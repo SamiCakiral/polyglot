@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}Liste catégories - FlashCards{% endblock %}
+
+{% block content %}
+<div class="categories-page">
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+
+    <div class="section-header">
+        <h1>Catégories</h1>
+        <a href="{{ url_for('categories.new_category', deck_id=deck.id) }}" class="btn btn-primary">+ Nouvelle
+            catégorie</a>
+    </div>
+
+    {% if deck.categories %}
+    <div class="category-grid">
+        {% for category in deck.categories %}
+        {% set stats = category.get_stats() %}
+        <div class="category-card" style="border-left-color: {{ category.color }}">
+            <h3>{{ category.name }}</h3>
+            <div class="category-stats">
+                <span>{{ stats.total }} cartes</span>
+                <span>{{ stats.due }} à réviser</span>
+            </div>
+            <div class="category-actions">
+                <a href="{{ url_for('categories.category_stats', category_id=category.id) }}"
+                    class="btn btn-sm">Stats</a>
+                <a href="{{ url_for('categories.edit_category', category_id=category.id) }}"
+                    class="btn btn-sm">Modifier</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucune catégorie dans ce paquet.</p>
+        <a href="{{ url_for('categories.new_category', deck_id=deck.id) }}" class="btn btn-primary">Créer une
+            catégorie</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

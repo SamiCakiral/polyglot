@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - FlashCards{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Bienvenue, {{ user.username }} !</h1>
+        {% if user.is_pro %}
+        <span class="badge badge-pro">PRO</span>
+        {% endif %}
+    </header>
+
+    <section class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-number">{{ due_cards }}</div>
+            <div class="stat-label">À réviser</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ new_cards }}</div>
+            <div class="stat-label">Nouvelles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_cards }}</div>
+            <div class="stat-label">Total cartes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ decks|length }}</div>
+            <div class="stat-label">Paquets</div>
+        </div>
+    </section>
+
+    <section class="decks-section">
+        <div class="section-header">
+            <h2>Mes Paquets</h2>
+            <a href="{{ url_for('decks.new_deck') }}" class="btn btn-primary">+ Nouveau paquet</a>
+        </div>
+
+        {% if decks %}
+        <div class="deck-grid">
+            {% for deck in decks %}
+            {% set stats = deck.get_stats() %}
+            <div class="deck-card">
+                <div class="deck-header">
+                    <h3>{{ deck.name }}</h3>
+                    {% if deck.description %}
+                    <p class="deck-description">{{ deck.description }}</p>
+                    {% endif %}
+                </div>
+                <div class="deck-stats">
+                    <span class="deck-stat" title="À réviser">🔴 {{ stats.due }}</span>
+                    <span class="deck-stat" title="Nouvelles">🔵 {{ stats.new }}</span>
+                    <span class="deck-stat" title="En apprentissage">🟡 {{ stats.learning }}</span>
+                    <span class="deck-stat" title="Maîtrisées">🟢 {{ stats.mastered }}</span>
+                </div>
+                <div class="deck-actions">
+                    {% if stats.due > 0 or stats.new > 0 %}
+                    <a href="{{ url_for('training.start_training', deck_id=deck.id) }}"
+                        class="btn btn-success btn-sm">Étudier</a>
+                    {% else %}
+                    <span class="btn btn-disabled btn-sm">Rien à réviser</span>
+                    {% endif %}
+                    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}"
+                        class="btn btn-secondary btn-sm">Voir</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>Vous n'avez pas encore de paquets.</p>
+            <a href="{{ url_for('decks.new_deck') }}" class="btn btn-primary">Créer votre premier paquet</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

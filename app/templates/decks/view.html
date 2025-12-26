@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ deck.name }} - FlashCards{% endblock %}
+
+{% block content %}
+<div class="deck-view">
+    <header class="deck-view-header">
+        <div class="header-left">
+            <a href="{{ url_for('main.index') }}" class="back-link">← Retour</a>
+            <h1>{{ deck.name }}</h1>
+            {% if deck.description %}
+            <p class="deck-description">{{ deck.description }}</p>
+            {% endif %}
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('decks.edit_deck', deck_id=deck.id) }}" class="btn btn-secondary btn-sm">Modifier</a>
+            <form method="POST" action="{{ url_for('decks.delete_deck', deck_id=deck.id) }}" class="inline-form"
+                onsubmit="return confirm('Supprimer ce paquet et toutes ses cartes ?')">
+                <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+            </form>
+        </div>
+    </header>
+
+    <section class="deck-stats-bar">
+        <div class="stat-item">
+            <span class="stat-value">{{ stats.total }}</span>
+            <span class="stat-name">Total</span>
+        </div>
+        <div class="stat-item stat-due">
+            <span class="stat-value">{{ stats.due }}</span>
+            <span class="stat-name">À réviser</span>
+        </div>
+        <div class="stat-item stat-new">
+            <span class="stat-value">{{ stats.new }}</span>
+            <span class="stat-name">Nouvelles</span>
+        </div>
+        <div class="stat-item stat-learning">
+            <span class="stat-value">{{ stats.learning }}</span>
+            <span class="stat-name">En cours</span>
+        </div>
+        <div class="stat-item stat-mastered">
+            <span class="stat-value">{{ stats.mastered }}</span>
+            <span class="stat-name">Maîtrisées</span>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="categories-section">
+        <div class="section-header">
+            <h2>Catégories</h2>
+            <a href="{{ url_for('categories.new_category', deck_id=deck.id) }}" class="btn btn-primary btn-sm">+
+                Catégorie</a>
+        </div>
+
+        {% if deck.categories %}
+        <div class="category-list">
+            {% for category in deck.categories %}
+            <div class="category-tag"
+                style="background-color: {{ category.color }}20; border-color: {{ category.color }}">
+                <span class="category-name">{{ category.name }}</span>
+                <span class="category-count">{{ category.cards|length }}</span>
+                <a href="{{ url_for('categories.category_stats', category_id=category.id) }}" class="category-action"
+                    title="Stats">📊</a>
+                <a href="{{ url_for('categories.edit_category', category_id=category.id) }}" class="category-action"
+                    title="Modifier">✏️</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="hint">Créez des catégories pour organiser vos cartes (ex: Sons K, Sons M pour les Kanas)</p>
+        {% endif %}
+    </section>
+
+    <!-- Training Section -->
+    <section class="training-section">
+        <div class="section-header">
+            <h2>Entraînement</h2>
+        </div>
+        {% if stats.due > 0 or stats.new > 0 %}
+        <a href="{{ url_for('training.start_training', deck_id=deck.id) }}" class="btn btn-success btn-lg">
+            Commencer l'entraînement ({{ stats.due + stats.new }} cartes)
+        </a>
+        {% else %}
+        <p class="hint">Aucune carte à réviser pour le moment. Revenez plus tard !</p>
+        {% endif %}
+    </section>
+
+    <!-- Cards Section -->
+    <section class="cards-section">
+        <div class="section-header">
+            <h2>📝 Cartes ({{ deck.cards|length }})</h2>
+            <div class="header-actions">
+                <a href="{{ url_for('cards.new_card', deck_id=deck.id) }}" class="btn btn-primary btn-sm">+ Carte</a>
+                <a href="{{ url_for('cards.bulk_create', deck_id=deck.id) }}" class="btn btn-secondary btn-sm">📋 Import
+                    texte</a>
+                <a href="{{ url_for('cards.json_import', deck_id=deck.id) }}" class="btn btn-secondary btn-sm">📥 Import
+                    JSON</a>
+            </div>
+        </div>
+
+        {% if deck.cards %}
+        <table class="cards-table">
+            <thead>
+                <tr>
+                    <th>Recto</th>
+                    <th>Verso</th>
+                    <th>Catégories</th>
+                    <th>Intervalle</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for card in deck.cards %}
+                <tr>
+                    <td>{{ card.front[:50] }}{% if card.front|length > 50 %}...{% endif %}</td>
+                    <td>{{ card.back[:50] }}{% if card.back|length > 50 %}...{% endif %}</td>
+                    <td>
+                        {% for cat in card.categories %}
+                        <span class="mini-tag" style="background-color: {{ cat.color }}">{{ cat.name }}</span>
+                        {% else %}
+                        <span class="no-category">-</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if card.repetitions == 0 %}
+                        <span class="badge badge-new">Nouvelle</span>
+                        {% else %}
+                        {{ card.interval }} jour{% if card.interval > 1 %}s{% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{{ url_for('cards.edit_card', card_id=card.id) }}" class="btn btn-sm">✏️</a>
+                        <form method="POST" action="{{ url_for('cards.delete_card', card_id=card.id) }}"
+                            class="inline-form">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Supprimer cette carte ?')">🗑️</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <p>Aucune carte dans ce paquet.</p>
+            <a href="{{ url_for('cards.new_card', deck_id=deck.id) }}" class="btn btn-primary">Créer une carte</a>
+        </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

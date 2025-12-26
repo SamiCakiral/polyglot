@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FlashCards{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <div class="nav-brand">
+                <a href="{{ url_for('main.index') }}">
+                    <span class="logo-icon">🧠</span>
+                    <span class="brand-text">
+                        FlashCards
+                        <small>Répétition espacée SM-2</small>
+                    </span>
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('main.index') }}"
+                        class="{% if request.endpoint == 'main.index' %}active{% endif %}">
+                        📚 Dashboard
+                    </a></li>
+                <li><a href="{{ url_for('stats.global_stats') }}"
+                        class="{% if 'stats' in request.endpoint %}active{% endif %}">
+                        📊 Statistiques
+                    </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <h3>🧠 FlashCards</h3>
+                <p>Application de mémorisation utilisant l'algorithme de répétition espacée SM-2, le même qu'Anki.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Navigation</h4>
+                <ul>
+                    <li><a href="{{ url_for('main.index') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('stats.global_stats') }}">Statistiques</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Ressources</h4>
+                <ul>
+                    <li><a href="#">Format JSON Import</a></li>
+                    <li><a href="#">Algorithme SM-2</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>FlashCards © 2024 • Fait avec ❤️ pour apprendre plus efficacement</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Mes Paquets - FlashCards{% endblock %}
+
+{% block content %}
+<div class="decks-page">
+    <div class="section-header">
+        <h1>Mes Paquets</h1>
+        <a href="{{ url_for('decks.new_deck') }}" class="btn btn-primary">+ Nouveau paquet</a>
+    </div>
+
+    {% if decks %}
+    <div class="deck-list">
+        {% for deck in decks %}
+        {% set stats = deck.get_stats() %}
+        <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="deck-item">
+            <div class="deck-info">
+                <h3>{{ deck.name }}</h3>
+                <p>{{ deck.cards|length }} cartes</p>
+            </div>
+            <div class="deck-mini-stats">
+                <span class="mini-stat due">{{ stats.due }}</span>
+                <span class="mini-stat new">{{ stats.new }}</span>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Vous n'avez pas encore de paquets.</p>
+        <a href="{{ url_for('decks.new_deck') }}" class="btn btn-primary">Créer votre premier paquet</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Import en masse - FlashCards{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+    <h1>Import en masse</h1>
+    <p class="hint">Créez plusieurs cartes rapidement en entrant une liste.</p>
+
+    <form method="POST" class="form">
+        <div class="form-group">
+            <label for="separator">Séparateur</label>
+            <select id="separator" name="separator">
+                <option value=";">Point-virgule (;)</option>
+                <option value=",">Virgule (,)</option>
+                <option value="	">Tabulation</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="data">Données (une carte par ligne)</label>
+            <textarea id="data" name="data" rows="10" required
+                placeholder="あ;a&#10;い;i&#10;う;u&#10;え;e&#10;お;o"></textarea>
+            <p class="field-hint">Format: recto{{ '{sep}' }}verso (une carte par ligne)</p>
+        </div>
+
+        {% if deck.categories %}
+        <div class="form-group">
+            <label>Catégories à appliquer</label>
+            <div class="checkbox-group">
+                {% for category in deck.categories %}
+                <label class="checkbox-label">
+                    <input type="checkbox" name="categories" value="{{ category.id }}">
+                    <span class="category-badge" style="background-color: {{ category.color }}">{{ category.name
+                        }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Importer</button>
+            <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="btn btn-link">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

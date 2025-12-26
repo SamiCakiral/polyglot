@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Stats {{ category.name }} - FlashCards{% endblock %}
+
+{% block content %}
+<div class="stats-page">
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+
+    <header class="section-header">
+        <h1>
+            <span class="category-badge" style="background-color: {{ category.color }}">{{ category.name }}</span>
+            Statistiques
+        </h1>
+    </header>
+
+    <section class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card stat-due">
+            <div class="stat-number">{{ stats.due }}</div>
+            <div class="stat-label">À réviser</div>
+        </div>
+        <div class="stat-card stat-new">
+            <div class="stat-number">{{ stats.new }}</div>
+            <div class="stat-label">Nouvelles</div>
+        </div>
+        <div class="stat-card stat-learning">
+            <div class="stat-number">{{ stats.learning }}</div>
+            <div class="stat-label">En cours</div>
+        </div>
+        <div class="stat-card stat-mastered">
+            <div class="stat-number">{{ stats.mastered }}</div>
+            <div class="stat-label">Maîtrisées</div>
+        </div>
+    </section>
+
+    {% if stats.total > 0 %}
+    <section class="progress-section">
+        <h2>Progression</h2>
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div class="progress-segment mastered"
+                    style="width: {{ (stats.mastered / stats.total * 100)|round(1) }}%"></div>
+                <div class="progress-segment learning"
+                    style="width: {{ (stats.learning / stats.total * 100)|round(1) }}%"></div>
+                <div class="progress-segment new" style="width: {{ (stats.new / stats.total * 100)|round(1) }}%"></div>
+            </div>
+        </div>
+        <div class="progress-legend">
+            <span><span class="dot mastered"></span> Maîtrisées ({{ (stats.mastered / stats.total * 100)|round(1)
+                }}%)</span>
+            <span><span class="dot learning"></span> En cours ({{ (stats.learning / stats.total * 100)|round(1)
+                }}%)</span>
+            <span><span class="dot new"></span> Nouvelles ({{ (stats.new / stats.total * 100)|round(1) }}%)</span>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if stats.due > 0 or stats.new > 0 %}
+    <section class="actions-section">
+        <a href="{{ url_for('training.start_training', deck_id=deck.id, categories=category.id) }}"
+            class="btn btn-success btn-lg">
+            Entraîner cette catégorie ({{ stats.due + stats.new }} cartes)
+        </a>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

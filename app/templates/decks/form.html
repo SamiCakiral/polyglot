@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if deck %}Modifier{% else %}Nouveau{% endif %} paquet - FlashCards{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <h1>{% if deck %}Modifier le paquet{% else %}Nouveau paquet{% endif %}</h1>
+
+    <form method="POST" class="form">
+        <div class="form-group">
+            <label for="name">Nom du paquet</label>
+            <input type="text" id="name" name="name" required value="{{ deck.name if deck else '' }}"
+                placeholder="Ex: Kanas Japonais">
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description (optionnel)</label>
+            <textarea id="description" name="description" rows="3"
+                placeholder="Ex: Apprentissage des hiraganas et katakanas">{{ deck.description if deck else '' }}</textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {% if deck %}Enregistrer{% else %}Créer{% endif %}
+            </button>
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

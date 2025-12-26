@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Import JSON - FlashCards{% endblock %}
+
+{% block content %}
+<div class="form-page">
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+    <h1>📥 Import JSON</h1>
+    <p class="hint">Importez des cartes et catégories depuis un fichier JSON.</p>
+
+    <form method="POST" enctype="multipart/form-data" class="form">
+        <div class="form-group">
+            <label>Fichier JSON</label>
+            <label class="file-input-wrapper">
+                <div class="file-icon">📄</div>
+                <span id="file-name">Cliquez pour choisir un fichier</span>
+                <input type="file" name="json_file" accept=".json" id="json-file-input">
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>Ou collez le JSON ici</label>
+            <textarea name="json_text" rows="12"
+                placeholder='{"cards": [{"front": "あ", "back": "a", "categories": ["Sons A"]}]}'></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">📥 Importer</button>
+            <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="btn btn-link">Annuler</a>
+        </div>
+    </form>
+
+    <div class="json-format-help">
+        <h3>📋 Format JSON</h3>
+
+        <h4>Format simple (liste de cartes)</h4>
+        <div class="code-preview">
+            [
+            {"front": "あ", "back": "a"},
+            {"front": "い", "back": "i"},
+            {"front": "う", "back": "u"}
+            ]
+        </div>
+
+        <h4>Format avec catégories</h4>
+        <div class="code-preview">
+            {
+            "categories": [
+            {"name": "Sons A", "color": "#3498db"},
+            {"name": "Sons K", "color": "#2ecc71"}
+            ],
+            "cards": [
+            {"front": "あ", "back": "a", "categories": ["Sons A"]},
+            {"front": "か", "back": "ka", "categories": ["Sons K"]},
+            {"front": "き", "back": "ki", "categories": ["Sons K"]}
+            ]
+            }
+        </div>
+
+        <h4>Format vocabulaire</h4>
+        <div class="code-preview">
+            {
+            "cards": [
+            {
+            "front": "猫",
+            "back": "chat (neko)",
+            "categories": ["Animaux", "N5"]
+            },
+            {
+            "front": "犬",
+            "back": "chien (inu)",
+            "categories": ["Animaux", "N5"]
+            }
+            ]
+            }
+        </div>
+
+        <p class="hint" style="margin-top: 1rem;">
+            💡 Les alias <code>question/answer</code> sont aussi acceptés au lieu de <code>front/back</code>.
+        </p>
+    </div>
+</div>
+
+<style>
+    .json-format-help {
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--light);
+    }
+
+    .json-format-help h3 {
+        margin-bottom: 1.5rem;
+    }
+
+    .json-format-help h4 {
+        margin: 1.5rem 0 0.75rem;
+        font-size: 0.9375rem;
+        color: var(--gray);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('json-file-input').addEventListener('change', function (e) {
+        const fileName = e.target.files[0] ? e.target.files[0].name : 'Cliquez pour choisir un fichier';
+        document.getElementById('file-name').textContent = fileName;
+    });
+</script>
+{% endblock %}

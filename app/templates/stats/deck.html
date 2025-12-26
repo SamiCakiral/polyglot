@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Stats {{ deck.name }} - FlashCards{% endblock %}
+
+{% block content %}
+<div class="stats-page">
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+    <h1>Statistiques: {{ deck.name }}</h1>
+
+    <section class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total }}</div>
+            <div class="stat-label">Total cartes</div>
+        </div>
+        <div class="stat-card stat-due">
+            <div class="stat-number">{{ stats.due }}</div>
+            <div class="stat-label">À réviser</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ success_rate|round(1) }}%</div>
+            <div class="stat-label">Taux de réussite</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ avg_easiness|round(2) }}</div>
+            <div class="stat-label">Facilité moy.</div>
+        </div>
+    </section>
+
+    <section class="progress-section">
+        <h2>Progression</h2>
+        {% if stats.total > 0 %}
+        <div class="progress-bar-container">
+            <div class="progress-bar">
+                <div class="progress-segment mastered"
+                    style="width: {{ (stats.mastered / stats.total * 100)|round(1) }}%"></div>
+                <div class="progress-segment learning"
+                    style="width: {{ (stats.learning / stats.total * 100)|round(1) }}%"></div>
+                <div class="progress-segment new" style="width: {{ (stats.new / stats.total * 100)|round(1) }}%"></div>
+            </div>
+        </div>
+        <div class="progress-legend">
+            <span><span class="dot mastered"></span> Maîtrisées {{ stats.mastered }} ({{ (stats.mastered / stats.total *
+                100)|round(1) }}%)</span>
+            <span><span class="dot learning"></span> En cours {{ stats.learning }} ({{ (stats.learning / stats.total *
+                100)|round(1) }}%)</span>
+            <span><span class="dot new"></span> Nouvelles {{ stats.new }} ({{ (stats.new / stats.total * 100)|round(1)
+                }}%)</span>
+        </div>
+        {% else %}
+        <p class="hint">Aucune carte dans ce paquet.</p>
+        {% endif %}
+    </section>
+
+    {% if category_stats %}
+    <section class="categories-stats-section">
+        <h2>Par catégorie</h2>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Catégorie</th>
+                    <th>Total</th>
+                    <th>À réviser</th>
+                    <th>Nouvelles</th>
+                    <th>En cours</th>
+                    <th>Maîtrisées</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in category_stats %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('categories.category_stats', category_id=item.category.id) }}">
+                            <span class="category-badge" style="background-color: {{ item.category.color }}">{{
+                                item.category.name }}</span>
+                        </a>
+                    </td>
+                    <td>{{ item.stats.total }}</td>
+                    <td class="stat-due">{{ item.stats.due }}</td>
+                    <td class="stat-new">{{ item.stats.new }}</td>
+                    <td class="stat-learning">{{ item.stats.learning }}</td>
+                    <td class="stat-mastered">{{ item.stats.mastered }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+    {% endif %}
+
+    <section class="chart-section">
+        <h2>Révisions cette semaine</h2>
+        <div class="bar-chart">
+            {% set max_count = daily_reviews|map(attribute='count')|max or 1 %}
+            {% for day in daily_reviews %}
+            <div class="bar-container">
+                <div class="bar" style="height: {{ (day.count / max_count * 100)|round }}%">
+                    <span class="bar-value">{{ day.count }}</span>
+                </div>
+                <span class="bar-label">{{ day.date }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

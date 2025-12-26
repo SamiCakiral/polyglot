@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Session terminée - FlashCards{% endblock %}
+
+{% block content %}
+<div class="session-complete">
+    <div class="complete-icon">🎉</div>
+    <h1>Session terminée !</h1>
+
+    <div class="session-stats">
+        <div class="stat-card success">
+            <div class="stat-number">{{ results.correct }}</div>
+            <div class="stat-label">Correctes</div>
+        </div>
+        <div class="stat-card error">
+            <div class="stat-number">{{ results.incorrect }}</div>
+            <div class="stat-label">À revoir</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ accuracy|round(1) }}%</div>
+            <div class="stat-label">Précision</div>
+        </div>
+    </div>
+
+    <div class="complete-actions">
+        <a href="{{ url_for('training.start_training', deck_id=deck.id) }}" class="btn btn-success">Nouvelle session</a>
+        <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="btn btn-secondary">Retour au paquet</a>
+        <a href="{{ url_for('main.index') }}" class="btn btn-link">Dashboard</a>
+    </div>
+</div>
+{% endblock %}

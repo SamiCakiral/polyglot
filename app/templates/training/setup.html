@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Entraînement {{ deck.name }} - FlashCards{% endblock %}
+
+{% block content %}
+<div class="training-setup">
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+
+    <h1>⚡ Configuration de l'entraînement</h1>
+    <p class="hint">Personnalisez votre session d'apprentissage.</p>
+
+    <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}" class="form">
+
+        <!-- Training Mode Selection -->
+        <div class="training-options">
+            <h3>🎯 Mode d'entraînement</h3>
+            <div class="option-group">
+                <label class="option-item">
+                    <input type="radio" name="mode" value="flip" checked>
+                    <div>
+                        <strong>Mode classique (Flip)</strong>
+                        <p class="hint">Retournez la carte pour voir la réponse</p>
+                    </div>
+                </label>
+                <label class="option-item">
+                    <input type="radio" name="mode" value="type_back">
+                    <div>
+                        <strong>Mode écriture → Réponse</strong>
+                        <p class="hint">Écrivez la réponse (verso). Ex: Voir "あ", écrire "a"</p>
+                    </div>
+                </label>
+                <label class="option-item">
+                    <input type="radio" name="mode" value="type_front">
+                    <div>
+                        <strong>Mode écriture → Question</strong>
+                        <p class="hint">Écrivez la question (recto). Ex: Voir "a", écrire "あ"</p>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Category Selection -->
+        {% if deck.categories %}
+        <div class="training-options">
+            <h3>📁 Filtrer par catégories</h3>
+            <div class="category-selector">
+                {% for category in deck.categories %}
+                {% set cat_stats = category.get_stats() %}
+                {% if cat_stats.due + cat_stats.new > 0 %}
+                <label class="checkbox-label category-option">
+                    <input type="checkbox" name="categories" value="{{ category.id }}" {% if category.id in
+                        selected_categories %}checked{% endif %}>
+                    <span class="category-badge" style="background-color: {{ category.color }}">
+                        {{ category.name }}
+                    </span>
+                    <span class="count">({{ cat_stats.due + cat_stats.new }} cartes)</span>
+                </label>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <p class="field-hint">💡 Si aucune catégorie n'est sélectionnée, toutes les cartes seront incluses.</p>
+        </div>
+        {% endif %}
+
+        <div class="form-actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn btn-success btn-lg">🚀 Commencer l'entraînement</button>
+            <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="btn btn-link">Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

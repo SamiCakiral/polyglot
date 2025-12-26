@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Révision - FlashCards{% endblock %}
+
+{% block content %}
+<div class="training-card-page">
+    <header class="training-header">
+        <div class="progress-info">
+            <span>{{ current }} / {{ total }}</span>
+            <span class="results-mini">
+                <span class="correct">✓ {{ results.correct }}</span>
+                <span class="incorrect">✗ {{ results.incorrect }}</span>
+            </span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {{ progress }}%"></div>
+        </div>
+        <form method="POST" action="{{ url_for('training.stop_training') }}" class="stop-form">
+            <button type="submit" class="btn btn-sm btn-secondary">Arrêter</button>
+        </form>
+    </header>
+
+    {% if mode == 'flip' %}
+    <!-- Classic Flip Mode -->
+    <main class="flashcard-container">
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <div class="flashcard-inner" id="flashcard-inner">
+                <div class="flashcard-front">
+                    <div class="card-categories">
+                        {% for cat in card.categories %}
+                        <span class="mini-tag" style="background-color: {{ cat.color }}">{{ cat.name }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="card-content">{{ card.front }}</div>
+                    <div class="flip-hint">👆 Cliquez ou appuyez sur Espace</div>
+                </div>
+                <div class="flashcard-back">
+                    <div class="card-content">{{ card.back }}</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="review-buttons" id="review-buttons" style="display: none;">
+        <form method="POST" action="{{ url_for('training.submit_review') }}" class="buttons-form">
+            {% for button in buttons %}
+            <button type="submit" name="quality" value="{{ button.quality }}"
+                class="review-btn quality-{{ button.quality }}">
+                <span class="btn-label">{{ button.label }}</span>
+                <span class="btn-interval">{{ button.interval_label }}</span>
+            </button>
+            {% endfor %}
+        </form>
+    </footer>
+
+    {% else %}
+    <!-- Typing Mode -->
+    <main class="flashcard-container">
+        <div class="flashcard typing-mode">
+            <div class="flashcard-front" style="backface-visibility: visible;">
+                <div class="card-categories">
+                    {% for cat in card.categories %}
+                    <span class="mini-tag" style="background-color: {{ cat.color }}">{{ cat.name }}</span>
+                    {% endfor %}
+                </div>
+
+                <!-- Show the question -->
+                <div class="card-content">
+                    {% if mode == 'type_back' %}
+                    {{ card.front }}
+                    {% else %}
+                    {{ card.back }}
+                    {% endif %}
+                </div>
+
+                <!-- Typing input -->
+                <div class="typing-container">
+                    <div class="typing-input-wrapper">
+                        <input type="text" class="typing-input" id="answer-input" placeholder="Écrivez la réponse..."
+                            autocomplete="off" autofocus>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="check-btn" onclick="checkAnswer()">
+                        Vérifier
+                    </button>
+
+                    <!-- Feedback area (hidden initially) -->
+                    <div id="typing-feedback" style="display: none;"></div>
+                    <div id="expected-answer" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="review-buttons" id="review-buttons" style="display: none;">
+        <form method="POST" action="{{ url_for('training.submit_review') }}" class="buttons-form">
+            {% for button in buttons %}
+            <button type="submit" name="quality" value="{{ button.quality }}"
+                class="review-btn quality-{{ button.quality }}">
+                <span class="btn-label">{{ button.label }}</span>
+                <span class="btn-interval">{{ button.interval_label }}</span>
+            </button>
+            {% endfor %}
+        </form>
+    </footer>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    {% if mode == 'flip' %}
+    // === FLIP MODE ===
+    let flipped = false;
+
+    function flipCard() {
+        const inner = document.getElementById('flashcard-inner');
+        const buttons = document.getElementById('review-buttons');
+
+        if (!flipped) {
+            inner.classList.add('flipped');
+            buttons.style.display = 'flex';
+            flipped = true;
+        }
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.code === 'Space' && !flipped) {
+            e.preventDefault();
+            flipCard();
+        } else if (flipped) {
+            const keyMap = { 'Digit1': 1, 'Digit2': 3, 'Digit3': 4, 'Digit4': 5 };
+            if (keyMap[e.code]) {
+                const btn = document.querySelector(`button[value="${keyMap[e.code]}"]`);
+                if (btn) btn.click();
+            }
+        }
+    });
+
+    {% else %}
+    // === TYPING MODE ===
+    let checked = false;
+
+    function checkAnswer() {
+        if (checked) return;
+
+        const input = document.getElementById('answer-input');
+        const answer = input.value.trim();
+
+        if (!answer) {
+            input.focus();
+            return;
+        }
+
+        // Send to server to check
+        fetch('{{ url_for("training.check_answer") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'answer=' + encodeURIComponent(answer)
+        })
+            .then(response => response.json())
+            .then(data => {
+                checked = true;
+
+                const feedback = document.getElementById('typing-feedback');
+                const expected = document.getElementById('expected-answer');
+                const buttons = document.getElementById('review-buttons');
+                const checkBtn = document.getElementById('check-btn');
+
+                if (data.correct) {
+                    input.classList.add('correct');
+                    feedback.innerHTML = '✓ Correct !';
+                    feedback.className = 'typing-feedback correct';
+                } else {
+                    input.classList.add('incorrect');
+                    feedback.innerHTML = '✗ Incorrect';
+                    feedback.className = 'typing-feedback incorrect';
+                    expected.innerHTML = '<strong>Réponse attendue :</strong> ' + data.expected;
+                    expected.style.display = 'block';
+                }
+
+                feedback.style.display = 'block';
+                checkBtn.style.display = 'none';
+                buttons.style.display = 'flex';
+
+                // Pre-select quality based on correctness
+                if (data.correct) {
+                    // Focus the "Good" button
+                    document.querySelector('button[value="4"]').focus();
+                } else {
+                    // Focus the "Again" button
+                    document.querySelector('button[value="1"]').focus();
+                }
+            });
+    }
+
+    // Allow Enter to submit
+    document.getElementById('answer-input').addEventListener('keydown', function (e) {
+        if (e.code === 'Enter') {
+            e.preventDefault();
+            if (!checked) {
+                checkAnswer();
+            }
+        }
+    });
+
+    // Keyboard shortcuts after checking
+    document.addEventListener('keydown', function (e) {
+        if (checked) {
+            const keyMap = { 'Digit1': 1, 'Digit2': 3, 'Digit3': 4, 'Digit4': 5 };
+            if (keyMap[e.code]) {
+                const btn = document.querySelector(`button[value="${keyMap[e.code]}"]`);
+                if (btn) btn.click();
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}
