@@ -1,18 +1,22 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for, g
 from app.models import Deck, Card, Category, Review, User
-from app.routes.main import get_or_create_default_user
 from app import db
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 
+@bp.before_request
+def login_required():
+    if not g.user:
+        return redirect(url_for('auth.profiles'))
+
 
 @bp.route('/')
 def global_stats():
     """Show global statistics across all decks."""
-    user = get_or_create_default_user()
-    decks = Deck.query.filter_by(user_id=user.id).all()
+    decks = Deck.query.filter_by(user_id=g.user.id).all()
+    user = g.user
     
     # Basic stats
     total_decks = len(decks)
@@ -87,6 +91,9 @@ def deck_stats(deck_id):
     from app.grades import calculate_deck_progress, get_grade_distribution, GRADES
     
     deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != g.user.id:
+        return redirect(url_for('stats.global_stats'))
+        
     stats = deck.get_stats()
     
     now = datetime.utcnow()

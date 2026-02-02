@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, g
 from app.models import Card, Deck, Category
 from app import db
 from app.utils import find_duplicates, check_import_duplicates, normalize_text
@@ -7,10 +7,19 @@ import json
 bp = Blueprint('cards', __name__, url_prefix='/cards')
 
 
+@bp.before_request
+def login_required():
+    if not g.user:
+        return redirect(url_for('auth.profiles'))
+
+
 @bp.route('/deck/<int:deck_id>/new', methods=['GET', 'POST'])
 def new_card(deck_id):
     """Create a new card in a deck."""
     deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != g.user.id:
+        flash('Accès non autorisé.', 'error')
+        return redirect(url_for('main.index'))
     
     if request.method == 'POST':
         front = request.form.get('front', '').strip()
@@ -60,6 +69,10 @@ def edit_card(card_id):
     """Edit a card."""
     card = Card.query.get_or_404(card_id)
     deck = card.deck
+    
+    if deck.user_id != g.user.id:
+        flash('Accès non autorisé.', 'error')
+        return redirect(url_for('main.index'))
     
     if request.method == 'POST':
         front = request.form.get('front', '').strip()

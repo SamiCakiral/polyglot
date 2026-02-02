@@ -19,4 +19,7 @@ def create_app(config_class=Config):
     app.register_blueprint(training.bp)
     app.register_blueprint(stats.bp)
     
+    from app.routes import auth
+    app.register_blueprint(auth.bp)
+    
     return app

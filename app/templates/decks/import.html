@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Importer un paquet - FlashCards{% endblock %}
+
+{% block content %}
+<div class="deck-view-header">
+    <div class="header-left">
+        <a href="{{ url_for('decks.list_decks') }}" class="back-link">← Mes paquets</a>
+        <h1>Importer un paquet</h1>
+        <p>Copiez un paquet d'un autre utilisateur pour commencer à l'étudier.</p>
+    </div>
+</div>
+
+<div class="deck-grid">
+    {% for deck in decks %}
+    <div class="deck-card">
+        <div class="deck-header">
+            <h3>{{ deck.name }}</h3>
+            <p>Par {{ deck.user.username }}</p>
+            {% if deck.description %}
+            <p class="deck-description">{{ deck.description }}</p>
+            {% endif %}
+        </div>
+        <div class="deck-stats">
+            <span class="deck-stat">{{ deck.card_count }} cartes</span>
+            <span class="deck-stat">{{ deck.categories|length }} catégories</span>
+        </div>
+        <div class="deck-actions">
+            <form method="POST" action="{{ url_for('decks.import_public_deck') }}">
+                <input type="hidden" name="deck_id" value="{{ deck.id }}">
+                <button type="submit" class="btn btn-primary btn-sm">Importer</button>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Aucun paquet public trouvé.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

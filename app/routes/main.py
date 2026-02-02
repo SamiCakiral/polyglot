@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for
+from flask import Blueprint, render_template, redirect, url_for, session, g
 from app.models import Deck, User, Card, Review
 from app import db
 from datetime import datetime, timedelta
@@ -6,14 +6,11 @@ from datetime import datetime, timedelta
 bp = Blueprint('main', __name__)
 
 
-def get_or_create_default_user():
-    """Get or create a default user for demo purposes."""
-    user = User.query.first()
-    if not user:
-        user = User(username='Sami', is_pro=True)
-        db.session.add(user)
-        db.session.commit()
-    return user
+def get_current_user():
+    """Get current logged in user."""
+    if 'user_id' not in session:
+        return None
+    return User.query.get(session['user_id'])
 
 
 def get_recommendations(decks):
@@ -94,13 +91,21 @@ def get_recommendations(decks):
 
 def get_streak_info(user):
     """Calculate user's study streak."""
+    # Logic remains same but simplified since we have user object
     now = datetime.utcnow()
     today = now.date()
     
-    # Get reviews from last 30 days
-    reviews = Review.query.filter(
-        Review.reviewed_at >= now - timedelta(days=30)
-    ).order_by(Review.reviewed_at.desc()).all()
+    # Get reviews from last 30 days specific to user's decks
+    # This is a bit complex as reviews link to cards link to decks link to user
+    # Simplified: Assume all reviews in system belong to current user's cards? 
+    # Or strict join.
+    
+    reviews = Review.query\
+        .join(Card)\
+        .join(Deck)\
+        .filter(Deck.user_id == user.id)\
+        .filter(Review.reviewed_at >= now - timedelta(days=30))\
+        .order_by(Review.reviewed_at.desc()).all()
     
     if not reviews:
         return {'current': 0, 'best': 0, 'today': 0}
@@ -126,7 +131,10 @@ def get_streak_info(user):
 @bp.route('/')
 def index():
     """Dashboard - main page showing all decks and global stats."""
-    user = get_or_create_default_user()
+    if not g.user:
+        return redirect(url_for('auth.profiles'))
+        
+    user = g.user
     decks = Deck.query.filter_by(user_id=user.id).all()
     
     now = datetime.utcnow()

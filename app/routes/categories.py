@@ -1,14 +1,22 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, g
 from app.models import Category, Deck
 from app import db
 
 bp = Blueprint('categories', __name__, url_prefix='/categories')
 
 
+@bp.before_request
+def login_required():
+    if not g.user:
+        return redirect(url_for('auth.profiles'))
+
+
 @bp.route('/deck/<int:deck_id>')
 def list_categories(deck_id):
     """List all categories for a deck."""
     deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != g.user.id:
+        return redirect(url_for('main.index'))
     return render_template('categories/list.html', deck=deck)
 
 

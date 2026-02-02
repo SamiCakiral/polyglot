@@ -11,16 +11,30 @@ card_categories = db.Table('card_categories',
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))  # Optional password
     is_pro = db.Column(db.Boolean, default=False)
+    avatar_color = db.Column(db.String(7), default='#3498db')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     decks = db.relationship('Deck', backref='user', lazy=True, cascade='all, delete-orphan')
+    
+    def set_password(self, password):
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
+        
+    def check_password(self, password):
+        from werkzeug.security import check_password_hash
+        if not self.password_hash:
+            return True
+        return check_password_hash(self.password_hash, password)
     
     def to_dict(self):
         return {
             'id': self.id,
             'username': self.username,
             'is_pro': self.is_pro,
+            'avatar_color': self.avatar_color,
+            'has_password': bool(self.password_hash),
             'created_at': self.created_at.isoformat()
         }
 

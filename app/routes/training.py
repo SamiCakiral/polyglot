@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, g
 from app.models import Card, Deck, Category, Review, TrainingSession
 from app.sm2 import calculate_sm2, get_review_buttons
 from app import db
@@ -12,10 +12,19 @@ from app.grades import calculate_grade, grade_to_numeric
 bp = Blueprint('training', __name__, url_prefix='/train')
 
 
+@bp.before_request
+def login_required():
+    if not g.user:
+        return redirect(url_for('auth.profiles'))
+
+
 @bp.route('/deck/<int:deck_id>')
 def start_training(deck_id):
     """Start a training session for a deck, optionally filtered by categories."""
     deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != g.user.id:
+        flash('Accès non autorisé.', 'error')
+        return redirect(url_for('main.index'))
     
     # Get category filter from query params
     category_ids = request.args.getlist('categories', type=int)
@@ -137,6 +146,8 @@ def count_cards(deck_id):
 def create_session(deck_id):
     """Create a training session and redirect to first card."""
     deck = Deck.query.get_or_404(deck_id)
+    if deck.user_id != g.user.id:
+        return redirect(url_for('main.index'))
     
     # Store params in session for restart
     params = {

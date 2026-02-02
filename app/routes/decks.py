@@ -1,24 +1,80 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, g
 from app.models import Deck, Card, User
 from app import db
-from app.routes.main import get_or_create_default_user
 
 bp = Blueprint('decks', __name__, url_prefix='/decks')
+
+
+@bp.before_request
+def login_required():
+    """Ensure user is logged in."""
+    if not g.user:
+        return redirect(url_for('auth.profiles'))
 
 
 @bp.route('/')
 def list_decks():
     """List all decks."""
-    user = get_or_create_default_user()
-    decks = Deck.query.filter_by(user_id=user.id).all()
+    decks = Deck.query.filter_by(user_id=g.user.id).all()
     return render_template('decks/list.html', decks=decks)
+
+
+@bp.route('/import-public', methods=['GET', 'POST'])
+def import_public_deck():
+    """Import a deck from another user."""
+    if request.method == 'POST':
+        deck_id = request.form.get('deck_id')
+        source_deck = Deck.query.get_or_404(deck_id)
+        
+        # Clone deck
+        new_deck = Deck(
+            user_id=g.user.id, 
+            name=f"{source_deck.name} (Import)", 
+            description=source_deck.description
+        )
+        db.session.add(new_deck)
+        db.session.flush() # get ID
+        
+        # Clone categories mapping
+        cat_map = {}
+        for cat in source_deck.categories:
+            new_cat = cat.__class__(
+                deck_id=new_deck.id,
+                name=cat.name,
+                color=cat.color
+            )
+            db.session.add(new_cat)
+            db.session.flush()
+            cat_map[cat.id] = new_cat
+            
+        # Clone cards
+        for card in source_deck.cards:
+            new_card = Card(
+                deck_id=new_deck.id,
+                front=card.front,
+                back=card.back,
+                # Reset stats
+                fb_easiness=2.5, bf_easiness=2.5
+            )
+            db.session.add(new_card)
+            # Add categories
+            for cat in card.categories:
+                if cat.id in cat_map:
+                    new_card.categories.append(cat_map[cat.id])
+        
+        db.session.commit()
+        flash(f'Paquet "{source_deck.name}" importé avec succès !', 'success')
+        return redirect(url_for('decks.view_deck', deck_id=new_deck.id))
+    
+    # Show all decks NOT owned by current user
+    public_decks = Deck.query.filter(Deck.user_id != g.user.id).all()
+    return render_template('decks/import.html', decks=public_decks)
 
 
 @bp.route('/new', methods=['GET', 'POST'])
 def new_deck():
     """Create a new deck."""
     if request.method == 'POST':
-        user = get_or_create_default_user()
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         
@@ -26,7 +82,7 @@ def new_deck():
             flash('Le nom du paquet est requis.', 'error')
             return render_template('decks/form.html', deck=None)
         
-        deck = Deck(user_id=user.id, name=name, description=description)
+        deck = Deck(user_id=g.user.id, name=name, description=description)
         db.session.add(deck)
         db.session.commit()
         
@@ -42,6 +98,12 @@ def view_deck(deck_id):
     from app.grades import get_grade_distribution, calculate_deck_progress, GRADES
     
     deck = Deck.query.get_or_404(deck_id)
+    
+    # Ownership check
+    if deck.user_id != g.user.id:
+        flash('Vous ne pouvez pas accéder à ce paquet directement. Vous pouvez l\'importer.', 'info')
+        return redirect(url_for('decks.import_public_deck'))
+        
     stats = deck.get_stats()
     
     # Get sample cards for training mode examples

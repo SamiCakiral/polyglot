@@ -37,6 +37,18 @@
                         class="{% if 'stats' in request.endpoint %}active{% endif %}">
                         Statistiques
                     </a></li>
+                {% if g.user %}
+                <li style="margin-left: 1rem; display: flex; align-items: center;">
+                    <a href="{{ url_for('auth.profiles') }}"
+                        style="padding: 0; display: flex; align-items: center; gap: 0.5rem;" title="Changer de profil">
+                        <div
+                            style="width: 32px; height: 32px; border-radius: 4px; background-color: {{ g.user.avatar_color }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem;">
+                            {{ g.user.username[0]|upper }}
+                        </div>
+                        <span style="font-weight: 500;">{{ g.user.username }}</span>
+                    </a>
+                </li>
+                {% endif %}
             </ul>
         </div>
     </nav>
