@@ -51,6 +51,112 @@
         {% endif %}
     </section>
 
+    <!-- Grade Distribution Section -->
+    {% if fb_progress and fb_progress.total_cards > 0 %}
+    <section class="grade-section" style="margin-top: 2rem;">
+        <h2>📊 Distribution des notes</h2>
+
+        <!-- Front → Back Progress -->
+        <div class="grade-direction" style="margin-bottom: 2rem;">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem;">
+                📝 Recto → Verso
+                <span class="grade-badge"
+                    style="background-color: {{ grade_colors[fb_progress.average_grade] }}; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.9rem; margin-left: 0.5rem;">
+                    {{ fb_progress.average_grade }}
+                </span>
+                <span style="font-weight: normal; font-size: 0.9rem; opacity: 0.7;">
+                    ({{ fb_progress.progress_percent }}% maîtrisé)
+                </span>
+            </h3>
+
+            <!-- Progress Bar -->
+            <div
+                style="background: var(--gray-100); border-radius: var(--radius-sm); height: 12px; margin-bottom: 1rem; overflow: hidden;">
+                <div
+                    style="height: 100%; width: {{ fb_progress.progress_percent }}%; background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e, #10b981); transition: width 0.3s;">
+                </div>
+            </div>
+
+            <!-- Grade Histogram -->
+            <div class="grade-histogram"
+                style="display: flex; gap: 0.25rem; align-items: flex-end; height: 100px; margin-bottom: 0.5rem;">
+                {% set fb_max = fb_grade_dist.values()|max or 1 %}
+                {% for grade in grade_order %}
+                {% set count = fb_grade_dist[grade] %}
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-size: 0.7rem; margin-bottom: 0.25rem;">{{ count }}</span>
+                    <div
+                        style="width: 100%; max-width: 40px; height: {{ (count / fb_max * 80)|round }}px; min-height: 4px; background-color: {{ grade_colors[grade] }}; border-radius: 2px 2px 0 0;">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="display: flex; gap: 0.25rem;">
+                {% for grade in grade_order %}
+                <div style="flex: 1; text-align: center; font-size: 0.75rem; font-weight: 500;">{{ grade }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Back → Front Progress -->
+        <div class="grade-direction">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem;">
+                🔄 Verso → Recto
+                <span class="grade-badge"
+                    style="background-color: {{ grade_colors[bf_progress.average_grade] }}; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.9rem; margin-left: 0.5rem;">
+                    {{ bf_progress.average_grade }}
+                </span>
+                <span style="font-weight: normal; font-size: 0.9rem; opacity: 0.7;">
+                    ({{ bf_progress.progress_percent }}% maîtrisé)
+                </span>
+            </h3>
+
+            <!-- Progress Bar -->
+            <div
+                style="background: var(--gray-100); border-radius: var(--radius-sm); height: 12px; margin-bottom: 1rem; overflow: hidden;">
+                <div
+                    style="height: 100%; width: {{ bf_progress.progress_percent }}%; background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e, #10b981); transition: width 0.3s;">
+                </div>
+            </div>
+
+            <!-- Grade Histogram -->
+            <div class="grade-histogram"
+                style="display: flex; gap: 0.25rem; align-items: flex-end; height: 100px; margin-bottom: 0.5rem;">
+                {% set bf_max = bf_grade_dist.values()|max or 1 %}
+                {% for grade in grade_order %}
+                {% set count = bf_grade_dist[grade] %}
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                    <span style="font-size: 0.7rem; margin-bottom: 0.25rem;">{{ count }}</span>
+                    <div
+                        style="width: 100%; max-width: 40px; height: {{ (count / bf_max * 80)|round }}px; min-height: 4px; background-color: {{ grade_colors[grade] }}; border-radius: 2px 2px 0 0;">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="display: flex; gap: 0.25rem;">
+                {% for grade in grade_order %}
+                <div style="flex: 1; text-align: center; font-size: 0.75rem; font-weight: 500;">{{ grade }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div
+            style="margin-top: 1.5rem; padding: 1rem; background: var(--gray-50); border-radius: var(--radius-sm); display: flex; gap: 2rem; flex-wrap: wrap;">
+            <div>
+                <strong>Recto→Verso:</strong>
+                {{ fb_progress.passing_count }}/{{ fb_progress.total_cards }} réussies (C+),
+                {{ fb_progress.mastered_count }} maîtrisées (A/A+)
+            </div>
+            <div>
+                <strong>Verso→Recto:</strong>
+                {{ bf_progress.passing_count }}/{{ bf_progress.total_cards }} réussies (C+),
+                {{ bf_progress.mastered_count }} maîtrisées (A/A+)
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     {% if category_stats %}
     <section class="categories-stats-section">
         <h2>Par catégorie</h2>

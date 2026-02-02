@@ -1,0 +1,374 @@
+{
+    "name": "Katakana",
+    "description": "Les 46 katakanas de base",
+    "categories": [
+        {
+            "name": "Voyelles",
+            "color": "#ef4444"
+        },
+        {
+            "name": "K",
+            "color": "#f97316"
+        },
+        {
+            "name": "S",
+            "color": "#eab308"
+        },
+        {
+            "name": "T",
+            "color": "#84cc16"
+        },
+        {
+            "name": "N",
+            "color": "#22c55e"
+        },
+        {
+            "name": "H",
+            "color": "#14b8a6"
+        },
+        {
+            "name": "M",
+            "color": "#06b6d4"
+        },
+        {
+            "name": "Y",
+            "color": "#3b82f6"
+        },
+        {
+            "name": "R",
+            "color": "#8b5cf6"
+        },
+        {
+            "name": "W",
+            "color": "#d946ef"
+        },
+        {
+            "name": "Spécial",
+            "color": "#64748b"
+        }
+    ],
+    "cards": [
+        {
+            "front": "ア",
+            "back": "a",
+            "categories": [
+                "Voyelles"
+            ]
+        },
+        {
+            "front": "イ",
+            "back": "i",
+            "categories": [
+                "Voyelles"
+            ]
+        },
+        {
+            "front": "ウ",
+            "back": "u",
+            "categories": [
+                "Voyelles"
+            ]
+        },
+        {
+            "front": "エ",
+            "back": "e",
+            "categories": [
+                "Voyelles"
+            ]
+        },
+        {
+            "front": "オ",
+            "back": "o",
+            "categories": [
+                "Voyelles"
+            ]
+        },
+        {
+            "front": "カ",
+            "back": "ka",
+            "categories": [
+                "K"
+            ]
+        },
+        {
+            "front": "キ",
+            "back": "ki",
+            "categories": [
+                "K"
+            ]
+        },
+        {
+            "front": "ク",
+            "back": "ku",
+            "categories": [
+                "K"
+            ]
+        },
+        {
+            "front": "ケ",
+            "back": "ke",
+            "categories": [
+                "K"
+            ]
+        },
+        {
+            "front": "コ",
+            "back": "ko",
+            "categories": [
+                "K"
+            ]
+        },
+        {
+            "front": "サ",
+            "back": "sa",
+            "categories": [
+                "S"
+            ]
+        },
+        {
+            "front": "シ",
+            "back": "shi",
+            "categories": [
+                "S"
+            ]
+        },
+        {
+            "front": "ス",
+            "back": "su",
+            "categories": [
+                "S"
+            ]
+        },
+        {
+            "front": "セ",
+            "back": "se",
+            "categories": [
+                "S"
+            ]
+        },
+        {
+            "front": "ソ",
+            "back": "so",
+            "categories": [
+                "S"
+            ]
+        },
+        {
+            "front": "タ",
+            "back": "ta",
+            "categories": [
+                "T"
+            ]
+        },
+        {
+            "front": "チ",
+            "back": "chi",
+            "categories": [
+                "T"
+            ]
+        },
+        {
+            "front": "ツ",
+            "back": "tsu",
+            "categories": [
+                "T"
+            ]
+        },
+        {
+            "front": "テ",
+            "back": "te",
+            "categories": [
+                "T"
+            ]
+        },
+        {
+            "front": "ト",
+            "back": "to",
+            "categories": [
+                "T"
+            ]
+        },
+        {
+            "front": "ナ",
+            "back": "na",
+            "categories": [
+                "N"
+            ]
+        },
+        {
+            "front": "ニ",
+            "back": "ni",
+            "categories": [
+                "N"
+            ]
+        },
+        {
+            "front": "ヌ",
+            "back": "nu",
+            "categories": [
+                "N"
+            ]
+        },
+        {
+            "front": "ネ",
+            "back": "ne",
+            "categories": [
+                "N"
+            ]
+        },
+        {
+            "front": "ノ",
+            "back": "no",
+            "categories": [
+                "N"
+            ]
+        },
+        {
+            "front": "ハ",
+            "back": "ha",
+            "categories": [
+                "H"
+            ]
+        },
+        {
+            "front": "ヒ",
+            "back": "hi",
+            "categories": [
+                "H"
+            ]
+        },
+        {
+            "front": "フ",
+            "back": "fu",
+            "categories": [
+                "H"
+            ]
+        },
+        {
+            "front": "ヘ",
+            "back": "he",
+            "categories": [
+                "H"
+            ]
+        },
+        {
+            "front": "ホ",
+            "back": "ho",
+            "categories": [
+                "H"
+            ]
+        },
+        {
+            "front": "マ",
+            "back": "ma",
+            "categories": [
+                "M"
+            ]
+        },
+        {
+            "front": "ミ",
+            "back": "mi",
+            "categories": [
+                "M"
+            ]
+        },
+        {
+            "front": "ム",
+            "back": "mu",
+            "categories": [
+                "M"
+            ]
+        },
+        {
+            "front": "メ",
+            "back": "me",
+            "categories": [
+                "M"
+            ]
+        },
+        {
+            "front": "モ",
+            "back": "mo",
+            "categories": [
+                "M"
+            ]
+        },
+        {
+            "front": "ヤ",
+            "back": "ya",
+            "categories": [
+                "Y"
+            ]
+        },
+        {
+            "front": "ユ",
+            "back": "yu",
+            "categories": [
+                "Y"
+            ]
+        },
+        {
+            "front": "ヨ",
+            "back": "yo",
+            "categories": [
+                "Y"
+            ]
+        },
+        {
+            "front": "ラ",
+            "back": "ra",
+            "categories": [
+                "R"
+            ]
+        },
+        {
+            "front": "リ",
+            "back": "ri",
+            "categories": [
+                "R"
+            ]
+        },
+        {
+            "front": "ル",
+            "back": "ru",
+            "categories": [
+                "R"
+            ]
+        },
+        {
+            "front": "レ",
+            "back": "re",
+            "categories": [
+                "R"
+            ]
+        },
+        {
+            "front": "ロ",
+            "back": "ro",
+            "categories": [
+                "R"
+            ]
+        },
+        {
+            "front": "ワ",
+            "back": "wa",
+            "categories": [
+                "W"
+            ]
+        },
+        {
+            "front": "ヲ",
+            "back": "wo",
+            "categories": [
+                "W"
+            ]
+        },
+        {
+            "front": "ン",
+            "back": "n",
+            "categories": [
+                "Spécial"
+            ]
+        }
+    ]
+}

@@ -4,68 +4,441 @@
 
 {% block content %}
 <div class="training-setup">
-    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← Retour à {{ deck.name }}</a>
+    <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="back-link">← {{ deck.name }}</a>
 
-    <h1>⚡ Configuration de l'entraînement</h1>
+    <!-- Quick Actions -->
+    <div class="quick-start" style="margin-bottom: 2rem;">
+        <h2 style="font-size: 1.1rem; margin-bottom: 1rem;">⚡ Démarrage rapide</h2>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="mode" value="type_mode">
+                <input type="hidden" name="directions" value="fb">
+                <button type="submit" class="btn btn-primary">
+                    📝 Recto → Verso<br>
+                    <small style="opacity: 0.8; font-weight: normal;">Mode écriture</small>
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="mode" value="type_mode">
+                <input type="hidden" name="directions" value="bf">
+                <button type="submit" class="btn" style="background: #8b5cf6; color: white;">
+                    📝 Verso → Recto<br>
+                    <small style="opacity: 0.8; font-weight: normal;">Mode inverse</small>
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="mode" value="mixed">
+                <input type="hidden" name="directions" value="fb">
+                <input type="hidden" name="directions" value="bf">
+                <button type="submit" class="btn btn-success">
+                    🔀 Mixte<br>
+                    <small style="opacity: 0.8; font-weight: normal;">Tout (Sens & Modes)</small>
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="mode" value="flip">
+                <input type="hidden" name="directions" value="fb">
+                <button type="submit" class="btn btn-secondary">
+                    🔄 Flip<br>
+                    <small style="opacity: 0.8; font-weight: normal;">Classique</small>
+                </button>
+            </form>
+        </div>
+
+        <!-- Quick Training Options -->
+        <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="mode" value="type_mode">
+                <input type="hidden" name="directions" value="fb">
+                <input type="hidden" name="only_new" value="true">
+                <button type="submit" class="btn" style="background: #f59e0b; color: white;">
+                    🆕 Nouvelles cartes<br>
+                    <small style="opacity: 0.8; font-weight: normal;">Apprendre les E</small>
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="mode" value="type_mode">
+                <input type="hidden" name="directions" value="fb">
+                <input type="hidden" name="max_grade" value="B">
+                <button type="submit" class="btn" style="background: #ef4444; color: white;">
+                    📚 Révision intensive<br>
+                    <small style="opacity: 0.8; font-weight: normal;">Exclure A/A+</small>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--gray-200); margin: 1.5rem 0;">
+
+    <h2 style="font-size: 1.1rem;">⚙️ Configuration avancée</h2>
     <p class="hint">Personnalisez votre session d'apprentissage.</p>
 
-    <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}" class="form">
+    <form method="POST" action="{{ url_for('training.create_session', deck_id=deck.id) }}" class="form"
+        id="training-form">
 
         <!-- Training Mode Selection -->
         <div class="training-options">
-            <h3>🎯 Mode d'entraînement</h3>
+            <h3>🎯 Mode d'apprentissage</h3>
             <div class="option-group">
                 <label class="option-item">
                     <input type="radio" name="mode" value="flip" checked>
                     <div>
-                        <strong>Mode classique (Flip)</strong>
-                        <p class="hint">Retournez la carte pour voir la réponse</p>
+                        <strong>Classique (Flip)</strong>
+                        <p>Retournez la carte pour voir la réponse</p>
                     </div>
                 </label>
                 <label class="option-item">
-                    <input type="radio" name="mode" value="type_back">
+                    <input type="radio" name="mode" value="type_mode">
                     <div>
-                        <strong>Mode écriture → Réponse</strong>
-                        <p class="hint">Écrivez la réponse (verso). Ex: Voir "あ", écrire "a"</p>
+                        <strong>Écrire la réponse</strong>
+                        {% if sample_front and sample_back %}
+                        <p>Tapez la réponse au clavier</p>
+                        {% else %}
+                        <p>Saisir la réponse exacte</p>
+                        {% endif %}
                     </div>
                 </label>
                 <label class="option-item">
-                    <input type="radio" name="mode" value="type_front">
+                    <input type="radio" name="mode" value="mixed">
                     <div>
-                        <strong>Mode écriture → Question</strong>
-                        <p class="hint">Écrivez la question (recto). Ex: Voir "a", écrire "あ"</p>
+                        <strong>Mode mixte</strong>
+                        <p>Alterner entre flip et écriture aléatoirement</p>
                     </div>
                 </label>
             </div>
+        </div>
+
+        <!-- Direction Selection (Visible for ALL modes) -->
+        <div class="training-options" id="direction-options">
+            <h3>🔀 Direction</h3>
+            <div class="option-group">
+                <label class="option-item">
+                    <input type="checkbox" name="directions" value="fb" checked>
+                    <div>
+                        <strong>Recto → Verso</strong>
+                        {% if sample_front and sample_back %}
+                        <p>{{ sample_front }} → {{ sample_back }}</p>
+                        {% else %}
+                        <p>Voir la question, deviner la réponse</p>
+                        {% endif %}
+                    </div>
+                </label>
+                <label class="option-item">
+                    <input type="checkbox" name="directions" value="bf">
+                    <div>
+                        <strong>Verso → Recto</strong>
+                        {% if sample_front and sample_back %}
+                        <p>{{ sample_back }} → {{ sample_front }}</p>
+                        {% else %}
+                        <p>Voir la réponse, deviner la question</p>
+                        {% endif %}
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Grade Filter Selection -->
+        <div class="training-options">
+            <h3>📊 Filtrer par niveau</h3>
+            <p class="hint" style="margin-bottom: 1rem;">Concentrez-vous sur les cartes qui ont besoin de plus de
+                travail.</p>
+
+            <div class="option-group" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="grade_filter" value="all" checked>
+                    <span>Toutes</span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="grade_filter" value="only_new">
+                    <span style="color: #dc2626;">🆕 E uniquement</span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="grade_filter" value="max_D">
+                    <span>≤ D+ <small>(E à D+)</small></span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="grade_filter" value="max_C">
+                    <span>≤ C+ <small>(E à C+)</small></span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="grade_filter" value="max_B">
+                    <span>≤ B <small>(exclure A/A+)</small></span>
+                </label>
+            </div>
+
+            <!-- Include All Cards Toggle -->
+            <div
+                style="margin-top: 1rem; padding: 0.75rem; background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%); border-radius: var(--radius-sm); border: 1px solid #93c5fd;">
+                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                    <input type="checkbox" id="include_all_checkbox" name="include_all" value="true" checked
+                        style="width: 1.25rem; height: 1.25rem;">
+                    <div>
+                        <strong style="color: #1e40af;">🔄 Toutes les cartes</strong>
+                        <p style="margin: 0; font-size: 0.8rem; color: #3b82f6;">Ignorer le calendrier - réviser même
+                            les cartes pas encore "dues"</p>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Hidden fields that will be populated by JS -->
+            <input type="hidden" name="max_grade" id="max_grade_input" value="">
+            <input type="hidden" name="only_new" id="only_new_input" value="false">
+            <input type="hidden" name="include_all" id="include_all_input" value="true">
         </div>
 
         <!-- Category Selection -->
         {% if deck.categories %}
         <div class="training-options">
             <h3>📁 Filtrer par catégories</h3>
-            <div class="category-selector">
+
+            <!-- Filter Mode Toggle -->
+            <div
+                style="display: flex; gap: 1rem; margin-bottom: 1rem; padding: 0.75rem; background: var(--gray-100); border-radius: var(--radius-sm);">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="radio" name="filter_mode" value="or" checked>
+                    <span><strong>OU</strong> - Au moins une catégorie</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="radio" name="filter_mode" value="and">
+                    <span><strong>ET</strong> - Toutes les catégories</span>
+                </label>
+            </div>
+
+            <div class="category-selector"
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.5rem;">
                 {% for category in deck.categories %}
                 {% set cat_stats = category.get_stats() %}
-                {% if cat_stats.due + cat_stats.new > 0 %}
-                <label class="checkbox-label category-option">
-                    <input type="checkbox" name="categories" value="{{ category.id }}" {% if category.id in
-                        selected_categories %}checked{% endif %}>
-                    <span class="category-badge" style="background-color: {{ category.color }}">
-                        {{ category.name }}
-                    </span>
-                    <span class="count">({{ cat_stats.due + cat_stats.new }} cartes)</span>
-                </label>
-                {% endif %}
+                <div class="category-row"
+                    style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; background: white; border: 1px solid var(--gray-200); border-radius: 6px;">
+                    <!-- Include Option (OR) -->
+                    <label class="checkbox-label"
+                        style="flex: 1; margin: 0; display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" name="categories" value="{{ category.id }}" class="category-checkbox" {%
+                            if category.id in selected_categories %}checked{% endif %}>
+                        <span class="category-badge"
+                            style="background-color: {{ category.color }}; margin-left: 0.5rem;">{{ category.name
+                            }}</span>
+                        <span class="count" style="font-size: 0.75rem; color: var(--gray-500); margin-left: 0.5rem;">({{
+                            cat_stats.total }})</span>
+                    </label>
+
+                    <!-- Require Option (AND) -->
+                    <label class="require-label"
+                        style="margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid var(--gray-200); font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem; color: #dc2626; cursor: pointer;"
+                        title="La carte DOIT avoir cette catégorie">
+                        <input type="checkbox" name="required_categories" value="{{ category.id }}"
+                            class="require-checkbox">
+                        <span>Obligatoire</span>
+                    </label>
+                </div>
                 {% endfor %}
             </div>
-            <p class="field-hint">💡 Si aucune catégorie n'est sélectionnée, toutes les cartes seront incluses.</p>
+
+            <!-- Dynamic Count Display -->
+            <div
+                style="margin-top: 1rem; padding: 0.75rem; background: var(--primary-subtle); border-radius: var(--radius-sm); text-align: center;">
+                <strong id="filtered-count">Chargement...</strong> cartes sélectionnées
+            </div>
         </div>
         {% endif %}
 
-        <div class="form-actions" style="margin-top: 1.5rem;">
-            <button type="submit" class="btn btn-success btn-lg">🚀 Commencer l'entraînement</button>
+        <!-- Max Cards Per Session -->
+        <div class="training-options" style="margin-top: 1rem;">
+            <h3>🎯 Nombre de cartes</h3>
+            <p class="hint" style="margin-bottom: 0.75rem;">Limiter le nombre de cartes par session</p>
+
+            <div class="option-group" style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="max_cards" value="0" checked>
+                    <span>♾️ Toutes</span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="max_cards" value="10">
+                    <span>10</span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="max_cards" value="25">
+                    <span>25</span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="max_cards" value="50">
+                    <span>50</span>
+                </label>
+                <label class="option-item" style="flex: 0 0 auto; padding: 0.5rem 1rem;">
+                    <input type="radio" name="max_cards" value="custom" id="max_cards_custom_radio">
+                    <span>Autre:</span>
+                </label>
+                <input type="number" id="max_cards_custom_input" min="1" max="500" value="20"
+                    style="width: 70px; padding: 0.5rem; border: 1px solid var(--gray-300); border-radius: var(--radius-sm); font-size: 1rem;"
+                    disabled>
+            </div>
+
+            <!-- Hidden field for actual value -->
+            <input type="hidden" name="max_cards_value" id="max_cards_value" value="0">
+        </div>
+
+        <div class="form-actions" style="margin-top: 1rem;">
+            <button type="submit" class="btn btn-success btn-lg" id="submit-btn">Commencer</button>
             <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="btn btn-link">Annuler</a>
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const deckId = {{ deck.id }};
+
+    // Directions are always visible now
+    /*
+    document.querySelectorAll('input[name="mode"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            const directionOptions = document.getElementById('typing-direction-options');
+            if (this.value === 'mixed') {
+                directionOptions.style.display = 'block';
+            } else {
+                directionOptions.style.display = 'none';
+            }
+        });
+    });
+    */
+
+    // Handle grade filter radio buttons
+    function updateGradeFilterInputs() {
+        const selected = document.querySelector('input[name="grade_filter"]:checked');
+        const maxGradeInput = document.getElementById('max_grade_input');
+        const onlyNewInput = document.getElementById('only_new_input');
+
+        if (!selected || !maxGradeInput || !onlyNewInput) return;
+
+        const value = selected.value;
+
+        // Reset inputs
+        maxGradeInput.value = '';
+        onlyNewInput.value = 'false';
+
+        if (value === 'only_new') {
+            onlyNewInput.value = 'true';
+        } else if (value === 'max_D') {
+            maxGradeInput.value = 'D+';
+        } else if (value === 'max_C') {
+            maxGradeInput.value = 'C+';
+        } else if (value === 'max_B') {
+            maxGradeInput.value = 'B';
+        }
+
+        updateCardCount();
+    }
+
+    document.querySelectorAll('input[name="grade_filter"]').forEach(radio => {
+        radio.addEventListener('change', updateGradeFilterInputs);
+    });
+
+    // Update card count when categories, filter mode, or grade filter changes
+    function updateCardCount() {
+        const checkboxes = document.querySelectorAll('.category-checkbox:checked');
+        const categoryIds = Array.from(checkboxes).map(cb => cb.value);
+
+        const requiredCheckboxes = document.querySelectorAll('.require-checkbox:checked');
+        const requiredIds = Array.from(requiredCheckboxes).map(cb => cb.value);
+
+        const filterMode = document.querySelector('input[name="filter_mode"]:checked')?.value || 'or';
+
+        // Get grade filter values
+        const maxGrade = document.getElementById('max_grade_input')?.value || '';
+        const onlyNew = document.getElementById('only_new_input')?.value || 'false';
+        const includeAll = document.getElementById('include_all_checkbox')?.checked ? 'true' : 'false';
+
+        // Sync checkbox with hidden input
+        document.getElementById('include_all_input').value = includeAll;
+
+        let url = `/train/deck/${deckId}/count?filter_mode=${filterMode}&include_all=${includeAll}`;
+        categoryIds.forEach(id => {
+            url += `&categories=${id}`;
+        });
+        requiredIds.forEach(id => {
+            url += `&required_categories=${id}`;
+        });
+
+        // Add grade filters
+        if (maxGrade) {
+            url += `&max_grade=${encodeURIComponent(maxGrade)}`;
+        }
+        if (onlyNew === 'true') {
+            url += `&only_new=true`;
+        }
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                const countEl = document.getElementById('filtered-count');
+                if (countEl) {
+                    countEl.textContent = data.count;
+                }
+                // Disable submit if no cards
+                const btn = document.getElementById('submit-btn');
+                if (data.count === 0) {
+                    btn.disabled = true;
+                    btn.textContent = 'Aucune carte';
+                    btn.classList.add('btn-disabled');
+                    btn.classList.remove('btn-success');
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = `Commencer (${data.count} cartes)`;
+                    btn.classList.remove('btn-disabled');
+                    btn.classList.add('btn-success');
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching count:', err);
+            });
+    }
+
+    // Add event listeners
+    document.querySelectorAll('.category-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateCardCount);
+    });
+    document.querySelectorAll('.require-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateCardCount);
+    });
+    document.querySelectorAll('input[name="filter_mode"]').forEach(radio => {
+        radio.addEventListener('change', updateCardCount);
+    });
+    document.getElementById('include_all_checkbox')?.addEventListener('change', updateCardCount);
+
+    // Max cards handling
+    function updateMaxCardsValue() {
+        const selected = document.querySelector('input[name="max_cards"]:checked');
+        const customInput = document.getElementById('max_cards_custom_input');
+        const hiddenInput = document.getElementById('max_cards_value');
+
+        if (!selected) return;
+
+        if (selected.value === 'custom') {
+            customInput.disabled = false;
+            hiddenInput.value = customInput.value || '20';
+        } else {
+            customInput.disabled = true;
+            hiddenInput.value = selected.value;
+        }
+    }
+
+    document.querySelectorAll('input[name="max_cards"]').forEach(radio => {
+        radio.addEventListener('change', updateMaxCardsValue);
+    });
+    document.getElementById('max_cards_custom_input')?.addEventListener('input', function () {
+        document.getElementById('max_cards_value').value = this.value;
+    });
+
+    // Initial setup
+    updateGradeFilterInputs();
+    updateCardCount();
+    updateMaxCardsValue();
+</script>
 {% endblock %}

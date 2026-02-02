@@ -3,11 +3,16 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0ea5e9">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>{% block title %}FlashCards{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
@@ -19,18 +24,18 @@
                     <span class="logo-icon">🧠</span>
                     <span class="brand-text">
                         FlashCards
-                        <small>Répétition espacée SM-2</small>
+                        <small>Répétition espacée</small>
                     </span>
                 </a>
             </div>
             <ul class="nav-links">
                 <li><a href="{{ url_for('main.index') }}"
                         class="{% if request.endpoint == 'main.index' %}active{% endif %}">
-                        📚 Dashboard
+                        Dashboard
                     </a></li>
                 <li><a href="{{ url_for('stats.global_stats') }}"
                         class="{% if 'stats' in request.endpoint %}active{% endif %}">
-                        📊 Statistiques
+                        Statistiques
                     </a></li>
             </ul>
         </div>
@@ -52,27 +57,11 @@
 
     <footer class="footer">
         <div class="footer-inner">
-            <div class="footer-brand">
-                <h3>🧠 FlashCards</h3>
-                <p>Application de mémorisation utilisant l'algorithme de répétition espacée SM-2, le même qu'Anki.</p>
+            <div class="footer-brand">🧠 FlashCards</div>
+            <div class="footer-links">
+                <a href="{{ url_for('main.index') }}">Dashboard</a>
+                <a href="{{ url_for('stats.global_stats') }}">Stats</a>
             </div>
-            <div class="footer-section">
-                <h4>Navigation</h4>
-                <ul>
-                    <li><a href="{{ url_for('main.index') }}">Dashboard</a></li>
-                    <li><a href="{{ url_for('stats.global_stats') }}">Statistiques</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4>Ressources</h4>
-                <ul>
-                    <li><a href="#">Format JSON Import</a></li>
-                    <li><a href="#">Algorithme SM-2</a></li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>FlashCards © 2024 • Fait avec ❤️ pour apprendre plus efficacement</p>
         </div>
     </footer>
 

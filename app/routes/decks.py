@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from app.models import Deck, User
+from app.models import Deck, Card, User
 from app import db
 from app.routes.main import get_or_create_default_user
 
@@ -39,9 +39,40 @@ def new_deck():
 @bp.route('/<int:deck_id>')
 def view_deck(deck_id):
     """View a specific deck with its cards and categories."""
+    from app.grades import get_grade_distribution, calculate_deck_progress, GRADES
+    
     deck = Deck.query.get_or_404(deck_id)
     stats = deck.get_stats()
-    return render_template('decks/view.html', deck=deck, stats=stats)
+    
+    # Get sample cards for training mode examples
+    sample_front = None
+    sample_back = None
+    if deck.cards:
+        sample_card = deck.cards[0]
+        sample_front = sample_card.front[:20] + ('...' if len(sample_card.front) > 20 else '')
+        sample_back = sample_card.back[:20] + ('...' if len(sample_card.back) > 20 else '')
+    
+    # Get grade distribution for both directions
+    fb_grade_dist = get_grade_distribution(deck.cards, 'fb')
+    bf_grade_dist = get_grade_distribution(deck.cards, 'bf')
+    fb_progress = calculate_deck_progress(deck.cards, 'fb')
+    bf_progress = calculate_deck_progress(deck.cards, 'bf')
+    
+    # Grade colors and order for display
+    grade_colors = {g[0]: g[3] for g in GRADES}
+    grade_order = [g[0] for g in reversed(GRADES)]  # E to A+
+    
+    return render_template('decks/view.html', 
+                           deck=deck, 
+                           stats=stats,
+                           sample_front=sample_front,
+                           sample_back=sample_back,
+                           fb_grade_dist=fb_grade_dist,
+                           bf_grade_dist=bf_grade_dist,
+                           fb_progress=fb_progress,
+                           bf_progress=bf_progress,
+                           grade_colors=grade_colors,
+                           grade_order=grade_order)
 
 
 @bp.route('/<int:deck_id>/edit', methods=['GET', 'POST'])
@@ -77,3 +108,48 @@ def delete_deck(deck_id):
     
     flash(f'Paquet "{name}" supprimé.', 'success')
     return redirect(url_for('main.index'))
+
+
+@bp.route('/<int:deck_id>/reset', methods=['GET', 'POST'])
+def reset_deck(deck_id):
+    """Reset deck progress - set all cards back to new state."""
+    deck = Deck.query.get_or_404(deck_id)
+    
+    if request.method == 'POST':
+        # Reset all cards in the deck
+        from datetime import datetime
+        for card in deck.cards:
+            # Reset legacy fields (flip mode)
+            card.easiness = 2.5
+            card.interval = 0
+            card.repetitions = 0
+            card.next_review = datetime.utcnow()
+            card.last_reviewed = None
+            
+            # Reset front→back direction
+            card.fb_easiness = 2.5
+            card.fb_interval = 0
+            card.fb_repetitions = 0
+            card.fb_next_review = datetime.utcnow()
+            card.fb_last_reviewed = None
+            
+            # Reset back→front direction
+            card.bf_easiness = 2.5
+            card.bf_interval = 0
+            card.bf_repetitions = 0
+            card.bf_next_review = datetime.utcnow()
+            card.bf_last_reviewed = None
+        
+        # Optionally delete review history
+        if request.form.get('delete_history'):
+            from app.models import Review
+            for card in deck.cards:
+                Review.query.filter_by(card_id=card.id).delete()
+        
+        db.session.commit()
+        
+        flash(f'Progression du paquet "{deck.name}" réinitialisée !', 'success')
+        return redirect(url_for('decks.view_deck', deck_id=deck.id))
+    
+    return render_template('decks/reset.html', deck=deck)
+

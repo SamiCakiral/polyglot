@@ -84,6 +84,8 @@ def global_stats():
 @bp.route('/deck/<int:deck_id>')
 def deck_stats(deck_id):
     """Show statistics for a specific deck."""
+    from app.grades import calculate_deck_progress, get_grade_distribution, GRADES
+    
     deck = Deck.query.get_or_404(deck_id)
     stats = deck.get_stats()
     
@@ -103,6 +105,18 @@ def deck_stats(deck_id):
         avg_easiness = sum(c.easiness for c in deck.cards) / len(deck.cards)
     else:
         avg_easiness = 2.5
+    
+    # Grade distribution for front→back direction
+    fb_grade_dist = get_grade_distribution(deck.cards, 'fb')
+    fb_progress = calculate_deck_progress(deck.cards, 'fb')
+    
+    # Grade distribution for back→front direction
+    bf_grade_dist = get_grade_distribution(deck.cards, 'bf')
+    bf_progress = calculate_deck_progress(deck.cards, 'bf')
+    
+    # Combined grade info (for histograms)
+    grade_colors = {g[0]: g[3] for g in GRADES}
+    grade_order = [g[0] for g in reversed(GRADES)]  # E to A+
     
     # Review history
     week_ago = now - timedelta(days=7)
@@ -143,4 +157,10 @@ def deck_stats(deck_id):
                            avg_easiness=avg_easiness,
                            success_rate=success_rate,
                            total_reviews=len(reviews),
-                           daily_reviews=daily_reviews)
+                           daily_reviews=daily_reviews,
+                           fb_grade_dist=fb_grade_dist,
+                           bf_grade_dist=bf_grade_dist,
+                           fb_progress=fb_progress,
+                           bf_progress=bf_progress,
+                           grade_colors=grade_colors,
+                           grade_order=grade_order)

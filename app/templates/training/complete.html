@@ -7,6 +7,7 @@
     <div class="complete-icon">🎉</div>
     <h1>Session terminée !</h1>
 
+    <!-- Main Stats -->
     <div class="session-stats">
         <div class="stat-card success">
             <div class="stat-number">{{ results.correct }}</div>
@@ -16,16 +17,127 @@
             <div class="stat-number">{{ results.incorrect }}</div>
             <div class="stat-label">À revoir</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card {% if accuracy >= 80 %}success{% elif accuracy >= 60 %}warning{% else %}error{% endif %}">
             <div class="stat-number">{{ accuracy|round(1) }}%</div>
             <div class="stat-label">Précision</div>
         </div>
     </div>
 
+    <!-- Direction Stats -->
+    {% if results.direction_stats %}
+    <div class="direction-stats" style="margin-top: 2rem;">
+        <h3 style="font-size: 1rem; color: var(--gray-600); margin-bottom: 1rem;">📊 Précision par direction</h3>
+        <div class="direction-bars">
+            {% set fb = results.direction_stats.get('type_back', {'correct': 0, 'total': 0}) %}
+            {% set bf = results.direction_stats.get('type_front', {'correct': 0, 'total': 0}) %}
+
+            {% if fb.total > 0 %}
+            <div class="direction-bar">
+                <div class="dir-label">
+                    <span class="dir-icon" style="background: var(--primary);">→</span>
+                    Recto → Verso
+                </div>
+                <div class="dir-progress">
+                    {% set fb_pct = (fb.correct / fb.total * 100) if fb.total > 0 else 0 %}
+                    <div class="dir-fill" style="width: {{ fb_pct }}%; background: var(--primary);"></div>
+                </div>
+                <span class="dir-score">{{ fb.correct }}/{{ fb.total }} ({{ fb_pct|round(0) }}%)</span>
+            </div>
+            {% endif %}
+
+            {% if bf.total > 0 %}
+            <div class="direction-bar">
+                <div class="dir-label">
+                    <span class="dir-icon" style="background: #8b5cf6;">←</span>
+                    Verso → Recto
+                </div>
+                <div class="dir-progress">
+                    {% set bf_pct = (bf.correct / bf.total * 100) if bf.total > 0 else 0 %}
+                    <div class="dir-fill" style="width: {{ bf_pct }}%; background: #8b5cf6;"></div>
+                </div>
+                <span class="dir-score">{{ bf.correct }}/{{ bf.total }} ({{ bf_pct|round(0) }}%)</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Encouragement -->
+    <div class="encouragement"
+        style="margin-top: 1.5rem; padding: 1rem; background: var(--gray-50); border-radius: var(--radius-md); text-align: center;">
+        {% if accuracy >= 90 %}
+        <span style="font-size: 2rem;">🌟</span>
+        <p style="margin: 0.5rem 0 0; color: var(--success);">Excellent ! Tu maîtrises vraiment bien ce sujet !</p>
+        {% elif accuracy >= 70 %}
+        <span style="font-size: 2rem;">💪</span>
+        <p style="margin: 0.5rem 0 0; color: var(--primary);">Bien joué ! Continue comme ça !</p>
+        {% elif accuracy >= 50 %}
+        <span style="font-size: 2rem;">📚</span>
+        <p style="margin: 0.5rem 0 0; color: var(--warning);">Pas mal ! Révise les cartes difficiles.</p>
+        {% else %}
+        <span style="font-size: 2rem;">🔄</span>
+        <p style="margin: 0.5rem 0 0; color: var(--error);">Continue de pratiquer, ça viendra !</p>
+        {% endif %}
+    </div>
+
     <div class="complete-actions">
+        <a href="{{ url_for('training.restart_session') }}" class="btn btn-warning" style="margin-right: 0.5rem;">🔄
+            Relancer même session</a>
         <a href="{{ url_for('training.start_training', deck_id=deck.id) }}" class="btn btn-success">Nouvelle session</a>
         <a href="{{ url_for('decks.view_deck', deck_id=deck.id) }}" class="btn btn-secondary">Retour au paquet</a>
         <a href="{{ url_for('main.index') }}" class="btn btn-link">Dashboard</a>
     </div>
 </div>
+
+<style>
+    .direction-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .direction-bar {
+        display: grid;
+        grid-template-columns: 140px 1fr 100px;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .dir-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .dir-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+    }
+
+    .dir-progress {
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .dir-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    .dir-score {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        text-align: right;
+    }
+</style>
 {% endblock %}
