@@ -1,0 +1,364 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un Programme - Étape 2{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <div class="wizard-header">
+        <h1>🎓 Créer mon Programme d'Entraînement</h1>
+        <div class="wizard-progress">
+            <div class="progress-step completed">
+                <span class="step-number">✓</span>
+                <span class="step-label">Infos</span>
+            </div>
+            <div class="progress-line completed"></div>
+            <div class="progress-step active">
+                <span class="step-number">2</span>
+                <span class="step-label">Exercices</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <span class="step-number">3</span>
+                <span class="step-label">Templates</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <span class="step-number">4</span>
+                <span class="step-label">Prompts</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" class="wizard-form">
+        <div class="form-section">
+            <h2>🏋️ Configuration des Exercices</h2>
+            <p class="section-desc">Choisissez les exercices à inclure et leur ordre d'exécution.</p>
+
+            <div class="exercises-list" id="exercisesList">
+                {% for ex_id, ex_name, ex_desc in exercises %}
+                <div class="exercise-item" data-id="{{ ex_id }}" draggable="true">
+                    <div class="exercise-drag">⋮⋮</div>
+                    <input type="hidden" name="exercise_order" value="{{ ex_id }}">
+                    <div class="exercise-toggle">
+                        <label class="switch">
+                            <input type="checkbox" name="enabled_{{ ex_id }}" {% if not data.get('exercise_config') or
+                                data.get('exercise_config', {}).get('enabled', {}).get(ex_id, True) %}checked{% endif
+                                %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="exercise-info">
+                        <div class="exercise-name">{{ ex_name }}</div>
+                        <div class="exercise-desc">{{ ex_desc }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <p class="form-hint">💡 Glissez-déposez pour réorganiser l'ordre des exercices</p>
+        </div>
+
+        <div class="form-section">
+            <h2>⏱️ Durée cible</h2>
+
+            <div class="duration-slider">
+                <input type="range" id="duration" name="duration_target" min="15" max="60" step="5"
+                    value="{{ data.get('exercise_config', {}).get('duration_target', 30) }}">
+                <div class="duration-labels">
+                    <span>15 min</span>
+                    <span class="duration-value"><strong id="durationValue">30</strong> minutes</span>
+                    <span>60 min</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="wizard-actions">
+            <a href="{{ url_for('programs.wizard_step', step=1) }}" class="btn btn-secondary">← Précédent</a>
+            <button type="submit" class="btn btn-primary">Suivant →</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .wizard-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .wizard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .wizard-progress {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .step-number {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--border-color);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .progress-step.active .step-number {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .progress-step.completed .step-number {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .progress-step.active .step-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .progress-line {
+        width: 60px;
+        height: 3px;
+        background: var(--border-color);
+        margin: 0 0.5rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .progress-line.completed {
+        background: var(--success-color);
+    }
+
+    .wizard-form {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 2rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .form-section h2 {
+        margin-bottom: 0.5rem;
+    }
+
+    .section-desc {
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+    }
+
+    .exercises-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .exercise-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        cursor: grab;
+        transition: all 0.2s;
+    }
+
+    .exercise-item:hover {
+        border-color: var(--primary-color);
+    }
+
+    .exercise-item.dragging {
+        opacity: 0.5;
+    }
+
+    .exercise-drag {
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        cursor: grab;
+    }
+
+    .exercise-toggle {
+        flex-shrink: 0;
+    }
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 50px;
+        height: 28px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-color);
+        transition: .3s;
+        border-radius: 28px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked+.slider {
+        background-color: var(--success-color);
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(22px);
+    }
+
+    .exercise-info {
+        flex: 1;
+    }
+
+    .exercise-name {
+        font-weight: 600;
+        margin-bottom: 0.2rem;
+    }
+
+    .exercise-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .form-hint {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 1rem;
+    }
+
+    .duration-slider {
+        padding: 1rem;
+        background: var(--bg-color);
+        border-radius: 8px;
+    }
+
+    .duration-slider input[type="range"] {
+        width: 100%;
+        height: 8px;
+        border-radius: 4px;
+        background: var(--border-color);
+        outline: none;
+        -webkit-appearance: none;
+    }
+
+    .duration-slider input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        cursor: pointer;
+    }
+
+    .duration-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .duration-value {
+        color: var(--primary-color);
+    }
+
+    .wizard-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+</style>
+
+<script>
+    // Duration slider
+    const durationSlider = document.getElementById('duration');
+    const durationValue = document.getElementById('durationValue');
+
+    durationSlider.addEventListener('input', () => {
+        durationValue.textContent = durationSlider.value;
+    });
+    durationValue.textContent = durationSlider.value;
+
+    // Drag and drop for exercise reordering
+    const exercisesList = document.getElementById('exercisesList');
+    let draggedItem = null;
+
+    exercisesList.addEventListener('dragstart', (e) => {
+        draggedItem = e.target.closest('.exercise-item');
+        draggedItem.classList.add('dragging');
+    });
+
+    exercisesList.addEventListener('dragend', (e) => {
+        draggedItem.classList.remove('dragging');
+        draggedItem = null;
+    });
+
+    exercisesList.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(exercisesList, e.clientY);
+        if (afterElement == null) {
+            exercisesList.appendChild(draggedItem);
+        } else {
+            exercisesList.insertBefore(draggedItem, afterElement);
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.exercise-item:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+</script>
+{% endblock %}

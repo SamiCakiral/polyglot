@@ -1,0 +1,999 @@
+{% extends "base.html" %}
+{% block title %}Parametres du Profil{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="page-header">
+        <h1>Parametres du Profil</h1>
+        <p>Configurez votre profil pour des cours personnalises</p>
+        <span class="autosave-indicator" id="autosave-indicator"></span>
+    </div>
+
+    <form method="POST" class="settings-form" id="profile-form">
+        <div class="settings-grid">
+
+            <!-- Section Compte -->
+            <div class="settings-card">
+                <h3>👤 Compte</h3>
+                <div class="account-row">
+                    <div class="form-group account-field">
+                        <label for="edit-username">Nom d'utilisateur</label>
+                        <div class="inline-edit">
+                            <input type="text" id="edit-username" class="form-control" 
+                                   value="{{ user.username }}" minlength="2" maxlength="80">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="saveUsername()">Modifier</button>
+                        </div>
+                        <span class="field-feedback" id="username-feedback"></span>
+                    </div>
+                    <div class="form-group account-field">
+                        <label>Mot de passe</label>
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="togglePasswordModal()">
+                            Changer le mot de passe
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Apparence -->
+            <div class="settings-card">
+                <h3>🎨 Apparence</h3>
+                <div class="form-group">
+                    <label>Couleur d'avatar</label>
+                    <div class="color-picker">
+                        {% for color in ['#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c', '#34495e'] %}
+                        <label class="color-option">
+                            <input type="radio" name="avatar_color" value="{{ color }}" 
+                                   {% if user.avatar_color == color %}checked{% endif %}
+                                   onchange="autoSave({avatar_color: this.value})">
+                            <span class="color-swatch" style="background: {{ color }}"></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Langue Maternelle -->
+            <div class="settings-card">
+                <h3>🏠 Langue Maternelle</h3>
+                <div class="form-group">
+                    <label for="native_language">Quelle est votre langue maternelle ?</label>
+                    <select name="native_language" id="native_language" class="form-control"
+                            onchange="autoSave({native_language: this.value})">
+                        {% set native = profile.get('native_language', 'fr') if profile else 'fr' %}
+                        <option value="fr" {% if native == 'fr' %}selected{% endif %}>🇫🇷 Francais</option>
+                        <option value="en" {% if native == 'en' %}selected{% endif %}>🇬🇧 Anglais</option>
+                        <option value="es" {% if native == 'es' %}selected{% endif %}>🇪🇸 Espagnol</option>
+                        <option value="de" {% if native == 'de' %}selected{% endif %}>🇩🇪 Allemand</option>
+                        <option value="it" {% if native == 'it' %}selected{% endif %}>🇮🇹 Italien</option>
+                        <option value="pt" {% if native == 'pt' %}selected{% endif %}>🇵🇹 Portugais</option>
+                        <option value="ru" {% if native == 'ru' %}selected{% endif %}>🇷🇺 Russe</option>
+                        <option value="zh" {% if native == 'zh' %}selected{% endif %}>🇨🇳 Chinois</option>
+                        <option value="ja" {% if native == 'ja' %}selected{% endif %}>🇯🇵 Japonais</option>
+                        <option value="ko" {% if native == 'ko' %}selected{% endif %}>🇰🇷 Coreen</option>
+                        <option value="ar" {% if native == 'ar' %}selected{% endif %}>🇸🇦 Arabe</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section Langues Connues -->
+            <div class="settings-card">
+                <h3>🌍 Langues que vous connaissez</h3>
+                <p class="section-description">Ces langues peuvent servir de "pont" pour expliquer de nouveaux concepts</p>
+                
+                <div id="known-languages-list"></div>
+                
+                <button type="button" class="btn btn-secondary btn-sm add-language-btn" onclick="addKnownLanguage()">
+                    + Ajouter une langue
+                </button>
+                
+                <input type="hidden" name="known_languages_json" id="known_languages_json" value="">
+            </div>
+
+            <!-- Section Objectifs -->
+            <div class="settings-card">
+                <h3>🎯 Objectifs d'apprentissage</h3>
+                <p class="section-description">Pourquoi apprenez-vous des langues ?</p>
+                
+                {% set goals = profile.get('goals', []) if profile else [] %}
+                <div class="goals-grid">
+                    {% for val, icon, label in [
+                        ('conversation', '💬', 'Conversation'),
+                        ('travel', '✈️', 'Voyage'),
+                        ('work', '💼', 'Travail'),
+                        ('exams', '📝', 'Examens'),
+                        ('culture', '🎭', 'Culture'),
+                        ('family', '👨‍👩‍👧', 'Famille')
+                    ] %}
+                    <label class="checkbox-card">
+                        <input type="checkbox" name="goals" value="{{ val }}" 
+                               {% if val in goals %}checked{% endif %}
+                               onchange="autoSaveGoals()">
+                        <span class="checkbox-content">
+                            <span class="checkbox-icon">{{ icon }}</span>
+                            <span class="checkbox-label">{{ label }}</span>
+                        </span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Section Temps disponible -->
+            <div class="settings-card">
+                <h3>⏱️ Temps disponible</h3>
+                <div class="form-group">
+                    <label for="daily_time">Combien de temps pouvez-vous etudier par jour ?</label>
+                    {% set daily_time = profile.get('daily_time_available', 30) if profile else 30 %}
+                    <div class="time-selector">
+                        <input type="range" name="daily_time_available" id="daily_time" 
+                               min="5" max="120" step="5" value="{{ daily_time }}"
+                               oninput="updateTimeDisplay(this.value); debouncedAutoSave({daily_time_available: parseInt(this.value)})">
+                        <span class="time-display" id="time-display">{{ daily_time }} min</span>
+                    </div>
+                    <div class="time-presets">
+                        <button type="button" class="time-preset" onclick="setTime(15)">15 min</button>
+                        <button type="button" class="time-preset" onclick="setTime(30)">30 min</button>
+                        <button type="button" class="time-preset" onclick="setTime(60)">1 heure</button>
+                        <button type="button" class="time-preset" onclick="setTime(90)">1h30</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Style d'apprentissage -->
+            <div class="settings-card">
+                <h3>📚 Style d'apprentissage</h3>
+                <div class="form-group">
+                    <label for="learning_style">Comment apprenez-vous le mieux ?</label>
+                    <select name="learning_style" id="learning_style" class="form-control"
+                            onchange="autoSave({learning_style: this.value})">
+                        {% set style = profile.get('learning_style', 'balanced') if profile else 'balanced' %}
+                        <option value="visual" {% if style == 'visual' %}selected{% endif %}>👁️ Visuel</option>
+                        <option value="auditory" {% if style == 'auditory' %}selected{% endif %}>👂 Auditif</option>
+                        <option value="reading" {% if style == 'reading' %}selected{% endif %}>📖 Lecture/Ecriture</option>
+                        <option value="kinesthetic" {% if style == 'kinesthetic' %}selected{% endif %}>✋ Kinesthesique</option>
+                        <option value="balanced" {% if style == 'balanced' %}selected{% endif %}>⚖️ Equilibre</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section Correction -->
+            <div class="settings-card">
+                <h3>✍️ Preference de correction</h3>
+                <div class="form-group">
+                    <label for="correction_preference">Quel type de feedback preferez-vous ?</label>
+                    <select name="correction_preference" id="correction_preference" class="form-control"
+                            onchange="autoSave({correction_preference: this.value})">
+                        {% set pref = profile.get('correction_preference', 'moderate') if profile else 'moderate' %}
+                        <option value="strict" {% if pref == 'strict' %}selected{% endif %}>🔴 Strict</option>
+                        <option value="moderate" {% if pref == 'moderate' %}selected{% endif %}>🟡 Modere</option>
+                        <option value="encouraging" {% if pref == 'encouraging' %}selected{% endif %}>🟢 Encourageant</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section TTS -->
+            <div class="settings-card tts-status-card">
+                <h3>🔊 Prononciation (Qwen3-TTS)</h3>
+                <div id="tts-profile-status" class="tts-profile-badge">Verification...</div>
+                <p class="section-description">
+                    Synthese vocale : chinois, anglais, japonais, coreen, allemand, francais, russe, portugais, espagnol, italien.
+                    <br><span class="section-note">⚠️ Le turc n'est pas encore supporte.</span>
+                </p>
+                
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="tts_accent">Instruction d'accent / style vocal</label>
+                    <input type="text" name="tts_accent" id="tts_accent" class="form-control"
+                           value="{{ profile.get('tts_accent', '') }}"
+                           placeholder="Ex: Speak with a native Parisian French accent, clearly and slowly"
+                           oninput="debouncedAutoSave({tts_accent: this.value})">
+                    <p class="field-hint">Conseil envoyé au modèle TTS pour guider la prononciation. Laissez vide pour le comportement par défaut.</p>
+                </div>
+                
+                <div class="tts-test-area">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="testTts()">
+                        ▶ Tester le TTS
+                    </button>
+                    <span id="tts-test-result" class="tts-test-result"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Retour</a>
+            <button type="submit" class="btn btn-primary">💾 Tout sauvegarder</button>
+        </div>
+    </form>
+</div>
+
+<!-- Password Change Modal -->
+<div id="password-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header-bar">
+            <h3>Changer le mot de passe</h3>
+            <button type="button" class="modal-close-btn" onclick="togglePasswordModal()">&times;</button>
+        </div>
+        <div class="modal-body-content">
+            <div class="form-group">
+                <label for="current-password">Mot de passe actuel</label>
+                <input type="password" id="current-password" class="form-control" autocomplete="current-password">
+            </div>
+            <div class="form-group">
+                <label for="new-password">Nouveau mot de passe</label>
+                <input type="password" id="new-password" class="form-control" autocomplete="new-password" minlength="4">
+                <p class="field-hint">Minimum 4 caractères</p>
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Confirmer</label>
+                <input type="password" id="confirm-password" class="form-control" autocomplete="new-password">
+            </div>
+            <span class="field-feedback" id="password-feedback"></span>
+            <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="togglePasswordModal()">Annuler</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="savePassword()">Confirmer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// =============================================================
+// Known Languages
+// =============================================================
+const LANGUAGE_OPTIONS = [
+    { code: 'en', name: 'Anglais', flag: '🇬🇧' },
+    { code: 'fr', name: 'Francais', flag: '🇫🇷' },
+    { code: 'es', name: 'Espagnol', flag: '🇪🇸' },
+    { code: 'de', name: 'Allemand', flag: '🇩🇪' },
+    { code: 'it', name: 'Italien', flag: '🇮🇹' },
+    { code: 'pt', name: 'Portugais', flag: '🇵🇹' },
+    { code: 'ru', name: 'Russe', flag: '🇷🇺' },
+    { code: 'zh', name: 'Chinois', flag: '🇨🇳' },
+    { code: 'ja', name: 'Japonais', flag: '🇯🇵' },
+    { code: 'ko', name: 'Coreen', flag: '🇰🇷' },
+    { code: 'ar', name: 'Arabe', flag: '🇸🇦' },
+    { code: 'tr', name: 'Turc', flag: '🇹🇷' },
+    { code: 'nl', name: 'Neerlandais', flag: '🇳🇱' },
+    { code: 'pl', name: 'Polonais', flag: '🇵🇱' },
+    { code: 'sv', name: 'Suedois', flag: '🇸🇪' }
+];
+const LEVEL_OPTIONS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+let knownLanguages = {{ (profile.get('known_languages', []) if profile else []) | tojson | safe }};
+if (!Array.isArray(knownLanguages)) knownLanguages = [];
+
+function renderKnownLanguages() {
+    const container = document.getElementById('known-languages-list');
+    container.innerHTML = '';
+    
+    knownLanguages.forEach((lang, index) => {
+        const row = document.createElement('div');
+        row.className = 'known-language-row';
+        row.innerHTML = `
+            <select class="form-control lang-select" onchange="updateKnownLanguage(${index}, 'code', this.value)">
+                <option value="">-- Langue --</option>
+                ${LANGUAGE_OPTIONS.map(l => `
+                    <option value="${l.code}" ${lang.code === l.code ? 'selected' : ''}>
+                        ${l.flag} ${l.name}
+                    </option>
+                `).join('')}
+            </select>
+            <select class="form-control level-select" onchange="updateKnownLanguage(${index}, 'level', this.value)">
+                <option value="">Niveau</option>
+                ${LEVEL_OPTIONS.map(lvl => `
+                    <option value="${lvl}" ${lang.level === lvl ? 'selected' : ''}>${lvl}</option>
+                `).join('')}
+            </select>
+            <input type="number" class="form-control years-input" placeholder="Annees" 
+                   min="0" max="50" value="${lang.years || ''}"
+                   onchange="updateKnownLanguage(${index}, 'years', parseInt(this.value) || 0)">
+            <button type="button" class="btn btn-danger btn-sm remove-btn" onclick="removeKnownLanguage(${index})">×</button>
+        `;
+        container.appendChild(row);
+    });
+    
+    updateHiddenField();
+}
+
+function addKnownLanguage() {
+    knownLanguages.push({ code: '', level: '', years: 0 });
+    renderKnownLanguages();
+}
+
+function removeKnownLanguage(index) {
+    knownLanguages.splice(index, 1);
+    renderKnownLanguages();
+    autoSaveKnownLanguages();
+}
+
+function updateKnownLanguage(index, field, value) {
+    knownLanguages[index][field] = value;
+    updateHiddenField();
+    debouncedAutoSaveKnownLanguages();
+}
+
+function updateHiddenField() {
+    const validLanguages = knownLanguages.filter(l => l.code && l.level);
+    document.getElementById('known_languages_json').value = JSON.stringify(validLanguages);
+}
+
+// =============================================================
+// Auto-save with debounce
+// =============================================================
+let _saveTimer = null;
+let _langSaveTimer = null;
+
+function showSaveIndicator(state) {
+    const el = document.getElementById('autosave-indicator');
+    el.classList.remove('saving', 'saved', 'error');
+    if (state === 'saving') {
+        el.textContent = 'Sauvegarde...';
+        el.classList.add('saving');
+    } else if (state === 'saved') {
+        el.textContent = 'Sauvegardé';
+        el.classList.add('saved');
+        setTimeout(() => { el.textContent = ''; el.classList.remove('saved'); }, 2500);
+    } else if (state === 'error') {
+        el.textContent = 'Erreur de sauvegarde';
+        el.classList.add('error');
+        setTimeout(() => { el.textContent = ''; el.classList.remove('error'); }, 3000);
+    }
+}
+
+async function autoSave(data) {
+    showSaveIndicator('saving');
+    try {
+        const resp = await fetch('/api/profile/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (resp.ok) {
+            showSaveIndicator('saved');
+        } else {
+            showSaveIndicator('error');
+        }
+    } catch (e) {
+        showSaveIndicator('error');
+    }
+}
+
+function debouncedAutoSave(data) {
+    if (_saveTimer) clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(() => autoSave(data), 1500);
+}
+
+function autoSaveKnownLanguages() {
+    const validLanguages = knownLanguages.filter(l => l.code && l.level);
+    autoSave({ known_languages: validLanguages });
+}
+
+function debouncedAutoSaveKnownLanguages() {
+    if (_langSaveTimer) clearTimeout(_langSaveTimer);
+    _langSaveTimer = setTimeout(autoSaveKnownLanguages, 2000);
+}
+
+function autoSaveGoals() {
+    const checked = [...document.querySelectorAll('input[name="goals"]:checked')].map(c => c.value);
+    autoSave({ goals: checked });
+}
+
+// =============================================================
+// Time selector
+// =============================================================
+function updateTimeDisplay(value) {
+    document.getElementById('time-display').textContent = value + ' min';
+}
+
+function setTime(minutes) {
+    const slider = document.getElementById('daily_time');
+    slider.value = minutes;
+    updateTimeDisplay(minutes);
+    autoSave({ daily_time_available: minutes });
+}
+
+// =============================================================
+// Account: Username
+// =============================================================
+async function saveUsername() {
+    const input = document.getElementById('edit-username');
+    const feedback = document.getElementById('username-feedback');
+    const newName = input.value.trim();
+    
+    if (!newName || newName.length < 2) {
+        feedback.textContent = 'Minimum 2 caractères';
+        feedback.className = 'field-feedback error';
+        return;
+    }
+    
+    try {
+        const resp = await fetch('/api/profile/username', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: newName })
+        });
+        const data = await resp.json();
+        
+        if (resp.ok) {
+            feedback.textContent = data.message;
+            feedback.className = 'field-feedback success';
+            // Update navbar avatar
+            const navName = document.querySelector('.user-name');
+            if (navName) navName.textContent = newName;
+            const navAvatar = document.querySelector('.user-avatar');
+            if (navAvatar) navAvatar.textContent = newName[0].toUpperCase();
+            setTimeout(() => { feedback.textContent = ''; }, 3000);
+        } else {
+            feedback.textContent = data.error;
+            feedback.className = 'field-feedback error';
+        }
+    } catch (e) {
+        feedback.textContent = 'Erreur de connexion';
+        feedback.className = 'field-feedback error';
+    }
+}
+
+// =============================================================
+// Account: Password
+// =============================================================
+function togglePasswordModal() {
+    const modal = document.getElementById('password-modal');
+    if (!modal) return;
+    
+    const isActive = modal.classList.contains('active');
+    
+    if (isActive) {
+        modal.classList.remove('active');
+    } else {
+        modal.classList.add('active');
+        document.getElementById('current-password').value = '';
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+        document.getElementById('password-feedback').textContent = '';
+        setTimeout(() => {
+            const pwInput = document.getElementById('current-password');
+            if (pwInput) pwInput.focus();
+        }, 100);
+    }
+}
+
+async function savePassword() {
+    const feedback = document.getElementById('password-feedback');
+    const currentPw = document.getElementById('current-password').value;
+    const newPw = document.getElementById('new-password').value;
+    const confirmPw = document.getElementById('confirm-password').value;
+    
+    feedback.textContent = '';
+    
+    try {
+        const resp = await fetch('/api/profile/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                current_password: currentPw,
+                new_password: newPw,
+                confirm_password: confirmPw
+            })
+        });
+        const data = await resp.json();
+        
+        if (resp.ok) {
+            feedback.textContent = data.message;
+            feedback.className = 'field-feedback success';
+            setTimeout(() => togglePasswordModal(), 1500);
+        } else {
+            feedback.textContent = data.error;
+            feedback.className = 'field-feedback error';
+        }
+    } catch (e) {
+        feedback.textContent = 'Erreur de connexion';
+        feedback.className = 'field-feedback error';
+    }
+}
+
+// =============================================================
+// TTS
+// =============================================================
+async function checkProfileTts() {
+    const badge = document.getElementById('tts-profile-status');
+    try {
+        const resp = await fetch('/api/tts/status');
+        const data = await resp.json();
+        if (data.available) {
+            badge.textContent = 'Service actif';
+            badge.className = 'tts-profile-badge ready';
+        } else {
+            badge.textContent = 'Service indisponible';
+            badge.className = 'tts-profile-badge unavailable';
+        }
+    } catch (e) {
+        badge.textContent = 'Hors ligne';
+        badge.className = 'tts-profile-badge unavailable';
+    }
+}
+
+async function testTts() {
+    const result = document.getElementById('tts-test-result');
+    const accent = document.getElementById('tts_accent').value.trim();
+    result.textContent = 'Generation...';
+    result.style.color = '';
+    
+    try {
+        const resp = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: 'Bonjour, bienvenue dans votre apprentissage des langues!',
+                language: 'fr',
+                instruct: accent || 'Speak clearly and at a moderate pace with a native French accent'
+            })
+        });
+        
+        if (resp.ok) {
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.play();
+            audio.onended = () => URL.revokeObjectURL(url);
+            result.textContent = 'Audio joue!';
+            result.style.color = '#10b981';
+        } else {
+            const err = await resp.json();
+            result.textContent = err.error || 'Erreur';
+            result.style.color = '#ef4444';
+        }
+    } catch (e) {
+        result.textContent = 'Service TTS non disponible';
+        result.style.color = '#ef4444';
+    }
+}
+
+// Toast
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-fade');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', function() {
+    renderKnownLanguages();
+    checkProfileTts();
+    
+    // Close modal on overlay click or Escape
+    const passwordModal = document.getElementById('password-modal');
+    if (passwordModal) {
+        passwordModal.addEventListener('click', function(e) {
+            if (e.target === this) togglePasswordModal();
+        });
+    }
+    
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && passwordModal && passwordModal.classList.contains('active')) {
+            togglePasswordModal();
+        }
+    });
+});
+</script>
+
+<style>
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: var(--text-secondary);
+}
+
+.autosave-indicator {
+    display: inline-block;
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    min-height: 1.2em;
+    transition: opacity 0.3s;
+}
+
+.autosave-indicator.saving {
+    color: #eab308;
+}
+
+.autosave-indicator.saved {
+    color: #22c55e;
+}
+
+.autosave-indicator.error {
+    color: #ef4444;
+}
+
+.settings-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.settings-card {
+    background: var(--card-bg, #fff);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.settings-card h3 {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.section-description {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.section-note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Account section */
+.account-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.account-field {
+    flex: 1;
+    min-width: 200px;
+}
+
+.inline-edit {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.inline-edit .form-control {
+    flex: 1;
+}
+
+.field-feedback {
+    display: block;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    min-height: 1.1em;
+}
+
+.field-feedback.success {
+    color: #22c55e;
+}
+
+.field-feedback.error {
+    color: #ef4444;
+}
+
+.field-hint {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #94a3b8);
+    margin-top: 0.3rem;
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 8px;
+    background: var(--input-bg, var(--bg-secondary, #f8fafc));
+    color: var(--text-primary, #0f172a);
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* Color picker */
+.color-picker {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.color-option input { display: none; }
+
+.color-swatch {
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-option input:checked + .color-swatch {
+    border-color: white;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+/* Known languages */
+.known-language-row {
+    display: grid;
+    grid-template-columns: 1fr 100px 80px 40px;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+
+.add-language-btn {
+    margin-top: 0.5rem;
+}
+
+/* Goals */
+.goals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.checkbox-card { cursor: pointer; }
+.checkbox-card input { display: none; }
+
+.checkbox-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary, #f8fafc);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.checkbox-card input:checked + .checkbox-content {
+    border-color: var(--primary, #6366f1);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.checkbox-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.checkbox-label { font-size: 0.85rem; text-align: center; }
+
+/* Time selector */
+.time-selector {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.time-selector input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 8px;
+    background: var(--border-color, #e2e8f0);
+    border-radius: 4px;
+}
+
+.time-selector input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: var(--primary, #6366f1);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.time-display { font-weight: 600; min-width: 60px; }
+
+.time-presets { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.time-preset {
+    padding: 0.4rem 0.75rem;
+    background: var(--bg-secondary, #f8fafc);
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.time-preset:hover {
+    background: var(--primary, #6366f1);
+    color: white;
+    border-color: var(--primary, #6366f1);
+}
+
+/* TTS Status */
+.tts-profile-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: #e5e7eb;
+    color: #4b5563;
+    margin-bottom: 0.5rem;
+}
+
+.tts-profile-badge.ready { background: #d1fae5; color: #065f46; }
+.tts-profile-badge.unavailable { background: #fef3c7; color: #92400e; }
+
+.tts-test-area {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.tts-test-result {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Form actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+}
+
+.btn-primary { background: var(--primary, #6366f1); color: white; }
+.btn-primary:hover { background: var(--primary-dark, #4f46e5); }
+
+.btn-secondary {
+    background: var(--bg-secondary, #f8fafc);
+    color: var(--text-primary, #0f172a);
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.btn-secondary:hover { background: var(--border-color, #e2e8f0); }
+
+.btn-danger { background: #ef4444; color: white; }
+.btn-sm { padding: 0.4rem 0.75rem; font-size: 0.85rem; }
+
+/* Password Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 1rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-box {
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.modal-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.modal-header-bar h3 { margin: 0; font-size: 1.1rem; }
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    line-height: 1;
+    padding: 0;
+}
+
+.modal-close-btn:hover { color: var(--text-primary); }
+
+.modal-body-content {
+    padding: 1.5rem;
+}
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10001;
+}
+
+.toast {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color, #e2e8f0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 0.5rem;
+}
+
+.toast-success { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+.toast-error { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+
+.toast-fade {
+    animation: toast-out 0.3s ease forwards;
+}
+
+@keyframes toast-out {
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+@media (max-width: 600px) {
+    .profile-container { padding: 1rem; }
+    .known-language-row { grid-template-columns: 1fr 1fr; }
+    .goals-grid { grid-template-columns: repeat(2, 1fr); }
+    .account-row { flex-direction: column; }
+}
+</style>
+{% endblock %}

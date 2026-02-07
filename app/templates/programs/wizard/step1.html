@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un Programme - Étape 1{% endblock %}
+
+{% block content %}
+<div class="wizard-container">
+    <div class="wizard-header">
+        <h1>🎓 Créer mon Programme d'Entraînement</h1>
+        <div class="wizard-progress">
+            <div class="progress-step active">
+                <span class="step-number">1</span>
+                <span class="step-label">Infos</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <span class="step-number">2</span>
+                <span class="step-label">Exercices</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <span class="step-number">3</span>
+                <span class="step-label">Templates</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step">
+                <span class="step-number">4</span>
+                <span class="step-label">Prompts</span>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" class="wizard-form">
+        <div class="form-section">
+            <h2>📋 Informations de base</h2>
+
+            <div class="form-group">
+                <label for="name">Nom du programme *</label>
+                <input type="text" id="name" name="name" value="{{ data.get('name', '') }}"
+                    placeholder="Ex: Mon Programme Italien A2" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optionnel)</label>
+                <textarea id="description" name="description" rows="3"
+                    placeholder="Décrivez votre objectif d'apprentissage...">{{ data.get('description', '') }}</textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="target_language">Langue cible</label>
+                    <select id="target_language" name="target_language">
+                        {% for code, label in languages %}
+                        <option value="{{ code }}" {% if data.get('target_language', 'italian' )==code %}selected{%
+                            endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="native_language">Langue maternelle</label>
+                    <select id="native_language" name="native_language">
+                        {% for code, label in languages %}
+                        <option value="{{ code }}" {% if data.get('native_language', 'french' )==code %}selected{% endif
+                            %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Deck selection removed as we auto-create a dedicated deck -->
+        </div>
+
+        <div class="wizard-actions">
+            <a href="{{ url_for('programs.list_programs') }}" class="btn btn-secondary">Annuler</a>
+            <button type="submit" class="btn btn-primary">Suivant →</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .wizard-container {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .wizard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .wizard-header h1 {
+        margin-bottom: 1.5rem;
+    }
+
+    .wizard-progress {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .step-number {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--border-color);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .progress-step.active .step-number {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .progress-step.completed .step-number {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    .progress-step.active .step-label {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+
+    .progress-line {
+        width: 60px;
+        height: 3px;
+        background: var(--border-color);
+        margin: 0 0.5rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .wizard-form {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 2rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .form-section h2 {
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-color);
+        color: var(--text-color);
+        font-size: 1rem;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-hint {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+    }
+
+    .form-hint.warning {
+        color: var(--warning-color);
+    }
+
+    .wizard-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+    }
+</style>
+{% endblock %}

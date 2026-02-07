@@ -1,0 +1,21 @@
+# Qwen3-TTS Dependencies
+# NOTE: torch and torchaudio are PROVIDED by the NGC base image.
+# Do NOT include them here - it would overwrite the NVIDIA-optimized GPU build.
+transformers>=4.57.0,<5.0.0
+accelerate>=1.12.0
+einops
+soundfile
+librosa
+numpy
+tokenizers
+sox
+onnxruntime
+
+# API server
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart
+
+# Utilities
+requests
+huggingface_hub>=0.28.0

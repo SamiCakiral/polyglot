@@ -7,9 +7,9 @@
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0ea5e9">
+    <meta name="theme-color" content="#6366f1">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>{% block title %}FlashCards{% endblock %}</title>
+    <title>{% block title %}Polyglot{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,14 +17,15 @@
 </head>
 
 <body>
+    {% block navbar %}
     <nav class="navbar">
         <div class="navbar-inner">
             <div class="nav-brand">
                 <a href="{{ url_for('main.index') }}">
-                    <span class="logo-icon">🧠</span>
+                    <span class="logo-icon">🌍</span>
                     <span class="brand-text">
-                        FlashCards
-                        <small>Répétition espacée</small>
+                        Polyglot
+                        <small>Plateforme d'apprentissage</small>
                     </span>
                 </a>
             </div>
@@ -38,22 +39,41 @@
                         Statistiques
                     </a></li>
                 {% if g.user %}
-                <li style="margin-left: 1rem; display: flex; align-items: center;">
-                    <a href="{{ url_for('auth.profiles') }}"
-                        style="padding: 0; display: flex; align-items: center; gap: 0.5rem;" title="Changer de profil">
-                        <div
-                            style="width: 32px; height: 32px; border-radius: 4px; background-color: {{ g.user.avatar_color }}; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.9rem;">
+                <li class="nav-user-section">
+                    <!-- Settings Icon -->
+                    <a href="{{ url_for('auth.profile_settings') }}" class="settings-btn" title="Paramètres">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                    </a>
+                    <!-- Avatar + Username -->
+                    <div class="user-avatar-link" title="{{ g.user.username }}">
+                        <div class="user-avatar" style="background-color: {{ g.user.avatar_color }};">
                             {{ g.user.username[0]|upper }}
                         </div>
-                        <span style="font-weight: 500;">{{ g.user.username }}</span>
+                        <span class="user-name">{{ g.user.username }}</span>
+                    </div>
+                    <!-- Logout -->
+                    <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Déconnexion">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
                     </a>
                 </li>
                 {% endif %}
             </ul>
         </div>
     </nav>
+    {% endblock %}
 
-    <main class="container">
+    <main class="{% block main_class %}container{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         <div class="flash-messages">
@@ -67,18 +87,747 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% block footer %}
     <footer class="footer">
         <div class="footer-inner">
-            <div class="footer-brand">🧠 FlashCards</div>
+            <div class="footer-brand">🌍 Polyglot</div>
             <div class="footer-links">
                 <a href="{{ url_for('main.index') }}">Dashboard</a>
                 <a href="{{ url_for('stats.global_stats') }}">Stats</a>
+                {% if g.user %}
+                <a href="{{ url_for('auth.profile_settings') }}">Paramètres</a>
+                {% endif %}
             </div>
         </div>
     </footer>
+    {% endblock %}
 
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
+
+    <!-- PROF CHATBOT - Language Learning Assistant -->
+    <div id="polyglot-helper">
+        <!-- Chat Bubble Trigger -->
+        <button id="helper-trigger" onclick="toggleHelper()">
+            👨‍🏫
+            <span class="notification-dot" style="display:none;"></span>
+        </button>
+
+        <!-- Chat Window -->
+        <div id="helper-window" class="helper-window">
+            <div class="helper-header">
+                <div class="header-title">
+                    <span>👨‍🏫 Prof</span>
+                    <small>Votre tuteur de langues personnel</small>
+                </div>
+                <div class="header-actions">
+                    <button class="tts-btn" onclick="toggleTtsPanel()" title="Prononciation (Qwen3-TTS)">
+                        🔊
+                    </button>
+                    <button class="close-helper" onclick="toggleHelper()">×</button>
+                </div>
+            </div>
+
+            <div class="helper-messages" id="helper-messages">
+                <div class="message system">
+                    👋 Salut ! Je suis ton <strong>Prof</strong> personnel.<br><br>
+                    Je peux t'aider avec :
+                    <ul style="margin: 0.5rem 0; padding-left: 1.25rem;">
+                        <li>Explications grammaticales</li>
+                        <li>Vocabulaire et expressions</li>
+                        <li>Questions sur les piliers</li>
+                    </ul>
+                    <small>💡 Pose-moi tes questions !</small>
+                </div>
+            </div>
+
+            <div class="helper-input-area">
+                <input type="text" id="helper-input" placeholder="Posez votre question..."
+                    onkeypress="handleHelperKey(event)">
+                <button onclick="sendHelperMessage()">➤</button>
+            </div>
+            
+            <!-- TTS Panel -->
+            <div id="tts-panel" class="tts-panel" style="display: none;">
+                <div class="tts-input-row">
+                    <input type="text" id="tts-text-input" placeholder="Tapez du texte a prononcer..."
+                        onkeypress="if(event.key==='Enter') playTts()">
+                    <button onclick="playTts()" id="tts-play-btn" title="Ecouter">▶</button>
+                </div>
+                <div class="tts-status" id="tts-status"></div>
+                <audio id="tts-audio" style="display:none;"></audio>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Floating Helper Styles */
+        #polyglot-helper {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #helper-trigger {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary, #6366f1);
+            color: white;
+            font-size: 2rem;
+            border: none;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #helper-trigger:hover {
+            transform: scale(1.1);
+            background: #4f46e5;
+        }
+
+        .helper-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .helper-window.visible {
+            display: flex;
+            /* overridden by JS usually, but needed for flex layout */
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .helper-header {
+            background: var(--primary, #6366f1);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title small {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .close-helper {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .helper-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .message.system {
+            align-self: flex-start;
+            background: #e2e8f0;
+            color: #475569;
+            border-bottom-left-radius: 2px;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--primary, #6366f1);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #1e293b;
+            border-bottom-left-radius: 2px;
+        }
+
+        .vocab-highlight {
+            display: inline-block;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            font-weight: 600;
+            padding: 0.1rem 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #fcd34d;
+            margin: 0 0.1rem;
+        }
+
+        .helper-input-area {
+            padding: 0.75rem;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #helper-input {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.95rem;
+        }
+
+        #helper-input:focus {
+            border-color: var(--primary, #6366f1);
+        }
+
+        .helper-input-area button {
+            background: var(--primary, #6366f1);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            margin-bottom: 0.5rem;
+            display: none;
+        }
+        
+        /* Prof Chatbot Header Actions */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .tts-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 8px;
+            padding: 0.4rem 0.6rem;
+            cursor: pointer;
+            font-size: 1rem;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+        
+        .tts-btn:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .tts-btn.active {
+            opacity: 1;
+            background: rgba(99, 102, 241, 0.5);
+        }
+        
+        /* Inline TTS Buttons (used across all pages) */
+        .tts-inline-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.1);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            vertical-align: middle;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .tts-inline-btn:hover {
+            background: rgba(99, 102, 241, 0.25);
+            transform: scale(1.1);
+        }
+        .tts-inline-btn.tts-inline-loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        .tts-inline-btn.tts-inline-playing {
+            background: rgba(99, 102, 241, 0.3);
+            animation: tts-pulse 1s ease-in-out infinite;
+        }
+        .tts-inline-btn.tts-inline-error {
+            background: rgba(239, 68, 68, 0.15);
+        }
+        .tts-inline-btn.tts-inline-unsupported {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .tts-inline-btn.tts-sm {
+            width: 26px;
+            height: 26px;
+            font-size: 0.75rem;
+        }
+        @keyframes tts-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .tts-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* TTS Panel */
+        .tts-panel {
+            background: linear-gradient(135deg, #ede9fe, #e0e7ff);
+            padding: 0.75rem;
+            border-top: 1px solid #c4b5fd;
+        }
+        
+        .tts-input-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .tts-input-row input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #c4b5fd;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            background: white;
+            outline: none;
+        }
+        
+        .tts-input-row input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+        
+        .tts-input-row button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        
+        .tts-input-row button:hover {
+            background: #4f46e5;
+        }
+        
+        .tts-input-row button:disabled {
+            background: #a5b4fc;
+            cursor: not-allowed;
+        }
+        
+        .tts-status {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.4rem;
+            min-height: 1rem;
+        }
+        
+        .tts-status.error {
+            color: #ef4444;
+        }
+        
+        .tts-status.success {
+            color: #10b981;
+        }
+        
+        /* System message styling */
+        .message.system ul {
+            margin: 0.5rem 0;
+            padding-left: 1.25rem;
+        }
+        
+        .message.system li {
+            margin: 0.25rem 0;
+        }
+    </style>
+
+    <script>
+        function toggleHelper() {
+            const win = document.getElementById('helper-window');
+            if (win.style.display === 'flex') {
+                win.classList.remove('visible');
+                setTimeout(() => win.style.display = 'none', 300);
+            } else {
+                win.style.display = 'flex';
+                // Small delay to allow display flex to apply before opacity transition
+                requestAnimationFrame(() => win.classList.add('visible'));
+                document.getElementById('helper-input').focus();
+            }
+        }
+
+        function handleHelperKey(e) {
+            if (e.key === 'Enter') sendHelperMessage();
+        }
+
+        async function sendHelperMessage() {
+            const input = document.getElementById('helper-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Add user message
+            addMessage('user', text);
+            input.value = '';
+
+            // Show typing
+            const messagesDiv = document.getElementById('helper-messages');
+            const typing = document.createElement('div');
+            typing.className = 'typing-indicator';
+            typing.textContent = 'Assistant écrit...';
+            typing.style.display = 'block';
+            messagesDiv.appendChild(typing);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const response = await fetch('/session/chat_helper', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await response.json();
+
+                // Remove typing
+                typing.remove();
+
+                if (data.refusal) {
+                    addMessage('system', data.message); // Not in target language
+                } else {
+                    addMessage('bot', data.message);
+                }
+
+                // If word added to debt, show small notification in chat
+                if (data.added_to_debt) {
+                    const notif = document.createElement('div');
+                    notif.style.textAlign = 'center';
+                    notif.style.fontSize = '0.75rem';
+                    notif.style.color = '#eab308';
+                    notif.style.marginTop = '0.25rem';
+                    notif.textContent = '📝 Ajouté à la banque de mots (Dette)';
+                    messagesDiv.appendChild(notif);
+
+                    // Update main UI debt counter if it exists
+                    const debtBadge = document.getElementById('debt-badge');
+                    if (debtBadge && data.debt_count) debtBadge.textContent = data.debt_count;
+                }
+
+            } catch (e) {
+                typing.remove();
+                addMessage('system', 'Erreur de connexion.');
+                console.error(e);
+            }
+        }
+
+        function addMessage(type, text) {
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            
+            // Parse [VOCAB]word[/VOCAB] tags into styled spans
+            const parsedText = text.replace(
+                /\[VOCAB\](.*?)\[\/VOCAB\]/g, 
+                '<span class="vocab-highlight">$1</span>'
+            );
+            div.innerHTML = parsedText;
+
+            const container = document.getElementById('helper-messages');
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        // =============================================================
+        // TTS (Qwen3-TTS) Functions
+        // =============================================================
+        let ttsAvailable = null; // cached availability
+        
+        function toggleTtsPanel() {
+            const panel = document.getElementById('tts-panel');
+            const btn = document.querySelector('.tts-btn');
+            const isVisible = panel.style.display !== 'none';
+            
+            panel.style.display = isVisible ? 'none' : 'block';
+            btn.classList.toggle('active', !isVisible);
+            
+            // Check TTS availability on first open
+            if (!isVisible && ttsAvailable === null) {
+                checkTtsAvailability();
+            }
+        }
+        
+        async function checkTtsAvailability() {
+            const status = document.getElementById('tts-status');
+            try {
+                const resp = await fetch('/api/tts/status');
+                const data = await resp.json();
+                ttsAvailable = data.available;
+                if (data.available) {
+                    status.textContent = 'Qwen3-TTS pret';
+                    status.className = 'tts-status success';
+                } else {
+                    status.textContent = 'TTS indisponible - service en cours de demarrage...';
+                    status.className = 'tts-status error';
+                }
+            } catch (e) {
+                ttsAvailable = false;
+                status.textContent = 'TTS indisponible';
+                status.className = 'tts-status error';
+            }
+        }
+        
+        async function playTts(text, lang) {
+            const input = document.getElementById('tts-text-input');
+            const statusEl = document.getElementById('tts-status');
+            const playBtn = document.getElementById('tts-play-btn');
+            const audio = document.getElementById('tts-audio');
+            
+            // Use provided text or input field
+            const ttsText = text || input.value.trim();
+            if (!ttsText) {
+                statusEl.textContent = 'Entrez du texte a prononcer';
+                statusEl.className = 'tts-status error';
+                return;
+            }
+            
+            // Detect language from page context or default
+            const ttsLang = lang || document.body.dataset.ttsLanguage || 'auto';
+            
+            playBtn.disabled = true;
+            playBtn.textContent = '⏳';
+            statusEl.textContent = 'Generation en cours...';
+            statusEl.className = 'tts-status';
+            
+            try {
+                const resp = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: ttsText,
+                        language: ttsLang,
+                        instruct: 'Speak clearly and at a moderate pace'
+                    })
+                });
+                
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    audio.src = url;
+                    audio.play();
+                    
+                    const durationMs = resp.headers.get('X-TTS-Duration-Ms') || '?';
+                    statusEl.textContent = `Audio genere (${durationMs}ms)`;
+                    statusEl.className = 'tts-status success';
+                    
+                    // Cleanup URL after play
+                    audio.onended = () => URL.revokeObjectURL(url);
+                } else {
+                    const err = await resp.json();
+                    statusEl.textContent = err.error || 'Erreur TTS';
+                    statusEl.className = 'tts-status error';
+                }
+            } catch (e) {
+                statusEl.textContent = 'Erreur de connexion au service TTS';
+                statusEl.className = 'tts-status error';
+            } finally {
+                playBtn.disabled = false;
+                playBtn.textContent = '▶';
+            }
+        }
+        
+        // Global function to play TTS from anywhere in the app
+        // Usage: playTtsText("Bonjour", "fr")
+        window.playTtsText = function(text, lang) {
+            // Open the TTS panel if closed
+            const panel = document.getElementById('tts-panel');
+            if (panel.style.display === 'none') {
+                toggleTtsPanel();
+            }
+            // Set the text and play
+            document.getElementById('tts-text-input').value = text;
+            playTts(text, lang);
+        };
+
+        // =============================================================
+        // INLINE TTS - Play audio directly without opening chatbot
+        // =============================================================
+        // Map full language names (as in TrainingProgram) to TTS codes
+        const LANG_NAME_TO_CODE = {
+            'italian': 'it', 'japanese': 'ja', 'spanish': 'es', 'german': 'de',
+            'turkish': 'tr', 'russian': 'ru', 'chinese': 'zh', 'korean': 'ko',
+            'french': 'fr', 'english': 'en', 'portuguese': 'pt',
+            'italien': 'it', 'japonais': 'ja', 'espagnol': 'es', 'allemand': 'de',
+            'turc': 'tr', 'russe': 'ru', 'chinois': 'zh', 'coréen': 'ko',
+            'français': 'fr', 'anglais': 'en', 'portugais': 'pt',
+            // codes passthrough
+            'it': 'it', 'ja': 'ja', 'es': 'es', 'de': 'de', 'tr': 'tr',
+            'ru': 'ru', 'zh': 'zh', 'ko': 'ko', 'fr': 'fr', 'en': 'en', 'pt': 'pt'
+        };
+
+        const TTS_UNSUPPORTED = new Set(['tr', 'turkish', 'turc']);
+        
+        // Audio cache to avoid re-generating the same text
+        const _ttsCache = new Map();
+        let _ttsCurrentAudio = null;
+
+        /**
+         * Play TTS inline. Call from any page.
+         * @param {string} text - Text to speak
+         * @param {string} lang - Language name or code (e.g. 'japanese', 'ja', 'italien')
+         * @param {HTMLElement} [btn] - Optional button element to show loading state
+         */
+        window.ttsInline = async function(text, lang, btn) {
+            if (!text || !text.trim()) return;
+            text = text.trim();
+
+            // Resolve language code
+            const langCode = LANG_NAME_TO_CODE[(lang || '').toLowerCase()] || 'auto';
+
+            // Check unsupported
+            if (TTS_UNSUPPORTED.has((lang || '').toLowerCase()) || langCode === 'tr') {
+                if (btn) {
+                    btn.title = 'TTS non disponible pour le turc';
+                    btn.classList.add('tts-inline-unsupported');
+                }
+                return;
+            }
+
+            // Stop current audio if playing
+            if (_ttsCurrentAudio) {
+                _ttsCurrentAudio.pause();
+                _ttsCurrentAudio.currentTime = 0;
+            }
+
+            // Check cache
+            const cacheKey = `${langCode}:${text.substring(0, 200)}`;
+            if (_ttsCache.has(cacheKey)) {
+                const cachedUrl = _ttsCache.get(cacheKey);
+                _ttsCurrentAudio = new Audio(cachedUrl);
+                _ttsCurrentAudio.play();
+                if (btn) animateTtsBtn(btn, 'playing');
+                _ttsCurrentAudio.onended = () => { if (btn) animateTtsBtn(btn, 'idle'); };
+                return;
+            }
+
+            // Show loading
+            if (btn) animateTtsBtn(btn, 'loading');
+
+            try {
+                const resp = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: text.substring(0, 2000),
+                        language: langCode,
+                        instruct: 'Speak clearly and at a moderate pace'
+                    })
+                });
+
+                if (resp.ok) {
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    _ttsCache.set(cacheKey, url);
+
+                    _ttsCurrentAudio = new Audio(url);
+                    _ttsCurrentAudio.play();
+                    if (btn) animateTtsBtn(btn, 'playing');
+                    _ttsCurrentAudio.onended = () => { if (btn) animateTtsBtn(btn, 'idle'); };
+                } else {
+                    console.warn('TTS error:', resp.status);
+                    if (btn) animateTtsBtn(btn, 'error');
+                }
+            } catch (e) {
+                console.warn('TTS connection error:', e);
+                if (btn) animateTtsBtn(btn, 'error');
+            }
+        };
+
+        function animateTtsBtn(btn, state) {
+            btn.classList.remove('tts-inline-loading', 'tts-inline-playing', 'tts-inline-error');
+            switch (state) {
+                case 'loading':
+                    btn.classList.add('tts-inline-loading');
+                    btn.innerHTML = '<span class="tts-spinner"></span>';
+                    break;
+                case 'playing':
+                    btn.classList.add('tts-inline-playing');
+                    btn.innerHTML = '🔊';
+                    break;
+                case 'error':
+                    btn.classList.add('tts-inline-error');
+                    btn.innerHTML = '🔇';
+                    setTimeout(() => { btn.classList.remove('tts-inline-error'); btn.innerHTML = '🔊'; }, 2000);
+                    break;
+                default: // idle
+                    btn.innerHTML = '🔊';
+            }
+        }
+
+        /**
+         * Utility: get text content of an element and play TTS
+         * @param {string} elementId - ID of element containing text
+         * @param {string} lang - Language
+         * @param {HTMLElement} btn - Button that was clicked
+         */
+        window.ttsFromElement = function(elementId, lang, btn) {
+            const el = document.getElementById(elementId);
+            if (el) ttsInline(el.textContent, lang, btn);
+        };
+    </script>
 </body>
 
 </html>

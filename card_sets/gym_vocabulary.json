@@ -1,0 +1,128 @@
+[
+    {
+        "front": "La mela",
+        "back": "La pomme",
+        "categories": [
+            "Tag:Food",
+            "Tag:Edible",
+            "Tag:Object"
+        ]
+    },
+    {
+        "front": "La pizza",
+        "back": "La pizza",
+        "categories": [
+            "Tag:Food",
+            "Tag:Edible",
+            "Tag:Object"
+        ]
+    },
+    {
+        "front": "Il pane",
+        "back": "Le pain",
+        "categories": [
+            "Tag:Food",
+            "Tag:Edible",
+            "Tag:Object"
+        ]
+    },
+    {
+        "front": "L'acqua",
+        "back": "L'eau",
+        "categories": [
+            "Tag:Drink",
+            "Tag:Liquid",
+            "Tag:Object"
+        ]
+    },
+    {
+        "front": "Il vino",
+        "back": "Le vin",
+        "categories": [
+            "Tag:Drink",
+            "Tag:Liquid",
+            "Tag:Object"
+        ]
+    },
+    {
+        "front": "La cucina",
+        "back": "La cuisine",
+        "categories": [
+            "Tag:Place",
+            "Tag:Room"
+        ]
+    },
+    {
+        "front": "La casa",
+        "back": "La maison",
+        "categories": [
+            "Tag:Place",
+            "Tag:Building"
+        ]
+    },
+    {
+        "front": "La macchina",
+        "back": "La voiture",
+        "categories": [
+            "Tag:Vehicle",
+            "Tag:Object"
+        ]
+    },
+    {
+        "front": "Il libro",
+        "back": "Le livre",
+        "categories": [
+            "Tag:Object",
+            "Tag:Readable"
+        ]
+    },
+    {
+        "front": "La lettera",
+        "back": "La lettre",
+        "categories": [
+            "Tag:Object",
+            "Tag:Readable",
+            "Tag:Writable"
+        ]
+    },
+    {
+        "front": "La penna",
+        "back": "Le stylo",
+        "categories": [
+            "Tag:Object",
+            "Tag:Tool"
+        ]
+    },
+    {
+        "front": "Il cane",
+        "back": "Le chien",
+        "categories": [
+            "Tag:Animal",
+            "Tag:Living"
+        ]
+    },
+    {
+        "front": "Il gatto",
+        "back": "Le chat",
+        "categories": [
+            "Tag:Animal",
+            "Tag:Living"
+        ]
+    },
+    {
+        "front": "La porta",
+        "back": "La porte",
+        "categories": [
+            "Tag:Object",
+            "Tag:Openable"
+        ]
+    },
+    {
+        "front": "La finestra",
+        "back": "La fenêtre",
+        "categories": [
+            "Tag:Object",
+            "Tag:Openable"
+        ]
+    }
+]

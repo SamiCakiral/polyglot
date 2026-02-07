@@ -354,3 +354,5 @@ def get_grade_description_from_S(S: float) -> str:
     }
     return descriptions.get(grade, 'Inconnu')
 
+
+

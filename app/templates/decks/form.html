@@ -13,8 +13,10 @@
         style="background: var(--primary-subtle); border: 1px solid var(--primary-light); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem;">
         <p style="margin: 0 0 0.75rem; font-weight: 500;">📥 Vous avez déjà un jeu de cartes ?</p>
         <p style="margin: 0 0 0.75rem; font-size: 0.875rem; color: var(--gray-600);">
-            Créez d'abord un deck vide, puis importez vos cartes via JSON.
+            Importez un deck public ou créez un deck vide puis ajoutez vos cartes via JSON.
         </p>
+        <a href="{{ url_for('decks.import_public_deck') }}" class="btn btn-secondary" style="margin-bottom: 0.5rem;">📂
+            Importer un deck public</a>
         <details style="margin-top: 0.5rem;">
             <summary style="cursor: pointer; font-size: 0.8125rem; color: var(--primary);">Voir le format JSON</summary>
             <div class="code-preview" style="margin-top: 0.75rem;">

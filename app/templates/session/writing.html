@@ -1,0 +1,429 @@
+{% extends 'base.html' %}
+
+{% block footer %}{% endblock %}
+{% block main_class %}session-main{% endblock %}
+{% block title %}✍️ Smart Writing - Session{% endblock %}
+
+{# Writing: user writes in target language, so show native (back), hide target (front) #}
+{% set exercise_direction = 'native_to_target' %}
+
+{% block content %}
+<style>
+    .session-main {
+        padding: 0 !important;
+        max-width: none !important;
+        width: 100%;
+    }
+</style>
+
+<!-- Include Vocabulary Sidebar Component -->
+{% include 'components/_vocab_sidebar.html' %}
+
+<div class="session-wrapper has-vocab-sidebar">
+    <!-- Header -->
+    <header class="session-header">
+        <div class="progress-info">
+            <span class="module-title">✍️ Smart Writing</span>
+            <span class="theme-badge boss-badge">🎯 Boss Fight</span>
+        </div>
+        <div class="header-actions">
+            <form method="POST" action="{{ url_for('session.stop_session') }}" style="display: inline;">
+                <button type="submit" class="btn btn-sm btn-secondary">Arrêter</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="zen-container">
+
+        <div class="zen-instruction">
+            <h3>Mission d'Écriture</h3>
+            <p class="text-muted">Utilisez vos mots pour vaincre la page blanche.</p>
+        </div>
+
+        <!-- Quest Section -->
+        <div class="text-card mb-4" id="quest-card">
+            <div class="quest-header"
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0; font-size:1.2rem; color:var(--primary);">📜 Votre Quête</h3>
+                {% if not session.writing_quest %}
+                <button type="button" class="btn btn-sm btn-primary" onclick="generateQuest()">
+                    ✨ Générer
+                </button>
+                {% endif %}
+            </div>
+
+            <div class="quest-content" id="quest-content"
+                style="font-size:1.1rem; line-height:1.6; color:var(--text-color);">
+                {% if session.writing_quest %}
+                {{ session.writing_quest }}
+                {% else %}
+                <em style="color:var(--gray-500);">Cliquez sur "Générer" pour recevoir votre mission...</em>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Input Section -->
+        <div class="input-card" id="writing-area">
+            <!-- Word Chips -->
+            <div class="words-section mb-4">
+                <label class="input-label" style="margin-bottom:0.5rem; display:block;">Mots imposés (Cliquer pour
+                    insérer)</label>
+                <div class="word-chips" id="word-chips">
+                    {% for word in daily_words[:6] %}
+                    <span class="word-chip" data-word="{{ word.front }}">
+                        {{ word.front }}
+                        <button class="tts-inline-btn tts-sm" onclick="event.stopPropagation(); ttsInline('{{ word.front }}', '{{ program.target_language }}', this)" title="Ecouter" style="margin-left:0.25rem;">🔊</button>
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- TextArea -->
+            <textarea id="writing-input" class="zen-input"
+                placeholder="Rédigez votre réponse ici en {{ program.target_language }}..."></textarea>
+
+            <div
+                style="display:flex; justify-content:space-between; margin-top:0.5rem; color:var(--gray-400); font-size:0.9rem;">
+                <span>Minimum 30 mots</span>
+                <span>Mots: <strong id="word-count" style="color:var(--primary);">0</strong></span>
+            </div>
+
+            <div class="input-actions mt-4">
+                <button type="button" class="btn-text" onclick="useSOS()">💡 SOS Aide</button>
+                <button type="button" class="btn btn-primary btn-lg" id="submit-btn" onclick="submitWriting()">
+                    ✅ Soumettre
+                </button>
+            </div>
+        </div>
+
+        <!-- Feedback View -->
+        <div class="correction-card mt-4" id="feedback-section" style="display: none;">
+            <h3>📝 Correction</h3>
+            <div class="feedback-content" id="feedback-content"
+                style="white-space: pre-wrap; margin:1rem 0; line-height:1.6;"></div>
+            <button type="button" class="btn btn-primary btn-lg btn-block" onclick="nextModule()">
+                Terminer la session →
+            </button>
+        </div>
+
+    </main>
+</div>
+
+<style>
+    /* Shared Zen Styles */
+    .session-wrapper {
+        min-height: 100vh;
+        background-color: var(--bg-color);
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .progress-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .module-title {
+        font-weight: 700;
+        color: var(--text-color);
+    }
+
+    .zen-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .zen-instruction {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .text-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        position: relative;
+        border-left: 6px solid #a855f7;
+    }
+
+    .input-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    }
+
+    .correction-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    .zen-input {
+        width: 100%;
+        min-height: 250px;
+        border: 2px solid var(--gray-100);
+        border-radius: 12px;
+        padding: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        transition: all 0.2s;
+        background: var(--gray-50);
+        resize: vertical;
+        margin-top: 0.5rem;
+    }
+
+    .zen-input:focus {
+        background: white;
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .input-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-text {
+        background: none;
+        border: none;
+        color: var(--warning-dark);
+        cursor: pointer;
+        padding: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    /* Word Chips */
+    .word-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .word-chip {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+    }
+
+    .word-chip:hover {
+        transform: translateY(-2px);
+        background: white;
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .word-chip.used {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #86efac;
+        text-decoration: line-through;
+        opacity: 0.7;
+    }
+
+    .boss-badge {
+        background: linear-gradient(135deg, #9333ea, #7c3aed);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(124, 58, 237, 0.3);
+    }
+
+    .theme-badge {
+        background: rgba(99, 102, 241, 0.1);
+        color: #4f46e5;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+</style>
+
+<!-- SOS Modal -->
+<div id="sos-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; padding:2rem; border-radius:16px; max-width:400px; width:90%;">
+        <h3 style="margin-bottom:1rem;">💡 SOS Traduction</h3>
+        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:1rem;">Ce mot sera ajouté à votre dette de révision.</p>
+        <input type="text" id="sos-input" placeholder="Quel mot voulez-vous traduire ?" style="width:100%; padding:0.75rem; border:2px solid #e2e8f0; border-radius:8px; margin-bottom:1rem;">
+        <div style="display:flex; gap:1rem; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeSOS()">Annuler</button>
+            <button class="btn btn-primary" onclick="confirmSOS()">Traduire</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Word count & Chip logic
+        const input = document.getElementById('writing-input');
+        input.addEventListener('input', function () {
+            const text = this.value.trim();
+            const wordCount = text ? text.split(/\s+/).length : 0;
+            document.getElementById('word-count').textContent = wordCount;
+
+            const chips = document.querySelectorAll('.word-chip');
+            chips.forEach(chip => {
+                const word = chip.dataset.word.toLowerCase();
+                // Simple inclusion check
+                if (text.toLowerCase().includes(word)) {
+                    chip.classList.add('used');
+                } else {
+                    chip.classList.remove('used');
+                }
+            });
+        });
+
+        // Chip click to insert
+        document.querySelectorAll('.word-chip').forEach(chip => {
+            chip.addEventListener('click', function () {
+                input.value += (input.value ? ' ' : '') + this.dataset.word;
+                input.dispatchEvent(new Event('input'));
+                input.focus();
+            });
+        });
+    });
+
+    async function generateQuest() {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = 'Génération...';
+
+        try {
+            const response = await fetch('{{ url_for("session.generate_writing_quest") }}', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('quest-content').textContent = data.quest;
+                btn.style.display = 'none';
+            } else {
+                document.getElementById('quest-content').innerHTML = `<em style="color:#dc2626;">Erreur: ${data.error || 'Generation impossible'}. Reessayez.</em>`;
+                btn.disabled = false;
+                btn.textContent = 'Réessayer';
+            }
+        } catch (e) {
+            console.error(e);
+            btn.disabled = false;
+        }
+    }
+
+    async function submitWriting() {
+        const text = document.getElementById('writing-input').value.trim();
+        const wordCount = text ? text.split(/\s+/).length : 0;
+
+        if (wordCount < 30) {
+            // Show inline warning instead of alert
+            const wc = document.getElementById('word-count');
+            wc.style.color = '#dc2626';
+            wc.textContent = wordCount + ' (min 30 !)';
+            setTimeout(() => { wc.style.color = ''; }, 3000);
+            return;
+        }
+
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        btn.textContent = 'Correction...';
+
+        try {
+            const response = await fetch('{{ url_for("session.submit_writing") }}', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('writing-area').style.display = 'none';
+                document.getElementById('feedback-section').style.display = 'block';
+                document.getElementById('feedback-content').textContent = data.feedback || 'Bon travail !';
+                // You could parse feedback into markdown/html if needed, assuming plain text for now or safe HTML
+            } else {
+                console.error('Writing error:', data.error);
+                btn.disabled = false;
+                btn.textContent = '✅ Soumettre';
+            }
+        } catch (e) {
+            console.error(e);
+            btn.disabled = false;
+            btn.textContent = '✅ Soumettre';
+        }
+    }
+
+    function nextModule() { window.location.href = '{{ url_for("session.next_module") }}'; }
+
+    function useSOS() {
+        document.getElementById('sos-modal').style.display = 'flex';
+        setTimeout(() => document.getElementById('sos-input').focus(), 100);
+    }
+
+    function closeSOS() {
+        document.getElementById('sos-modal').style.display = 'none';
+        document.getElementById('sos-input').value = '';
+    }
+
+    async function confirmSOS() {
+        const word = document.getElementById('sos-input').value.trim();
+        if (!word) return;
+        closeSOS();
+
+        try {
+            const response = await fetch('{{ url_for("session.use_sos") }}', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ word: word, direction: 'to_target' })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                updateDebtBadge(data.debt_count);
+                const input = document.getElementById('writing-input');
+                input.value += (input.value ? ' ' : '') + data.translation;
+                input.dispatchEvent(new Event('input'));
+                // Show inline feedback
+                const hint = document.createElement('div');
+                hint.style.cssText = 'background:#dcfce7; padding:0.5rem 0.75rem; border-radius:8px; margin-top:0.5rem; color:#166534; font-size:0.9rem;';
+                hint.innerHTML = `✅ <strong>${data.translation}</strong> <small>(dette +1)</small>`;
+                document.getElementById('writing-input').parentNode.insertBefore(hint, document.getElementById('writing-input').nextSibling);
+                setTimeout(() => hint.remove(), 5000);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    document.getElementById('sos-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') confirmSOS();
+    });
+
+    // Word bank is handled by _vocab_sidebar.html component
+</script>
+{% endblock %}

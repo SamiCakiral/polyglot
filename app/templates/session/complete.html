@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}🎉 Session Terminée{% endblock %}
+
+{% block content %}
+<div class="complete-container">
+    <div class="complete-card">
+        <div class="complete-header">
+            <span class="complete-icon">🎉</span>
+            <h1>Session terminée !</h1>
+            <p>Programme: <strong>{{ program.name }}</strong></p>
+        </div>
+
+        <div class="stats-grid">
+            <!-- Flashcards -->
+            <div class="stat-card">
+                <span class="stat-icon">📚</span>
+                <h3>Vocabulaire</h3>
+                <p class="stat-value">
+                    {{ session.results.flashcards.correct }} / {{ session.results.flashcards.total }}
+                </p>
+                <p class="stat-label">Cartes réussies</p>
+            </div>
+
+            <!-- Git Input -->
+            <div class="stat-card">
+                <span class="stat-icon">📝</span>
+                <h3>Git Input</h3>
+                <p class="stat-value">
+                    {% if session.results.git_input.completed %}✅{% else %}⏭️{% endif %}
+                </p>
+                <p class="stat-label">{{ program.target_language }} → {{ program.native_language }}</p>
+            </div>
+
+            <!-- Gym -->
+            <div class="stat-card">
+                <span class="stat-icon">🏋️</span>
+                <h3>The Gym</h3>
+                <p class="stat-value">
+                    {{ session.results.gym.lego_done + session.results.gym.fsi_done }}
+                </p>
+                <p class="stat-label">Exercices complétés</p>
+            </div>
+
+            <!-- Shadowing -->
+            <div class="stat-card">
+                <span class="stat-icon">🎧</span>
+                <h3>Shadowing</h3>
+                <p class="stat-value">
+                    {{ session.results.shadowing.done }} / {{ session.results.shadowing.total }}
+                </p>
+                <p class="stat-label">Phrases répétées</p>
+            </div>
+
+            <!-- Git Output -->
+            <div class="stat-card">
+                <span class="stat-icon">🔄</span>
+                <h3>Git Output</h3>
+                <p class="stat-value">
+                    {% if session.results.git_output.completed %}
+                    {% if session.results.git_output.skipped %}⏭️{% else %}✅{% endif %}
+                    {% else %}
+                    ⏸️
+                    {% endif %}
+                </p>
+                <p class="stat-label">
+                    {% if session.results.git_output.diff_errors %}
+                    {{ session.results.git_output.diff_errors }} erreurs
+                    {% else %}
+                    J+1 Recall
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Writing -->
+            <div class="stat-card">
+                <span class="stat-icon">✍️</span>
+                <h3>Smart Writing</h3>
+                <p class="stat-value">
+                    {% if session.results.writing.completed %}✅{% else %}⏭️{% endif %}
+                </p>
+                <p class="stat-label">Boss Fight</p>
+            </div>
+        </div>
+
+        <!-- Debt summary -->
+        {% if debt_count > 0 %}
+        <div class="debt-summary">
+            <h3>📋 Dette pour demain</h3>
+            <p>Vous avez <strong>{{ debt_count }}</strong> mot(s) à réviser demain.</p>
+            <p class="debt-note">Ces mots seront ajoutés à vos flashcards de demain.</p>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="complete-actions">
+            <a href="{{ url_for('programs.view_program', program_id=program.id) }}" class="btn btn-secondary">
+                Voir le programme
+            </a>
+            <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
+                🏠 Retour au Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .complete-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 1rem;
+    }
+
+    .complete-card {
+        background: var(--card-bg);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .complete-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .complete-icon {
+        font-size: 4rem;
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .complete-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--gray-50);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-card h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--primary);
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin: 0.25rem 0 0 0;
+    }
+
+    .debt-summary {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .debt-summary h3 {
+        margin: 0 0 0.5rem 0;
+    }
+
+    .debt-note {
+        font-size: 0.875rem;
+        color: #92400e;
+        margin: 0.5rem 0 0 0;
+    }
+
+    .token-summary {
+        text-align: center;
+        margin-bottom: 2rem;
+        color: var(--gray-600);
+    }
+
+    .complete-actions {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}

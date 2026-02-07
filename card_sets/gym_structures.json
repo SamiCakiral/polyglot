@@ -1,0 +1,142 @@
+[
+    {
+        "id": "pivot_condition_01",
+        "name": "Condition Simple (Si je... je...)",
+        "level": "A2",
+        "pattern": "Se [SUJET] [VERBE_A], allora [SUJET] [VERBE_B]",
+        "description": "Exprimer une condition simple.",
+        "lego_template": {
+            "pattern": "Se [SUJET] [VERBE_A] [OBJET_A], allora [SUJET] [VERBE_B] [OBJET_B]",
+            "slots": {
+                "SUJET": {
+                    "type": "subject",
+                    "variation": true
+                },
+                "VERBE_A": {
+                    "type": "verb",
+                    "tags": [
+                        "Tag:Action"
+                    ],
+                    "conjugate": true,
+                    "tense": "PRESENT"
+                },
+                "OBJET_A": {
+                    "type": "object",
+                    "match_context": "VERBE_A"
+                },
+                "VERBE_B": {
+                    "type": "verb",
+                    "tags": [
+                        "Tag:Action"
+                    ],
+                    "conjugate": true,
+                    "tense": "PRESENT"
+                },
+                "OBJET_B": {
+                    "type": "object",
+                    "match_context": "VERBE_B"
+                }
+            }
+        },
+        "fsi_instructions": [
+            "Réécris cette phrase en changeant la personne (ex: Tu -> Noi).",
+            "Réécris cette phrase en remplaçant les objets par des mots de ton vocabulaire du jour.",
+            "Transforme cette phrase à la forme négative (Se non... allora non...)."
+        ]
+    },
+    {
+        "id": "pivot_obligation_01",
+        "name": "Obligation & Cause (Je ne peux pas... car je dois...)",
+        "level": "A2",
+        "pattern": "[SUJET] non [POTERE] [VERBE_A] perché [DOVERE] [VERBE_B]",
+        "description": "Exprimer une impossibilité et sa cause.",
+        "lego_template": {
+            "pattern": "[SUJET] [NON] [POTERE] [VERBE_A] [OBJET_A] perché [DOVERE] [VERBE_B] [OBJET_B]",
+            "slots": {
+                "SUJET": {
+                    "type": "subject",
+                    "variation": true
+                },
+                "NON": {
+                    "type": "fixed",
+                    "value": "non"
+                },
+                "POTERE": {
+                    "type": "modal"
+                },
+                "VERBE_A": {
+                    "type": "verb",
+                    "tags": [
+                        "Tag:Action"
+                    ]
+                },
+                "OBJET_A": {
+                    "type": "object",
+                    "match_context": "VERBE_A"
+                },
+                "DOVERE": {
+                    "type": "modal"
+                },
+                "VERBE_B": {
+                    "type": "verb",
+                    "tags": [
+                        "Tag:Action"
+                    ]
+                },
+                "OBJET_B": {
+                    "type": "object",
+                    "match_context": "VERBE_B"
+                }
+            }
+        },
+        "fsi_instructions": [
+            "Réécris cette phrase au passé (J'ai dû...).",
+            "Change la raison (parce qu'il veut...).",
+            "Utilise de nouveaux verbes d'action de ta liste du jour."
+        ]
+    },
+    {
+        "id": "pivot_desire_01",
+        "name": "Désir & But (Je veux... pour...)",
+        "level": "A1",
+        "pattern": "[SUJET] [VOLERE] [VERBE_A] per [VERBE_B]",
+        "description": "Exprimer un désir et son objectif.",
+        "lego_template": {
+            "pattern": "[SUJET] [VOLERE] [VERBE_A] [OBJET_A] per [VERBE_B] [OBJET_B]",
+            "slots": {
+                "SUJET": {
+                    "type": "subject",
+                    "variation": true
+                },
+                "VOLERE": {
+                    "type": "modal"
+                },
+                "VERBE_A": {
+                    "type": "verb",
+                    "tags": [
+                        "Tag:Action"
+                    ]
+                },
+                "OBJET_A": {
+                    "type": "object",
+                    "match_context": "VERBE_A"
+                },
+                "VERBE_B": {
+                    "type": "verb",
+                    "tags": [
+                        "Tag:Action"
+                    ]
+                },
+                "OBJET_B": {
+                    "type": "object",
+                    "match_context": "VERBE_B"
+                }
+            }
+        },
+        "fsi_instructions": [
+            "Réécris cette phrase avec 'Il faut' (Bisogna...).",
+            "Imagine une situation absurde avec cette structure.",
+            "Remplace les objets par des choses que tu vois autour de toi."
+        ]
+    }
+]

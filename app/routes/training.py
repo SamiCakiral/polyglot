@@ -13,9 +13,9 @@ bp = Blueprint('training', __name__, url_prefix='/train')
 
 
 @bp.before_request
-def login_required():
+def check_login():
     if not g.user:
-        return redirect(url_for('auth.profiles'))
+        return redirect(url_for('auth.login'))
 
 
 @bp.route('/deck/<int:deck_id>')
@@ -401,6 +401,13 @@ def show_card():
     # Check if already reviewed
     is_reviewed = training['current_index'] in training.get('reviewed_indices', [])
     
+    # Detect TTS language from associated program
+    tts_language = 'auto'
+    from app.models import TrainingProgram
+    program = TrainingProgram.query.filter_by(deck_id=deck.id, user_id=g.user.id).first()
+    if program:
+        tts_language = program.target_language or 'auto'
+    
     return render_template('training/card.html',
                            card=card,
                            deck=deck,
@@ -411,7 +418,8 @@ def show_card():
                            mode=current_mode,
                            direction=current_direction,
                            results=training['results'],
-                           is_reviewed=is_reviewed)
+                           is_reviewed=is_reviewed,
+                           tts_language=tts_language)
 
 
 def get_review_buttons_for_sm2(easiness, interval, repetitions):

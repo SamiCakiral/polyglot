@@ -6,10 +6,10 @@ bp = Blueprint('decks', __name__, url_prefix='/decks')
 
 
 @bp.before_request
-def login_required():
+def check_login():
     """Ensure user is logged in."""
     if not g.user:
-        return redirect(url_for('auth.profiles'))
+        return redirect(url_for('auth.login'))
 
 
 @bp.route('/')
@@ -124,6 +124,13 @@ def view_deck(deck_id):
     grade_colors = {g[0]: g[3] for g in GRADES}
     grade_order = [g[0] for g in reversed(GRADES)]  # E to A+
     
+    # Detect TTS language from associated program
+    tts_language = 'auto'
+    from app.models import TrainingProgram
+    program = TrainingProgram.query.filter_by(deck_id=deck.id, user_id=g.user.id).first()
+    if program:
+        tts_language = program.target_language or 'auto'
+    
     return render_template('decks/view.html', 
                            deck=deck, 
                            stats=stats,
@@ -134,7 +141,8 @@ def view_deck(deck_id):
                            fb_progress=fb_progress,
                            bf_progress=bf_progress,
                            grade_colors=grade_colors,
-                           grade_order=grade_order)
+                           grade_order=grade_order,
+                           tts_language=tts_language)
 
 
 @bp.route('/<int:deck_id>/edit', methods=['GET', 'POST'])

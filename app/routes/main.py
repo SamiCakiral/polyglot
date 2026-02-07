@@ -1,16 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, session, g
-from app.models import Deck, User, Card, Review
+from flask import Blueprint, render_template, redirect, url_for, g
+from flask_login import login_required, current_user
+from app.models import Deck, User, Card, Review, TrainingProgram, UserLanguage
 from app import db
 from datetime import datetime, timedelta
+from app.pillar_config import get_language, get_pillars_for_language
 
 bp = Blueprint('main', __name__)
-
-
-def get_current_user():
-    """Get current logged in user."""
-    if 'user_id' not in session:
-        return None
-    return User.query.get(session['user_id'])
 
 
 def get_recommendations(decks):
@@ -129,12 +124,10 @@ def get_streak_info(user):
 
 
 @bp.route('/')
+@login_required
 def index():
     """Dashboard - main page showing all decks and global stats."""
-    if not g.user:
-        return redirect(url_for('auth.profiles'))
-        
-    user = g.user
+    user = current_user
     decks = Deck.query.filter_by(user_id=user.id).all()
     
     now = datetime.utcnow()
@@ -173,9 +166,36 @@ def index():
     recommendations = get_recommendations(decks)
     streak = get_streak_info(user)
     
+    # Get user's training programs
+    programs = TrainingProgram.query.filter_by(user_id=user.id, is_active=True).all()
+    
+    # Get user's languages with enriched data
+    user_languages_raw = UserLanguage.query.filter_by(user_id=user.id).all()
+    user_languages = []
+    
+    for ul in user_languages_raw:
+        lang_config = get_language(ul.language_code)
+        if lang_config:
+            pillars = get_pillars_for_language(ul.language_code)
+            total_pillars = len(pillars)
+            completed_pillars = ul.get_completed_pillars_count()
+            
+            user_languages.append({
+                'code': ul.language_code,
+                'name': lang_config['name'],
+                'native_name': lang_config['native_name'],
+                'flag': lang_config['flag'],
+                'level': ul.estimated_level,
+                'total': total_pillars,
+                'completed': completed_pillars,
+                'mastery': ul.get_total_mastery()
+            })
+    
     return render_template('dashboard.html', 
                            user=user,
                            decks=decks,
+                           programs=programs,
+                           user_languages=user_languages,
                            total_cards=total_cards,
                            due_cards=due_cards,
                            new_cards=new_cards,

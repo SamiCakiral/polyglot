@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Dashboard CECR - {{ lang_config.name }}{% endblock %}
+
+{% block content %}
+<div class="dash">
+    <div class="dash-header">
+        <a href="{{ url_for('pillars.language_view', lang=lang_code) }}" class="back-link">← {{ lang_config.name }}</a>
+        <h1>Dashboard CECR</h1>
+        <p class="dash-subtitle">Vue d'ensemble de votre progression en {{ lang_config.name }}</p>
+    </div>
+
+    <!-- Level + Stats Row -->
+    <div class="dash-top-row">
+        <div class="dash-card dash-level-card">
+            <div class="dash-level-main">
+                <span class="dash-level-badge level-{{ current_level|lower }}">{{ current_level }}</span>
+                <div>
+                    <span class="dash-level-label">Niveau actuel</span>
+                    {% if next_level %}
+                    <span class="dash-level-next">Prochain : {{ next_level }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- CECR minitrack -->
+            <div class="dash-minitrack">
+                {% for lvl in cecr_order %}
+                <span class="dash-minitrack-dot {% if cecr_order.index(lvl) < cecr_order.index(current_level) %}passed{% elif lvl == current_level %}current{% endif %}">{{ lvl }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="dash-card dash-stats-card">
+            <div class="dash-stat">
+                <span class="dash-stat-val">{{ completed_count }}/{{ pillar_count }}</span>
+                <span class="dash-stat-lbl">Piliers completes</span>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-val">{{ weakness.get('total_exercises', 0) }}</span>
+                <span class="dash-stat-lbl">Exercices faits</span>
+            </div>
+            <div class="dash-stat">
+                {% set total_ex = weakness.get('total_exercises', 0) %}
+                {% set total_ok = weakness.get('total_correct', 0) %}
+                <span class="dash-stat-val">{{ ((total_ok / total_ex * 100)|int) if total_ex > 0 else 0 }}%</span>
+                <span class="dash-stat-lbl">Taux de reussite</span>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-val">{{ assessments|length }}</span>
+                <span class="dash-stat-lbl">Controles passes</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Radar Chart + Weakness -->
+    <div class="dash-row">
+        <div class="dash-card dash-radar-card">
+            <h2>Competences par type</h2>
+            <canvas id="radarChart" width="300" height="300"></canvas>
+        </div>
+        <div class="dash-card dash-weakness-card">
+            <h2>Points a travailler</h2>
+            {% if skill_scores %}
+            <div class="dash-skills">
+                {% for ex_type, stats in skill_scores.items() %}
+                <div class="dash-skill-row">
+                    <span class="dash-skill-name">{{ ex_type|replace('_', ' ')|title }}</span>
+                    <div class="dash-skill-bar">
+                        <div class="dash-skill-fill {% if stats.rate >= 70 %}good{% elif stats.rate >= 40 %}ok{% else %}bad{% endif %}" style="width: {{ stats.rate }}%"></div>
+                    </div>
+                    <span class="dash-skill-pct {% if stats.rate >= 70 %}good{% elif stats.rate >= 40 %}ok{% else %}bad{% endif %}">{{ stats.rate }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="dash-empty">Aucun exercice effectue pour le moment.</p>
+            {% endif %}
+
+            {% if weakness.get('recent_errors') %}
+            <h3>Erreurs recentes</h3>
+            <div class="dash-errors">
+                {% for err in weakness.recent_errors[-5:]|reverse %}
+                <div class="dash-error-item">
+                    <span class="dash-error-type">{{ err.type|replace('_', ' ')|title }}</span>
+                    {% if err.verb %}<span class="dash-error-detail">{{ err.verb }}</span>{% endif %}
+                    {% if err.tense %}<span class="dash-error-detail">{{ err.tense }}</span>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Assessment Timeline -->
+    {% if assessments %}
+    <div class="dash-card dash-timeline-card">
+        <h2>Historique des controles</h2>
+        <div class="dash-timeline">
+            {% for a in assessments %}
+            <div class="dash-timeline-item {{ a.status }}">
+                <div class="dash-timeline-dot"></div>
+                <div class="dash-timeline-content">
+                    <div class="dash-timeline-header">
+                        <span class="dash-timeline-level">{{ a.target_level }}</span>
+                        <span class="dash-timeline-date">{{ a.started_at.strftime('%d/%m/%Y') if a.started_at else '-' }}</span>
+                    </div>
+                    <div class="dash-timeline-score">
+                        {% if a.total_score is not none %}
+                        <span class="dash-timeline-pct {{ 'pass' if a.status == 'passed' else 'fail' }}">{{ a.total_score|int }}%</span>
+                        {% endif %}
+                        <span class="dash-timeline-status">
+                            {% if a.status == 'passed' %}Reussi{% elif a.status == 'failed' %}Echoue{% else %}En cours{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="dash-actions">
+        <a href="{{ url_for('assessments.assessment_hub', lang=lang_code) }}" class="btn btn-primary">Passer un controle</a>
+        <a href="{{ url_for('pillar_exercises.exercises_list', lang=lang_code) }}" class="btn btn-secondary">S'exercer</a>
+    </div>
+</div>
+
+<script>
+// Radar Chart - pure Canvas (no library needed)
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = document.getElementById('radarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const skills = {{ skill_scores|tojson }};
+    const labels = Object.keys(skills).map(k => k.replace('_', ' '));
+    const values = Object.values(skills).map(s => s.rate / 100);
+
+    if (labels.length < 3) {
+        ctx.fillStyle = '#9ca3af';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Pas assez de donnees', 150, 150);
+        return;
+    }
+
+    const cx = 150, cy = 150, maxR = 110;
+    const n = labels.length;
+    const angleStep = (2 * Math.PI) / n;
+
+    // Draw grid
+    [0.25, 0.5, 0.75, 1.0].forEach(level => {
+        ctx.beginPath();
+        for (let i = 0; i <= n; i++) {
+            const angle = i * angleStep - Math.PI / 2;
+            const x = cx + maxR * level * Math.cos(angle);
+            const y = cy + maxR * level * Math.sin(angle);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.stroke();
+    });
+
+    // Draw axes
+    for (let i = 0; i < n; i++) {
+        const angle = i * angleStep - Math.PI / 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + maxR * Math.cos(angle), cy + maxR * Math.sin(angle));
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.stroke();
+    }
+
+    // Draw data
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+        const idx = i % n;
+        const angle = idx * angleStep - Math.PI / 2;
+        const val = values[idx] || 0;
+        const x = cx + maxR * val * Math.cos(angle);
+        const y = cy + maxR * val * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+    ctx.fill();
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw points and labels
+    for (let i = 0; i < n; i++) {
+        const angle = i * angleStep - Math.PI / 2;
+        const val = values[i] || 0;
+        const px = cx + maxR * val * Math.cos(angle);
+        const py = cy + maxR * val * Math.sin(angle);
+
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = '#6366f1';
+        ctx.fill();
+
+        // Label
+        const lx = cx + (maxR + 20) * Math.cos(angle);
+        const ly = cy + (maxR + 20) * Math.sin(angle);
+        ctx.fillStyle = '#374151';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labels[i], lx, ly);
+    }
+});
+</script>
+
+<style>
+.dash { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+.dash-header { margin-bottom: 1.5rem; }
+.dash-header .back-link { color: var(--gray-500); text-decoration: none; font-size: 0.85rem; display: inline-block; margin-bottom: 0.5rem; }
+.dash-header h1 { font-size: 1.5rem; margin: 0 0 0.25rem; }
+.dash-subtitle { color: var(--gray-500); font-size: 0.9rem; margin: 0; }
+
+.dash-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 1.25rem; }
+.dash-card h2 { font-size: 1rem; margin: 0 0 1rem; color: var(--gray-700); }
+.dash-card h3 { font-size: 0.88rem; margin: 1rem 0 0.5rem; color: var(--gray-600); }
+
+/* Top Row */
+.dash-top-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.dash-level-card { display: flex; flex-direction: column; gap: 1rem; }
+.dash-level-main { display: flex; align-items: center; gap: 1rem; }
+.dash-level-badge { font-size: 2rem; font-weight: 800; padding: 0.5rem 1rem; border-radius: 12px; }
+.dash-level-label { display: block; font-size: 0.85rem; color: var(--gray-500); }
+.dash-level-next { display: block; font-size: 0.78rem; color: var(--primary); }
+.dash-minitrack { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.dash-minitrack-dot { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--gray-100); color: var(--gray-400); font-weight: 600; }
+.dash-minitrack-dot.passed { background: #dcfce7; color: #16a34a; }
+.dash-minitrack-dot.current { background: var(--primary); color: white; }
+.level-badge.level-a0, .level-badge.level-a1 { background: #dcfce7; color: #166534; }
+.level-badge.level-a2 { background: #dbeafe; color: #1e40af; }
+.level-badge.level-b1, .level-badge.level-b2 { background: #fef3c7; color: #92400e; }
+.level-badge.level-c1, .level-badge.level-c2 { background: #fce7f3; color: #9d174d; }
+
+.dash-stats-card { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.dash-stat { text-align: center; }
+.dash-stat-val { display: block; font-size: 1.4rem; font-weight: 700; color: var(--gray-800); }
+.dash-stat-lbl { display: block; font-size: 0.72rem; color: var(--gray-500); }
+
+/* Radar + Weakness Row */
+.dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.dash-radar-card { display: flex; flex-direction: column; align-items: center; }
+.dash-radar-card canvas { max-width: 100%; }
+
+/* Skills bars */
+.dash-skills { display: flex; flex-direction: column; gap: 0.5rem; }
+.dash-skill-row { display: flex; align-items: center; gap: 0.5rem; }
+.dash-skill-name { font-size: 0.8rem; color: var(--gray-600); min-width: 80px; text-transform: capitalize; }
+.dash-skill-bar { flex: 1; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden; }
+.dash-skill-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.dash-skill-fill.good { background: #22c55e; }
+.dash-skill-fill.ok { background: #f59e0b; }
+.dash-skill-fill.bad { background: #ef4444; }
+.dash-skill-pct { font-size: 0.78rem; font-weight: 600; min-width: 35px; text-align: right; }
+.dash-skill-pct.good { color: #16a34a; }
+.dash-skill-pct.ok { color: #f59e0b; }
+.dash-skill-pct.bad { color: #ef4444; }
+.dash-empty { color: var(--gray-400); font-size: 0.88rem; font-style: italic; }
+
+/* Errors */
+.dash-errors { display: flex; flex-direction: column; gap: 0.3rem; }
+.dash-error-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; padding: 0.25rem 0; }
+.dash-error-type { color: #ef4444; font-weight: 500; }
+.dash-error-detail { color: var(--gray-500); font-size: 0.75rem; }
+
+/* Timeline */
+.dash-timeline-card { margin-bottom: 1rem; }
+.dash-timeline { position: relative; padding-left: 24px; }
+.dash-timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--gray-200); }
+.dash-timeline-item { position: relative; margin-bottom: 1.25rem; }
+.dash-timeline-dot { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--gray-300); background: var(--white); }
+.dash-timeline-item.passed .dash-timeline-dot { background: #22c55e; border-color: #22c55e; }
+.dash-timeline-item.failed .dash-timeline-dot { background: #ef4444; border-color: #ef4444; }
+.dash-timeline-content { padding-left: 0.5rem; }
+.dash-timeline-header { display: flex; justify-content: space-between; align-items: center; }
+.dash-timeline-level { font-weight: 700; font-size: 0.95rem; }
+.dash-timeline-date { font-size: 0.78rem; color: var(--gray-500); }
+.dash-timeline-score { margin-top: 0.15rem; }
+.dash-timeline-pct { font-weight: 700; font-size: 0.92rem; }
+.dash-timeline-pct.pass { color: #16a34a; }
+.dash-timeline-pct.fail { color: #ef4444; }
+.dash-timeline-status { font-size: 0.78rem; color: var(--gray-500); margin-left: 0.5rem; }
+
+/* Actions */
+.dash-actions { display: flex; gap: 0.75rem; justify-content: center; margin-top: 1.5rem; }
+
+@media (max-width: 640px) {
+    .dash-top-row, .dash-row { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}

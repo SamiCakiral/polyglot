@@ -8,9 +8,9 @@ bp = Blueprint('cards', __name__, url_prefix='/cards')
 
 
 @bp.before_request
-def login_required():
+def check_login():
     if not g.user:
-        return redirect(url_for('auth.profiles'))
+        return redirect(url_for('auth.login'))
 
 
 @bp.route('/deck/<int:deck_id>/new', methods=['GET', 'POST'])
@@ -303,9 +303,14 @@ def json_import(deck_id):
                         created_categories += 1
                         category_map[cat_name] = category
                     
+                
                     if category not in card.categories:
                         card.categories.append(category)
             
+            # Update slot_type if present
+            if 'slot_type' in card_data:
+                card.slot_type = card_data['slot_type']
+
             updated_count += 1
         
         # Process cards creation
@@ -316,7 +321,8 @@ def json_import(deck_id):
             back = card_data.get('back', card_data.get('answer', '')).strip()
             
             if front and back:
-                card = Card(deck_id=deck.id, front=front, back=back)
+                slot_type = card_data.get('slot_type')
+                card = Card(deck_id=deck.id, front=front, back=back, slot_type=slot_type)
                 
                 # Add categories
                 card_categories = card_data.get('categories', [])

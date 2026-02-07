@@ -6,9 +6,9 @@ bp = Blueprint('categories', __name__, url_prefix='/categories')
 
 
 @bp.before_request
-def login_required():
+def check_login():
     if not g.user:
-        return redirect(url_for('auth.profiles'))
+        return redirect(url_for('auth.login'))
 
 
 @bp.route('/deck/<int:deck_id>')

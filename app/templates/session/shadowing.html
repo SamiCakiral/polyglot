@@ -1,0 +1,569 @@
+{% extends 'base.html' %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block main_class %}session-main{% endblock %}
+
+{% block title %}Shadowing - Écoute & Répète{% endblock %}
+
+{% block content %}
+<style>
+    .session-main {
+        padding: 0 !important;
+        max-width: none !important;
+        width: 100%;
+    }
+
+    .session-wrapper {
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        position: relative;
+        overflow-x: hidden;
+        color: white;
+    }
+
+    .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .progress-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .module-title {
+        font-weight: 700;
+        color: white;
+    }
+
+    .zen-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .zen-instruction {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .zen-instruction h3 {
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .zen-instruction p {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Video Container */
+    .video-container {
+        background: #000;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        margin-bottom: 2rem;
+    }
+
+    .video-wrapper {
+        position: relative;
+        padding-bottom: 56.25%; /* 16:9 */
+        height: 0;
+    }
+
+    .video-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    .video-info {
+        padding: 1rem 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .video-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .video-segment {
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Controls Card */
+    .controls-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 2rem;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .instructions-box {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(139, 92, 246, 0.1);
+        border-radius: 12px;
+        border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .instructions-box h4 {
+        color: #a78bfa;
+        margin-bottom: 0.5rem;
+    }
+
+    .instructions-box p {
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    .controls-row {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-control {
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-control.primary {
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        color: white;
+    }
+
+    .btn-control.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-control.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-control.secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .feedback-buttons {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        gap: 1rem;
+    }
+
+    .feedback-btn {
+        padding: 1rem;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .feedback-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .feedback-btn.difficult {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .feedback-btn.done {
+        background: rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .feedback-btn.next-video {
+        background: rgba(59, 130, 246, 0.2);
+        color: #93c5fd;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    /* TTS Fallback */
+    .tts-container {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .phrase-display {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tts-controls {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .btn-audio {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-audio.primary {
+        background: linear-gradient(135deg, #8b5cf6, #6366f1);
+        color: white;
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+
+    .btn-audio.secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    /* Complete View */
+    .complete-view {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .complete-view .icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+    }
+</style>
+
+<div class="session-wrapper">
+    <!-- Header -->
+    <header class="session-header">
+        <div class="progress-info">
+            <span class="module-title">🎧 Shadowing</span>
+            {% if has_video %}
+            <span style="color: rgba(255,255,255,0.5);">Vidéo authentique</span>
+            {% else %}
+            <span style="color: rgba(255,255,255,0.5);"><span id="current-phrase">1</span> / {{ phrases|length }}</span>
+            {% endif %}
+        </div>
+        <div>
+            <form method="POST" action="{{ url_for('session.stop_session') }}" style="display: inline;">
+                <button type="submit" style="background:rgba(255,255,255,0.1); border:none; color:white; cursor:pointer; padding:0.5rem 1rem; border-radius:8px;">⏹ Arrêter</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="zen-container">
+        <div class="zen-instruction">
+            <h3>Écoute & Répète</h3>
+            <p>{% if has_video %}Regardez la vidéo et répétez immédiatement ce que vous entendez.{% else %}Écoutez et répétez en imitant l'intonation.{% endif %}</p>
+        </div>
+
+        {% if has_video %}
+        <!-- VIDEO MODE -->
+        <div id="video-mode">
+            <div class="video-container">
+                <div class="video-wrapper">
+                    <iframe id="youtube-player" 
+                            src="{{ embed_url }}" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="video-info">
+                    <div class="video-title" id="video-title">{{ video.title or 'Vidéo de pratique' }}</div>
+                    <div class="video-segment" id="video-segment">
+                        Segment: {{ video_segment.start|default(0) }}s - {{ video_segment.end|default(30) }}s
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls-card">
+                <div class="instructions-box">
+                    <h4>💡 Technique de Shadowing</h4>
+                    <p>Répétez <strong>en même temps</strong> que vous écoutez, pas après. Imitez l'intonation et le rythme !</p>
+                </div>
+
+                <div class="feedback-buttons">
+                    <button class="feedback-btn difficult" onclick="markVideo('difficult')">
+                        😕 Trop dur
+                    </button>
+                    <button class="feedback-btn done" onclick="markVideo('done')">
+                        ✅ Bien compris
+                    </button>
+                    <button class="feedback-btn next-video" onclick="nextVideo()">
+                        ⏭️ Autre vidéo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- TTS FALLBACK MODE -->
+        <div id="tts-mode">
+            {% if phrases %}
+            <div class="tts-container" id="phrase-card">
+                <div class="phrase-display" id="phrase-display">
+                    {{ phrases[0] if phrases else 'Chargement...' }}
+                </div>
+                
+                <div class="tts-controls">
+                    <button class="btn-audio secondary" onclick="pauseTTS()">⏸️</button>
+                    <button class="btn-audio primary" onclick="playTTS()">▶️</button>
+                    <button class="btn-audio secondary" onclick="replayTTS()">🔁</button>
+                </div>
+            </div>
+
+            <div class="controls-card">
+                <div class="feedback-buttons">
+                    <button class="feedback-btn difficult" onclick="markPhrase('difficult')">
+                        😕 Difficile
+                    </button>
+                    <button class="feedback-btn done" onclick="markPhrase('done')">
+                        ✅ Maîtrisé
+                    </button>
+                    <button class="feedback-btn next-video" onclick="markPhrase('skip')">
+                        ⏭️ Skip
+                    </button>
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+                <h3>Aucune ressource disponible</h3>
+                <p style="color: rgba(255,255,255,0.6); margin-bottom: 2rem;">Ajoutez des vidéos YouTube dans les paramètres du programme.</p>
+                <button class="btn-control primary" onclick="skipModule()">
+                    Passer ce module →
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- COMPLETE VIEW -->
+        <div id="complete-view" class="complete-view" style="display: none;">
+            <div class="icon">🎉</div>
+            <h2>Shadowing terminé !</h2>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 2rem;">
+                Sessions réussies: <strong id="done-count">0</strong>
+            </p>
+            <button class="btn-control primary" onclick="completeModule()">
+                Module suivant →
+            </button>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // State
+    let state = {
+        hasVideo: {{ 'true' if has_video else 'false' }},
+        videoId: {{ video.id if video else 'null' }},
+        videosWatched: 0,
+        doneCount: 0,
+        phrases: {{ phrases|tojson }},
+        currentPhraseIndex: 0,
+        speechRate: 1.0
+    };
+
+    const _shadowLang = '{{ program.target_language if program else "auto" }}';
+    let _shadowAudio = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Qwen3-TTS is loaded on demand, no init needed
+    });
+
+    // =========================================================
+    // VIDEO MODE
+    // =========================================================
+    function markVideo(result) {
+        if (result === 'done') {
+            state.doneCount++;
+        }
+        state.videosWatched++;
+        
+        // Show complete after a few videos or user marks done
+        if (state.doneCount >= 2 || state.videosWatched >= 3) {
+            showComplete();
+        }
+    }
+
+    async function nextVideo() {
+        try {
+            const response = await fetch('{{ url_for("session.get_next_shadowing_video") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_video_id: state.videoId })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                state.videoId = data.video.id;
+                document.getElementById('youtube-player').src = data.embed_url;
+                document.getElementById('video-title').textContent = data.video.title || 'Vidéo de pratique';
+                document.getElementById('video-segment').textContent = 
+                    `Segment: ${data.segment.start}s - ${data.segment.end}s`;
+                state.videosWatched++;
+            } else {
+                // No more videos, show complete
+                showComplete();
+            }
+        } catch (e) {
+            console.error(e);
+            showComplete();
+        }
+    }
+
+    // =========================================================
+    // TTS MODE - Using Qwen3-TTS via API
+    // =========================================================
+    async function playTTS() {
+        const text = state.phrases[state.currentPhraseIndex];
+        if (!text) return;
+
+        // Stop any current audio
+        if (_shadowAudio) {
+            _shadowAudio.pause();
+            _shadowAudio.currentTime = 0;
+        }
+
+        // Check cache first
+        const cacheKey = `shadow_${_shadowLang}:${text}`;
+        if (_ttsCache && _ttsCache.has(cacheKey)) {
+            _shadowAudio = new Audio(_ttsCache.get(cacheKey));
+            _shadowAudio.play();
+            return;
+        }
+
+        try {
+            const resp = await fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: text,
+                    language: LANG_NAME_TO_CODE[(_shadowLang || '').toLowerCase()] || 'auto',
+                    instruct: 'Speak clearly and at a moderate pace'
+                })
+            });
+
+            if (resp.ok) {
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                if (_ttsCache) _ttsCache.set(cacheKey, url);
+                _shadowAudio = new Audio(url);
+                _shadowAudio.play();
+            } else {
+                console.warn('TTS error for shadowing:', resp.status);
+            }
+        } catch (e) {
+            console.warn('TTS connection error:', e);
+        }
+    }
+
+    function replayTTS() { playTTS(); }
+    
+    function pauseTTS() {
+        if (_shadowAudio) {
+            _shadowAudio.pause();
+        }
+    }
+
+    function markPhrase(result) {
+        if (_shadowAudio) {
+            _shadowAudio.pause();
+            _shadowAudio.currentTime = 0;
+        }
+        
+        if (result === 'done') state.doneCount++;
+        state.currentPhraseIndex++;
+        
+        if (state.currentPhraseIndex >= state.phrases.length) {
+            showComplete();
+        } else {
+            document.getElementById('phrase-display').textContent = state.phrases[state.currentPhraseIndex];
+            const phraseCounter = document.getElementById('current-phrase');
+            if (phraseCounter) phraseCounter.textContent = state.currentPhraseIndex + 1;
+        }
+    }
+
+    // =========================================================
+    // COMMON
+    // =========================================================
+    function showComplete() {
+        document.getElementById('video-mode')?.style.setProperty('display', 'none');
+        document.getElementById('tts-mode')?.style.setProperty('display', 'none');
+        document.getElementById('complete-view').style.display = 'block';
+        document.getElementById('done-count').textContent = state.doneCount;
+    }
+
+    async function completeModule() {
+        await fetch('{{ url_for("session.shadowing_complete") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                done: state.doneCount,
+                total: state.hasVideo ? state.videosWatched : state.phrases.length,
+                videos_watched: state.videosWatched
+            })
+        });
+        window.location.href = '{{ url_for("session.next_module") }}';
+    }
+
+    async function skipModule() {
+        await fetch('{{ url_for("session.shadowing_complete") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ done: 0, total: 0, videos_watched: 0 })
+        });
+        window.location.href = '{{ url_for("session.next_module") }}';
+    }
+
+    // No word bank in shadowing - focus on immersion
+</script>
+{% endblock %}

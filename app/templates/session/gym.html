@@ -1,0 +1,1257 @@
+{% extends 'base.html' %}
+{% block footer %}{% endblock %}
+{% block main_class %}session-main{% endblock %}
+{% block title %}The Gym - Structures{% endblock %}
+
+{# Set exercise direction for vocab sidebar: gym uses target_to_native mostly #}
+{% set exercise_direction = 'target_to_native' %}
+
+{% block content %}
+<style>
+    .session-main {
+        padding: 0 !important;
+        max-width: none !important;
+        width: 100%;
+    }
+
+    /* Main Content Area - margins handled by _vocab_sidebar.html component */
+    .gym-main {
+        min-height: calc(100vh - 60px);
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        transition: margin-left 0.3s ease;
+    }
+
+    /* Top Header Bar */
+    .gym-header {
+        background: white;
+        padding: 0.75rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 50;
+    }
+
+    .gym-header-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .gym-badge {
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .phase-label {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .gym-header-right {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .btn-stop {
+        background: #fee2e2;
+        color: #991b1b;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    .btn-stop:hover {
+        background: #fecaca;
+    }
+
+    /* Session Content */
+    .session-content {
+        padding: 2rem;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Phase Indicator */
+    .phase-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .phase-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #e2e8f0;
+        transition: all 0.3s;
+    }
+
+    .phase-dot.active {
+        background: #3b82f6;
+        transform: scale(1.2);
+    }
+
+    .phase-dot.completed {
+        background: #10b981;
+    }
+
+    /* Structure Card */
+    .structure-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+    }
+
+    .structure-pattern {
+        font-family: 'JetBrains Mono', monospace;
+        background: #f1f5f9;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        color: #1e40af;
+        margin: 1rem 0;
+        border-left: 4px solid #3b82f6;
+    }
+
+    .example-box {
+        background: #fefce8;
+        border: 1px solid #fde047;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+
+    .example-box .target {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #1e3a8a;
+        margin-bottom: 0.5rem;
+    }
+
+    .example-box .native {
+        color: #64748b;
+        font-style: italic;
+    }
+
+    /* Input Area */
+    .input-area {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .input-area textarea {
+        width: 100%;
+        min-height: 120px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1rem;
+        font-size: 1.2rem;
+        resize: none;
+        transition: border-color 0.3s;
+    }
+
+    .input-area textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+    }
+
+    /* Vocabulary Pills */
+    .vocab-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+    .vocab-pill {
+        background: #e0f2fe;
+        color: #0369a1;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .vocab-pill:hover {
+        background: #0ea5e9;
+        color: white;
+    }
+
+    /* Feedback */
+    .feedback-box {
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .feedback-box.success {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        color: #166534;
+    }
+
+    .feedback-box.error {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #991b1b;
+    }
+
+    .feedback-box.warning {
+        background: #fef9c3;
+        border: 1px solid #fde047;
+        color: #854d0e;
+    }
+
+    /* FSI Surprise */
+    .fsi-surprise {
+        background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        margin: 1rem 0;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+    }
+
+    .fsi-surprise h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .fsi-surprise .mutation-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 1.1rem;
+        margin: 0.5rem 0;
+    }
+
+    /* Buttons */
+    .btn-gym {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-gym:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Progress */
+    .gym-progress {
+        background: #e2e8f0;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+
+    .gym-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #10b981);
+        transition: width 0.5s ease;
+    }
+
+
+    /* Loading */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #e2e8f0;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Start Screen */
+    .start-card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        max-width: 500px;
+        margin: 2rem auto;
+    }
+
+    .start-card h1 {
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+    }
+
+    /* Translation List */
+    .translation-list {
+        list-style: none;
+        padding: 0;
+        margin: 1rem 0;
+    }
+
+    .translation-item {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .translation-item .number {
+        width: 32px;
+        height: 32px;
+        background: #3b82f6;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+
+    .translation-item.completed {
+        background: #dcfce7;
+    }
+
+    .translation-item.completed .number {
+        background: #10b981;
+    }
+
+    /* Vocabulary Errors Styling */
+    .vocab-errors-section {
+        background: linear-gradient(135deg, #fef3c7, #fde68a);
+        border: 2px solid #f59e0b;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .vocab-error-item {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.75rem;
+        border-left: 4px solid #f59e0b;
+    }
+
+    .vocab-error-word {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .wrong-word {
+        color: #dc2626;
+        font-weight: 700;
+        text-decoration: line-through;
+    }
+
+    .vocab-hint {
+        color: #92400e;
+    }
+
+    .vocab-hint-text {
+        color: #78716c;
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        padding: 0.5rem;
+        background: #fefce8;
+        border-radius: 6px;
+    }
+
+    .vocab-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-reveal-vocab {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-reveal-vocab:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .vocab-encourage {
+        color: #78716c;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    /* Reveal Modal */
+    .vocab-reveal-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .vocab-reveal-modal.show {
+        display: flex;
+    }
+
+    .vocab-modal-content {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 450px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .vocab-modal-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .vocab-modal-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 1rem;
+    }
+
+    .vocab-modal-warning {
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        color: #92400e;
+        font-size: 0.95rem;
+    }
+
+    .vocab-modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-modal-cancel {
+        background: #e2e8f0;
+        color: #475569;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-modal-confirm {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .vocab-revealed {
+        background: #dcfce7;
+        border: 2px solid #10b981;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: center;
+    }
+
+    .vocab-revealed-word {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #059669;
+    }
+
+    .vocab-revealed-note {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+</style>
+
+<!-- Include Vocabulary Sidebar Component -->
+{% include 'components/_vocab_sidebar.html' %}
+
+<!-- Main Content -->
+<main class="gym-main has-vocab-sidebar" id="gym-main">
+    <!-- Top Header -->
+    <div class="gym-header">
+        <div class="gym-header-left">
+            <span class="gym-badge">🏋️ The Gym</span>
+            <span class="phase-label" id="step-info">Phase 1: Découverte</span>
+        </div>
+        <div class="gym-header-right">
+            <form method="POST" action="{{ url_for('session.stop_session') }}" style="margin: 0;">
+                <button type="submit" class="btn-stop">⏹ Arrêter</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="session-content">
+        <!-- Phase Indicator -->
+        <div class="phase-indicator" id="phase-indicator" style="display: none;">
+            <div class="phase-dot" data-phase="1" title="Découverte"></div>
+            <div class="phase-dot" data-phase="2" title="Construction"></div>
+            <div class="phase-dot" data-phase="3" title="FSI"></div>
+            <div class="phase-dot" data-phase="4" title="Traduction"></div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="gym-progress" id="progress-bar" style="display: none;">
+            <div class="gym-progress-bar" id="progress-fill" style="width: 0%"></div>
+        </div>
+
+        <!-- START SCREEN -->
+        <div id="start-screen">
+            <div class="start-card">
+                <h1>🏋️ The Gym</h1>
+                <p class="text-muted mb-4">Maîtrise les structures de phrases pour construire des centaines de variations !</p>
+
+                <div class="form-group my-4">
+                    <label class="form-label fw-bold">Durée de la session</label>
+                    <select id="duration-select" class="form-select form-select-lg">
+                        <option value="5">5 minutes - Express</option>
+                        <option value="10" selected>10 minutes - Standard</option>
+                        <option value="15">15 minutes - Intensif</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary btn-gym w-100" onclick="startSession()">
+                    Commencer l'entraînement →
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN GAME CONTAINER -->
+        <div id="game-container" style="display: none;">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+
+                    <!-- Dynamic Content Area -->
+                    <div id="exercise-content">
+                        <!-- Content will be injected here -->
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="text-center mt-4" id="action-buttons">
+                        <button id="submit-btn" class="btn btn-primary btn-gym" onclick="submitAnswer()" disabled>
+                            Vérifier
+                        </button>
+                        <button id="next-btn" class="btn btn-success btn-gym" onclick="nextStep()" style="display: none;">
+                            Continuer →
+                        </button>
+                    </div>
+
+                    <!-- Feedback Area -->
+                    <div id="feedback-area" style="display: none;"></div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="end-screen" style="display: none;">
+            <div class="start-card">
+                <div style="font-size: 4rem;">🎉</div>
+                <h2 class="mt-3">Session Terminée !</h2>
+                <p class="text-muted mb-4">Tu as renforcé ta maîtrise de la structure. Rendez-vous demain !</p>
+                
+                <div id="session-stats" class="mb-4">
+                    <!-- Stats will be injected -->
+                </div>
+
+                <button class="btn btn-primary btn-gym" onclick="completeGym()">
+                    Continuer le programme →
+                </button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Vocabulary Reveal Modal (for Gym vocab errors) -->
+<div class="vocab-reveal-modal" id="vocab-reveal-modal">
+    <div class="vocab-modal-content">
+        <div class="vocab-modal-icon">⚠️</div>
+        <div class="vocab-modal-title">Tu veux vraiment la réponse ?</div>
+        <div class="vocab-modal-warning">
+            <strong>Attention !</strong> Si je te donne la correction, ce mot sera ajouté à ton <strong>vocabulaire de demain</strong>. 
+            Tu devras le revoir car tu ne le connais pas encore !
+        </div>
+        <p id="vocab-modal-word" style="color: #6b7280; margin-bottom: 1.5rem;">
+            Mot: <strong id="modal-wrong-word"></strong>
+        </p>
+        <div class="vocab-modal-actions">
+            <button class="btn-modal-cancel" onclick="closeRevealModal()">
+                Non, je cherche !
+            </button>
+            <button class="btn-modal-confirm" onclick="confirmReveal()">
+                Oui, montre-moi
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Session State
+    let gymSession = {
+        structure: null,
+        steps: [],
+        currentIndex: 0,
+        currentStep: null,
+        translationPhrases: [],
+        userSentence: null,  // Store user's construction for FSI
+        stats: { discovery: 0, construction: 0, fsi: 0, translation: 0 }
+    };
+
+    const AUTO_DURATION = {{ gym_duration|default('null') }};
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        setupWordBank();
+        
+        if (AUTO_DURATION) {
+            document.getElementById('duration-select').value = AUTO_DURATION;
+            startSession();
+        }
+    });
+
+    // =========================================================
+    // SESSION CONTROL
+    // =========================================================
+    async function startSession() {
+        const duration = document.getElementById('duration-select').value;
+        const btn = document.querySelector('#start-screen button');
+        
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Préparation...';
+        }
+
+        try {
+            const response = await fetch('{{ url_for("session.get_gym_exercise") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ duration: parseInt(duration) })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                console.error('Gym error:', data.error);
+                if (btn) { btn.disabled = false; btn.textContent = 'Commencer'; }
+                return;
+            }
+
+            gymSession.structure = data.structure;
+            gymSession.steps = data.steps;
+            gymSession.currentIndex = 0;
+
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('phase-indicator').style.display = 'flex';
+            document.getElementById('progress-bar').style.display = 'block';
+
+            loadStep(0);
+
+        } catch (e) {
+            console.error(e);
+            console.error('Connection error');
+            if (btn) { btn.disabled = false; btn.textContent = 'Commencer'; }
+        }
+    }
+
+    // =========================================================
+    // STEP LOADING
+    // =========================================================
+    function loadStep(index) {
+        if (index >= gymSession.steps.length) {
+            showEndScreen();
+            return;
+        }
+
+        const step = gymSession.steps[index];
+        gymSession.currentStep = step;
+        gymSession.currentIndex = index;
+
+        // Update progress
+        updateProgress(index, gymSession.steps.length);
+        updatePhaseIndicator(step.phase);
+
+        // Reset UI
+        document.getElementById('feedback-area').style.display = 'none';
+        document.getElementById('submit-btn').style.display = 'inline-block';
+        document.getElementById('submit-btn').disabled = false;
+        document.getElementById('next-btn').style.display = 'none';
+
+        // Load appropriate view
+        switch (step.type) {
+            case 'discovery':
+                renderDiscovery(step);
+                break;
+            case 'construction':
+                renderConstruction(step);
+                break;
+            case 'fsi':
+                renderFSI(step);
+                break;
+            case 'translation_intro':
+                renderTranslationIntro(step);
+                break;
+            case 'translation':
+                renderTranslation(step, index);
+                break;
+            default:
+                console.error('Unknown step type:', step.type);
+        }
+    }
+
+    // =========================================================
+    // RENDER FUNCTIONS
+    // =========================================================
+    const _gymTtsLang = '{{ program.target_language if program else "auto" }}';
+
+    function renderDiscovery(step) {
+        const content = document.getElementById('exercise-content');
+        content.innerHTML = `
+            <div class="structure-card">
+                <h3 class="mb-3">📚 ${step.title}</h3>
+                <p class="text-muted">${step.instruction}</p>
+                
+                <div class="structure-pattern">${step.pattern}</div>
+                
+                <div class="example-box">
+                    <div class="target" style="display:flex; align-items:center; gap:0.5rem;">
+                        <span id="disc-target">${step.example_target}</span>
+                        <button class="tts-inline-btn tts-sm" onclick="ttsInline(document.getElementById('disc-target').textContent, _gymTtsLang, this)" title="Ecouter">🔊</button>
+                    </div>
+                    <div class="native">${step.example_native}</div>
+                </div>
+                
+                ${step.description ? `<p class="small text-muted mt-3">💡 ${step.description}</p>` : ''}
+            </div>
+            
+            <div class="input-area">
+                <label class="form-label fw-bold">Recopie l'exemple ci-dessus :</label>
+                <textarea id="user-input" placeholder="Écris ici..." oninput="enableSubmit()"></textarea>
+            </div>
+        `;
+        
+        document.getElementById('step-info').textContent = 'Phase 1: Découverte';
+    }
+
+    function renderConstruction(step) {
+        const vocabHtml = step.vocabulary.map(v => 
+            `<span class="vocab-pill" onclick="insertVocab('${v.front}')">${v.front}</span>`
+        ).join('');
+
+        const content = document.getElementById('exercise-content');
+        content.innerHTML = `
+            <div class="structure-card">
+                <h3 class="mb-3">🔨 ${step.title}</h3>
+                <p class="text-muted">${step.instruction}</p>
+                
+                <div class="structure-pattern">${step.pattern}</div>
+                
+                <div class="example-box">
+                    <small class="text-muted">Exemple de référence:</small>
+                    <div class="target" style="display:flex; align-items:center; gap:0.5rem;">
+                        <span id="constr-target">${step.example_target}</span>
+                        <button class="tts-inline-btn tts-sm" onclick="ttsInline(document.getElementById('constr-target').textContent, _gymTtsLang, this)" title="Ecouter">🔊</button>
+                    </div>
+                </div>
+                
+                ${vocabHtml ? `
+                <div class="mt-3">
+                    <small class="text-muted">Vocabulaire du jour (clique pour insérer):</small>
+                    <div class="vocab-pills">${vocabHtml}</div>
+                </div>
+                ` : ''}
+                
+                <p class="small text-muted mt-2">💡 ${step.hint}</p>
+            </div>
+            
+            <div class="input-area">
+                <label class="form-label fw-bold">Ta phrase originale :</label>
+                <textarea id="user-input" placeholder="Crée ta propre phrase..." oninput="enableSubmit()"></textarea>
+            </div>
+        `;
+        
+        document.getElementById('step-info').textContent = 'Phase 2: Construction';
+    }
+
+    function renderFSI(step) {
+        // Use the user's previous sentence or fallback
+        const contextSentence = gymSession.userSentence || step.context_sentence || gymSession.structure.example_target;
+        
+        const content = document.getElementById('exercise-content');
+        content.innerHTML = `
+            <div class="fsi-surprise">
+                <h3>${step.mutation.emoji} SURPRISE !</h3>
+                <div class="mutation-badge">${step.mutation.instruction_template}</div>
+            </div>
+            
+            <div class="structure-card mt-3">
+                <p class="text-muted mb-2">Ta phrase à transformer :</p>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <h4 class="text-primary mb-0" id="fsi-sentence">"${contextSentence}"</h4>
+                    <button class="tts-inline-btn tts-sm" onclick="ttsInline(document.getElementById('fsi-sentence').textContent.replace(/[\"]/g,''), _gymTtsLang, this)" title="Ecouter">🔊</button>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <label class="form-label fw-bold">Réécris la phrase transformée :</label>
+                <textarea id="user-input" placeholder="Écris toute la phrase..." oninput="enableSubmit()"></textarea>
+                <p class="small text-muted mt-2">💡 ${step.hint}</p>
+            </div>
+        `;
+        
+        // Store context for validation
+        gymSession.currentStep.context_sentence = contextSentence;
+        document.getElementById('step-info').textContent = 'Phase 3: FSI';
+    }
+
+    async function renderTranslationIntro(step) {
+        const content = document.getElementById('exercise-content');
+        content.innerHTML = `
+            <div class="structure-card text-center">
+                <h3 class="mb-3">🌍 ${step.title}</h3>
+                <p class="text-muted">${step.instruction}</p>
+                
+                <div class="structure-pattern">${step.pattern}</div>
+                
+                <div class="mt-4">
+                    <span class="loading-spinner"></span>
+                    <p class="text-muted mt-2">Génération des phrases...</p>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('submit-btn').style.display = 'none';
+        document.getElementById('step-info').textContent = 'Phase 4: Traduction';
+        
+        // Generate translation phrases
+        try {
+            const response = await fetch('{{ url_for("session.generate_gym_translations") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    structure_id: step.structure_id,
+                    count: step.n_phrases
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.phrases) {
+                gymSession.translationPhrases = data.phrases;
+                
+                // Fill in the translation steps
+                let phraseIndex = 0;
+                for (let i = gymSession.currentIndex + 1; i < gymSession.steps.length; i++) {
+                    if (gymSession.steps[i].type === 'translation' && phraseIndex < data.phrases.length) {
+                        gymSession.steps[i].native_phrase = data.phrases[phraseIndex].native;
+                        gymSession.steps[i].expected_target = data.phrases[phraseIndex].expected_target;
+                        phraseIndex++;
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error generating translations:', e);
+        }
+        
+        // Auto-advance after a brief pause
+        setTimeout(() => nextStep(), 1500);
+    }
+
+    function renderTranslation(step, index) {
+        // Calculate which translation this is
+        const translationSteps = gymSession.steps.filter(s => s.type === 'translation');
+        const translationIndex = translationSteps.findIndex(s => s.id === step.id) + 1;
+        
+        const content = document.getElementById('exercise-content');
+        content.innerHTML = `
+            <div class="structure-card">
+                <h3 class="mb-3">🌍 Traduction ${translationIndex}/${translationSteps.length}</h3>
+                <p class="text-muted">${step.instruction}</p>
+                
+                <div class="structure-pattern" style="background: #fef3c7; border-color: #f59e0b; display:flex; align-items:center; gap:0.5rem;">
+                    <span id="trans-phrase">${step.native_phrase || 'Phrase en cours de génération...'}</span>
+                </div>
+                
+                <small class="text-muted">Structure à suivre: ${step.pattern}</small>
+            </div>
+            
+            <div class="input-area">
+                <label class="form-label fw-bold">Ta traduction en {{ program.target_language }} :</label>
+                <textarea id="user-input" placeholder="Traduis en suivant la structure..." oninput="enableSubmit()"></textarea>
+            </div>
+        `;
+        
+        document.getElementById('step-info').textContent = `Phase 4: Traduction (${translationIndex}/${translationSteps.length})`;
+    }
+
+    // =========================================================
+    // SUBMISSION & VALIDATION
+    // =========================================================
+    function enableSubmit() {
+        const input = document.getElementById('user-input');
+        document.getElementById('submit-btn').disabled = !input || !input.value.trim();
+    }
+
+    async function submitAnswer() {
+        const step = gymSession.currentStep;
+        const input = document.getElementById('user-input');
+        const userAnswer = input.value.trim();
+        
+        if (!userAnswer) return;
+        
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading-spinner"></span> Vérification...';
+        
+        // Generate unique step key for conversation history
+        const stepKey = `${step.type}_${gymSession.currentIndex}`;
+        
+        // Build request based on step type
+        let requestBody = {
+            type: step.type,
+            answer: userAnswer,
+            step_key: stepKey  // For conversation history tracking
+        };
+        
+        if (step.type === 'discovery') {
+            requestBody.expected = step.example_target;
+        } else if (step.type === 'construction') {
+            requestBody.pattern = step.pattern;
+            requestBody.example = step.example_target;
+        } else if (step.type === 'fsi') {
+            requestBody.sentence = step.context_sentence;
+            requestBody.mutation = step.mutation.instruction_template;
+        } else if (step.type === 'translation') {
+            requestBody.expected = step.expected_target;
+        }
+        
+        try {
+            const response = await fetch('{{ url_for("session.check_gym_answer") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+            
+            const data = await response.json();
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Vérifier';
+            
+            if (data.valid) {
+                showFeedback(data.feedback || 'Correct !', 'success');
+                gymSession.stats[step.type]++;
+                
+                // Store user's sentence for FSI
+                if (step.type === 'construction') {
+                    gymSession.userSentence = userAnswer;
+                }
+                
+                // Show next button
+                submitBtn.style.display = 'none';
+                document.getElementById('next-btn').style.display = 'inline-block';
+                input.disabled = true;
+            } else {
+                let feedbackMsg = data.feedback || 'Pas tout à fait...';
+                
+                // Regular grammar errors
+                if (data.errors && data.errors.length > 0) {
+                    feedbackMsg += '<br><br><strong>Erreurs grammaticales:</strong><ul>';
+                    data.errors.forEach(err => {
+                        feedbackMsg += `<li><code>${err.segment}</code>: ${err.explanation}</li>`;
+                    });
+                    feedbackMsg += '</ul>';
+                }
+                
+                // Vocabulary errors - special handling with reveal option
+                if (data.vocab_errors && data.vocab_errors.length > 0) {
+                    feedbackMsg += '<br><br><div class="vocab-errors-section">';
+                    feedbackMsg += '<strong>⚠️ Erreurs de vocabulaire:</strong>';
+                    data.vocab_errors.forEach((vocabErr, idx) => {
+                        feedbackMsg += `
+                            <div class="vocab-error-item" data-idx="${idx}">
+                                <div class="vocab-error-word">
+                                    <span class="wrong-word">"${vocabErr.wrong_word}"</span> 
+                                    <span class="vocab-hint">ne se dit pas comme ça !</span>
+                                </div>
+                                <div class="vocab-hint-text">
+                                    💡 <em>Indice: ${vocabErr.hint}</em>
+                                </div>
+                                <div class="vocab-actions">
+                                    <button class="btn-reveal-vocab" onclick="showRevealModal('${vocabErr.wrong_word.replace(/'/g, "\\'")}', '${vocabErr.correct_word.replace(/'/g, "\\'")}', '${(vocabErr.native_meaning || '').replace(/'/g, "\\'")}')">
+                                        🔓 Je veux savoir
+                                    </button>
+                                    <span class="vocab-encourage">ou essaie de deviner par toi-même !</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    feedbackMsg += '</div>';
+                }
+                
+                // Only show suggestion if there's no vocab error (otherwise it reveals the answer)
+                if (data.suggestion && (!data.vocab_errors || data.vocab_errors.length === 0)) {
+                    feedbackMsg += `<br><br><strong>Suggestion:</strong> ${data.suggestion}`;
+                }
+                
+                showFeedback(feedbackMsg, 'error');
+            }
+            
+        } catch (e) {
+            console.error(e);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Vérifier';
+            showFeedback('Erreur de connexion', 'error');
+        }
+    }
+
+    function nextStep() {
+        loadStep(gymSession.currentIndex + 1);
+    }
+
+    // =========================================================
+    // UI HELPERS
+    // =========================================================
+    function showFeedback(message, type) {
+        const feedback = document.getElementById('feedback-area');
+        feedback.className = `feedback-box ${type}`;
+        feedback.innerHTML = message;
+        feedback.style.display = 'block';
+        feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function updateProgress(current, total) {
+        const pct = ((current + 1) / total) * 100;
+        document.getElementById('progress-fill').style.width = `${pct}%`;
+    }
+
+    function updatePhaseIndicator(phase) {
+        document.querySelectorAll('.phase-dot').forEach(dot => {
+            const dotPhase = parseInt(dot.dataset.phase);
+            dot.classList.remove('active', 'completed');
+            if (dotPhase < phase) {
+                dot.classList.add('completed');
+            } else if (dotPhase === phase) {
+                dot.classList.add('active');
+            }
+        });
+    }
+
+    function insertVocab(word) {
+        const input = document.getElementById('user-input');
+        if (input) {
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            const text = input.value;
+            input.value = text.substring(0, start) + word + text.substring(end);
+            input.focus();
+            input.selectionStart = input.selectionEnd = start + word.length;
+            enableSubmit();
+        }
+    }
+
+    // =========================================================
+    // END SCREEN
+    // =========================================================
+    function showEndScreen() {
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('phase-indicator').style.display = 'none';
+        document.getElementById('progress-bar').style.display = 'none';
+        document.getElementById('end-screen').style.display = 'block';
+        
+        // Show stats
+        const stats = gymSession.stats;
+        document.getElementById('session-stats').innerHTML = `
+            <div class="row text-center">
+                <div class="col-3">
+                    <div class="h4 text-primary">${stats.discovery || 0}</div>
+                    <small class="text-muted">Découverte</small>
+                </div>
+                <div class="col-3">
+                    <div class="h4 text-success">${stats.construction || 0}</div>
+                    <small class="text-muted">Construction</small>
+                </div>
+                <div class="col-3">
+                    <div class="h4 text-purple">${stats.fsi || 0}</div>
+                    <small class="text-muted">FSI</small>
+                </div>
+                <div class="col-3">
+                    <div class="h4 text-warning">${stats.translation || 0}</div>
+                    <small class="text-muted">Traduction</small>
+                </div>
+            </div>
+        `;
+    }
+
+    async function completeGym() {
+        // Calculate grade based on performance
+        const total = Object.values(gymSession.stats).reduce((a, b) => a + b, 0);
+        const possible = gymSession.steps.filter(s => s.type !== 'translation_intro').length;
+        const ratio = total / Math.max(possible, 1);
+        
+        let grade = 3; // Good
+        if (ratio >= 0.9) grade = 4; // Easy
+        else if (ratio >= 0.7) grade = 3; // Good
+        else if (ratio >= 0.5) grade = 2; // Hard
+        else grade = 1; // Fail
+        
+        try {
+            await fetch('{{ url_for("session.gym_complete") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    structure_id: gymSession.structure?.id,
+                    grade: grade
+                })
+            });
+        } catch (e) {
+            console.error(e);
+        }
+        
+        // Navigate to next module
+        window.location.href = '{{ url_for("session.next_module") }}';
+    }
+
+    // =========================================================
+    // WORD BANK - Now handled by _vocab_sidebar.html component
+    // =========================================================
+    function setupWordBank() {
+        // Component handles this automatically via its own DOMContentLoaded
+    }
+
+    // =========================================================
+    // VOCABULARY REVEAL MODAL (for Gym errors)
+    // =========================================================
+    let pendingVocabReveal = null;
+
+    function showRevealModal(wrongWord, correctWord, nativeMeaning) {
+        pendingVocabReveal = { wrongWord, correctWord, nativeMeaning };
+        document.getElementById('modal-wrong-word').textContent = wrongWord;
+        document.getElementById('vocab-reveal-modal').classList.add('show');
+    }
+
+    function closeRevealModal() {
+        document.getElementById('vocab-reveal-modal').classList.remove('show');
+        pendingVocabReveal = null;
+    }
+
+    async function confirmReveal() {
+        if (!pendingVocabReveal) return;
+
+        const { wrongWord, correctWord, nativeMeaning } = pendingVocabReveal;
+
+        try {
+            const res = await fetch('{{ url_for("session.reveal_vocab_word") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    wrong_word: wrongWord,
+                    correct_word: correctWord,
+                    native_meaning: nativeMeaning
+                })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                // Close modal
+                closeRevealModal();
+
+                // Replace the vocab error item with the revealed answer
+                const feedbackArea = document.getElementById('feedback-area');
+                const vocabSection = feedbackArea.querySelector('.vocab-errors-section');
+                
+                if (vocabSection) {
+                    // Find and update the specific item
+                    const items = vocabSection.querySelectorAll('.vocab-error-item');
+                    items.forEach(item => {
+                        const wrongWordEl = item.querySelector('.wrong-word');
+                        if (wrongWordEl && wrongWordEl.textContent.includes(wrongWord)) {
+                            item.innerHTML = `
+                                <div class="vocab-revealed">
+                                    <div class="vocab-revealed-word">✅ ${correctWord}</div>
+                                    <div class="vocab-revealed-note">
+                                        Ce mot sera dans ton vocabulaire de demain !
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+
+                // Update debt badge
+                const debtBadge = document.getElementById('debt-badge');
+                if (debtBadge && data.debt_count) {
+                    debtBadge.textContent = data.debt_count;
+                }
+            }
+        } catch (e) {
+            console.error('Error revealing vocab:', e);
+            closeRevealModal();
+        }
+    }
+
+    // Close modal on outside click
+    document.getElementById('vocab-reveal-modal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeRevealModal();
+    });
+</script>
+{% endblock %}

@@ -7,9 +7,9 @@ from sqlalchemy import func
 bp = Blueprint('stats', __name__, url_prefix='/stats')
 
 @bp.before_request
-def login_required():
+def check_login():
     if not g.user:
-        return redirect(url_for('auth.profiles'))
+        return redirect(url_for('auth.login'))
 
 
 @bp.route('/')

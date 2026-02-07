@@ -1,13 +1,13 @@
 /* ========================================
-   FlashCards - Clean Minimal Design
+   Polyglot - Language Learning Platform
    ======================================== */
 
 :root {
-    /* Clean Color Palette - Soft Blues & Neutrals */
-    --primary: #0ea5e9;
-    --primary-dark: #0284c7;
-    --primary-light: #38bdf8;
-    --primary-subtle: #e0f2fe;
+    /* Polyglot Color Palette - Indigo & Purple */
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --primary-subtle: #eef2ff;
 
     --accent: #14b8a6;
     --accent-light: #5eead4;
@@ -147,6 +147,84 @@ a:hover {
 .nav-links a.active {
     background: var(--primary-subtle);
     color: var(--primary-dark);
+}
+
+/* User Section in Nav */
+.nav-user-section {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--gray-200);
+}
+
+.settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    color: var(--gray-500);
+    transition: all 0.2s ease;
+}
+
+.settings-btn:hover {
+    background: var(--gray-100);
+    color: var(--primary);
+}
+
+.settings-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.user-avatar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 !important;
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    color: var(--gray-500);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.logout-btn:hover {
+    background: rgba(244, 63, 94, 0.1);
+    color: var(--danger);
+}
+
+.logout-btn svg {
+    width: 18px;
+    height: 18px;
 }
 
 /* ========================================
@@ -2068,4 +2146,76 @@ a:hover {
 .cards-section,
 .categories-stats-section {
     -webkit-overflow-scrolling: touch;
+}
+
+/* ========================================
+   Generic Modal - Clean & Zen
+   ======================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.modal-overlay.visible {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 90%;
+    max-width: 400px;
+    transform: scale(0.95);
+    transition: transform 0.2s ease;
+    border: 1px solid var(--gray-200);
+}
+
+.modal-overlay.visible .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--gray-400);
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
 }

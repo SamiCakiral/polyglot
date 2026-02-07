@@ -1,0 +1,496 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ program.name }} - FlashCards{% endblock %}
+
+{% block content %}
+<div class="program-view">
+    <div class="program-header">
+        <div class="header-left">
+            <a href="{{ url_for('programs.list_programs') }}" class="back-link">← Mes Programmes</a>
+            <h1>
+                {% if program.target_language == 'italian' %}🇮🇹{% elif program.target_language == 'japanese' %}🇯🇵{%
+                elif program.target_language == 'spanish' %}🇪🇸{% elif program.target_language == 'german' %}🇩🇪{%
+                else %}🌍{% endif %}
+                {{ program.name }}
+            </h1>
+            {% if program.description %}
+            <p class="program-desc">{{ program.description }}</p>
+            {% endif %}
+        </div>
+        <div class="header-actions">
+            <a href="{{ url_for('programs.edit_program', program_id=program.id) }}" class="btn btn-secondary">
+                ✏️ Modifier
+            </a>
+            <a href="{{ url_for('session.start_session', program_id=program.id) }}" class="btn btn-success btn-lg">
+                ▶ Lancer la session
+            </a>
+        </div>
+    </div>
+
+    <div class="program-grid">
+        <!-- Info Card -->
+        <div class="info-card">
+            <h3>📋 Informations</h3>
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="info-label">Langue cible</span>
+                    <span class="info-value">{{ program.target_language }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Langue maternelle</span>
+                    <span class="info-value">{{ program.native_language }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Deck associé</span>
+                    <span class="info-value">
+                        <a href="{{ url_for('decks.view_deck', deck_id=program.deck_id) }}">
+                            {{ program.deck.name }}
+                        </a>
+                        ({{ program.deck.cards|length }} cartes)
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Durée cible</span>
+                    <span class="info-value">{{ program.exercise_config.duration_target if program.exercise_config else
+                        30 }} minutes</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Statut</span>
+                    <span class="info-value">
+                        {% if program.is_active %}
+                        <span class="badge badge-success">Actif</span>
+                        {% else %}
+                        <span class="badge badge-muted">Inactif</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercises Card -->
+        <div class="info-card">
+            <h3>🏋️ Exercices</h3>
+            <div class="exercises-list">
+                {% set config = program.exercise_config or {} %}
+                {% set order = config.get('order', ['flashcards', 'git_input', 'gym', 'shadowing', 'git_output',
+                'writing']) %}
+                {% set enabled = config.get('enabled', {}) %}
+
+                {% for ex_id, ex_name, ex_desc in exercises %}
+                {% if ex_id in order %}
+                <div class="exercise-row {% if not enabled.get(ex_id, True) %}disabled{% endif %}">
+                    <span class="exercise-order">{{ loop.index }}</span>
+                    <span class="exercise-name">{{ ex_name }}</span>
+                    <span class="exercise-status">
+                        {% if enabled.get(ex_id, True) %}✅{% else %}❌{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Theme Card -->
+        <div class="info-card info-card-full">
+            <h3>📅 Thème du Jour</h3>
+            {% if program.get_current_theme() %}
+            <div class="current-theme">
+                <span class="theme-icon">🎯</span>
+                <div class="theme-content">
+                    <span class="theme-text">{{ program.get_current_theme() }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if program.daily_themes %}
+            <div class="themes-list">
+                <h4>Rotation des thèmes ({{ program.daily_themes|length }} jours):</h4>
+                <ol>
+                    {% for theme in program.daily_themes %}
+                    <li class="{% if loop.index0 == program.current_theme_index %}current{% endif %}">
+                        <span class="theme-day">Jour {{ loop.index }}:</span> {{ theme }}
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% else %}
+            <p class="empty-text">Aucun thème configuré.</p>
+            {% endif %}
+        </div>
+
+        <!-- Lego Templates Card -->
+        <div class="info-card">
+            <h3>🧩 Templates Lego</h3>
+            {% if program.lego_templates %}
+            <div class="templates-list">
+                {% for t in program.lego_templates %}
+                <div class="template-item">
+                    <code class="template-pattern">{{ t.pattern }}</code>
+                    <div class="template-example">
+                        <span class="example-it">{{ t.example }}</span>
+                        {% if t.translation %}
+                        <span class="example-fr">→ {{ t.translation }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-text">Aucun template configuré.</p>
+            {% endif %}
+        </div>
+
+        <!-- FSI Mutations Card -->
+        <div class="info-card">
+            <h3>🔄 Mutations FSI</h3>
+            {% if program.fsi_mutations %}
+            <div class="mutations-tags">
+                {% for mutation in program.fsi_mutations %}
+                <span class="mutation-tag">{{ mutation }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-text">Aucune mutation configurée.</p>
+            {% endif %}
+        </div>
+
+        <!-- Shadowing Card -->
+        <div class="info-card">
+            <h3>🎧 Ressources Shadowing</h3>
+            {% if program.shadowing_resources %}
+            <div class="resources-list">
+                {% for r in program.shadowing_resources %}
+                <div class="resource-item">
+                    <span class="resource-type">
+                        {% if r.type == 'youtube' %}📺{% elif r.type == 'podcast' %}🎙️{% else %}🔗{% endif %}
+                    </span>
+                    <a href="{{ r.url }}" target="_blank" class="resource-title">{{ r.title or r.url }}</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty-text">Aucune ressource configurée.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="danger-zone">
+        <h3>⚠️ Zone de danger</h3>
+        <form action="{{ url_for('programs.delete_program', program_id=program.id) }}" method="POST"
+            onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce programme ?');">
+            <button type="submit" class="btn btn-danger">🗑️ Supprimer le programme</button>
+        </form>
+    </div>
+</div>
+
+<style>
+    .program-view {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .program-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .back-link {
+        color: var(--text-muted);
+        text-decoration: none;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    .back-link:hover {
+        color: var(--primary-color);
+    }
+
+    .program-header h1 {
+        margin: 0;
+        font-size: 1.8rem;
+    }
+
+    .program-desc {
+        color: var(--text-muted);
+        margin-top: 0.5rem;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-lg {
+        padding: 0.8rem 1.5rem;
+    }
+
+    .program-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .info-card h3 {
+        margin: 0 0 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .info-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        font-weight: 500;
+    }
+
+    .info-value a {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .badge-muted {
+        background: var(--text-muted);
+        color: white;
+    }
+
+    .exercises-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .exercise-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        background: var(--bg-color);
+        border-radius: 6px;
+    }
+
+    .exercise-row.disabled {
+        opacity: 0.5;
+    }
+
+    .exercise-order {
+        width: 24px;
+        height: 24px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    .exercise-name {
+        flex: 1;
+    }
+
+    .info-card-full {
+        grid-column: 1 / -1;
+    }
+
+    .current-theme {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #6366f1, #06b6d4);
+        border-radius: 8px;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .theme-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .theme-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .theme-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.4;
+        word-wrap: break-word;
+        color: white;
+    }
+
+    .themes-list h4 {
+        margin: 0 0 0.75rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .themes-list ol {
+        margin: 0;
+        padding-left: 0;
+        list-style: none;
+    }
+
+    .themes-list li {
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 0.5rem;
+        background: var(--bg-color);
+        border-radius: 6px;
+        border-left: 3px solid var(--border-color);
+        line-height: 1.4;
+    }
+
+    .themes-list li.current {
+        font-weight: 600;
+        border-left-color: var(--primary-color);
+        background: rgba(52, 152, 219, 0.1);
+    }
+
+    .theme-day {
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .templates-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .template-item {
+        padding: 0.75rem;
+        background: var(--bg-color);
+        border-radius: 6px;
+    }
+
+    .template-pattern {
+        display: block;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        background: var(--card-bg);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .template-example {
+        font-size: 0.9rem;
+    }
+
+    .example-it {
+        font-style: italic;
+    }
+
+    .example-fr {
+        color: var(--text-muted);
+        margin-left: 0.5rem;
+    }
+
+    .mutations-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .mutation-tag {
+        padding: 0.4rem 0.8rem;
+        background: var(--bg-color);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .resources-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .resource-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: var(--bg-color);
+        border-radius: 6px;
+    }
+
+    .resource-type {
+        font-size: 1.2rem;
+    }
+
+    .resource-title {
+        color: var(--primary-color);
+        text-decoration: none;
+    }
+
+    .resource-title:hover {
+        text-decoration: underline;
+    }
+
+    .empty-text {
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
+    .danger-zone {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: var(--card-bg);
+        border-radius: 12px;
+        border: 1px solid var(--danger-color);
+    }
+
+    .danger-zone h3 {
+        margin: 0 0 1rem;
+        color: var(--danger-color);
+    }
+
+    .btn-danger {
+        background: var(--danger-color);
+        color: white;
+        border: none;
+    }
+</style>
+{% endblock %}

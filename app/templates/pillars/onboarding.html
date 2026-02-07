@@ -1,0 +1,688 @@
+{% extends "base.html" %}
+{% block title %}Commencer {{ lang_config.name }}{% endblock %}
+
+{% block content %}
+<div class="onboarding-container">
+    <a href="{{ url_for('pillars.index') }}" class="back-link">← Retour</a>
+    
+    <div class="onboarding-card">
+        <div class="onboarding-header">
+            <div class="language-intro">
+                <span class="flag-icon flag-{{ lang_config.flag }}"></span>
+                <div>
+                    <h1>{{ lang_config.name }}</h1>
+                    <span class="native-name">{{ lang_config.native_name }}</span>
+                </div>
+            </div>
+            
+            <div class="language-traits">
+                {% if lang_config.writing_system != 'latin' %}
+                <span class="trait"><span class="trait-icon">✍️</span> Nouvel alphabet</span>
+                {% endif %}
+                {% if lang_config.has_tones %}
+                <span class="trait"><span class="trait-icon">🎵</span> Langue tonale</span>
+                {% endif %}
+                {% if lang_config.has_cases %}
+                <span class="trait"><span class="trait-icon">📐</span> Cas grammaticaux</span>
+                {% endif %}
+                {% if lang_config.has_particles %}
+                <span class="trait"><span class="trait-icon">🔤</span> Particules</span>
+                {% endif %}
+                <span class="trait"><span class="trait-icon">📊</span> Difficulte: 
+                    {% for i in range(lang_config.difficulty) %}★{% endfor %}{% for i in range(5 - lang_config.difficulty) %}☆{% endfor %}
+                </span>
+            </div>
+        </div>
+        
+        <div class="onboarding-body">
+            <div id="step-intro" class="step active">
+                <h2>Bienvenue dans ton aventure {{ lang_config.name }} !</h2>
+                <p>
+                    Avant de commencer, quelques questions pour adapter ton parcours.
+                    Cela nous aidera a savoir quels piliers tu dois travailler.
+                </p>
+                
+                <div class="pillar-preview">
+                    <h3>Ce que tu vas apprendre :</h3>
+                    <div class="preview-levels">
+                        {% for level in range(6) %}
+                        {% set level_pillars = lang_config.pillars | selectattr('level', 'equalto', level) | list %}
+                        {% if level_pillars %}
+                        <div class="preview-level">
+                            <span class="level-num">{{ level }}</span>
+                            <span class="level-content">
+                                {{ level_pillars | map(attribute='name') | join(', ') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-lg" onclick="startQuestions()">
+                    Commencer l'evaluation
+                </button>
+            </div>
+            
+            {% if questions %}
+            <div id="step-questions" class="step" style="display: none;">
+                <div class="progress-indicator">
+                    <span id="question-progress">Question 1/{{ questions | length }}</span>
+                    <div class="progress-dots">
+                        {% for q in questions %}
+                        <span class="dot" data-index="{{ loop.index0 }}"></span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                {% for q in questions %}
+                <div class="question-card" id="question-{{ loop.index0 }}" style="{% if loop.index0 > 0 %}display: none;{% endif %}">
+                    <h3>{{ q.question }}</h3>
+                    <div class="options">
+                        {% for opt in q.options %}
+                        <button class="option-btn" 
+                                onclick="selectAnswer('{{ q.pillar }}', {{ loop.index0 }}, {{ 'true' if loop.index0 == (questions | length - 1) else 'false' }})">
+                            <span class="option-icon">
+                                {% if loop.index0 == 0 %}❌{% elif loop.index0 == 1 %}🤔{% else %}✅{% endif %}
+                            </span>
+                            {{ opt }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <div id="step-summary" class="step" style="display: none;">
+                <h2>Parfait ! Voici ton parcours personnalise</h2>
+                
+                <div class="summary-results">
+                    <div class="result-item result-skip">
+                        <span class="result-icon">✓</span>
+                        <div class="result-content">
+                            <span class="result-label">Piliers que tu connais deja</span>
+                            <span class="result-list" id="skipped-pillars">Aucun</span>
+                        </div>
+                    </div>
+                    <div class="result-item result-todo">
+                        <span class="result-icon">→</span>
+                        <div class="result-content">
+                            <span class="result-label">Piliers a travailler</span>
+                            <span class="result-list" id="todo-pillars">Tous</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bridge-language-section">
+                    <h3>Langue pont (optionnel)</h3>
+                    <p>Si tu connais bien une autre langue, on peut l'utiliser pour t'expliquer certains concepts.</p>
+                    <select id="bridge-language" class="form-select">
+                        <option value="">Pas de langue pont</option>
+                        <option value="en">Anglais</option>
+                        <option value="es">Espagnol</option>
+                        <option value="fr">Francais</option>
+                        <option value="de">Allemand</option>
+                        <option value="it">Italien</option>
+                        <option value="pt">Portugais</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary btn-lg" onclick="finishOnboarding()" id="finish-btn">
+                    Commencer mon apprentissage
+                </button>
+            </div>
+            
+            <div id="step-loading" class="step" style="display: none;">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Configuration de ton parcours...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const langCode = '{{ lang_code }}';
+const totalQuestions = {{ questions | length }};
+let currentQuestion = 0;
+let answers = {};
+
+// Pillar names mapping
+const pillarNames = {
+    {% for pillar in lang_config.pillars %}
+    '{{ pillar.id }}': '{{ pillar.name }}',
+    {% endfor %}
+};
+
+function startQuestions() {
+    if (totalQuestions === 0) {
+        // No questions, go straight to summary
+        showSummary();
+        return;
+    }
+    
+    document.getElementById('step-intro').style.display = 'none';
+    document.getElementById('step-questions').style.display = 'block';
+    updateProgress();
+}
+
+function selectAnswer(pillarId, answerIndex, isLast) {
+    answers[pillarId] = answerIndex;
+    
+    // Highlight selected option
+    const questionCard = document.getElementById('question-' + currentQuestion);
+    questionCard.querySelectorAll('.option-btn').forEach((btn, idx) => {
+        btn.classList.toggle('selected', idx === answerIndex);
+    });
+    
+    // Update dot
+    document.querySelector(`.dot[data-index="${currentQuestion}"]`).classList.add('answered');
+    
+    // Move to next question or summary
+    setTimeout(() => {
+        if (isLast || currentQuestion >= totalQuestions - 1) {
+            showSummary();
+        } else {
+            currentQuestion++;
+            showQuestion(currentQuestion);
+        }
+    }, 300);
+}
+
+function showQuestion(index) {
+    document.querySelectorAll('.question-card').forEach((card, i) => {
+        card.style.display = i === index ? 'block' : 'none';
+    });
+    updateProgress();
+}
+
+function updateProgress() {
+    document.getElementById('question-progress').textContent = 
+        `Question ${currentQuestion + 1}/${totalQuestions}`;
+    
+    document.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentQuestion);
+    });
+}
+
+function showSummary() {
+    document.getElementById('step-questions').style.display = 'none';
+    document.getElementById('step-summary').style.display = 'block';
+    
+    // Calculate skipped and todo pillars
+    const skipped = [];
+    const todo = [];
+    
+    for (const [pillarId, answer] of Object.entries(answers)) {
+        if (answer === 2) { // "Oui" = skip
+            skipped.push(pillarNames[pillarId] || pillarId);
+        } else {
+            todo.push(pillarNames[pillarId] || pillarId);
+        }
+    }
+    
+    // All pillars not in answers are todo
+    for (const [id, name] of Object.entries(pillarNames)) {
+        if (!(id in answers) && !todo.includes(name)) {
+            todo.push(name);
+        }
+    }
+    
+    document.getElementById('skipped-pillars').textContent = 
+        skipped.length > 0 ? skipped.join(', ') : 'Aucun';
+    document.getElementById('todo-pillars').textContent = 
+        todo.length > 0 ? todo.slice(0, 5).join(', ') + (todo.length > 5 ? '...' : '') : 'Aucun';
+}
+
+async function finishOnboarding() {
+    const finishBtn = document.getElementById('finish-btn');
+    finishBtn.disabled = true;
+    finishBtn.textContent = 'Configuration...';
+    
+    document.getElementById('step-summary').style.display = 'none';
+    document.getElementById('step-loading').style.display = 'block';
+    
+    try {
+        const response = await fetch(`/pillars/${langCode}/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                answers: answers,
+                bridge_language: document.getElementById('bridge-language').value
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success || data.redirect) {
+            window.location.href = data.redirect || `/pillars/${langCode}`;
+        } else {
+            showToast(data.error || 'Erreur', 'error');
+            document.getElementById('step-loading').style.display = 'none';
+            document.getElementById('step-summary').style.display = 'block';
+            finishBtn.disabled = false;
+            finishBtn.textContent = 'Commencer mon apprentissage';
+        }
+    } catch (error) {
+        showToast('Erreur de connexion', 'error');
+        document.getElementById('step-loading').style.display = 'none';
+        document.getElementById('step-summary').style.display = 'block';
+        finishBtn.disabled = false;
+        finishBtn.textContent = 'Commencer mon apprentissage';
+    }
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('toast-fade');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
+
+<style>
+.onboarding-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.back-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+}
+
+.back-link:hover {
+    color: var(--primary);
+}
+
+.onboarding-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.onboarding-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--primary), #818cf8);
+    color: white;
+}
+
+.language-intro {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.language-intro h1 {
+    margin: 0;
+    font-size: 1.75rem;
+}
+
+.native-name {
+    opacity: 0.9;
+}
+
+.language-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.trait {
+    background: rgba(255,255,255,0.2);
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.onboarding-body {
+    padding: 2rem;
+}
+
+.step h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.step p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.pillar-preview {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.pillar-preview h3 {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.preview-levels {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.preview-level {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.9rem;
+}
+
+.level-num {
+    background: var(--primary);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.level-content {
+    color: var(--text-secondary);
+}
+
+/* Questions */
+.progress-indicator {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+#question-progress {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--border-color);
+    transition: all 0.2s;
+}
+
+.dot.active {
+    background: var(--primary);
+    transform: scale(1.2);
+}
+
+.dot.answered {
+    background: #10b981;
+}
+
+.question-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.option-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+    text-align: left;
+}
+
+.option-btn:hover {
+    border-color: var(--primary);
+    background: var(--card-bg);
+}
+
+.option-btn.selected {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.option-icon {
+    font-size: 1.25rem;
+}
+
+/* Summary */
+.summary-results {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.result-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: var(--bg-secondary);
+}
+
+.result-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.result-skip .result-icon {
+    background: #10b981;
+    color: white;
+}
+
+.result-todo .result-icon {
+    background: var(--primary);
+    color: white;
+}
+
+.result-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.result-label {
+    font-weight: 600;
+}
+
+.result-list {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.bridge-language-section {
+    margin-bottom: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.bridge-language-section h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.bridge-language-section p {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+/* Loading */
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    width: 100%;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark, #4f46e5);
+}
+
+.btn-primary:disabled {
+    background: var(--border-color);
+    cursor: not-allowed;
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+/* Flag */
+.flag-icon {
+    display: inline-block;
+    width: 48px;
+    height: 36px;
+    border-radius: 4px;
+}
+
+.flag-jp { background: white; position: relative; }
+.flag-jp::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; background: #bc002d; border-radius: 50%; }
+.flag-cn { background: #de2910; }
+.flag-kr { background: white; border: 1px solid rgba(255,255,255,0.3); }
+.flag-ru { background: linear-gradient(white 33%, #0039a6 33%, #0039a6 66%, #d52b1e 66%); }
+.flag-tr { background: #e30a17; }
+.flag-es { background: linear-gradient(#c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%); }
+.flag-it { background: linear-gradient(90deg, #009246 33%, white 33%, white 66%, #ce2b37 66%); }
+
+/* Toast */
+#toast-container {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+}
+
+.toast {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.toast-error {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.toast-fade {
+    animation: toast-out 0.3s ease forwards;
+}
+
+@keyframes toast-out {
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+@media (max-width: 600px) {
+    .onboarding-container {
+        padding: 1rem;
+    }
+    
+    .onboarding-header {
+        padding: 1.5rem;
+    }
+    
+    .onboarding-body {
+        padding: 1.5rem;
+    }
+    
+    .language-intro {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
