@@ -1,3 +1,0 @@
-cd /Users/sami/Documents/Code/anki2
-source venv/bin/activate
-python run.py

@@ -58,6 +58,14 @@ def select_cards_for_session(program, time_minutes):
     """
     Select cards for today's session based on available time.
     
+    Vocabulary budget (TOTAL cards including reviews + debt):
+    - 10 min -> ~10 cards
+    - 15 min -> ~12 cards
+    - 30 min -> ~15 cards (max new)
+    - 45 min -> ~20 cards
+    - 60 min -> ~25 cards
+    Hard cap: 30 cards MAX (to stay manageable with debt accumulation)
+    
     Priority order:
     1. Due cards with grade < C (critical - stability < 14 days)
     2. Due cards with grade < B (important - stability < 30 days)
@@ -74,8 +82,10 @@ def select_cards_for_session(program, time_minutes):
         return []
     
     now = datetime.utcnow()
-    avg_time_per_card = 0.5  # 30 seconds average per card
-    max_cards = int(time_minutes / avg_time_per_card)
+    # Scale new words with duration: 0.5 word/min, capped at 25
+    max_new_words = max(5, min(25, int(time_minutes * 0.5)))
+    # Total cap (new + reviews): never exceed 30
+    max_cards = min(30, max_new_words + 15)  # Reserve ~15 slots for reviews
     
     # Get all cards from the deck
     cards = Card.query.filter_by(deck_id=deck.id).all()
@@ -122,37 +132,37 @@ def select_cards_for_session(program, time_minutes):
     for cat in [critical, important, learning, review, new_cards]:
         cat.sort(key=lambda x: x['stability'])
     
-    # Build selection following priority
+    # Build selection: reviews first (no cap), then new words (capped)
     selected = []
-    for category in [critical, important, learning, review, new_cards]:
+    
+    # 1. Add all due/review cards first (they MUST be reviewed)
+    review_categories = [critical, important, learning, review]
+    review_count = 0
+    for category in review_categories:
         for card_info in category:
             if len(selected) >= max_cards:
                 break
             selected.append(card_info)
+            review_count += 1
         if len(selected) >= max_cards:
             break
+    
+    # 2. Fill remaining slots with new cards (capped independently)
+    new_count = 0
+    remaining_slots = max_cards - len(selected)
+    new_word_cap = min(max_new_words, remaining_slots)
+    for card_info in new_cards:
+        if new_count >= new_word_cap:
+            break
+        selected.append(card_info)
+        new_count += 1
             
-    # BI-DIRECTIONAL LOGIC for Session Review
-    # We want to review cards in BOTH directions
+    # Return unique cards (15 real cards, not 30 duplicates)
+    # Bidirectional review (both directions) is handled in the flashcard JS
     import random
+    random.shuffle(selected)
     
-    bidirectional_selection = []
-    for c in selected:
-        # Direction 1: Original (Target -> Native usually, or whatever is stored)
-        bidirectional_selection.append(c)
-        
-        # Direction 2: Reverse
-        rev = c.copy()
-        rev['front'] = c['back']
-        rev['back'] = c['front']
-        rev['direction'] = 'reverse'
-        # We might want to track separate grading for reverse in the future, 
-        # but for now we test both.
-        bidirectional_selection.append(rev)
-        
-    random.shuffle(bidirectional_selection)
-    
-    return bidirectional_selection
+    return selected
 
 
 def get_word_bank(ps):
@@ -460,12 +470,19 @@ def stop_session():
 
 
 # ============================================================
-# MODULE 1: FLASHCARDS
+# MODULE 1: FLASHCARDS (delegates to existing training system)
 # ============================================================
 
 @bp.route('/flashcards')
 def module_flashcards():
-    """Flashcards module - vocabulary learning."""
+    """Flashcards module - uses the REAL training system (training/card.html).
+    
+    Creates a TrainingSession from the daily_words card_ids 
+    and redirects to the existing training flow.
+    """
+    from app.models import TrainingSession
+    import random
+    
     ps = get_current_session()
     if not ps:
         return redirect(url_for('main.index'))
@@ -473,16 +490,87 @@ def module_flashcards():
     program = ps.program
     deck = program.deck
     
-    # Generate daily words if not done
+    # If no daily_words yet, show a loading page that generates them first
     if not ps.daily_words or len(ps.daily_words) == 0:
-        # Will be populated via AJAX call
-        pass
+        return render_template('session/flashcards_loading.html',
+                              session=ps, program=program)
     
-    return render_template('session/flashcards.html',
-                          session=ps,
-                          program=program,
-                          deck=deck,
-                          theme=ps.daily_words_theme)
+    # Extract unique card_ids from daily_words (filter out any without card_id)
+    seen_ids = set()
+    card_ids = []
+    for w in ps.daily_words:
+        cid = w.get('card_id')
+        if cid and cid not in seen_ids:
+            seen_ids.add(cid)
+            card_ids.append(cid)
+    
+    if not card_ids:
+        flash('Aucune carte a reviser.', 'info')
+        return redirect(url_for('session.next_module'))
+    
+    # Build bidirectional card list (each card in both directions)
+    all_items = []
+    for cid in card_ids:
+        all_items.append((cid, 'type_back'))   # front -> back (target -> native)
+        all_items.append((cid, 'type_front'))   # back -> front (native -> target)
+    
+    random.shuffle(all_items)
+    
+    # Separate same card_id so they don't appear back-to-back
+    distributed = []
+    last_cid = None
+    deferred = []
+    for cid, direction in all_items:
+        if cid == last_cid:
+            deferred.append((cid, direction))
+        else:
+            distributed.append((cid, direction))
+            last_cid = cid
+    # Insert deferred items at safe positions
+    for cid, direction in deferred:
+        inserted = False
+        for i in range(len(distributed)):
+            prev_cid = distributed[i-1][0] if i > 0 else None
+            next_cid = distributed[i][0] if i < len(distributed) else None
+            if prev_cid != cid and next_cid != cid:
+                distributed.insert(i, (cid, direction))
+                inserted = True
+                break
+        if not inserted:
+            distributed.append((cid, direction))
+    
+    final_card_ids = [item[0] for item in distributed]
+    final_directions = [item[1] for item in distributed]
+    final_modes = ['flip'] * len(distributed)  # All flip mode
+    
+    # Create a real TrainingSession (same as training.py does)
+    ts = TrainingSession(deck_id=deck.id)
+    ts.data = {
+        'card_ids': final_card_ids,
+        'card_modes': final_modes,
+        'card_directions': final_directions,
+        'current_index': 0,
+        'reviewed_indices': [],
+        'deck_id': deck.id,
+        'results': {
+            'correct': 0, 'incorrect': 0,
+            'direction_stats': {
+                'type_back': {'correct': 0, 'total': 0},
+                'type_front': {'correct': 0, 'total': 0},
+                'flip': {'correct': 0, 'total': 0}
+            }
+        },
+        # Flag so training knows to return to session after completion
+        'session_program_id': program.id,
+        'session_return': True
+    }
+    db.session.add(ts)
+    db.session.commit()
+    
+    # Store training session ID in flask session
+    session['training_session_id'] = ts.id
+    
+    return redirect(url_for('training.show_card'))
 
 
 @bp.route('/sidebar-data')
@@ -558,33 +646,49 @@ Return ONLY the JSON array, no other text."""
         if not isinstance(words, list):
             raise ValueError("Not a list")
             
-        # BI-DIRECTIONAL LOGIC:
-        # User wants to check "in the other sense too".
-        # We duplicate the list with swapped front/back.
+        # Create real Card objects in the deck (if they don't already exist)
         import random
         
-        bidirectional_words = []
-        for w in words:
-            # Original (Target -> Native)
-            bidirectional_words.append(w)
-            
-            # Reverse (Native -> Target)
-            # We create a copy to avoid mutation issues
-            reverse_w = w.copy()
-            reverse_w['front'] = w['back']
-            reverse_w['back'] = w['front']
-            # Optional: Add a metadata flag if we want to style them differently later
-            reverse_w['direction'] = 'reverse' 
-            bidirectional_words.append(reverse_w)
-            
-        # Shuffle to mix them up
-        random.shuffle(bidirectional_words)
+        deck = program.deck
+        enriched_words = []
         
-        ps.daily_words = bidirectional_words
+        for w in words:
+            front = w.get('front', '').strip()
+            back = w.get('back', '').strip()
+            if not front or not back:
+                continue
+            
+            # Check if card already exists
+            existing = Card.query.filter_by(
+                deck_id=deck.id, front=front
+            ).first()
+            
+            if existing:
+                card = existing
+            else:
+                # Create new card
+                card = Card(
+                    deck_id=deck.id,
+                    front=front,
+                    back=back
+                )
+                db.session.add(card)
+                db.session.flush()  # Get the ID
+            
+            enriched_words.append({
+                'card_id': card.id,
+                'front': card.front,
+                'back': card.back,
+                'revealed': False
+            })
+        
+        random.shuffle(enriched_words)
+        
+        ps.daily_words = enriched_words
         flag_modified(ps, 'daily_words')
         db.session.commit()
         
-        return jsonify({'success': True, 'words': bidirectional_words})
+        return jsonify({'success': True, 'words': enriched_words})
         
     except (json.JSONDecodeError, ValueError) as e:
         return jsonify({'error': f'Parse error: {str(e)}', 'raw': response}), 500
@@ -803,7 +907,8 @@ Réponds en JSON:
 {{
     "reply": "Ta réponse utile et encourageante en {target_lang}...",
     "is_target_language": true/false,
-    "vocab_word": "le mot en {target_lang} que tu as donné (sans les tags), ou null si aucun"
+    "vocab_word": "le mot en {target_lang} que tu as donné (sans les tags), ou null si aucun",
+    "vocab_translation": "la traduction en {native_lang} du mot, ou null si aucun"
 }}
 """
 
@@ -826,24 +931,27 @@ Réponds en JSON:
         reply = data.get('reply', '')
         is_target = data.get('is_target_language', True)
         vocab_word = data.get('vocab_word')
+        vocab_translation = data.get('vocab_translation', '')
         
         # Add to debt if vocab provided (word user asked for = debt for tomorrow)
         added_to_debt = False
         debt_count = 0
         
         if vocab_word and ps:
+            word_back = vocab_translation or message  # Use translation or original user message as fallback
+            
             # Create DebtWord for tomorrow
             DebtWord.add_debt(
                 user_id=g.user.id,
                 program_id=ps.program_id,
                 word_front=vocab_word,
-                word_back="Aide Chatbot",
+                word_back=word_back,
                 source='chatbot',
                 context=ps.current_module
             )
             
             # Also track in session
-            ps.add_debt_word(vocab_word, "Aide Chatbot", source="chatbot")
+            ps.add_debt_word(vocab_word, word_back, source="chatbot")
             flag_modified(ps, 'debt_words')
             db.session.commit()
             
@@ -862,6 +970,8 @@ Réponds en JSON:
             'refusal': not is_target,
             'added_to_debt': added_to_debt,
             'debt_count': debt_count,
+            'vocab_word': vocab_word,
+            'vocab_translation': vocab_translation,
             'behavior': data.get('behavior_applied', 'normal')
         })
 
@@ -913,39 +1023,66 @@ def submit_git_input():
     from app.llm_service import get_learner_context
     learner_context = get_learner_context(program, g.user)
 
-    prompt = f"""Target Text ({program.target_language}):
+    prompt = f"""TEXTE ORIGINAL ({program.target_language}):
 "{daily_text.original_text}"
 
-User Translation ({program.native_language}):
+TRADUCTION DE L'APPRENANT ({program.native_language}):
 "{translation}"
 
-Analyze this translation. 
 {mode_instruction}
 
 {learner_context}
 
-Return a valid JSON object strictly matching this schema:
+REGLES D'EVALUATION CRITIQUES:
+1. Tu evalues une TRADUCTION, PAS un exercice d'orthographe dans la langue maternelle.
+2. IGNORE completement les fautes d'orthographe/accents dans {program.native_language}. C'est sa langue natale, les typos ne comptent PAS.
+3. CONCENTRE-TOI UNIQUEMENT sur:
+   - Les ERREURS DE SENS (mot mal traduit, contre-sens, faux-ami)
+   - Les OMISSIONS (passages non traduits, phrases sautees)
+   - Les AJOUTS incorrects (l'apprenant a invente du contenu absent de l'original)
+   - Les STRUCTURES mal comprises (la phrase source n'a pas ete comprise)
+4. Une reformulation DIFFERENTE mais de MEME SENS est CORRECTE. Ne penalise pas les variations stylistiques.
+5. Sois ENCOURAGEANT. L'apprenant fait un effort de comprehension, pas un examen de grammaire.
+
+REGLES POUR LES INDICES (hints):
+- Les indices doivent GUIDER sans DONNER la reponse.
+- JAMAIS donner la traduction directe d'un mot dans un indice.
+- Utilise des formulations indirectes: "Ce mot est lie au domaine de...", "Pense a ce que tu fais quand tu...", "Ce verbe exprime un mouvement vers..."
+- Tu peux donner le champ semantique, une analogie, ou une piste sans reveler le mot.
+
+REGLES POUR LES MOTS INCONNUS (unknown_words):
+- Si l'apprenant a ecrit "???", "je sais pas", "...", ou a clairement laisse un blanc, c'est un MOT INCONNU.
+- Si l'apprenant a visiblement mal traduit un mot (contre-sens total), c'est AUSSI un mot inconnu.
+- Pour chaque mot inconnu, donne: le mot original en {program.target_language}, sa traduction en {program.native_language}, et un petit indice (PAS la traduction, juste une piste).
+- La traduction est la pour le systeme (sera cachee a l'apprenant jusqu'a ce qu'il choisisse de la voir).
+
+Reponds en JSON STRICT:
 {{
   "status": "PERFECT" | "HINTS" | "CORRECTION",
   "score": {{
-    "grammar": 0-10,
-    "spelling": 0-10,
-    "quality": 0-10,
-    "explanation": "Brief explanation of the score"
+    "comprehension": 0-10,
+    "completeness": 0-10,
+    "accuracy": 0-10,
+    "explanation": "Explication breve du score"
   }},
-  "feedback": "General Encouraging Feedback (in {program.native_language})",
-  "hints": ["Hint 1", "Hint 2"],
-  "correction": "Full corrected text (only if status is CORRECTION or PERFECT)"
+  "feedback": "Feedback encourageant en {program.native_language}",
+  "hints": ["Indice VAGUE 1 (sans donner la reponse)", "Indice VAGUE 2"],
+  "correction": "Texte corrige complet (seulement si CORRECTION ou PERFECT)",
+  "unknown_words": [
+    {{"original": "mot en {program.target_language}", "translation": "traduction en {program.native_language}", "hint": "piste sans donner la reponse", "context": "bout de phrase ou le mot apparait"}}
+  ]
 }}
 
-Rules:
-- If status is HINTS, 'correction' should be null or empty string.
-- If status is HINTS, provide specific actionable hints in 'hints' array (e.g. 'Attention à l'accord du verbe...').
-- Feedback must be in {program.native_language}.
+Regles JSON:
+- Si status=HINTS: correction=null
+- Si status=PERFECT: felicite, correction = la traduction de l'apprenant
+- unknown_words: TOUJOURS rempli si l'apprenant a mis ???, ..., ou semble ne pas connaitre un mot
+- Feedback en {program.native_language}
+- IMPORTANT: les hints ne donnent JAMAIS la traduction d'un mot. Ils guident l'apprenant a trouver par lui-meme.
 """
 
     response = call_llm(
-        f"You are a strict but helpful {program.target_language} teacher. {learner_context}. Output strictly JSON.",
+        f"Tu es un professeur de {program.target_language} bienveillant. Tu evalues des TRADUCTIONS, pas l'orthographe de la langue maternelle. {learner_context}. Reponds strictement en JSON.",
         prompt,
         temperature=0.3
     )
@@ -964,6 +1101,23 @@ Rules:
         # Cleanup potential json formatting issues
         analysis = json.loads(text)
         
+        # Normalize score keys (ensure both old and new keys exist for backward compat)
+        score = analysis.get('score', {})
+        # New → old
+        if 'comprehension' in score and 'grammar' not in score:
+            score['grammar'] = score['comprehension']
+        if 'completeness' in score and 'spelling' not in score:
+            score['spelling'] = score['completeness']
+        if 'accuracy' in score and 'quality' not in score:
+            score['quality'] = score['accuracy']
+        # Old → new
+        if 'grammar' in score and 'comprehension' not in score:
+            score['comprehension'] = score['grammar']
+        if 'spelling' in score and 'completeness' not in score:
+            score['completeness'] = score['spelling']
+        if 'quality' in score and 'accuracy' not in score:
+            score['accuracy'] = score['quality']
+        analysis['score'] = score
         
         # --- Logic based on Status ---
         
@@ -980,12 +1134,13 @@ Rules:
             
         validated = (status == 'PERFECT' or status == 'CORRECTION')
         
+        # unknown_words are NOT auto-added to debt.
+        # The user decides via the UI "Voir la traduction" button.
+        # We just pass them through to the frontend.
+        
         if validated:
             # Save final result
             daily_text.user_translation = translation
-            # Store full JSON analysis as correction for now (or just the text)
-            # We can store the JSON string to render the grid later if we want, 
-            # or just extracts. Let's store the whole JSON string.
             daily_text.llm_correction = json.dumps(analysis)
             
             db.session.commit()
@@ -994,7 +1149,7 @@ Rules:
             results = ps.results or {}
             results['git_input'] = {
                 'completed': True, 
-                'score': analysis.get('score', {}).get('quality', 5)
+                'score': analysis.get('score', {}).get('comprehension', 5)
             }
             ps.results = results
             flag_modified(ps, 'results')
@@ -1428,6 +1583,71 @@ def get_next_shadowing_video():
     })
 
 
+@bp.route('/shadowing/generate-text', methods=['POST'])
+def generate_shadowing_text():
+    """Generate a coherent 10-15 line text for TTS shadowing when no video resources."""
+    from app.llm_service import call_llm
+    
+    ps = get_current_session()
+    if not ps:
+        return jsonify({'error': 'No session'}), 400
+    
+    program = ps.program
+    results = ps.results or {}
+    session_context = results.get('session_context', {})
+    
+    theme_name = session_context.get('theme_name', 'la vie quotidienne')
+    day_focus = session_context.get('day_focus', 'pratique generale')
+    user_level = session_context.get('user_level', 'A2')
+    target_language = program.target_language or 'la langue cible'
+    vocab_domains = session_context.get('vocab_domains', [])
+    daily_vocabulary = session_context.get('daily_vocabulary', [])
+    
+    vocab_hint = ''
+    if daily_vocabulary:
+        vocab_hint = f"\nIntegre naturellement ces mots: {', '.join(daily_vocabulary[:10])}"
+    
+    domains_hint = ''
+    if vocab_domains:
+        domains_hint = f"\nDomaines: {', '.join(vocab_domains)}"
+    
+    prompt = f"""Genere un texte COHERENT de 10-15 lignes en {target_language} pour un exercice de shadowing (lecture a voix haute).
+
+Theme: {theme_name}
+Focus du jour: {day_focus}
+Niveau: {user_level}{domains_hint}{vocab_hint}
+
+REGLES:
+1. Le texte doit etre un MONOLOGUE ou une NARRATION fluide (pas un dialogue)
+2. Phrases courtes et claires, adaptees au niveau {user_level}
+3. Rythme naturel, comme si quelqu'un racontait une histoire
+4. Vocabulaire accessible mais enrichissant
+5. Le texte doit avoir du SENS et raconter quelque chose de coherent
+
+Reponds UNIQUEMENT avec le texte, sans titre ni explication."""
+
+    response = call_llm(
+        f"Tu es un narrateur natif de {target_language}. Tu generes des textes de lecture fluides et naturels.",
+        prompt,
+        temperature=0.7
+    )
+    
+    if not response or len(response.strip()) < 20:
+        return jsonify({'success': False, 'error': 'Generation echouee'}), 500
+    
+    text = response.strip()
+    
+    # Split into sentences for progressive display
+    import re
+    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+    
+    return jsonify({
+        'success': True,
+        'text': text,
+        'sentences': sentences
+    })
+
+
 @bp.route('/shadowing/complete', methods=['POST'])
 def shadowing_complete():
     """Mark shadowing as complete."""
@@ -1849,19 +2069,22 @@ def reveal_word():
         return jsonify({'error': 'No session'}), 400
     
     front = request.json.get('front', '')
+    back = request.json.get('back', '')  # Can be provided directly (e.g. from git_input unknown words)
     context = request.json.get('context', '')  # Optional: which exercise they're doing
+    source = request.json.get('source', 'wordbank')
     
-    # Find the word in daily_words
-    word_found = None
-    for w in (ps.daily_words or []):
-        if w.get('front') == front:
-            word_found = w
-            break
-    
-    if not word_found:
-        return jsonify({'error': 'Word not found'}), 404
-    
-    back = word_found.get('back', '')
+    # If back not provided, look it up in daily_words
+    if not back:
+        word_found = None
+        for w in (ps.daily_words or []):
+            if w.get('front') == front:
+                word_found = w
+                break
+        
+        if not word_found:
+            return jsonify({'error': 'Word not found'}), 404
+        
+        back = word_found.get('back', '')
     
     # Create DebtWord for tomorrow's review
     DebtWord.add_debt(
@@ -1869,15 +2092,21 @@ def reveal_word():
         program_id=ps.program_id,
         word_front=front,
         word_back=back,
-        source='wordbank',
+        source=source,
         context=context or ps.current_module
     )
     
     # Also track in session for immediate UI feedback
-    ps.add_debt_word(front, back, source='wordbank')
+    ps.add_debt_word(front, back, source=source)
     
     # Apply FSRS penalty to the actual card (if it exists)
-    card_id = word_found.get('card_id')
+    # word_found may not exist for git_input unknown words
+    word_found = None
+    for w in (ps.daily_words or []):
+        if w.get('front') == front:
+            word_found = w
+            break
+    card_id = word_found.get('card_id') if word_found else None
     if card_id:
         card = Card.query.get(card_id)
         if card:

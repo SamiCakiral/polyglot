@@ -3,154 +3,1087 @@
 
 {% block content %}
 <style>
-/* ============ PAGE LAYOUT ============ */
-.pl-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    /* ============ PAGE LAYOUT ============ */
+    .pl-container {
+        max-width: 740px;
+        margin: 0 auto;
+        padding: 1.25rem 1rem;
+        background: #f8fafc;
+        color: #334155;
+        min-height: 100vh;
+    }
 
-.pl-back { color: var(--text-secondary, #64748b); text-decoration: none; display: inline-block; margin-bottom: 1rem; font-size: 0.9rem; }
-.pl-back:hover { color: var(--primary, #6366f1); }
+    .pl-back {
+        color: #94a3b8;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.82rem;
+        margin-bottom: 0.75rem;
+        transition: color 0.15s;
+    }
 
-.pl-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-.pl-lang-info { display: flex; align-items: center; gap: 1rem; }
-.pl-lang-info h1 { margin: 0; font-size: 2rem; }
-.pl-native { color: var(--text-secondary, #64748b); font-size: 0.9rem; }
-.pl-level-info { display: flex; align-items: center; gap: 1rem; }
-.pl-level-badge { padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
-.pl-level-a0, .pl-level-a1 { background: #e8f5e9; color: #2e7d32; }
-.pl-level-a2 { background: #e3f2fd; color: #1565c0; }
-.pl-level-b1, .pl-level-b2 { background: #fff3e0; color: #ef6c00; }
-.pl-level-c1, .pl-level-c2 { background: #fce4ec; color: #c2185b; }
-.pl-progress-text { color: var(--text-secondary, #64748b); font-size: 0.9rem; }
+    .pl-back:hover {
+        color: #6366f1;
+    }
 
-.pl-progress-bar { height: 10px; background: #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 1rem; }
-.pl-progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); border-radius: 8px; transition: width 0.5s; }
+    /* ============ HEADER ============ */
+    .pl-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        gap: 0.75rem;
+    }
 
-/* ============ TABS ============ */
-.pl-tabs { display: flex; gap: 0; border-bottom: 2px solid #e2e8f0; margin-bottom: 2rem; overflow-x: auto; }
-.pl-tab { display: flex; align-items: center; gap: 0.4rem; padding: 0.7rem 1.1rem; color: #64748b; text-decoration: none; font-weight: 500; font-size: 0.88rem; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
-.pl-tab:hover { color: #6366f1; }
-.pl-tab.active { color: #6366f1; border-bottom-color: #6366f1; }
-.pl-tab svg { opacity: 0.6; flex-shrink: 0; }
-.pl-tab.active svg { opacity: 1; }
+    .pl-lang-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
 
-/* ============ LEVEL SECTIONS ============ */
-.pl-level { margin-bottom: 2.5rem; }
-.pl-level-head { margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; }
-.pl-level-head h2 { font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.6rem; }
-.pl-level-sub { font-weight: 400; color: #64748b; font-size: 0.88rem; }
+    .pl-lang-info h1 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: #1e293b;
+        line-height: 1.2;
+    }
 
-/* ============ PILLAR CARDS ============ */
-.pl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .pl-native {
+        color: #94a3b8;
+        font-size: 0.82rem;
+    }
 
-.pl-card { background: white; border-radius: 12px; padding: 1.25rem; border: 2px solid #e2e8f0; transition: all 0.2s; display: flex; flex-direction: column; gap: 0.6rem; position: relative; }
-.pl-card[data-clickable="true"] { cursor: pointer; }
-.pl-card[data-clickable="true"]:hover { border-color: #6366f1; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(99,102,241,0.1); }
-.pl-card.st-in_progress { border-color: #f59e0b; }
-.pl-card.st-completed { border-color: #10b981; background: linear-gradient(135deg, white, rgba(16,185,129,0.04)); }
-.pl-card.st-locked { opacity: 0.55; cursor: not-allowed; }
+    .pl-level-info {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-shrink: 0;
+    }
 
-.pl-card-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; color: white; }
-.pl-card-icon.ic-completed { background: #10b981; }
-.pl-card-icon.ic-in_progress { background: #f59e0b; }
-.pl-card-icon.ic-available { background: #6366f1; }
-.pl-card-icon.ic-locked { background: #cbd5e1; }
+    .pl-level-badge {
+        padding: 0.3rem 0.7rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 0.78rem;
+    }
 
-.pl-card h3 { margin: 0; font-size: 1.05rem; }
-.pl-card-native { color: #64748b; font-size: 0.88rem; }
-.pl-card-desc { font-size: 0.82rem; color: #64748b; margin: 0; line-height: 1.4; }
-.pl-card-meta { display: flex; gap: 0.6rem; font-size: 0.78rem; margin-top: auto; }
-.pl-card-meta .badge-req { background: #fef3c7; color: #92400e; padding: 0.1rem 0.45rem; border-radius: 4px; }
-.pl-card-meta .badge-opt { background: #f1f5f9; color: #64748b; padding: 0.1rem 0.45rem; border-radius: 4px; }
-.pl-card-meta .card-cnt { color: #94a3b8; }
-.pl-card-progress { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.3rem; }
-.pl-card-progress-bar { flex: 1; height: 5px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
-.pl-card-progress-fill { height: 100%; background: #f59e0b; border-radius: 4px; }
-.pl-card-progress-pct { font-size: 0.8rem; font-weight: 600; color: #f59e0b; }
-.pl-card-hint { font-size: 0.82rem; color: #6366f1; margin-top: 0.25rem; border-top: 1px solid #f1f5f9; padding-top: 0.5rem; }
-.pl-card-actions { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem; border-top: 1px solid #f1f5f9; padding-top: 0.5rem; }
-.pl-card-actions a { font-size: 0.78rem; color: #64748b; text-decoration: none; padding: 0.15rem 0.4rem; border-radius: 4px; background: #f8fafc; border: 1px solid #e2e8f0; }
-.pl-card-actions a:hover { background: #eef2ff; color: #6366f1; border-color: rgba(99,102,241,0.2); }
+    .pl-level-a0,
+    .pl-level-a1 {
+        background: rgba(16, 185, 129, 0.15);
+        color: #059669;
+    }
 
-/* ============ TTS WIDGET ============ */
-.pl-tts { position: fixed; bottom: 5.5rem; right: 1.5rem; background: white; padding: 0.9rem 1.1rem; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 90; max-width: 330px; font-size: 0.88rem; }
-.pl-tts-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; color: #64748b; }
-.pl-tts-badge { font-size: 0.68rem; padding: 0.1rem 0.4rem; background: #e5e7eb; border-radius: 8px; margin-left: auto; }
-.pl-tts-badge.ready { background: #d1fae5; color: #065f46; }
-.pl-tts-badge.off { background: #fef3c7; color: #92400e; }
-.pl-tts-row { display: flex; gap: 0.4rem; }
-.pl-tts-row input { flex: 1; padding: 0.4rem 0.65rem; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 0.82rem; outline: none; }
-.pl-tts-row input:focus { border-color: #6366f1; }
-.pl-tts-row button { background: #6366f1; color: white; border: none; border-radius: 7px; padding: 0.4rem 0.65rem; cursor: pointer; font-size: 0.82rem; white-space: nowrap; }
-.pl-tts-row button:disabled { background: #a5b4fc; cursor: not-allowed; }
-.pl-tts-warn { margin-top: 0.4rem; font-size: 0.72rem; color: #92400e; background: #fef3c7; padding: 0.3rem 0.5rem; border-radius: 5px; }
+    .pl-level-a2 {
+        background: rgba(99, 102, 241, 0.15);
+        color: #6366f1;
+    }
 
-/* ============ MODAL ============ */
-.pl-modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 50000; align-items: center; justify-content: center; padding: 1rem; }
-.pl-modal-bg.open { display: flex; }
-.pl-modal { background: white; border-radius: 16px; max-width: 520px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
-.pl-modal-head { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 1.4rem; border-bottom: 1px solid #e2e8f0; }
-.pl-modal-head h2 { margin: 0; font-size: 1.2rem; }
-.pl-modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; line-height: 1; padding: 0; }
-.pl-modal-close:hover { color: #334155; }
-.pl-modal-body { padding: 1.2rem 1.4rem; }
-.pl-modal-body > p { margin: 0 0 1rem; color: #475569; font-size: 0.92rem; line-height: 1.5; }
-.pl-modal-stats { display: flex; gap: 1.2rem; padding: 0.9rem; background: #f8fafc; border-radius: 10px; margin-bottom: 1rem; }
-.pl-modal-stat { text-align: center; flex: 1; }
-.pl-modal-stat .val { display: block; font-size: 1.4rem; font-weight: 700; color: #6366f1; }
-.pl-modal-stat .lbl { font-size: 0.75rem; color: #94a3b8; }
-.pl-modal-prereqs { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #f1f5f9; }
-.pl-modal-prereqs h4 { margin: 0 0 0.5rem; font-size: 0.85rem; color: #64748b; }
-.pl-modal-prereqs ul { list-style: none; padding: 0; margin: 0; }
-.pl-modal-prereqs li { padding: 0.35rem 0; display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; }
+    .pl-level-b1,
+    .pl-level-b2 {
+        background: rgba(251, 146, 60, 0.15);
+        color: #c2410c;
+    }
 
-/* Modal actions */
-.pl-modal-links { padding: 0 1.4rem 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; }
-.pl-modal-links-title { font-size: 0.78rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.15rem; }
-.pl-modal-link { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem; border-radius: 8px; text-decoration: none; color: #334155; font-size: 0.85rem; background: #f8fafc; border: 1px solid #e2e8f0; transition: all 0.15s; }
-.pl-modal-link:hover { background: #eef2ff; border-color: rgba(99,102,241,0.3); color: #6366f1; }
-.pl-modal-link .ico { font-size: 1rem; flex-shrink: 0; }
-.pl-modal-ex-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; margin-bottom: 0.4rem; }
-.pl-modal-ex { display: flex; align-items: center; gap: 0.4rem; padding: 0.45rem 0.6rem; border-radius: 7px; text-decoration: none; color: #334155; font-size: 0.8rem; background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 1px solid #e2e8f0; transition: all 0.15s; }
-.pl-modal-ex:hover { background: #eef2ff; border-color: rgba(99,102,241,0.3); color: #6366f1; }
-.pl-modal-ex .ico { font-size: 0.95rem; }
-.pl-modal-ex .txt { display: flex; flex-direction: column; line-height: 1.15; }
-.pl-modal-ex .txt strong { font-size: 0.78rem; }
-.pl-modal-ex .txt small { font-size: 0.65rem; color: #94a3b8; }
-.pl-modal-train { background: linear-gradient(135deg, #fdf2f8, #fce7f3); border-color: rgba(219,39,119,0.12); }
-.pl-modal-train:hover { background: linear-gradient(135deg, #fce7f3, #fbcfe8); color: #be185d; }
+    .pl-level-c1,
+    .pl-level-c2 {
+        background: rgba(244, 114, 182, 0.15);
+        color: #be185d;
+    }
 
-.pl-modal-foot { display: flex; justify-content: flex-end; gap: 0.6rem; padding: 0.9rem 1.4rem; border-top: 1px solid #e2e8f0; }
-.pl-btn { padding: 0.65rem 1.3rem; border-radius: 9px; font-weight: 600; cursor: pointer; border: none; font-size: 0.88rem; transition: all 0.15s; }
-.pl-btn-primary { background: #6366f1; color: white; }
-.pl-btn-primary:hover { background: #4f46e5; }
-.pl-btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
-.pl-btn-ghost { background: #f1f5f9; color: #334155; }
-.pl-btn-ghost:hover { background: #e2e8f0; }
+    .pl-progress-text {
+        color: #94a3b8;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
 
-/* ============ TOAST ============ */
-#pl-toasts { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 60000; display: flex; flex-direction: column; gap: 0.4rem; }
-.pl-toast { padding: 0.65rem 1.3rem; border-radius: 9px; background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.12); animation: plToastIn 0.3s ease; font-size: 0.88rem; }
-.pl-toast.success { border-color: #10b981; background: #ecfdf5; color: #065f46; }
-.pl-toast.error { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
-@keyframes plToastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .pl-progress-bar {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+    }
 
-/* ============ FLAG ICONS ============ */
-.pl-flag { display: inline-block; width: 44px; height: 32px; border-radius: 4px; border: 1px solid #e2e8f0; }
-.pl-flag.f-jp { background: white; position: relative; }
-.pl-flag.f-jp::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 12px; height: 12px; background: #bc002d; border-radius: 50%; }
-.pl-flag.f-cn { background: #de2910; }
-.pl-flag.f-kr { background: white; }
-.pl-flag.f-ru { background: linear-gradient(white 33%, #0039a6 33%, #0039a6 66%, #d52b1e 66%); }
-.pl-flag.f-tr { background: #e30a17; }
-.pl-flag.f-es { background: linear-gradient(#c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%); }
-.pl-flag.f-it { background: linear-gradient(90deg, #009246 33%, white 33%, white 66%, #ce2b37 66%); }
+    .pl-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #818cf8, #a78bfa);
+        border-radius: 4px;
+        transition: width 0.5s;
+    }
 
-@media (max-width: 768px) {
-    .pl-header-row { flex-direction: column; text-align: center; }
-    .pl-lang-info { justify-content: center; }
-    .pl-grid { grid-template-columns: 1fr; }
-    .pl-tts { bottom: 4.5rem; right: 0.5rem; left: 0.5rem; max-width: none; }
-    .pl-modal-ex-grid { grid-template-columns: 1fr; }
-}
+    /* ============ TABS ============ */
+    .pl-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 2px solid #e2e8f0;
+        margin-bottom: 1rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .pl-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pl-tab {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.55rem 0.9rem;
+        color: #94a3b8;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.82rem;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: color 0.15s, border-color 0.15s;
+        white-space: nowrap;
+    }
+
+    .pl-tab:hover {
+        color: #6366f1;
+    }
+
+    .pl-tab.active {
+        color: #6366f1;
+        border-bottom-color: #6366f1;
+    }
+
+    .pl-tab svg {
+        opacity: 0.6;
+        flex-shrink: 0;
+    }
+
+    .pl-tab.active svg {
+        opacity: 1;
+    }
+
+    /* ============ LEVEL SECTIONS ============ */
+    .pl-level {
+        margin-bottom: 0.5rem;
+    }
+
+    .pl-level-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        margin: 0 0 0.5rem;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05));
+        border: 1px solid rgba(99, 102, 241, 0.15);
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        color: #6366f1;
+        letter-spacing: 0.02em;
+    }
+
+    .pl-level-banner .cefr-tag {
+        background: rgba(99, 102, 241, 0.2);
+        padding: 0.1rem 0.45rem;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #6366f1;
+    }
+
+    /* ---- Pillar Card Grid ---- */
+    .pl-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .pl-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pl-card:hover {
+        border-color: #c7d2fe;
+        box-shadow: 0 2px 12px rgba(99, 102, 241, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .pl-card:active {
+        transform: translateY(0);
+    }
+
+    /* Card icon */
+    .pl-card-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    /* Status-based icon backgrounds */
+    .pl-card.st-completed .pl-card-icon {
+        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        color: #059669;
+    }
+
+    .pl-card.st-in_progress .pl-card-icon {
+        background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+        color: #6366f1;
+        animation: iconPulse 2.5s ease-in-out infinite;
+    }
+
+    .pl-card.st-available .pl-card-icon {
+        background: #eef2ff;
+        color: #818cf8;
+    }
+
+    .pl-card.st-locked .pl-card-icon {
+        background: #f1f5f9;
+        color: #cbd5e1;
+    }
+
+    @keyframes iconPulse {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.2);
+        }
+
+        50% {
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+    }
+
+    /* Card body (text) */
+    .pl-card-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pl-card-name {
+        font-weight: 600;
+        font-size: 0.82rem;
+        color: #1e293b;
+        line-height: 1.2;
+        margin-bottom: 0.15rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pl-card.st-locked .pl-card-name {
+        color: #94a3b8;
+    }
+
+    /* Status indicator */
+    .pl-card-status {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.68rem;
+        font-weight: 500;
+    }
+
+    .pl-card.st-completed .pl-card-status {
+        color: #059669;
+    }
+
+    .pl-card.st-in_progress .pl-card-status {
+        color: #6366f1;
+    }
+
+    .pl-card.st-available .pl-card-status {
+        color: #818cf8;
+    }
+
+    .pl-card.st-locked .pl-card-status {
+        color: #cbd5e1;
+    }
+
+    .pl-card-status .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .pl-card.st-completed .dot {
+        background: #10b981;
+    }
+
+    .pl-card.st-in_progress .dot {
+        background: #6366f1;
+    }
+
+    .pl-card.st-available .dot {
+        background: #a5b4fc;
+    }
+
+    .pl-card.st-locked .dot {
+        background: #e2e8f0;
+    }
+
+    /* Mastery bar */
+    .pl-card-mastery {
+        height: 3px;
+        background: #f1f5f9;
+        border-radius: 2px;
+        margin-top: 0.3rem;
+        overflow: hidden;
+    }
+
+    .pl-card-mastery .fill {
+        height: 100%;
+        border-radius: 2px;
+        transition: width 0.5s;
+    }
+
+    .pl-card.st-completed .pl-card-mastery .fill {
+        background: #10b981;
+    }
+
+    .pl-card.st-in_progress .pl-card-mastery .fill {
+        background: #818cf8;
+    }
+
+    /* Arrow */
+    .pl-card-arrow {
+        color: #cbd5e1;
+        flex-shrink: 0;
+        transition: color 0.15s, transform 0.15s;
+    }
+
+    .pl-card:hover .pl-card-arrow {
+        color: #6366f1;
+        transform: translateX(2px);
+    }
+
+    /* Completed card left accent */
+    .pl-card.st-completed::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #10b981;
+        border-radius: 12px 0 0 12px;
+    }
+
+    .pl-card.st-in_progress::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #6366f1;
+        border-radius: 12px 0 0 12px;
+    }
+
+    /* ============ TTS WIDGET (Fixed bottom-left) ============ */
+    .pl-tts {
+        position: fixed;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        z-index: 999;
+        background: white;
+        padding: 0.65rem 0.85rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        font-size: 0.82rem;
+        color: #334155;
+        width: 320px;
+    }
+
+    .pl-tts-head {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-bottom: 0.4rem;
+        color: #94a3b8;
+        font-size: 0.78rem;
+    }
+
+    .pl-tts-badge {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.35rem;
+        background: #f1f5f9;
+        border-radius: 6px;
+        margin-left: auto;
+        color: #94a3b8;
+    }
+
+    .pl-tts-badge.ready {
+        background: rgba(16, 185, 129, 0.2);
+        color: #059669;
+    }
+
+    .pl-tts-badge.off {
+        background: rgba(251, 146, 60, 0.2);
+        color: #c2410c;
+    }
+
+    .pl-tts-row {
+        display: flex;
+        gap: 0.35rem;
+    }
+
+    .pl-tts-row input {
+        flex: 1;
+        padding: 0.35rem 0.55rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.78rem;
+        outline: none;
+        background: #f8fafc;
+        color: #334155;
+    }
+
+    .pl-tts-row input:focus {
+        border-color: #818cf8;
+    }
+
+    .pl-tts-row button {
+        background: #6366f1;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 0.35rem 0.55rem;
+        cursor: pointer;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+
+    .pl-tts-row button:disabled {
+        background: #4338ca;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .pl-tts-warn {
+        margin-top: 0.35rem;
+        font-size: 0.68rem;
+        color: #c2410c;
+        background: rgba(251, 146, 60, 0.1);
+        padding: 0.25rem 0.4rem;
+        border-radius: 4px;
+    }
+
+    /* ============ MODAL ============ */
+    .pl-modal-bg {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 50000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .pl-modal-bg.open {
+        display: flex;
+    }
+
+    .pl-modal {
+        background: white;
+        border-radius: 16px;
+        max-width: 520px;
+        width: 100%;
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        border: 1px solid #e2e8f0;
+        color: #334155;
+    }
+
+    .pl-modal-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .pl-modal-head h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: #1e293b;
+    }
+
+    .pl-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.4rem;
+        cursor: pointer;
+        color: #94a3b8;
+        line-height: 1;
+        padding: 0;
+    }
+
+    .pl-modal-close:hover {
+        color: #334155;
+    }
+
+    .pl-modal-body {
+        padding: 1rem 1.2rem;
+    }
+
+    .pl-modal-body>p {
+        margin: 0 0 0.75rem;
+        color: #94a3b8;
+        font-size: 0.88rem;
+        line-height: 1.5;
+    }
+
+    .pl-modal-stats {
+        display: flex;
+        gap: 0.8rem;
+        padding: 0.7rem;
+        background: #f8fafc;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+    }
+
+    .pl-modal-stat {
+        text-align: center;
+        flex: 1;
+    }
+
+    .pl-modal-stat .val {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #6366f1;
+    }
+
+    .pl-modal-stat .lbl {
+        font-size: 0.7rem;
+        color: #94a3b8;
+    }
+
+    .pl-modal-prereqs {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .pl-modal-prereqs h4 {
+        margin: 0 0 0.35rem;
+        font-size: 0.8rem;
+        color: #94a3b8;
+    }
+
+    .pl-modal-prereqs ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .pl-modal-prereqs li {
+        padding: 0.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.82rem;
+    }
+
+    /* Modal actions */
+    .pl-modal-links {
+        padding: 0 1.2rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .pl-modal-links-title {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        margin-bottom: 0.1rem;
+    }
+
+    .pl-modal-link {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #6366f1;
+        font-size: 0.8rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.15s;
+    }
+
+    .pl-modal-link:hover {
+        background: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .pl-modal-link .ico {
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    .pl-modal-ex-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.25rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .pl-modal-ex {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 7px;
+        text-decoration: none;
+        color: #6366f1;
+        font-size: 0.75rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        transition: all 0.15s;
+    }
+
+    .pl-modal-ex:hover {
+        background: rgba(99, 102, 241, 0.15);
+        border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .pl-modal-ex .ico {
+        font-size: 0.9rem;
+    }
+
+    .pl-modal-ex .txt {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+    }
+
+    .pl-modal-ex .txt strong {
+        font-size: 0.72rem;
+    }
+
+    .pl-modal-ex .txt small {
+        font-size: 0.6rem;
+        color: #94a3b8;
+    }
+
+    .pl-modal-train {
+        background: rgba(139, 92, 246, 0.1);
+        border-color: rgba(139, 92, 246, 0.2);
+    }
+
+    .pl-modal-train:hover {
+        background: rgba(139, 92, 246, 0.2);
+        color: #6366f1;
+    }
+
+    .pl-modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        padding: 0.75rem 1.2rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .pl-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        font-size: 0.82rem;
+        transition: all 0.15s;
+    }
+
+    .pl-btn-primary {
+        background: #6366f1;
+        color: white;
+    }
+
+    .pl-btn-primary:hover {
+        background: #4f46e5;
+    }
+
+    .pl-btn-primary:disabled {
+        background: #cbd5e1;
+        cursor: not-allowed;
+    }
+
+    .pl-btn-ghost {
+        background: #f1f5f9;
+        color: #94a3b8;
+    }
+
+    .pl-btn-ghost:hover {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    /* ============ TOAST ============ */
+    #pl-toasts {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 60000;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .pl-toast {
+        padding: 0.55rem 1rem;
+        border-radius: 8px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        animation: plToastIn 0.3s ease;
+        font-size: 0.82rem;
+    }
+
+    .pl-toast.success {
+        border-color: #10b981;
+        background: #ecfdf5;
+        color: #065f46;
+    }
+
+    .pl-toast.error {
+        border-color: #ef4444;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    @keyframes plToastIn {
+        from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ============ FLAG ICONS ============ */
+    .pl-flag {
+        display: inline-block;
+        width: 36px;
+        height: 26px;
+        border-radius: 3px;
+        border: 1px solid #e2e8f0;
+        flex-shrink: 0;
+    }
+
+    .pl-flag.f-jp {
+        background: white;
+        position: relative;
+    }
+
+    .pl-flag.f-jp::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 10px;
+        height: 10px;
+        background: #bc002d;
+        border-radius: 50%;
+    }
+
+    .pl-flag.f-cn {
+        background: #de2910;
+    }
+
+    .pl-flag.f-kr {
+        background: white;
+    }
+
+    .pl-flag.f-ru {
+        background: linear-gradient(white 33%, #0039a6 33%, #0039a6 66%, #d52b1e 66%);
+    }
+
+    .pl-flag.f-tr {
+        background: #e30a17;
+    }
+
+    .pl-flag.f-es {
+        background: linear-gradient(#c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%);
+    }
+
+    .pl-flag.f-de {
+        background: linear-gradient(#000 33%, #dd0000 33%, #dd0000 66%, #ffcc00 66%);
+    }
+
+    .pl-flag.f-fr {
+        background: linear-gradient(90deg, #002395 33%, white 33%, white 66%, #ed2939 66%);
+    }
+
+    .pl-flag.f-pt {
+        background: linear-gradient(90deg, #006600 40%, #ff0000 40%);
+    }
+
+    .pl-flag.f-it {
+        background: linear-gradient(90deg, #009246 33%, white 33%, white 66%, #ce2b37 66%);
+    }
+
+    /* ============ LESSON IN MODAL ============ */
+    .pl-lesson {
+        margin-top: 0.75rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .pl-lesson-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #334155;
+        padding: 0.3rem 0;
+        user-select: none;
+    }
+
+    .pl-lesson-toggle:hover {
+        color: #6366f1;
+    }
+
+    .pl-lesson-toggle .arrow {
+        transition: transform 0.2s;
+        font-size: 0.65rem;
+    }
+
+    .pl-lesson-toggle .arrow.open {
+        transform: rotate(90deg);
+    }
+
+    .pl-lesson-content {
+        display: none;
+        margin-top: 0.4rem;
+    }
+
+    .pl-lesson-content.open {
+        display: block;
+    }
+
+    .pl-lesson-summary {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        line-height: 1.5;
+        margin-bottom: 0.5rem;
+    }
+
+    .pl-lesson-section {
+        margin-bottom: 0.5rem;
+    }
+
+    .pl-lesson-section h5 {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #94a3b8;
+        margin: 0 0 0.25rem;
+    }
+
+    .pl-lesson-rule {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.35rem;
+        font-size: 0.78rem;
+        line-height: 1.4;
+        padding: 0.2rem 0;
+        color: #334155;
+    }
+
+    .pl-lesson-rule .bullet {
+        color: #6366f1;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .pl-lesson-example {
+        background: #f8fafc;
+        border-radius: 6px;
+        padding: 0.4rem 0.55rem;
+        margin-bottom: 0.2rem;
+        font-size: 0.78rem;
+    }
+
+    .pl-lesson-example .target {
+        font-weight: 600;
+        color: #6366f1;
+    }
+
+    .pl-lesson-example .translation {
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+    .pl-lesson-tip {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        line-height: 1.35;
+        padding: 0.3rem 0.5rem;
+        background: #fffbeb;
+        border-radius: 5px;
+        margin-bottom: 0.2rem;
+        color: #92400e;
+    }
+
+    .pl-lesson-loading {
+        text-align: center;
+        padding: 0.75rem;
+        color: #94a3b8;
+        font-size: 0.8rem;
+    }
+
+    /* ============ MOBILE ============ */
+    @media (max-width: 600px) {
+        .pl-container {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .pl-header-row {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .pl-lang-info {
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .pl-lang-info h1 {
+            font-size: 1.25rem;
+        }
+
+        .pl-grid {
+            grid-template-columns: 1fr;
+            gap: 0.4rem;
+        }
+
+        .pl-tab {
+            padding: 0.5rem 0.65rem;
+            font-size: 0.78rem;
+        }
+
+        .pl-tab svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .pl-level-banner {
+            font-size: 0.78rem;
+            padding: 0.4rem 0.7rem;
+        }
+
+        .pl-card {
+            padding: 0.55rem 0.65rem;
+            gap: 0.5rem;
+        }
+
+        .pl-card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .pl-card-name {
+            font-size: 0.78rem;
+        }
+
+        /* Modal as bottom sheet */
+        .pl-modal-bg {
+            align-items: flex-end;
+            padding: 0;
+        }
+
+        .pl-modal {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 16px 16px 0 0;
+            animation: slideUp 0.25s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .pl-modal-head {
+            padding: 0.85rem;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+
+        .pl-modal-head h2 {
+            font-size: 1rem;
+        }
+
+        .pl-modal-body {
+            padding: 0.85rem;
+        }
+
+        .pl-modal-ex-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .pl-container {
+            padding: 0.5rem 0.35rem;
+        }
+
+        .pl-lang-info h1 {
+            font-size: 1.1rem;
+        }
+
+        .pl-card-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+        }
+    }
 </style>
 
 <div class="pl-container">
@@ -165,85 +1098,51 @@
             </div>
         </div>
         <div class="pl-level-info">
-            <span class="pl-level-badge pl-level-{{ user_language.estimated_level|lower }}">{{ user_language.estimated_level }}</span>
+            <span class="pl-level-badge pl-level-{{ user_language.estimated_level|lower }}">{{
+                user_language.estimated_level }}</span>
             <span class="pl-progress-text">{{ completed_count }}/{{ total_count }} piliers</span>
         </div>
     </div>
 
     <div class="pl-progress-bar">
-        <div class="pl-progress-fill" style="width: {{ (completed_count / total_count * 100) if total_count > 0 else 0 }}%"></div>
+        <div class="pl-progress-fill"
+            style="width: {{ (completed_count / total_count * 100) if total_count > 0 else 0 }}%"></div>
     </div>
 
     <!-- Tabs -->
     <nav class="pl-tabs">
         <a href="{{ url_for('pillars.language_view', lang=lang_code) }}" class="pl-tab active">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
             Apprendre
         </a>
         <a href="{{ url_for('pillar_exercises.exercises_list', lang=lang_code) }}" class="pl-tab">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+            </svg>
             S'exercer
         </a>
         <a href="{{ url_for('assessments.assessment_hub', lang=lang_code) }}" class="pl-tab">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
             Controles
         </a>
         <a href="{{ url_for('assessments.cecr_dashboard', lang=lang_code) }}" class="pl-tab">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 20V10" />
+                <path d="M12 20V4" />
+                <path d="M6 20v-6" />
+            </svg>
             Dashboard
         </a>
     </nav>
 
-    <!-- Pillars Tree -->
-    {% for level in sorted_levels %}
-    <div class="pl-level">
-        <div class="pl-level-head">
-            <h2>
-                Niveau {{ level }}
-                <span class="pl-level-sub">
-                    {% if level == 0 %}Prerequis{% elif level == 1 %}Fondamentaux{% elif level == 2 %}Structure{% elif level == 3 %}Verbes{% elif level == 4 %}Temps{% elif level == 5 %}Complexe{% endif %}
-                </span>
-            </h2>
-        </div>
-        <div class="pl-grid">
-            {% for pillar in pillars_by_level[level] %}
-            {% set is_clickable = pillar.status != 'locked' %}
-            <div class="pl-card st-{{ pillar.status }}"
-                 data-pid="{{ pillar.config.id }}"
-                 data-clickable="{{ 'true' if is_clickable else 'false' }}">
-                <div class="pl-card-icon ic-{{ pillar.status }}">
-                    {% if pillar.status == 'completed' %}&#10003;{% elif pillar.status == 'in_progress' %}&#9684;{% elif pillar.status == 'available' %}&#9675;{% else %}&#128274;{% endif %}
-                </div>
-                <div>
-                    <h3>{{ pillar.config.name }}</h3>
-                    {% if pillar.config.native_name %}<span class="pl-card-native">{{ pillar.config.native_name }}</span>{% endif %}
-                    <p class="pl-card-desc">{{ pillar.config.description }}</p>
-                    <div class="pl-card-meta">
-                        <span class="card-cnt">{{ pillar.config.cards }} cartes</span>
-                        {% if pillar.config.required %}<span class="badge-req">Requis</span>{% else %}<span class="badge-opt">Optionnel</span>{% endif %}
-                    </div>
-                    {% if pillar.status == 'in_progress' %}
-                    <div class="pl-card-progress">
-                        <div class="pl-card-progress-bar"><div class="pl-card-progress-fill" style="width:{{ pillar.mastery }}%"></div></div>
-                        <span class="pl-card-progress-pct">{{ pillar.mastery }}%</span>
-                    </div>
-                    {% endif %}
-                </div>
-                {% if pillar.status == 'available' %}
-                <div class="pl-card-hint">Cliquez pour commencer</div>
-                {% elif pillar.status == 'in_progress' or pillar.status == 'completed' %}
-                <div class="pl-card-actions">
-                    <a href="{{ url_for('pillar_exercises.exercises_list', lang=lang_code, pillar=pillar.config.id) }}" onclick="event.stopPropagation()">&#9889; {{ 'Pratiquer' if pillar.status == 'in_progress' else 'Renforcer' }}</a>
-                    <span class="pl-card-hint">{{ 'Continuer' if pillar.status == 'in_progress' else '' }}</span>
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endfor %}
-
-    <!-- TTS Widget -->
+    <!-- TTS Widget (Moved here for mobile flow) -->
     <div class="pl-tts" id="pl-tts">
         <div class="pl-tts-head">
             <span>&#128266;</span>
@@ -251,13 +1150,63 @@
             <span class="pl-tts-badge" id="tts-badge">...</span>
         </div>
         <div class="pl-tts-row">
-            <input type="text" id="tts-input" placeholder="Tapez un mot en {{ lang_config.name }}..." onkeypress="if(event.key==='Enter')doTts()">
+            <input type="text" id="tts-input" placeholder="Tapez un mot en {{ lang_config.name }}..."
+                onkeypress="if(event.key==='Enter')doTts()">
             <button onclick="doTts()" id="tts-btn">&#9654; Ecouter</button>
         </div>
         {% if lang_code == 'tr' %}
         <div class="pl-tts-warn">Le turc n'est pas encore supporte pour la prononciation.</div>
         {% endif %}
     </div>
+
+    <!-- Pillar Cards Grid -->
+    {% for level in sorted_levels %}
+    <div class="pl-level">
+        <div class="pl-level-banner">
+            <span class="cefr-tag">
+                {% if level == 0 %}A0{% elif level == 1 %}A1{% elif level == 2 %}A2{% elif level == 3 %}B1{% elif
+                level
+                == 4 %}B2{% elif level == 5 %}C1{% elif level == 6 %}C2{% endif %}
+            </span>
+            {% if level == 0 %}Prérequis{% elif level == 1 %}Découverte{% elif level == 2 %}Survie{% elif level == 3
+            %}Seuil{% elif level == 4 %}Avancé{% elif level == 5 %}Autonome{% elif level == 6 %}Maîtrise{% endif %}
+        </div>
+        <div class="pl-grid">
+            {% for pillar in pillars_by_level[level] %}
+            <div class="pl-card st-{{ pillar.status }}" data-pid="{{ pillar.config.id }}" data-clickable="true"
+                data-cat="{{ pillar.config.category }}">
+                <div class="pl-card-icon">
+                    {% if pillar.status == 'completed' %}✓{% elif pillar.config.category == 'grammar' %}📝{% elif
+                    pillar.config.category == 'vocabulary' %}📚{% elif pillar.config.category == 'phonetics' %}🔊{%
+                    elif
+                    pillar.config.category == 'writing' %}✍️{% else %}📖{% endif %}
+                </div>
+                <div class="pl-card-body">
+                    <div class="pl-card-name">{{ pillar.config.name }}</div>
+                    <div class="pl-card-status">
+                        <span class="dot"></span>
+                        {% if pillar.status == 'completed' %}Terminé{% elif pillar.status == 'in_progress' %}En
+                        cours ·
+                        {{ pillar.mastery }}%{% elif pillar.status == 'available' %}Disponible{% else %}À venir{%
+                        endif
+                        %}
+                    </div>
+                    {% if pillar.status in ['completed', 'in_progress'] %}
+                    <div class="pl-card-mastery">
+                        <div class="fill"
+                            style="width: {{ pillar.mastery if pillar.status == 'in_progress' else 100 }}%"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                <svg class="pl-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M9 18l6-6-6-6" />
+                </svg>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
 </div>
 
 <!-- Modal -->
@@ -270,14 +1219,24 @@
         <div class="pl-modal-body">
             <p id="m-desc"></p>
             <div class="pl-modal-stats">
-                <div class="pl-modal-stat"><span class="val" id="m-cards">0</span><span class="lbl">Cartes</span></div>
-                <div class="pl-modal-stat"><span class="val" id="m-hours">0h</span><span class="lbl">Temps</span></div>
-                <div class="pl-modal-stat"><span class="val" id="m-mastery">0%</span><span class="lbl">Maitrise</span></div>
+                <div class="pl-modal-stat"><span class="val" id="m-cards">0</span><span class="lbl">Cartes</span>
+                </div>
+                <div class="pl-modal-stat"><span class="val" id="m-hours">0h</span><span class="lbl">Temps</span>
+                </div>
+                <div class="pl-modal-stat"><span class="val" id="m-mastery">0%</span><span class="lbl">Maitrise</span>
+                </div>
             </div>
             <div class="pl-modal-prereqs" id="m-prereqs" style="display:none">
                 <h4>Prerequis</h4>
                 <ul id="m-prereqs-list"></ul>
             </div>
+        </div>
+        <div class="pl-lesson" id="m-lesson" style="display:none">
+            <div class="pl-lesson-toggle" onclick="toggleLesson()">
+                <span class="arrow" id="lesson-arrow">&#9654;</span>
+                <span>&#128218; Voir la leçon</span>
+            </div>
+            <div class="pl-lesson-content" id="lesson-content"></div>
         </div>
         <div class="pl-modal-links" id="m-links"></div>
         <div class="pl-modal-foot">
@@ -291,10 +1250,11 @@
 <div id="pl-toasts"></div>
 
 <script>
-(function() {
-    "use strict";
+    (function () {
+        "use strict";
 
-    var langCode = {{ lang_code | tojson }};
+        var langCode = {{ lang_code | tojson
+    }};
     var currentPillarId = null;
 
     /* ---- Pillar data (server-rendered) ---- */
@@ -302,39 +1262,39 @@
     {% for level in sorted_levels %}
     {% for pillar in pillars_by_level[level] %}
     P[{{ pillar.config.id | tojson }}] = {
-        id: {{ pillar.config.id | tojson }},
-        name: {{ pillar.config.name | tojson }},
-        nativeName: {{ (pillar.config.native_name or "") | tojson }},
-        desc: {{ (pillar.config.description or "") | tojson }},
-        cards: {{ pillar.config.cards | default(0) | tojson }},
-        hours: {{ (pillar.config.estimated_hours or 5) | tojson }},
-        status: {{ pillar.status | tojson }},
-        mastery: {{ (pillar.mastery or 0) | tojson }},
-        deckId: {{ pillar.deck_id | tojson }},
-        prereq: {{ pillar.config.prereq | tojson }},
-        cat: {{ (pillar.config.category or "") | tojson }},
-        lvl: {{ pillar.config.level | default(0) | tojson }},
-        progId: {{ pillar.program_id | tojson }}
+        id: { { pillar.config.id | tojson } },
+        name: { { pillar.config.name | tojson } },
+        nativeName: { { (pillar.config.native_name or "") | tojson } },
+        desc: { { (pillar.config.description or "") | tojson } },
+        cards: { { pillar.config.cards | default (0) | tojson } },
+        hours: { { (pillar.config.estimated_hours or 5) | tojson } },
+        status: { { pillar.status | tojson } },
+        mastery: { { (pillar.mastery or 0) | tojson } },
+        deckId: { { pillar.deck_id | tojson } },
+        prereq: { { pillar.config.prereq | tojson } },
+        cat: { { (pillar.config.category or "") | tojson } },
+        lvl: { { pillar.config.level | default (0) | tojson } },
+        progId: { { pillar.program_id | tojson } }
     };
     {% endfor %}
     {% endfor %}
 
     /* ---- Exercise type config ---- */
     var EX_LABELS = {
-        conjugation: {n:"Conjugaison", i:"\ud83d\udcdd", d:"Grille pronoms + temps"},
-        fill_blank:  {n:"Phrases a trous", i:"\u270f\ufe0f", d:"Completer la bonne forme"},
-        transform:   {n:"Transformation", i:"\ud83d\udd04", d:"Negation, question, temps"},
-        word_order:  {n:"Ordre des mots", i:"\ud83d\udd00", d:"Remettre dans l'ordre"},
-        particles:   {n:"Particules", i:"\u2699\ufe0f", d:"Choisir la bonne particule"},
-        gender:      {n:"Genre / articles", i:"\u2642\u2640", d:"Accord et determinants"}
+        conjugation: { n: "Conjugaison", i: "\ud83d\udcdd", d: "Grille pronoms + temps" },
+        fill_blank: { n: "Phrases a trous", i: "\u270f\ufe0f", d: "Completer la bonne forme" },
+        transform: { n: "Transformation", i: "\ud83d\udd04", d: "Negation, question, temps" },
+        word_order: { n: "Ordre des mots", i: "\ud83d\udd00", d: "Remettre dans l'ordre" },
+        particles: { n: "Particules", i: "\u2699\ufe0f", d: "Choisir la bonne particule" },
+        gender: { n: "Genre / articles", i: "\u2642\u2640", d: "Accord et determinants" }
     };
     var EX_MAP = {
-        conjugation: {cats:["grammar"], lvls:[3,4]},
-        fill_blank:  {cats:["grammar","vocabulary"], lvls:[2,3,4]},
-        transform:   {cats:["grammar"], lvls:[2,4,5]},
-        word_order:  {cats:["grammar"], lvls:[2]},
-        particles:   {cats:["grammar"], lvls:[1,2]},
-        gender:      {cats:["grammar"], lvls:[2]}
+        conjugation: { cats: ["grammar"], lvls: [3, 4] },
+        fill_blank: { cats: ["grammar", "vocabulary"], lvls: [2, 3, 4] },
+        transform: { cats: ["grammar"], lvls: [2, 4, 5] },
+        word_order: { cats: ["grammar"], lvls: [2] },
+        particles: { cats: ["grammar"], lvls: [1, 2] },
+        gender: { cats: ["grammar"], lvls: [2] }
     };
 
     function exTypesFor(p) {
@@ -346,18 +1306,18 @@
     }
 
     /* ---- DOM refs ---- */
-    var modal   = document.getElementById("pillarModal");
-    var mName   = document.getElementById("m-name");
-    var mDesc   = document.getElementById("m-desc");
-    var mCards  = document.getElementById("m-cards");
-    var mHours  = document.getElementById("m-hours");
-    var mMast   = document.getElementById("m-mastery");
+    var modal = document.getElementById("pillarModal");
+    var mName = document.getElementById("m-name");
+    var mDesc = document.getElementById("m-desc");
+    var mCards = document.getElementById("m-cards");
+    var mHours = document.getElementById("m-hours");
+    var mMast = document.getElementById("m-mastery");
     var mPrereqs = document.getElementById("m-prereqs");
     var mPreList = document.getElementById("m-prereqs-list");
-    var mLinks  = document.getElementById("m-links");
+    var mLinks = document.getElementById("m-links");
     var mAction = document.getElementById("m-action");
     var mCancel = document.getElementById("m-cancel");
-    var mClose  = document.getElementById("m-close");
+    var mClose = document.getElementById("m-close");
 
     /* ---- Open modal ---- */
     function openModal(pid) {
@@ -417,19 +1377,42 @@
         mAction.disabled = false;
         if (p.status === "completed") {
             mAction.textContent = "Revoir les cartes";
-            mAction.onclick = function() { if (p.deckId) window.location.href = "/decks/" + p.deckId; };
+            mAction.onclick = function () { if (p.deckId) window.location.href = "/decks/" + p.deckId; };
         } else if (p.status === "in_progress") {
             mAction.textContent = "Continuer";
-            mAction.onclick = function() { if (p.deckId) window.location.href = "/decks/" + p.deckId; };
-        } else if (p.status === "available") {
-            mAction.textContent = "Commencer ce pilier";
-            mAction.onclick = function() { doStartPillar(); };
+            mAction.onclick = function () { if (p.deckId) window.location.href = "/decks/" + p.deckId; };
         } else {
-            mAction.textContent = "Bloque";
-            mAction.disabled = true;
+            // available OR locked — both can start
+            mAction.textContent = "Commencer ce pilier";
+            mAction.onclick = function () { doStartPillar(); };
         }
 
         modal.classList.add("open");
+
+        // Load lesson for started pillars
+        var lessonSection = document.getElementById('m-lesson');
+        var lessonContent = document.getElementById('lesson-content');
+        var lessonArrow = document.getElementById('lesson-arrow');
+        lessonContent.innerHTML = '';
+        lessonContent.classList.remove('open');
+        lessonArrow.classList.remove('open');
+
+        if (p.status === 'in_progress' || p.status === 'completed') {
+            lessonSection.style.display = 'block';
+            // Pre-fetch lesson data
+            fetch('/pillars/' + langCode + '/' + pid + '/lesson')
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.lesson) {
+                        window._currentLesson = data.lesson;
+                    } else {
+                        lessonSection.style.display = 'none';
+                    }
+                })
+                .catch(function () { lessonSection.style.display = 'none'; });
+        } else {
+            lessonSection.style.display = 'none';
+        }
     }
 
     function closeModal() {
@@ -445,25 +1428,25 @@
 
         fetch("/pillars/" + langCode + "/" + currentPillarId + "/start", {
             method: "POST",
-            headers: {"Content-Type": "application/json"}
+            headers: { "Content-Type": "application/json" }
         })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (data.success) {
-                toast("Pilier demarre !", "success");
-                setTimeout(function() { location.reload(); }, 800);
-            } else {
-                toast(data.error || "Erreur", "error");
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    toast("Pilier demarre !", "success");
+                    setTimeout(function () { location.reload(); }, 800);
+                } else {
+                    toast(data.error || "Erreur", "error");
+                    mAction.disabled = false;
+                    mAction.textContent = "Commencer";
+                }
+            })
+            .catch(function (err) {
+                console.error(err);
+                toast("Erreur de connexion", "error");
                 mAction.disabled = false;
                 mAction.textContent = "Commencer";
-            }
-        })
-        .catch(function(err) {
-            console.error(err);
-            toast("Erreur de connexion", "error");
-            mAction.disabled = false;
-            mAction.textContent = "Commencer";
-        });
+            });
     }
 
     /* ---- Toast ---- */
@@ -472,17 +1455,17 @@
         el.className = "pl-toast " + (type || "");
         el.textContent = msg;
         document.getElementById("pl-toasts").appendChild(el);
-        setTimeout(function() { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(function() { el.remove(); }, 300); }, 3000);
+        setTimeout(function () { el.style.opacity = "0"; el.style.transition = "opacity 0.3s"; setTimeout(function () { el.remove(); }, 300); }, 3000);
     }
 
-    /* ---- Attach card click handlers ---- */
+    /* ---- Attach node click handlers ---- */
     var cards = document.querySelectorAll(".pl-card[data-clickable='true']");
     for (var i = 0; i < cards.length; i++) {
-        (function(card) {
-            card.addEventListener("click", function(e) {
+        (function (card) {
+            card.addEventListener("click", function (e) {
                 if (e.target.closest && e.target.closest("a")) return;
                 var pid = card.getAttribute("data-pid");
-                openModal(pid);
+                window.location.href = "/pillars/" + langCode + "/" + pid;
             });
         })(cards[i]);
     }
@@ -490,8 +1473,79 @@
     /* ---- Close modal events ---- */
     mCancel.addEventListener("click", closeModal);
     mClose.addEventListener("click", closeModal);
-    modal.addEventListener("click", function(e) { if (e.target === modal) closeModal(); });
-    document.addEventListener("keydown", function(e) { if (e.key === "Escape") closeModal(); });
+    modal.addEventListener("click", function (e) { if (e.target === modal) closeModal(); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+
+    /* ---- Lesson toggle ---- */
+    window.toggleLesson = function () {
+        var content = document.getElementById('lesson-content');
+        var arrow = document.getElementById('lesson-arrow');
+        var isOpen = content.classList.contains('open');
+
+        if (isOpen) {
+            content.classList.remove('open');
+            arrow.classList.remove('open');
+        } else {
+            // Render lesson if not yet rendered
+            if (!content.innerHTML.trim() && window._currentLesson) {
+                renderLesson(window._currentLesson, content);
+            } else if (!content.innerHTML.trim()) {
+                content.innerHTML = '<div class="pl-lesson-loading">Chargement...</div>';
+            }
+            content.classList.add('open');
+            arrow.classList.add('open');
+        }
+    };
+
+    function renderLesson(lesson, container) {
+        var html = '';
+
+        // Summary
+        if (lesson.summary) {
+            html += '<div class="pl-lesson-summary">' + escHtml(lesson.summary) + '</div>';
+        }
+
+        // Key rules
+        if (lesson.key_rules && lesson.key_rules.length > 0) {
+            html += '<div class="pl-lesson-section"><h5>Regles cles</h5>';
+            for (var i = 0; i < lesson.key_rules.length; i++) {
+                html += '<div class="pl-lesson-rule"><span class="bullet">•</span>' + escHtml(lesson.key_rules[i]) + '</div>';
+            }
+            html += '</div>';
+        }
+
+        // Examples
+        if (lesson.examples && lesson.examples.length > 0) {
+            html += '<div class="pl-lesson-section"><h5>Exemples</h5>';
+            for (var j = 0; j < Math.min(lesson.examples.length, 6); j++) {
+                var ex = lesson.examples[j];
+                html += '<div class="pl-lesson-example">';
+                html += '<span class="target">' + escHtml(ex.target || '') + '</span>';
+                if (ex.translation) {
+                    html += ' — <span class="translation">' + escHtml(ex.translation) + '</span>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        // Tips
+        if (lesson.tips && lesson.tips.length > 0) {
+            html += '<div class="pl-lesson-section"><h5>Astuces</h5>';
+            for (var k = 0; k < lesson.tips.length; k++) {
+                html += '<div class="pl-lesson-tip">💡 ' + escHtml(lesson.tips[k]) + '</div>';
+            }
+            html += '</div>';
+        }
+
+        container.innerHTML = html || '<div class="pl-lesson-loading">Pas de leçon disponible</div>';
+    }
+
+    function escHtml(s) {
+        var d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
 
     /* ---- TTS ---- */
     var ttsAudio = new Audio();
@@ -504,16 +1558,16 @@
         document.getElementById("tts-btn").disabled = true;
         return;
         {% endif %}
-        fetch("/api/tts/status").then(function(r){return r.json();}).then(function(d) {
+        fetch("/api/tts/status").then(function (r) { return r.json(); }).then(function (d) {
             badge.textContent = d.available ? "Pret" : "Indisponible";
             badge.className = "pl-tts-badge " + (d.available ? "ready" : "off");
-        }).catch(function() {
+        }).catch(function () {
             badge.textContent = "Hors ligne";
             badge.className = "pl-tts-badge off";
         });
     }
 
-    window.doTts = function() {
+    window.doTts = function () {
         var input = document.getElementById("tts-input");
         var btn = document.getElementById("tts-btn");
         var text = input.value.trim();
@@ -522,19 +1576,19 @@
         btn.textContent = "\u23f3";
         fetch("/api/tts", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({text: text, language: langCode, instruct: "Speak clearly and at a moderate pace"})
-        }).then(function(r) {
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: text, language: langCode, instruct: "Speak clearly and at a moderate pace" })
+        }).then(function (r) {
             if (r.ok) return r.blob();
             throw new Error("TTS error");
-        }).then(function(blob) {
+        }).then(function (blob) {
             var url = URL.createObjectURL(blob);
             ttsAudio.src = url;
             ttsAudio.play();
-            ttsAudio.onended = function() { URL.revokeObjectURL(url); };
-        }).catch(function() {
+            ttsAudio.onended = function () { URL.revokeObjectURL(url); };
+        }).catch(function () {
             toast("Service TTS indisponible", "error");
-        }).finally(function() {
+        }).finally(function () {
             btn.disabled = false;
             btn.textContent = "\u25b6 Ecouter";
         });
@@ -543,6 +1597,6 @@
     initTts();
 
     console.log("[Pillar] Page ready. " + cards.length + " clickable cards.");
-})();
+}) ();
 </script>
 {% endblock %}

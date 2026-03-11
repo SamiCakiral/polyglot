@@ -19,6 +19,7 @@ from app.exercise_config import (
     PRONOUNS_BY_LANG,
     IRREGULAR_VERBS,
 )
+from app.pillar_config import get_language
 
 # Noms de langues pour les prompts
 LANG_NAMES = {
@@ -239,7 +240,7 @@ def _exists_exercise(language_code, exercise_type, content):
     return False
 
 
-def _prompt_conjugation(lang_code, difficulty, count, verb_mode='both', user_context=None):
+def _prompt_conjugation(lang_code, difficulty, count, verb_mode='both', user_context=None, pillar_context=None):
     lang_name = LANG_NAMES.get(lang_code, lang_code)
     pronouns = get_pronouns(lang_code)
     tenses = get_tenses(lang_code)
@@ -247,35 +248,47 @@ def _prompt_conjugation(lang_code, difficulty, count, verb_mode='both', user_con
     pronoun_list = ", ".join(f'"{p}"' for p in pronouns)
     diversity = _build_diversity_instruction(lang_code, 'conjugation', user_context)
 
-    system = f"""Tu es un expert en enseignement du {lang_name}.
-Tu génères des exercices de conjugaison au format JSON strict.
-{diversity}
-Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après."""
+    tier_guidance = {
+        1: "Niveau DEBUTANT: Utilise UNIQUEMENT le present. Verbes tres courants du quotidien (manger, boire, parler, dormir, ecrire).",
+        2: "Niveau ELEMENTAIRE: Present + verbes irreguliers courants (etre, avoir, aller, faire, venir, vouloir, pouvoir, devoir).",
+        3: "Niveau INTERMEDIAIRE: Present + passe compose/parfait + imparfait. Mix de verbes reguliers ET irreguliers.",
+        4: "Niveau AVANCE: Futur, conditionnel, subjonctif present. Verbes avec prepositions, verbes pronominaux.",
+        5: "Niveau EXPERT: Tous les temps y compris subjonctif imparfait, plus-que-parfait, passe simple. Concordance des temps.",
+    }
+    tier = tier_guidance.get(difficulty, tier_guidance[1])
 
-    # Verb mode instructions
+    pillar_instruction = ""
+    if pillar_context:
+        pillar_instruction = f"\nCONTEXTE PILIER: L'exercice doit etre lie au theme '{pillar_context.get('name', '')}'. Description: {pillar_context.get('description', '')}. Adapte les verbes et les temps a ce theme specifique."
+
+    system = f"""Tu es un expert en enseignement du {lang_name}.
+Tu generes des exercices de conjugaison au format JSON strict.
+{diversity}
+Reponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou apres."""
+
     mode_instruction = ""
     if verb_mode == 'irregular':
-        mode_instruction = "Utilise UNIQUEMENT des verbes irreguliers (essere, avere, andare, fare, venire, tenere, dire, sapere, volere, potere, dovere, stare, dare, etc.). Mets 'irregular': true pour tous."
+        mode_instruction = "Utilise UNIQUEMENT des verbes irreguliers. Mets 'irregular': true pour tous."
     elif verb_mode == 'regular':
-        mode_instruction = "Utilise UNIQUEMENT des verbes reguliers (mangiare, parlare, dormire, scrivere, leggere, etc.). Mets 'irregular': false pour tous."
+        mode_instruction = "Utilise UNIQUEMENT des verbes reguliers. Mets 'irregular': false pour tous."
     else:
         mode_instruction = "Melange des verbes reguliers et irreguliers. Indique correctement le champ 'irregular' pour chaque verbe."
 
-    user = f"""Génère {count} exercices de conjugaison en {lang_name}.
-CHAQUE EXERCICE DOIT UTILISER UN VERBE DIFFÉRENT. Aucune répétition de verbe.
+    user = f"""Genere {count} exercices de conjugaison en {lang_name}.
+CHAQUE EXERCICE DOIT UTILISER UN VERBE DIFFERENT. Aucune repetition de verbe.
 
-Chaque exercice doit être un objet avec:
-- "verb": infinitif du verbe dans la langue cible (ex: andare, tener)
-- "verb_native": traduction en français (ex: aller, tenir)
+{tier}
+{mode_instruction}
+{pillar_instruction}
+
+Chaque exercice doit etre un objet avec:
+- "verb": infinitif du verbe dans la langue cible
+- "verb_native": traduction en francais
 - "tense": un des temps suivants: {tense_list}
 - "irregular": true si le verbe est irregulier, false sinon
-- "answers": objet avec une clé pour chaque pronom: {pronoun_list}
-  Les valeurs sont les formes conjuguees correctes.
+- "answers": objet avec une cle pour chaque pronom: {pronoun_list}
 
-Difficulté: {difficulty}/5. Pour difficulté 1-2 utilise des verbes courants et le présent.
-{mode_instruction}
-
-Format de réponse (JSON array):
+Format de reponse (JSON array):
 [
   {{"verb": "andare", "verb_native": "aller", "tense": "presente", "irregular": true, "answers": {{"io": "vado", "tu": "vai", "lui/lei": "va", "noi": "andiamo", "voi": "andate", "loro": "vanno"}}}}
 ]"""
@@ -283,55 +296,83 @@ Format de réponse (JSON array):
     return system, user
 
 
-def _prompt_fill_blank(lang_code, difficulty, count, user_context=None):
+def _prompt_fill_blank(lang_code, difficulty, count, user_context=None, pillar_context=None):
     lang_name = LANG_NAMES.get(lang_code, lang_code)
     diversity = _build_diversity_instruction(lang_code, 'fill_blank', user_context)
 
+    tier_guidance = {
+        1: "Niveau DEBUTANT: Phrases de 3-5 mots. Vocabulaire de base (famille, nourriture, salutations). Verbes au present uniquement. Un seul trou evident.",
+        2: "Niveau ELEMENTAIRE: Phrases de 5-7 mots. Vocabulaire quotidien. Present + passe compose simple. Indice clair.",
+        3: "Niveau INTERMEDIAIRE: Phrases de 7-10 mots. Vocabulaire varie. Tous temps courants. Parfois sans indice de temps.",
+        4: "Niveau AVANCE: Phrases complexes 10-15 mots avec subordonnees. Expressions idiomatiques, prepositions complexes, subjonctif.",
+        5: "Niveau EXPERT: Phrases longues avec nuances. Registre formel/litteraire. Concordance des temps complexe.",
+    }
+    tier = tier_guidance.get(difficulty, tier_guidance[1])
+
+    pillar_instruction = ""
+    if pillar_context:
+        pillar_instruction = f"\nCONTEXTE PILIER: L'exercice doit etre lie au theme '{pillar_context.get('name', '')}'. Description: {pillar_context.get('description', '')}."
+
     system = f"""Tu es un expert en enseignement du {lang_name}.
-Tu génères des exercices "phrase à trou" (un seul trou par phrase) au format JSON.
+Tu generes des exercices "phrase a trou" (un seul trou par phrase) au format JSON.
 {diversity}
-Réponds UNIQUEMENT avec un tableau JSON valide."""
+Reponds UNIQUEMENT avec un tableau JSON valide."""
 
-    user = f"""Génère {count} exercices "phrase à trou" en {lang_name}.
-CHAQUE PHRASE DOIT UTILISER UN VERBE/MOT DIFFÉRENT. Varie les thèmes et les contextes.
+    user = f"""Genere {count} exercices "phrase a trou" en {lang_name}.
+CHAQUE PHRASE DOIT UTILISER UN VERBE/MOT DIFFERENT. Varie les themes et les contextes.
 
-Chaque exercice: une phrase avec ___ à la place du verbe conjugué (ou du mot manquant).
+{tier}
+{pillar_instruction}
+
+Chaque exercice: une phrase avec ___ a la place du verbe conjugue (ou du mot manquant).
 - "sentence": phrase avec ___
-- "hint_verb": infinitif du verbe à conjuguer (ou null si ce n'est pas un verbe)
+- "hint_verb": infinitif du verbe a conjuguer (ou null si ce n'est pas un verbe)
 - "hint_tense": temps (ex: presente, passe_compose) ou null
 - "answer": le mot ou forme qui remplace ___
-- "full_sentence": la phrase complète
-- "translation": traduction de la phrase complète en français
-
-Difficulté {difficulty}/5. Phrases courtes et claires.
+- "full_sentence": la phrase complete
+- "translation": traduction de la phrase complete en francais
 
 Format:
 [
-  {{"sentence": "Io ___ al cinema", "hint_verb": "andare", "hint_tense": "presente", "answer": "vado", "full_sentence": "Io vado al cinema", "translation": "Je vais au cinéma"}}
+  {{"sentence": "Io ___ al cinema", "hint_verb": "andare", "hint_tense": "presente", "answer": "vado", "full_sentence": "Io vado al cinema", "translation": "Je vais au cinema"}}
 ]"""
 
     return system, user
 
 
-def _prompt_transform(lang_code, difficulty, count, user_context=None):
+def _prompt_transform(lang_code, difficulty, count, user_context=None, pillar_context=None):
     lang_name = LANG_NAMES.get(lang_code, lang_code)
     diversity = _build_diversity_instruction(lang_code, 'transform', user_context)
 
-    system = f"""Tu es un expert en enseignement du {lang_name}.
-Tu génères des exercices de transformation (négation, question, changement de temps).
-{diversity}
-Réponds UNIQUEMENT avec un tableau JSON valide."""
+    tier_guidance = {
+        1: "Niveau DEBUTANT: Transformations simples: affirmatif -> negatif uniquement. Phrases courtes (3-5 mots). Present.",
+        2: "Niveau ELEMENTAIRE: Negatif + questions simples. Phrases 5-7 mots. Present + passe compose.",
+        3: "Niveau INTERMEDIAIRE: Negatif, questions, changement de temps (present->passe, present->futur). Phrases de longueur moyenne.",
+        4: "Niveau AVANCE: Voix passive, discours indirect, transformation conditionnelle. Phrases complexes.",
+        5: "Niveau EXPERT: Transformations enchainees (negatif + passif + changement de temps). Registre formel. Concordance des temps.",
+    }
+    tier = tier_guidance.get(difficulty, tier_guidance[1])
 
-    user = f"""Génère {count} exercices de transformation en {lang_name}.
-CHAQUE EXERCICE DOIT UTILISER UNE PHRASE DIFFÉRENTE avec des verbes/sujets variés.
-Varie aussi les types de transformation (négatif, question, changement de temps).
+    pillar_instruction = ""
+    if pillar_context:
+        pillar_instruction = f"\nCONTEXTE PILIER: L'exercice doit etre lie au theme '{pillar_context.get('name', '')}'. Description: {pillar_context.get('description', '')}."
+
+    system = f"""Tu es un expert en enseignement du {lang_name}.
+Tu generes des exercices de transformation (negation, question, changement de temps).
+{diversity}
+Reponds UNIQUEMENT avec un tableau JSON valide."""
+
+    user = f"""Genere {count} exercices de transformation en {lang_name}.
+CHAQUE EXERCICE DOIT UTILISER UNE PHRASE DIFFERENTE avec des verbes/sujets varies.
+Varie aussi les types de transformation (negatif, question, changement de temps).
+
+{tier}
+{pillar_instruction}
 
 Chaque exercice:
-- "original": phrase de départ
-- "instruction": consigne en français (ex: "Mets au négatif", "Pose la question", "Passe au passé")
-- "answer": la phrase transformée correcte
-
-Difficulté {difficulty}/5.
+- "original": phrase de depart
+- "instruction": consigne en francais (ex: "Mets au negatif", "Pose la question", "Passe au passe")
+- "answer": la phrase transformee correcte
 
 Format:
 [
@@ -341,24 +382,38 @@ Format:
     return system, user
 
 
-def _prompt_word_order(lang_code, difficulty, count, user_context=None):
+def _prompt_word_order(lang_code, difficulty, count, user_context=None, pillar_context=None):
     lang_name = LANG_NAMES.get(lang_code, lang_code)
     diversity = _build_diversity_instruction(lang_code, 'word_order', user_context)
 
-    system = f"""Tu es un expert en enseignement du {lang_name}.
-Tu génères des exercices "ordre des mots": phrase correcte dont les mots sont mélangés.
-{diversity}
-Réponds UNIQUEMENT avec un tableau JSON valide."""
+    tier_guidance = {
+        1: "Niveau DEBUTANT: Phrases tres courtes (3-4 mots). SVO simple. Vocabulaire de base.",
+        2: "Niveau ELEMENTAIRE: Phrases courtes (4-6 mots). Avec articles et prepositions simples.",
+        3: "Niveau INTERMEDIAIRE: Phrases moyennes (6-8 mots). Avec adverbes, conjonctions, complements.",
+        4: "Niveau AVANCE: Phrases longues (8-10 mots). Subordonnees, pronoms COD/COI, constructions complexes.",
+        5: "Niveau EXPERT: Phrases complexes (10+ mots). Propositions imbriquees, registre formel.",
+    }
+    tier = tier_guidance.get(difficulty, tier_guidance[1])
 
-    user = f"""Génère {count} exercices d'ordre des mots en {lang_name}.
-CHAQUE PHRASE DOIT ÊTRE SUR UN THÈME DIFFÉRENT. Varie: famille, travail, nourriture, voyage, loisirs, etc.
+    pillar_instruction = ""
+    if pillar_context:
+        pillar_instruction = f"\nCONTEXTE PILIER: L'exercice doit etre lie au theme '{pillar_context.get('name', '')}'. Description: {pillar_context.get('description', '')}."
+
+    system = f"""Tu es un expert en enseignement du {lang_name}.
+Tu generes des exercices "ordre des mots": phrase correcte dont les mots sont melanges.
+{diversity}
+Reponds UNIQUEMENT avec un tableau JSON valide."""
+
+    user = f"""Genere {count} exercices d'ordre des mots en {lang_name}.
+CHAQUE PHRASE DOIT ETRE SUR UN THEME DIFFERENT. Varie: famille, travail, nourriture, voyage, loisirs, etc.
+
+{tier}
+{pillar_instruction}
 
 Chaque exercice:
-- "words_shuffled": liste des mots dans un ordre mélangé (sans ponctuation finale dans les mots)
-- "answer": la phrase correcte (même ordre que words_shuffled mais réordonné)
-- "translation": traduction en français
-
-Difficulté {difficulty}/5. Phrases courtes (4-8 mots).
+- "words_shuffled": liste des mots dans un ordre melange (sans ponctuation finale dans les mots)
+- "answer": la phrase correcte (meme ordre que words_shuffled mais reordonne)
+- "translation": traduction en francais
 
 Format:
 [
@@ -368,51 +423,81 @@ Format:
     return system, user
 
 
-def _prompt_particles(lang_code, difficulty, count, user_context=None):
+def _prompt_particles(lang_code, difficulty, count, user_context=None, pillar_context=None):
     lang_name = LANG_NAMES.get(lang_code, lang_code)
     diversity = _build_diversity_instruction(lang_code, 'particles', user_context)
 
-    system = f"""Tu es un expert en enseignement du {lang_code} (particules).
-Tu génères des exercices à trou pour choisir la bonne particule.
-{diversity}
-Réponds UNIQUEMENT avec un tableau JSON valide."""
+    tier_guidance = {
+        1: "Niveau DEBUTANT: Seulement les particules les plus basiques. Phrases tres simples (sujet + verbe).",
+        2: "Niveau ELEMENTAIRE: Particules de base + destination/moyen. Contextes quotidiens clairs.",
+        3: "Niveau INTERMEDIAIRE: Particules avancees. Phrases avec complements.",
+        4: "Niveau AVANCE: Particules composees, nuances subtiles, particules de fin de phrase.",
+        5: "Niveau EXPERT: Toutes les particules. Cas ambigus, nuances subtiles, particules litteraires.",
+    }
+    tier = tier_guidance.get(difficulty, tier_guidance[1])
 
-    user = f"""Génère {count} exercices de particules en {lang_code}.
-CHAQUE EXERCICE DOIT UTILISER UN CONTEXTE ET UNE PARTICULE DIFFÉRENTS. Varie les situations.
+    pillar_instruction = ""
+    if pillar_context:
+        pillar_instruction = f"\nCONTEXTE PILIER: L'exercice doit etre lie au theme '{pillar_context.get('name', '')}'. Description: {pillar_context.get('description', '')}."
+
+    system = f"""Tu es un expert en enseignement du {lang_code} (particules).
+Tu generes des exercices a trou pour choisir la bonne particule.
+{diversity}
+Reponds UNIQUEMENT avec un tableau JSON valide."""
+
+    user = f"""Genere {count} exercices de particules en {lang_code}.
+CHAQUE EXERCICE DOIT UTILISER UN CONTEXTE ET UNE PARTICULE DIFFERENTS. Varie les situations.
+
+{tier}
+{pillar_instruction}
 
 Chaque exercice:
-- "sentence": phrase avec ___ à la place de la particule manquante
-- "options": liste de 4 particules possibles (ex: ["は", "が", "を", "に"])
+- "sentence": phrase avec ___ a la place de la particule manquante
+- "options": liste de 4 particules possibles
 - "answer": la bonne particule
-- "explanation": courte explication en français (pourquoi cette particule)
+- "explanation": courte explication en francais (pourquoi cette particule)
 
 Format:
 [
-  {{"sentence": "私 ___ 学生です", "options": ["は", "が", "を", "に"], "answer": "は", "explanation": "は marque le sujet/theme"}}
+  {{"sentence": "...", "options": ["...", "...", "...", "..."], "answer": "...", "explanation": "..."}}
 ]"""
 
     return system, user
 
 
-def _prompt_gender(lang_code, difficulty, count, user_context=None):
+def _prompt_gender(lang_code, difficulty, count, user_context=None, pillar_context=None):
     lang_name = LANG_NAMES.get(lang_code, lang_code)
     diversity = _build_diversity_instruction(lang_code, 'gender', user_context)
 
-    system = f"""Tu es un expert en enseignement du {lang_name} (genre et articles).
-Tu génères des exercices pour choisir le bon article/déterminant.
-{diversity}
-Réponds UNIQUEMENT avec un tableau JSON valide."""
+    tier_guidance = {
+        1: "Niveau DEBUTANT: Mots tres courants avec genre evident. Articles definis simples.",
+        2: "Niveau ELEMENTAIRE: Mots courants du quotidien. Articles definis et indefinis. Quelques exceptions simples.",
+        3: "Niveau INTERMEDIAIRE: Mots avec genre non-evident. Articles contractes. Noms ambigus.",
+        4: "Niveau AVANCE: Mots avec exceptions de genre. Noms composes. Articles devant consonnes speciales.",
+        5: "Niveau EXPERT: Cas ambigus, noms avec double genre. Mots d'origine etrangere.",
+    }
+    tier = tier_guidance.get(difficulty, tier_guidance[1])
 
-    user = f"""Génère {count} exercices genre/articles en {lang_name}.
-CHAQUE EXERCICE DOIT UTILISER UN MOT DIFFÉRENT. Varie les catégories: objets, nourriture, animaux, vêtements, corps, maison, nature, etc.
+    pillar_instruction = ""
+    if pillar_context:
+        pillar_instruction = f"\nCONTEXTE PILIER: L'exercice doit etre lie au theme '{pillar_context.get('name', '')}'. Description: {pillar_context.get('description', '')}."
+
+    system = f"""Tu es un expert en enseignement du {lang_name} (genre et articles).
+Tu generes des exercices pour choisir le bon article/determinant.
+{diversity}
+Reponds UNIQUEMENT avec un tableau JSON valide."""
+
+    user = f"""Genere {count} exercices genre/articles en {lang_name}.
+CHAQUE EXERCICE DOIT UTILISER UN MOT DIFFERENT. Varie les categories: objets, nourriture, animaux, vetements, corps, maison, nature, etc.
+
+{tier}
+{pillar_instruction}
 
 Chaque exercice:
-- "word": le nom (ex: maison, livre)
-- "options": liste de 4 choix (ex: ["le", "la", "l'", "les"] pour français)
-- "answer": le bon article/déterminant
-- "full": phrase ou syntagme complet (ex: "la maison")
-
-Difficulté {difficulty}/5.
+- "word": le nom
+- "options": liste de 4 choix d'articles/determinants
+- "answer": le bon article/determinant
+- "full": phrase ou syntagme complet
 
 Format:
 [
@@ -422,24 +507,24 @@ Format:
     return system, user
 
 
-def _generate_via_llm(exercise_type, language_code, difficulty, count, verb_mode='both', user_context=None):
+def _generate_via_llm(exercise_type, language_code, difficulty, count, verb_mode='both', user_context=None, pillar_context=None):
     """Call LLM and return list of content dicts, or empty list on failure."""
     if exercise_type == 'conjugation':
-        system, user = _prompt_conjugation(language_code, difficulty, count, verb_mode=verb_mode, user_context=user_context)
+        system, user = _prompt_conjugation(language_code, difficulty, count, verb_mode=verb_mode, user_context=user_context, pillar_context=pillar_context)
     elif exercise_type == 'fill_blank':
-        system, user = _prompt_fill_blank(language_code, difficulty, count, user_context=user_context)
+        system, user = _prompt_fill_blank(language_code, difficulty, count, user_context=user_context, pillar_context=pillar_context)
     elif exercise_type == 'transform':
-        system, user = _prompt_transform(language_code, difficulty, count, user_context=user_context)
+        system, user = _prompt_transform(language_code, difficulty, count, user_context=user_context, pillar_context=pillar_context)
     elif exercise_type == 'word_order':
-        system, user = _prompt_word_order(language_code, difficulty, count, user_context=user_context)
+        system, user = _prompt_word_order(language_code, difficulty, count, user_context=user_context, pillar_context=pillar_context)
     elif exercise_type == 'particles':
-        system, user = _prompt_particles(language_code, difficulty, count, user_context=user_context)
+        system, user = _prompt_particles(language_code, difficulty, count, user_context=user_context, pillar_context=pillar_context)
     elif exercise_type == 'gender':
-        system, user = _prompt_gender(language_code, difficulty, count, user_context=user_context)
+        system, user = _prompt_gender(language_code, difficulty, count, user_context=user_context, pillar_context=pillar_context)
     else:
         return []
 
-    # Température plus haute pour plus de diversité
+    # Temperature plus haute pour plus de diversite
     response = call_llm(system, user, temperature=0.8)
     if not response:
         return []
@@ -502,21 +587,31 @@ def _normalize_content(exercise_type, raw):
 
 def generate_exercise_batch(language_code, exercise_type, difficulty, count=10, pillar_id=None, verb_mode='both', user_context=None):
     """
-    Génère un batch d'exercices via LLM et les stocke en DB.
-    Déduplique avant insertion. Retourne la liste des exercices créés.
+    Genere un batch d'exercices via LLM et les stocke en DB.
+    Deduplique avant insertion. Retourne la liste des exercices crees.
     
-    user_context (dict, optional): Contexte utilisateur pour personnaliser la génération.
-        Clés possibles:
-        - native_language: langue maternelle (ex: 'fr')
-        - known_languages: langues connues [{code, level, years}]
-        - goals: objectifs ['conversation', 'travel', ...]
-        - correction_preference: 'strict' | 'moderate' | 'encouraging'
-        - weakness_profile: profil de faiblesses {recent_errors, by_type, ...}
+    Si pillar_id est fourni, les exercices seront cibles sur le theme du pilier.
     """
     batch_id = uuid.uuid4().hex
     created = []
 
-    items = _generate_via_llm(exercise_type, language_code, difficulty, count, verb_mode=verb_mode, user_context=user_context)
+    # Build pillar context for targeted exercises
+    pillar_context = None
+    if pillar_id:
+        lang_config = get_language(language_code)
+        if lang_config:
+            pillars = lang_config.get('pillars', [])
+            pillar_cfg = next((p for p in pillars if p['id'] == pillar_id), None)
+            if pillar_cfg:
+                pillar_context = {
+                    'id': pillar_id,
+                    'name': pillar_cfg.get('name', ''),
+                    'description': pillar_cfg.get('description', ''),
+                    'cefr': pillar_cfg.get('cefr', ''),
+                    'category': pillar_cfg.get('category', ''),
+                }
+
+    items = _generate_via_llm(exercise_type, language_code, difficulty, count, verb_mode=verb_mode, user_context=user_context, pillar_context=pillar_context)
     for raw in items:
         content = _normalize_content(exercise_type, raw)
         if not content:
@@ -538,3 +633,4 @@ def generate_exercise_batch(language_code, exercise_type, difficulty, count=10, 
     if created:
         db.session.commit()
     return created
+

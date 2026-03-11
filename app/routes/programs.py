@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.models import TrainingProgram, Deck, User
 from app import db
 from app.llm_service import generate_lego_templates, generate_daily_themes
+from sqlalchemy.orm.attributes import flag_modified
 import json
 
 bp = Blueprint('programs', __name__, url_prefix='/programs')
@@ -35,8 +36,14 @@ EXERCISES = [
     ('writing', '✍️ Smart Writing', 'Écriture créative avec économie de tokens'),
 ]
 
-# Default FSI mutations
-DEFAULT_FSI_MUTATIONS = ['NEGATION', 'FUTUR', 'PASSE', 'PLURIEL', 'QUESTION', 'CONDITIONNEL']
+# Default FSI mutations (extended)
+DEFAULT_FSI_MUTATIONS = ['NEGATION', 'FUTUR', 'PASSE', 'PLURIEL', 'QUESTION', 'CONDITIONNEL', 'FORMEL', 'POINT_DE_VUE']
+
+# Interest suggestions for theme preferences
+INTEREST_OPTIONS = [
+    'sport', 'cuisine', 'voyage', 'tech', 'cinema', 'musique',
+    'nature', 'art', 'histoire', 'actualite', 'business', 'sante', 'mode', 'gaming'
+]
 
 
 @bp.before_request
@@ -62,37 +69,59 @@ def new_program():
 
 @bp.route('/new/step/<int:step>', methods=['GET', 'POST'])
 def wizard_step(step):
-    """Handle each step of the creation wizard."""
+    """Handle each step of the 5-step creation wizard."""
     # Initialize wizard data if needed
     if 'program_wizard' not in session:
         session['program_wizard'] = {}
     
     wizard_data = session['program_wizard']
     
-    # Get user's decks for step 1
-    decks = Deck.query.filter_by(user_id=g.user.id).all()
-    
     if request.method == 'POST':
         if step == 1:
-            # Basic info
+            # =============================================
+            # STEP 1: Basic info + Learner profile
+            # =============================================
             wizard_data['name'] = request.form.get('name', '').strip()
             wizard_data['description'] = request.form.get('description', '').strip()
             wizard_data['target_language'] = request.form.get('target_language', 'italian')
             wizard_data['native_language'] = request.form.get('native_language', 'french')
-            wizard_data['deck_id'] = request.form.get('deck_id', type=int)
             
             if not wizard_data['name']:
                 flash('Le nom du programme est requis.', 'error')
                 return render_template('programs/wizard/step1.html', 
-                                     step=1, data=wizard_data, decks=decks, languages=LANGUAGES)
+                                     step=1, data=wizard_data, languages=LANGUAGES)
             
-            # Deck selection is no longer required (auto-created)
+            # Learner profile
+            wizard_data['program_profile'] = {
+                'current_level': request.form.get('current_level', 'A2'),
+                'years_learning': int(request.form.get('years_learning', 0)),
+                'goals': request.form.getlist('goals') or ['conversation'],
+                'focus_areas': request.form.getlist('focus_areas') or [],
+                'correction_strictness': request.form.get('correction_strictness', 'moderate')
+            }
             
             session['program_wizard'] = wizard_data
             return redirect(url_for('programs.wizard_step', step=2))
             
         elif step == 2:
-            # Exercise configuration
+            # =============================================
+            # STEP 2: Theme preferences
+            # =============================================
+            wizard_data['theme_preferences'] = {
+                'interests': request.form.getlist('interests') or [],
+                'custom_interests': request.form.get('custom_interests', '').strip(),
+                'avoid_topics': request.form.get('avoid_topics', '').strip(),
+                'theme_style': request.form.get('theme_style', 'quotidien_realiste'),
+                'geographic_context': request.form.get('geographic_context', '').strip()
+            }
+            
+            session['program_wizard'] = wizard_data
+            return redirect(url_for('programs.wizard_step', step=3))
+            
+        elif step == 3:
+            # =============================================
+            # STEP 3: Exercises + FSI + Duration
+            # =============================================
             order = request.form.getlist('exercise_order')
             enabled = {}
             for ex_id, _, _ in EXERCISES:
@@ -106,148 +135,217 @@ def wizard_step(step):
                 'duration_target': duration
             }
             
+            wizard_data['fsi_mutations'] = request.form.getlist('fsi_mutations') or DEFAULT_FSI_MUTATIONS[:5]
+            
             session['program_wizard'] = wizard_data
-            return redirect(url_for('programs.wizard_step', step=3))
+            return redirect(url_for('programs.wizard_step', step=4))
             
-        elif step == 3:
-            # Templates & Resources
-            # Lego templates
-            lego_json = request.form.get('lego_templates', '[]')
-            try:
-                wizard_data['lego_templates'] = json.loads(lego_json)
-            except:
-                wizard_data['lego_templates'] = []
-            
-            # FSI mutations
-            wizard_data['fsi_mutations'] = request.form.getlist('fsi_mutations')
-            
-            # Shadowing resources
+        elif step == 4:
+            # =============================================
+            # STEP 4: Shadowing resources
+            # =============================================
             shadowing_json = request.form.get('shadowing_resources', '[]')
             try:
                 wizard_data['shadowing_resources'] = json.loads(shadowing_json)
             except:
                 wizard_data['shadowing_resources'] = []
             
-            # Daily themes
-            themes_raw = request.form.get('daily_themes', '')
-            wizard_data['daily_themes'] = [t.strip() for t in themes_raw.split('\n') if t.strip()]
-            
-            # User profile data
-            wizard_data['user_interests'] = request.form.get('user_interests', '').strip()
-            wizard_data['known_topics'] = request.form.get('known_topics', '').strip()
-            
             session['program_wizard'] = wizard_data
-            return redirect(url_for('programs.wizard_step', step=4))
+            return redirect(url_for('programs.wizard_step', step=5))
             
-        elif step == 4:
-            # LLM prompts & finalize
-            wizard_data['llm_prompts'] = {
-                'text_generation': request.form.get('prompt_text_generation', ''),
-                'quest_generation': request.form.get('prompt_quest_generation', ''),
-                'correction': request.form.get('prompt_correction', ''),
-                'lego_generation': request.form.get('prompt_lego_generation', ''),
+        elif step == 5:
+            # =============================================
+            # STEP 5: Finalize & Create/Update
+            # =============================================
+            session['program_wizard'] = wizard_data
+            
+            editing_id = wizard_data.get('editing_program_id')
+            
+            # Merge theme_preferences into program_profile
+            program_profile = wizard_data.get('program_profile', {})
+            program_profile['theme_preferences'] = wizard_data.get('theme_preferences', {})
+            
+            llm_prompts = {
                 'user_profile': {
-                    'interests': wizard_data.get('user_interests', ''),
-                    'known_topics': wizard_data.get('known_topics', '')
+                    'interests': wizard_data.get('theme_preferences', {}).get('custom_interests', ''),
+                    'known_topics': wizard_data.get('theme_preferences', {}).get('avoid_topics', '')
                 }
             }
             
-            wizard_data['daily_cheat_tokens'] = request.form.get('daily_cheat_tokens', type=int) or 3
+            if editing_id:
+                # ====== UPDATE existing program ======
+                program = TrainingProgram.query.get_or_404(editing_id)
+                if program.user_id != g.user.id:
+                    flash('Acces non autorise.', 'error')
+                    return redirect(url_for('programs.list_programs'))
+                
+                program.name = wizard_data['name']
+                program.description = wizard_data.get('description')
+                program.target_language = wizard_data['target_language']
+                program.native_language = wizard_data['native_language']
+                program.exercise_config = wizard_data.get('exercise_config', program.exercise_config)
+                program.program_profile = program_profile
+                program.fsi_mutations = wizard_data.get('fsi_mutations', DEFAULT_FSI_MUTATIONS[:5])
+                program.shadowing_resources = wizard_data.get('shadowing_resources', [])
+                program.llm_prompts = llm_prompts
+                
+                # Sync shadowing videos
+                from app.models import ShadowingVideo
+                for resource in wizard_data.get('shadowing_resources', []):
+                    url = resource.get('url', '').strip()
+                    if not url:
+                        continue
+                    existing = ShadowingVideo.query.filter_by(program_id=program.id, url=url).first()
+                    if not existing:
+                        db.session.add(ShadowingVideo(
+                            program_id=program.id, url=url,
+                            title=resource.get('title', ''),
+                            duration_seconds=resource.get('duration', 0) or None
+                        ))
+                
+                flag_modified(program, 'exercise_config')
+                flag_modified(program, 'program_profile')
+                db.session.commit()
+                
+                session.pop('program_wizard', None)
+                flash(f'Programme "{program.name}" mis a jour !', 'success')
+                return redirect(url_for('programs.view_program', program_id=program.id))
             
-            session['program_wizard'] = wizard_data
-            
-            # Auto-create a dedicated deck for this program
-            target_lang = wizard_data['target_language'].title()
-            program_name = wizard_data['name']
-            dedicated_deck = Deck(
-                user_id=g.user.id,
-                name=f"📚 {target_lang} - {program_name}",
-                description=f"Deck auto-créé pour le programme \"{program_name}\"",
-                is_program_deck=True
-            )
-            db.session.add(dedicated_deck)
-            db.session.flush()  # Get the ID
-            
-            # Create the program with the dedicated deck
-            program = TrainingProgram(
-                user_id=g.user.id,
-                deck_id=dedicated_deck.id,
-                name=wizard_data['name'],
-                description=wizard_data.get('description'),
-                target_language=wizard_data['target_language'],
-                native_language=wizard_data['native_language'],
-                exercise_config=wizard_data.get('exercise_config'),
-                lego_templates=wizard_data.get('lego_templates', []),
-                fsi_mutations=wizard_data.get('fsi_mutations', DEFAULT_FSI_MUTATIONS),
-                shadowing_resources=wizard_data.get('shadowing_resources', []),
-                daily_themes=wizard_data.get('daily_themes', []),
-                llm_prompts=wizard_data.get('llm_prompts'),
-                daily_cheat_tokens=wizard_data.get('daily_cheat_tokens', 3)
-            )
-            
-            db.session.add(program)
-            db.session.commit()
-            
-            # Pre-generate content (3 days worth) to avoid waiting in session
-            try:
-                generate_initial_batch(program)
-                flash(f'Programme "{program.name}" créé avec succès ! 45 mots générés.', 'success')
-            except Exception as e:
-                print(f"Error generating initial batch: {e}")
-                flash(f'Programme "{program.name}" créé, mais la génération a échoué.', 'warning')
-            
-            # Clear wizard data
-            session.pop('program_wizard', None)
-            
-            return redirect(url_for('programs.view_program', program_id=program.id))
+            else:
+                # ====== CREATE new program ======
+                target_lang = wizard_data['target_language'].title()
+                program_name = wizard_data['name']
+                dedicated_deck = Deck(
+                    user_id=g.user.id,
+                    name=f"{target_lang} - {program_name}",
+                    description=f"Deck du programme \"{program_name}\"",
+                    is_program_deck=True
+                )
+                db.session.add(dedicated_deck)
+                db.session.flush()
+                
+                program = TrainingProgram(
+                    user_id=g.user.id,
+                    deck_id=dedicated_deck.id,
+                    name=wizard_data['name'],
+                    description=wizard_data.get('description'),
+                    target_language=wizard_data['target_language'],
+                    native_language=wizard_data['native_language'],
+                    exercise_config=wizard_data.get('exercise_config'),
+                    program_profile=program_profile,
+                    lego_templates=[],
+                    fsi_mutations=wizard_data.get('fsi_mutations', DEFAULT_FSI_MUTATIONS[:5]),
+                    shadowing_resources=wizard_data.get('shadowing_resources', []),
+                    daily_themes=[],
+                    llm_prompts=llm_prompts,
+                    daily_cheat_tokens=3
+                )
+                
+                db.session.add(program)
+                db.session.commit()
+                
+                # Auto-generate initial content
+                generation_report = []
+                
+                try:
+                    from app.theme_generator import generate_new_weekly_theme
+                    weekly_theme = generate_new_weekly_theme(program, g.user)
+                    generation_report.append(f"Theme \"{weekly_theme.main_theme}\" genere")
+                except Exception as e:
+                    print(f"[Wizard] Theme generation failed: {e}")
+                    generation_report.append("Theme: echec")
+                
+                try:
+                    generate_initial_batch(program)
+                    generation_report.append("15 mots generes")
+                except Exception as e:
+                    print(f"[Wizard] Vocab generation failed: {e}")
+                    generation_report.append("Vocabulaire: echec")
+                
+                try:
+                    from app.gym_engine import create_default_structures
+                    structures = create_default_structures(
+                        program.id, program.target_language, program.native_language
+                    )
+                    generation_report.append(f"{len(structures)} structures Lego")
+                except Exception as e:
+                    print(f"[Wizard] Lego generation failed: {e}")
+                    generation_report.append("Structures: echec")
+                
+                session.pop('program_wizard', None)
+                
+                report = ' | '.join(generation_report)
+                flash(f'Programme "{program.name}" cree ! {report}', 'success')
+                
+                return redirect(url_for('programs.view_program', program_id=program.id))
     
+    # =============================================
     # GET request - render the appropriate step
+    # =============================================
     if step == 1:
         return render_template('programs/wizard/step1.html', 
-                             step=1, data=wizard_data, decks=decks, languages=LANGUAGES)
+                             step=1, data=wizard_data, languages=LANGUAGES)
     elif step == 2:
-        return render_template('programs/wizard/step2.html',
-                             step=2, data=wizard_data, exercises=EXERCISES)
+        return render_template('programs/wizard/step2_themes.html',
+                             step=2, data=wizard_data)
     elif step == 3:
-        return render_template('programs/wizard/step3.html',
-                             step=3, data=wizard_data, fsi_mutations=DEFAULT_FSI_MUTATIONS)
+        return render_template('programs/wizard/step3_exercises.html',
+                             step=3, data=wizard_data, exercises=EXERCISES, 
+                             fsi_mutations=DEFAULT_FSI_MUTATIONS)
     elif step == 4:
-        # Default prompts
-        default_prompts = {
-            'text_generation': "Génère un texte court (50-80 mots) en {target_language} sur le thème: {theme}. Niveau A2, phrases simples.",
-            'quest_generation': "Crée une mission courte en {native_language} demandant à l'utilisateur de raconter une anecdote utilisant ces mots: {words}",
-            'correction': "Tu es un correcteur strict. Corrige ce texte en {target_language}. Affiche les erreurs et explique-les.",
-            'lego_generation': "Génère 5 templates de structures de phrases pour apprendre {target_language} au niveau A2."
-        }
-        return render_template('programs/wizard/step4.html',
-                             step=4, data=wizard_data, default_prompts=default_prompts)
+        return render_template('programs/wizard/step4_resources.html',
+                             step=4, data=wizard_data)
+    elif step == 5:
+        return render_template('programs/wizard/step5_finalize.html',
+                             step=5, data=wizard_data)
 
 def generate_initial_batch(program):
-    """Generate initial vocabulary batch (45 words) for the new program."""
+    """Generate initial vocabulary batch (45 words) for the new program.
+    
+    If a WeeklyTheme exists for this program, use its first 3 days'
+    vocab_domains to generate themed vocabulary.
+    """
     from app.llm_service import call_llm
-    from app.models import Card
+    from app.models import Card, WeeklyTheme
     import json
     
-    theme = "Les bases / Salutations / Présentation"
-    count = 45
+    # Initial batch: just enough for first 2 days (~15 new/day)
+    # This will grow organically with daily generation
+    count = 15
     
-    # Context from user profile
-    llm_prompts = program.llm_prompts or {}
-    user_profile = llm_prompts.get('user_profile', {})
-    interests = user_profile.get('interests', '')
-    known = user_profile.get('known_topics', '')
+    # Try to get the weekly theme for context
+    weekly_theme = WeeklyTheme.query.filter_by(
+        program_id=program.id
+    ).order_by(WeeklyTheme.generated_at.desc()).first()
     
-    context = ""
-    if interests:
-        context += f"\nUser Interests (incorporate if possible): {interests}"
-    if known:
-        context += f"\nAvoid these topics (already known): {known}"
+    # Build theme context
+    theme = "Les bases / Salutations / Presentation"
+    vocab_hint = ""
+    if weekly_theme and weekly_theme.daily_breakdown:
+        theme = weekly_theme.main_theme
+        # Collect vocab domains from first 3 days
+        domains = []
+        for day in weekly_theme.daily_breakdown[:3]:
+            domains.extend(day.get('vocab_domains', []))
+        if domains:
+            vocab_hint = f"\nVocabulary domains to cover: {', '.join(domains)}"
+    
+    # Context from program profile
+    pp = program.program_profile or {}
+    user_level = pp.get('current_level', 'A2')
+    theme_prefs = pp.get('theme_preferences', {})
+    avoid = theme_prefs.get('avoid_topics', '')
+    
+    avoid_hint = f"\nTopics to AVOID: {avoid}" if avoid else ""
     
     prompt = f"""Generate {count} vocabulary words for learning {program.target_language} (Native: {program.native_language}).
-Theme: {theme}{context}
-Level: A1-A2 (Beginner)
+Theme: {theme}{vocab_hint}{avoid_hint}
+Level: {user_level}
 
-Return ONLY a JSON array with this format:
+The words should be practical, everyday vocabulary that fits the theme.
+Mix nouns, verbs, adjectives, and useful expressions.
+
+Return ONLY a JSON array:
 [
   {{"front": "word in {program.target_language}", "back": "translation in {program.native_language}"}},
   ...
@@ -283,129 +381,89 @@ Return ONLY the JSON array, no other text."""
             db.session.add(card)
         
         db.session.commit()
+        print(f"[Wizard] Generated {len(words)} vocabulary cards for program {program.id}")
     except Exception as e:
         print(f"Initial generation failed: {e}")
-    
-    return redirect(url_for('programs.wizard_step', step=1))
 
 
 @bp.route('/<int:program_id>')
 def view_program(program_id):
     """View a training program."""
+    from app.models import WeeklyTheme, ProgramSession, DebtWord, LegoStructure
+    
     program = TrainingProgram.query.get_or_404(program_id)
     if program.user_id != g.user.id:
-        flash('Accès non autorisé.', 'error')
+        flash('Acces non autorise.', 'error')
         return redirect(url_for('programs.list_programs'))
     
-    return render_template('programs/view.html', program=program, exercises=EXERCISES)
-
-
-@bp.route('/<int:program_id>/edit', methods=['GET', 'POST'])
-def edit_program(program_id):
-    """Edit a training program."""
-    program = TrainingProgram.query.get_or_404(program_id)
-    if program.user_id != g.user.id:
-        flash('Accès non autorisé.', 'error')
-        return redirect(url_for('programs.list_programs'))
+    # Get current weekly theme
+    weekly_theme = WeeklyTheme.query.filter_by(
+        program_id=program.id
+    ).order_by(WeeklyTheme.generated_at.desc()).first()
     
-    decks = Deck.query.filter_by(user_id=g.user.id).all()
+    # Get Lego structures
+    lego_structures = LegoStructure.query.filter_by(
+        program_id=program.id, is_active=True
+    ).order_by(LegoStructure.stability.asc()).all()
     
-    if request.method == 'POST':
-        program.name = request.form.get('name', '').strip()
-        program.description = request.form.get('description', '').strip()
-        program.target_language = request.form.get('target_language', 'italian')
-        program.native_language = request.form.get('native_language', 'french')
-        program.deck_id = request.form.get('deck_id', type=int)
-        
-        # Exercise config
-        order = request.form.getlist('exercise_order')
-        enabled = {}
-        for ex_id, _, _ in EXERCISES:
-            enabled[ex_id] = request.form.get(f'enabled_{ex_id}') == 'on'
-        
-        program.exercise_config = {
-            'order': order if order else program.exercise_config.get('order', []),
-            'enabled': enabled,
-            'duration_target': request.form.get('duration_target', type=int) or 30
-        }
-        
-        # Lego templates
-        lego_json = request.form.get('lego_templates', '[]')
-        try:
-            program.lego_templates = json.loads(lego_json)
-        except:
-            pass
-        
-        # FSI mutations
-        program.fsi_mutations = request.form.getlist('fsi_mutations')
-        
-        # Shadowing - Save to both legacy JSON and new ShadowingVideo model
-        from app.models import ShadowingVideo
-        shadowing_json = request.form.get('shadowing_resources', '[]')
-        try:
-            shadowing_data = json.loads(shadowing_json)
-            program.shadowing_resources = shadowing_data
-            
-            # Sync to ShadowingVideo model
-            # Deactivate old videos not in the new list
-            existing_urls = {v.url for v in ShadowingVideo.query.filter_by(program_id=program.id).all()}
-            new_urls = {r.get('url', '') for r in shadowing_data if r.get('url')}
-            
-            # Deactivate removed videos
-            for video in ShadowingVideo.query.filter_by(program_id=program.id).all():
-                if video.url not in new_urls:
-                    video.is_active = False
-            
-            # Add/update videos
-            for resource in shadowing_data:
-                url = resource.get('url', '').strip()
-                if not url:
-                    continue
-                    
-                # Check if already exists
-                existing = ShadowingVideo.query.filter_by(
-                    program_id=program.id,
-                    url=url
-                ).first()
-                
-                if existing:
-                    existing.title = resource.get('title', '')
-                    existing.is_active = True
-                else:
-                    video = ShadowingVideo(
-                        program_id=program.id,
-                        url=url,
-                        title=resource.get('title', ''),
-                        duration_seconds=resource.get('duration', 0) or None
-                    )
-                    db.session.add(video)
-        except Exception as e:
-            print(f"Error syncing shadowing videos: {e}")
-        
-        # Daily themes
-        themes_raw = request.form.get('daily_themes', '')
-        program.daily_themes = [t.strip() for t in themes_raw.split('\n') if t.strip()]
-        
-        # LLM prompts
-        program.llm_prompts = {
-            'text_generation': request.form.get('prompt_text_generation', ''),
-            'quest_generation': request.form.get('prompt_quest_generation', ''),
-            'correction': request.form.get('prompt_correction', ''),
-            'lego_generation': request.form.get('prompt_lego_generation', '')
-        }
-        
-        program.daily_cheat_tokens = request.form.get('daily_cheat_tokens', type=int) or 3
-        
-        db.session.commit()
-        flash('Programme mis à jour !', 'success')
-        return redirect(url_for('programs.view_program', program_id=program.id))
+    # Stats
+    session_count = ProgramSession.query.filter_by(
+        program_id=program.id, user_id=g.user.id
+    ).count()
     
-    return render_template('programs/edit.html', 
+    debt_count = DebtWord.query.filter_by(
+        user_id=g.user.id, program_id=program.id, processed=False
+    ).count()
+    
+    return render_template('programs/view.html', 
                          program=program, 
-                         decks=decks, 
-                         languages=LANGUAGES,
                          exercises=EXERCISES,
-                         fsi_mutations=DEFAULT_FSI_MUTATIONS)
+                         weekly_theme=weekly_theme,
+                         lego_structures=lego_structures,
+                         lego_count=len(lego_structures),
+                         session_count=session_count,
+                         debt_count=debt_count)
+
+
+@bp.route('/<int:program_id>/edit', methods=['GET'])
+def edit_program(program_id):
+    """Edit a training program - redirects to wizard with pre-filled data."""
+    program = TrainingProgram.query.get_or_404(program_id)
+    if program.user_id != g.user.id:
+        flash('Acces non autorise.', 'error')
+        return redirect(url_for('programs.list_programs'))
+    
+    pp = program.program_profile or {}
+    ec = program.exercise_config or {}
+    tp = pp.get('theme_preferences', {})
+    
+    # Pre-fill wizard data from existing program
+    session['program_wizard'] = {
+        'editing_program_id': program.id,
+        'name': program.name or '',
+        'description': program.description or '',
+        'target_language': program.target_language or 'italian',
+        'native_language': program.native_language or 'french',
+        'program_profile': {
+            'current_level': pp.get('current_level', 'A2'),
+            'years_learning': pp.get('years_learning', 0),
+            'goals': pp.get('goals', ['conversation']),
+            'focus_areas': pp.get('focus_areas', []),
+            'correction_strictness': pp.get('correction_strictness', 'moderate')
+        },
+        'theme_preferences': {
+            'interests': tp.get('interests', []),
+            'custom_interests': tp.get('custom_interests', ''),
+            'avoid_topics': tp.get('avoid_topics', ''),
+            'theme_style': tp.get('theme_style', 'quotidien_realiste'),
+            'geographic_context': tp.get('geographic_context', '')
+        },
+        'exercise_config': ec,
+        'fsi_mutations': program.fsi_mutations or DEFAULT_FSI_MUTATIONS[:5],
+        'shadowing_resources': program.shadowing_resources or []
+    }
+    
+    return redirect(url_for('programs.wizard_step', step=1))
 
 
 @bp.route('/<int:program_id>/delete', methods=['POST'])

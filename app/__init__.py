@@ -45,6 +45,9 @@ def create_app(config_class=Config):
     from app.routes import pillar_exercises
     app.register_blueprint(pillar_exercises.bp)
 
+    from app.routes import pillar_chat
+    app.register_blueprint(pillar_chat.bp)
+
     from app.routes import assessments
     app.register_blueprint(assessments.bp)
     

@@ -989,11 +989,23 @@ document.addEventListener('DOMContentLoaded', function() {
     to { opacity: 0; transform: translateY(-20px); }
 }
 
-@media (max-width: 600px) {
-    .profile-container { padding: 1rem; }
-    .known-language-row { grid-template-columns: 1fr 1fr; }
-    .goals-grid { grid-template-columns: repeat(2, 1fr); }
-    .account-row { flex-direction: column; }
+@media (max-width: 768px) {
+    .profile-container { padding: 0.75rem; max-width: 100%; }
+    .profile-section { padding: 1rem; }
+    .profile-section h2 { font-size: 1.1rem; }
+    .known-language-row { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .goals-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .account-row { flex-direction: column; gap: 0.5rem; }
+    .profile-actions { flex-direction: column; }
+    .profile-actions .btn { width: 100%; justify-content: center; }
+    .form-group input,
+    .form-group textarea,
+    .form-group select { font-size: 16px; } /* prevent iOS zoom */
+}
+
+@media (max-width: 400px) {
+    .known-language-row { grid-template-columns: 1fr; }
+    .goals-grid { grid-template-columns: 1fr 1fr; }
 }
 </style>
 {% endblock %}

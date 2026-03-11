@@ -45,24 +45,42 @@
 
         <!-- Card View -->
         <div id="card-view" style="width: 100%; {% if not session.daily_words %}display:none{% endif %}">
+            <!-- Navigation hints -->
+            <div class="keyboard-hint" style="text-align:center; font-size:0.75rem; color:var(--gray-400); margin-bottom:0.5rem;">
+                <kbd>Espace</kbd>=Retourner <kbd>1-4</kbd>=Noter <kbd>&larr;</kbd>=Retour
+            </div>
+
+            <!-- Direction indicator -->
+            <div style="text-align:center; margin-bottom:0.5rem;">
+                <span class="direction-badge" id="direction-badge" style="display:inline-block; background:var(--primary-color, #6366f1); color:white; padding:0.2rem 0.75rem; border-radius:12px; font-size:0.8rem; font-weight:500;"></span>
+            </div>
+
             <div class="flashcard" id="flashcard" onclick="flipCard()">
                 <div class="flashcard-inner" id="flashcard-inner">
                     <div class="flashcard-front">
                         <div class="card-content" id="card-front"></div>
-                        <button class="tts-inline-btn" id="tts-front-btn" onclick="event.stopPropagation(); ttsPlayCard('front')" title="Ecouter la prononciation">🔊</button>
-                        <div class="flip-hint">👆 Cliquez ou Espace pour retourner</div>
+                        <button class="tts-inline-btn" id="tts-front-btn"
+                            onclick="event.stopPropagation(); ttsPlayCard('front')"
+                            title="Ecouter la prononciation">&#128266;</button>
+                        <div class="flip-hint">Cliquez ou Espace pour retourner</div>
                     </div>
                     <div class="flashcard-back">
                         <div class="card-content" id="card-back"></div>
-                        <button class="tts-inline-btn" onclick="event.stopPropagation(); ttsPlayCard('back')" title="Ecouter la prononciation" style="position:absolute; bottom:1.5rem; right:1.5rem; background:rgba(255,255,255,0.2);">🔊</button>
+                        <button class="tts-inline-btn" onclick="event.stopPropagation(); ttsPlayCard('back')"
+                            title="Ecouter la prononciation"
+                            style="position:absolute; bottom:1.5rem; right:1.5rem; background:rgba(255,255,255,0.2);">&#128266;</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Review Buttons (Hidden initially) -->
+            <!-- Review Buttons + Back -->
             <footer class="review-buttons" id="review-buttons" style="display: none;">
+                <button type="button" class="review-btn" id="back-btn" onclick="goBack()" style="background:#f1f5f9; color:#64748b;" title="Revenir a la carte precedente">
+                    <span class="btn-label">&larr;</span>
+                    <span class="btn-interval">Retour</span>
+                </button>
                 <button type="button" class="review-btn quality-1" onclick="reviewCard(1)">
-                    <span class="btn-label">À revoir</span>
+                    <span class="btn-label">A revoir</span>
                     <span class="btn-interval">1j</span>
                 </button>
                 <button type="button" class="review-btn quality-2" onclick="reviewCard(2)">
@@ -229,23 +247,78 @@
         background-color: #dbeafe;
         color: #1d4ed8;
     }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+        .flashcard {
+            height: 300px;
+            margin: 1rem auto;
+        }
+
+        .card-content {
+            font-size: 1.75rem;
+        }
+
+        .review-buttons {
+            gap: 0.5rem;
+        }
+
+        .review-btn {
+            min-width: 70px;
+            padding: 0.5rem;
+            flex: 1;
+        }
+
+        .btn-label {
+            font-size: 0.85rem;
+        }
+
+        .btn-interval {
+            font-size: 0.7rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    let words = {{ session.daily_words | tojson | safe }};
+    // =========================================================
+    // SESSION FLASHCARDS - Bidirectional, flip, go back
+    // =========================================================
+    
+    // Raw unique cards (15 cards with front=target, back=native)
+    const rawWords = {{ session.daily_words | tojson | safe }};
+    
+    // Build bidirectional deck in JS (30 passes: 15 front->back + 15 back->front)
+    let deck = [];
+    function buildDeck(words) {
+        deck = [];
+        for (const w of words) {
+            // Pass 1: Target -> Native (front -> back)
+            deck.push({ ...w, show: w.front, answer: w.back, dir: 'target_to_native' });
+            // Pass 2: Native -> Target (back -> front)
+            deck.push({ ...w, show: w.back, answer: w.front, dir: 'native_to_target' });
+        }
+        // Shuffle so it's not always paired
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+    }
+
     let currentIndex = 0;
     let correct = 0;
-    let total = words.length;
+    let total = 0;
     let flipped = false;
+    let history = []; // for go-back
 
     document.addEventListener('DOMContentLoaded', () => {
-        if (total > 0) {
+        if (rawWords && rawWords.length > 0) {
+            buildDeck(rawWords);
+            total = deck.length;
             document.getElementById('total-count').textContent = total;
             showCard();
         } else {
-            // Auto-generate if empty
             document.getElementById('loading-state').style.display = 'block';
             generateWords();
         }
@@ -261,22 +334,20 @@
             const data = await response.json();
 
             if (data.success && data.words && data.words.length > 0) {
-                words = data.words;
-                total = words.length;
+                buildDeck(data.words);
+                total = deck.length;
                 document.getElementById('total-count').textContent = total;
                 document.getElementById('loading-state').style.display = 'none';
                 document.getElementById('card-view').style.display = 'block';
                 showCard();
             } else {
-                document.getElementById('loading-state').innerHTML = '<p class="text-danger">Erreur de génération: ' + (data.error || 'Aucun mot genere') + '. Veuillez rafraichir.</p>';
+                document.getElementById('loading-state').innerHTML = '<p style="color:red;">Erreur: ' + (data.error || 'Aucun mot genere') + '</p>';
             }
         } catch (e) {
             console.error("Generation failed", e);
-            document.getElementById('loading-state').innerHTML = '<p class="text-danger">Erreur serveur. Veuillez réessayer.</p>';
+            document.getElementById('loading-state').innerHTML = '<p style="color:red;">Erreur serveur.</p>';
         }
     }
-
-    // No word bank in flashcards (to avoid cheating)
 
     function showCard() {
         if (currentIndex >= total) {
@@ -284,63 +355,87 @@
             return;
         }
 
-        const word = words[currentIndex];
+        const card = deck[currentIndex];
         const inner = document.getElementById('flashcard-inner');
 
-        // 1. Disable transition to SNAP to front (mimic page reload)
+        // Snap to front (no animation)
         inner.style.transition = 'none';
-
-        // 2. Unflip immediately
         inner.classList.remove('flipped');
         flipped = false;
         document.getElementById('review-buttons').style.display = 'none';
 
-        // 3. Update all content immediately
-        document.getElementById('card-front').textContent = word.front;
-        document.getElementById('card-back').textContent = word.back;
+        // Update content
+        document.getElementById('card-front').textContent = card.show;
+        document.getElementById('card-back').textContent = card.answer;
         document.getElementById('current-idx').textContent = currentIndex + 1;
         document.getElementById('progress-fill').style.width = ((currentIndex / total) * 100) + '%';
 
-        // 4. Force reflow/repaint
-        void inner.offsetWidth;
+        // Direction badge
+        const badge = document.getElementById('direction-badge');
+        if (card.dir === 'target_to_native') {
+            badge.textContent = 'Cible \u2192 Maternelle';
+            badge.style.background = '#6366f1';
+        } else {
+            badge.textContent = 'Maternelle \u2192 Cible';
+            badge.style.background = '#8b5cf6';
+        }
 
-        // 5. Restore transition for the NEXT flip
+        // Back button visibility
+        document.getElementById('back-btn').style.visibility = currentIndex > 0 ? 'visible' : 'hidden';
+
+        // Force reflow then restore transition
+        void inner.offsetWidth;
         inner.style.transition = '';
     }
 
     function flipCard() {
         if (flipped) return;
-
         const inner = document.getElementById('flashcard-inner');
         inner.classList.add('flipped');
         flipped = true;
         document.getElementById('review-buttons').style.display = 'flex';
-
-        // Auto-focus logic like in training/card.html
-        setTimeout(() => document.querySelector('.quality-4')?.focus(), 100);
+        setTimeout(() => document.querySelector('.quality-3')?.focus(), 100);
     }
 
     async function reviewCard(quality) {
-        // Guard: Stop if already complete
         if (currentIndex >= total) return;
 
-        const word = words[currentIndex];
-        try {
-            await fetch('{{ url_for("training.submit_review") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    card_id: word.card_id,
-                    quality: quality,
-                    duration: 0
-                })
-            });
-        } catch (e) {
-            console.error("Review failed", e);
+        const card = deck[currentIndex];
+        
+        // Submit review to server (use original card_id)
+        if (card.card_id) {
+            try {
+                await fetch('{{ url_for("training.submit_review") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        card_id: card.card_id,
+                        quality: quality,
+                        duration: 0
+                    })
+                });
+            } catch (e) {
+                console.error("Review failed", e);
+            }
         }
 
         if (quality >= 3) correct++;
+        
+        // Save to history for go-back
+        history.push({ index: currentIndex, quality: quality });
+        
         currentIndex++;
+        showCard();
+    }
+
+    function goBack() {
+        if (history.length === 0) return;
+        
+        const prev = history.pop();
+        // Undo score
+        if (prev.quality >= 3) correct--;
+        
+        currentIndex = prev.index;
         showCard();
     }
 
@@ -360,22 +455,21 @@
         window.location.href = '{{ url_for("session.next_module") }}';
     }
 
-    // TTS for flashcards
+    // TTS
     const _ttsLang = '{{ program.target_language if program else "auto" }}';
     function ttsPlayCard(side) {
-        const text = side === 'front' 
-            ? document.getElementById('card-front').textContent 
+        const text = side === 'front'
+            ? document.getElementById('card-front').textContent
             : document.getElementById('card-back').textContent;
-        const btn = side === 'front' 
+        const btn = side === 'front'
             ? document.getElementById('tts-front-btn')
             : event.target.closest('.tts-inline-btn');
         if (text && text.trim()) ttsInline(text.trim(), _ttsLang, btn);
     }
 
-    // Keyboard Shortcuts (Matching training/card.html keys)
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        // Guard: Stop if indices exhausted
-        if (currentIndex >= total) return;
+        if (currentIndex >= total && !history.length) return;
 
         if (e.code === 'Space' || e.code === 'Enter') {
             e.preventDefault();
@@ -386,7 +480,12 @@
             const keyMap = { 'Digit1': 1, 'Digit2': 2, 'Digit3': 3, 'Digit4': 4 };
             if (keyMap[e.code]) reviewCard(keyMap[e.code]);
         }
-    });
 
+        // Back with left arrow
+        if (e.code === 'ArrowLeft') {
+            e.preventDefault();
+            goBack();
+        }
+    });
 </script>
 {% endblock %}

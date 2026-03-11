@@ -71,7 +71,9 @@
                         {{ card.front }}
                         {% endif %}
                     </div>
-                    <button class="tts-inline-btn" onclick="event.stopPropagation(); ttsInline(this.previousElementSibling.textContent, '{{ tts_language }}', this)" title="Ecouter">🔊</button>
+                    <button class="tts-inline-btn"
+                        onclick="event.stopPropagation(); ttsInline(this.previousElementSibling.textContent, '{{ tts_language }}', this)"
+                        title="Ecouter">🔊</button>
                     <div class="flip-hint">👆 Cliquez ou <kbd>Entrée</kbd> pour retourner</div>
                 </div>
                 <div class="flashcard-back">
@@ -82,7 +84,10 @@
                         {{ card.back }}
                         {% endif %}
                     </div>
-                    <button class="tts-inline-btn" onclick="event.stopPropagation(); ttsInline(this.previousElementSibling.textContent, '{{ tts_language }}', this)" title="Ecouter" style="position:absolute; bottom:1.5rem; right:1.5rem; background:rgba(255,255,255,0.2);">🔊</button>
+                    <button class="tts-inline-btn"
+                        onclick="event.stopPropagation(); ttsInline(this.previousElementSibling.textContent, '{{ tts_language }}', this)"
+                        title="Ecouter"
+                        style="position:absolute; bottom:1.5rem; right:1.5rem; background:rgba(255,255,255,0.2);">🔊</button>
                 </div>
             </div>
         </div>
@@ -120,7 +125,9 @@
                     {{ card.back }}
                     {% endif %}
                 </div>
-                <button class="tts-inline-btn" onclick="ttsInline(document.getElementById('typing-question').textContent, '{{ tts_language }}', this)" title="Ecouter" style="margin-top:0.5rem;">🔊</button>
+                <button class="tts-inline-btn"
+                    onclick="ttsInline(document.getElementById('typing-question').textContent, '{{ tts_language }}', this)"
+                    title="Ecouter" style="margin-top:0.5rem;">🔊</button>
 
                 {% if is_reviewed %}
                 <div class="typing-container">
@@ -197,6 +204,17 @@
             padding: 0.5rem;
         }
 
+        .flashcard {
+            height: 300px;
+            /* Reduced height for mobile */
+            margin: 1rem auto;
+        }
+
+        .card-content {
+            font-size: 1.75rem;
+            /* Smaller font for mobile */
+        }
+
         .typing-mode {
             height: auto !important;
             min-height: auto;
@@ -245,6 +263,28 @@
         .stop-form .btn {
             padding: 0.5rem 0.75rem;
             font-size: 0.8rem;
+        }
+
+        /* Review Buttons Grid */
+        .buttons-form {
+            display: flex;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .review-btn {
+            flex: 1;
+            padding: 0.5rem;
+            min-width: 0;
+            /* Allow shrinking */
+        }
+
+        .btn-label {
+            font-size: 0.8rem;
+        }
+
+        .btn-interval {
+            font-size: 0.65rem;
         }
     }
 </style>

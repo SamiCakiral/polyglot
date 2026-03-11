@@ -372,25 +372,80 @@ Réponds UNIQUEMENT en JSON:
         }]
 
 
+def _structure_matches_intent(structure, intent):
+    """Check if a structure's tags or description match the suggested_lego_intent."""
+    if not intent or intent == 'general':
+        return False
+    
+    intent_lower = intent.lower().replace('_', ' ')
+    
+    # Check tags
+    tags = structure.tags or []
+    for tag in tags:
+        if intent_lower in tag.lower() or tag.lower() in intent_lower:
+            return True
+    
+    # Check description
+    desc = (structure.description or '').lower()
+    if intent_lower in desc:
+        return True
+    
+    # Check pattern keywords
+    pattern = (structure.pattern or '').lower()
+    # Map common intents to pattern keywords
+    intent_pattern_map = {
+        'se_presenter': ['sujet', 'present', 'appel'],
+        'exprimer_souhait': ['vorr', 'voul', 'aimer'],
+        'raconter_passe': ['passe', 'pass'],
+        'exprimer_obligation': ['dev', 'doit', 'falloir'],
+        'exprimer_condition': ['se ', 'si '],
+        'exprimer_cause': ['perch', 'parce'],
+        'comparer': ['più', 'plus', 'moin'],
+        'donner_avis': ['pens', 'cred', 'opinion'],
+        'demander': ['question', 'demand'],
+    }
+    
+    keywords = intent_pattern_map.get(intent, [])
+    for kw in keywords:
+        if kw in pattern or kw in desc:
+            return True
+    
+    return False
+
+
 def get_or_generate_structure_for_session(program, user, session_context):
     """
     Get an existing due structure or generate a new one if needed.
     
-    Logic:
-    1. If a structure is due (FSRS) -> use it
-    2. If few structures (< 5) -> generate a new one
-    3. If all structures mastered (stability > 30) -> generate a new one
-    4. Otherwise -> use structure with lowest stability
+    Uses suggested_lego_intent from the daily_breakdown to prioritize
+    structures that match the day's communicative intent.
     
-    Args:
-        program: TrainingProgram object
-        user: User object (can be None)
-        session_context: dict with theme, level, etc.
-    
-    Returns:
-        LegoStructure: The structure to practice
+    Priority:
+    1. Due structure matching today's intent
+    2. Due structure (any)
+    3. New structure matching intent
+    4. New structure (any)
+    5. Generate a new structure if few exist or all mastered
+    6. Lowest stability structure
     """
     today = date.today()
+    
+    # Get today's suggested intent
+    lego_intent = 'general'
+    if session_context:
+        lego_intent = session_context.get('suggested_lego_intent', 'general')
+        # If not directly in context, try to extract from day breakdown
+        if lego_intent == 'general' and session_context.get('day_focus'):
+            # Infer intent from day_focus keywords
+            focus = session_context.get('day_focus', '').lower()
+            if any(w in focus for w in ['present', 'introdui', 'arriv']):
+                lego_intent = 'se_presenter'
+            elif any(w in focus for w in ['pass', 'hier', 'racont', 'souvenir']):
+                lego_intent = 'raconter_passe'
+            elif any(w in focus for w in ['futur', 'projet', 'plan', 'demain']):
+                lego_intent = 'exprimer_souhait'
+            elif any(w in focus for w in ['travail', 'bureau', 'reunion']):
+                lego_intent = 'exprimer_obligation'
     
     # Get all active structures for this program
     all_structures = LegoStructure.query.filter_by(
@@ -406,81 +461,199 @@ def get_or_generate_structure_for_session(program, user, session_context):
             program.native_language
         )
     
-    # Case 2: Very few structures (< 5) -> try to generate a new one
-    if len(all_structures) < 5 and user and session_context:
+    # Case 2: Few structures (< 10) -> try to generate a new one matching intent
+    if len(all_structures) < 10 and user and session_context:
         new_structure = generate_dynamic_structure(program, user, session_context)
         if new_structure:
             all_structures.append(new_structure)
     
-    # Find due structures (FSRS)
-    due_structures = [s for s in all_structures if s.due_date and s.due_date <= today]
+    # Categorize structures
+    due_matching = []
+    due_other = []
+    new_matching = []
+    new_other = []
+    rest = []
     
-    if due_structures:
-        # Return the most overdue structure (lowest due_date)
-        due_structures.sort(key=lambda s: s.due_date)
-        return due_structures[0]
+    for s in all_structures:
+        is_due = s.due_date and s.due_date <= today
+        is_new = s.review_count == 0
+        matches_intent = _structure_matches_intent(s, lego_intent)
+        
+        if is_due and matches_intent:
+            due_matching.append(s)
+        elif is_due:
+            due_other.append(s)
+        elif is_new and matches_intent:
+            new_matching.append(s)
+        elif is_new:
+            new_other.append(s)
+        else:
+            rest.append(s)
     
-    # Find new structures (never reviewed)
-    new_structures = [s for s in all_structures if s.review_count == 0]
+    # Priority 1: Due structure matching intent
+    if due_matching:
+        due_matching.sort(key=lambda s: s.due_date)
+        return due_matching[0]
     
-    if new_structures:
-        return new_structures[0]
+    # Priority 2: Due structure (any)
+    if due_other:
+        due_other.sort(key=lambda s: s.due_date)
+        return due_other[0]
     
-    # Check if all structures are mastered (stability > 30)
-    min_stability = min(s.stability for s in all_structures) if all_structures else 0
+    # Priority 3: New structure matching intent
+    if new_matching:
+        return new_matching[0]
     
-    if min_stability > 30 and user and session_context:
-        # All mastered! Generate a new challenge
-        new_structure = generate_dynamic_structure(program, user, session_context)
-        if new_structure:
-            return new_structure
+    # Priority 4: New structure (any)
+    if new_other:
+        return new_other[0]
     
-    # Default: return structure with lowest stability
+    # Priority 5: All reviewed, all non-due => try to generate a new one for variety
+    if user and session_context:
+        min_stability = min(s.stability for s in all_structures) if all_structures else 0
+        if min_stability > 20 or len(all_structures) < 8:
+            # All somewhat mastered or few structures => generate new challenge
+            new_structure = generate_dynamic_structure(program, user, session_context)
+            if new_structure:
+                return new_structure
+    
+    # Priority 6: Pick randomly among the 3 lowest stability structures (for variety)
     all_structures.sort(key=lambda s: s.stability)
-    return all_structures[0] if all_structures else None
+    import random
+    pool = all_structures[:min(3, len(all_structures))]
+    return random.choice(pool) if pool else None
 
 
 # =============================================================================
 # FSI MUTATIONS
 # =============================================================================
 
-FSI_MUTATIONS = [
-    {
+FSI_MUTATIONS = {
+    "negation": {
         "id": "negation",
-        "name": "Négation",
-        "instruction_template": "Mets cette phrase à la forme NÉGATIVE",
-        "emoji": "🚫"
+        "name": "Negation",
+        "instruction_template": "Mets cette phrase a la forme NEGATIVE",
+        "config_key": "NEGATION"
     },
-    {
+    "future": {
         "id": "future",
         "name": "Futur",
         "instruction_template": "Mets cette phrase au FUTUR",
-        "emoji": "🔮"
+        "config_key": "FUTUR"
     },
-    {
+    "past": {
         "id": "past",
-        "name": "Passé",
-        "instruction_template": "Mets cette phrase au PASSÉ",
-        "emoji": "⏪"
+        "name": "Passe",
+        "instruction_template": "Mets cette phrase au PASSE",
+        "config_key": "PASSE"
     },
-    {
+    "question": {
         "id": "question",
         "name": "Question",
         "instruction_template": "Transforme cette phrase en QUESTION",
-        "emoji": "❓"
+        "config_key": "QUESTION"
     },
-    {
+    "plural": {
         "id": "plural",
         "name": "Pluriel",
         "instruction_template": "Mets cette phrase au PLURIEL (change le sujet)",
-        "emoji": "👥"
+        "config_key": "PLURIEL"
+    },
+    "conditionnel": {
+        "id": "conditionnel",
+        "name": "Conditionnel",
+        "instruction_template": "Mets cette phrase au CONDITIONNEL",
+        "config_key": "CONDITIONNEL"
+    },
+    "formel": {
+        "id": "formel",
+        "name": "Formel/Informel",
+        "instruction_template": "Reformule en VOUVOYANT (registre formel)",
+        "config_key": "FORMEL"
+    },
+    "point_de_vue": {
+        "id": "point_de_vue",
+        "name": "Changement de sujet",
+        "instruction_template": "Raconte comme si c'etait QUELQU'UN D'AUTRE (3e personne)",
+        "config_key": "POINT_DE_VUE"
     }
-]
+}
+
+# Backward compat: list version
+FSI_MUTATIONS_LIST = list(FSI_MUTATIONS.values())
 
 
 def get_random_mutation():
-    """Get a random FSI mutation for the surprise element."""
-    return random.choice(FSI_MUTATIONS)
+    """Get a random FSI mutation (backward compat fallback)."""
+    return random.choice(FSI_MUTATIONS_LIST)
+
+
+def get_contextual_mutation(session_context=None, program=None, used_mutations=None):
+    """
+    Get a contextual FSI mutation based on:
+    1. suggested_fsi_mutations from the daily_breakdown
+    2. program.fsi_mutations (user-configured allowed mutations)
+    3. Avoid repeating mutations already used in this session
+    
+    Args:
+        session_context: dict with day_focus, vocab_domains, etc.
+        program: TrainingProgram (to get fsi_mutations config)
+        used_mutations: list of mutation IDs already used in this session
+    
+    Returns:
+        dict: mutation with id, name, instruction_template
+    """
+    used_mutations = used_mutations or []
+    
+    # 1. Get allowed mutations from program config
+    allowed_config_keys = None
+    if program and hasattr(program, 'fsi_mutations') and program.fsi_mutations:
+        allowed_config_keys = set(program.fsi_mutations)
+    
+    # Filter available mutations by program config
+    available = {}
+    for mut_id, mut in FSI_MUTATIONS.items():
+        if allowed_config_keys is None or mut['config_key'] in allowed_config_keys:
+            available[mut_id] = mut
+    
+    if not available:
+        available = FSI_MUTATIONS  # Fallback to all
+    
+    # 2. Get suggested mutations from daily_breakdown
+    suggested = []
+    if session_context:
+        # Try to get from day's breakdown
+        day_suggested = session_context.get('suggested_fsi_mutations', [])
+        if not day_suggested:
+            # Try to get from the full context
+            day_focus = session_context.get('day_focus', '')
+            # Infer from context if no explicit suggestions
+            if any(word in day_focus.lower() for word in ['passe', 'hier', 'racont', 'souvenir']):
+                day_suggested = ['past', 'point_de_vue']
+            elif any(word in day_focus.lower() for word in ['futur', 'demain', 'projet', 'plan']):
+                day_suggested = ['future', 'conditionnel']
+            elif any(word in day_focus.lower() for word in ['formel', 'professionnel', 'bureau', 'travail']):
+                day_suggested = ['formel', 'question']
+        
+        # Normalize: lowercase for matching
+        suggested = [s.lower() for s in day_suggested]
+    
+    # 3. Build weighted candidates (suggested mutations have higher weight)
+    candidates = []
+    for mut_id, mut in available.items():
+        # Skip already used mutations
+        if mut_id in used_mutations:
+            continue
+        
+        # Weight: suggested = 3x, others = 1x
+        weight = 3 if mut_id in suggested else 1
+        candidates.extend([mut] * weight)
+    
+    # If all mutations were used, allow repeats
+    if not candidates:
+        candidates = list(available.values())
+    
+    return random.choice(candidates)
 
 
 # =============================================================================
@@ -655,7 +828,7 @@ class GymSessionEngine:
                 "id": f"fsi_{i+1}",
                 "type": "fsi",
                 "phase": 3,
-                "title": f"{mutation['emoji']} FSI: {mutation['name']}",
+                "title": f"{mutation.get('emoji', '🔄')} FSI: {mutation['name']}",
                 "structure_id": structure.id,
                 "mutation": mutation,
                 "instruction": f"SURPRISE ! {mutation['instruction_template']}",
@@ -720,23 +893,27 @@ class GymSessionEngine:
         }
     
     def _get_relevant_vocab(self, max_words=10):
-        """Get vocabulary relevant for the gym session."""
+        """Get vocabulary relevant for the gym session (deduplicated, target language only)."""
         if not self.daily_vocab:
             return []
         
-        # Return a subset of daily vocab
-        vocab = self.daily_vocab[:max_words]
-        
-        # Format for display
+        # Deduplicate: skip reverse cards from old bidirectional format
+        seen_fronts = set()
         formatted = []
-        for word in vocab:
+        for word in self.daily_vocab:
             if isinstance(word, dict):
-                formatted.append({
-                    "front": word.get("front", ""),
-                    "back": word.get("back", "")
-                })
-            else:
-                formatted.append({"front": str(word), "back": ""})
+                # Skip reverse cards
+                if word.get('direction') == 'reverse':
+                    continue
+                front = word.get("front", "")
+                if front and front not in seen_fronts:
+                    seen_fronts.add(front)
+                    formatted.append({
+                        "front": front,
+                        "back": word.get("back", "")
+                    })
+            if len(formatted) >= max_words:
+                break
         
         return formatted
     

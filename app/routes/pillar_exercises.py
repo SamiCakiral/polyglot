@@ -45,15 +45,95 @@ def _get_exercise_difficulty(user_language):
     return user_language.pillar_progress.get('_exercise_difficulty', 1)
 
 
-def _set_exercise_difficulty(user_language, value):
-    """Set difficulty 1-5."""
+def _set_exercise_difficulty(user_language, value, manual=False):
+    """Set difficulty 1-5. If manual=True, record that user overrode auto."""
     if not user_language:
         return
     if user_language.pillar_progress is None:
         user_language.pillar_progress = {}
     user_language.pillar_progress['_exercise_difficulty'] = max(1, min(5, int(value)))
+    if manual:
+        user_language.pillar_progress['_difficulty_manual_override'] = True
+        user_language.pillar_progress['_manual_override_count'] = 0
     flag_modified(user_language, 'pillar_progress')
     db.session.commit()
+
+
+# =============================================================================
+# ADAPTIVE DIFFICULTY
+# =============================================================================
+
+CEFR_DIFFICULTY_MAP = {
+    'A0': 1, 'A1': 2, 'A2': 3, 'B1': 3, 'B2': 4, 'C1': 5, 'C2': 5,
+}
+
+AUTO_WINDOW = 10        # sliding window size
+AUTO_UP_THRESHOLD = 0.8   # >= 80% correct -> go up
+AUTO_DOWN_THRESHOLD = 0.5 # < 50% correct -> go down
+
+
+def _get_suggested_difficulty_for_pillar(lang_config, pillar_id):
+    """Return suggested difficulty (1-5) based on the CEFR level of a pillar."""
+    if not pillar_id or not lang_config:
+        return None
+    pillars = lang_config.get('pillars', [])
+    pillar_cfg = next((p for p in pillars if p['id'] == pillar_id), None)
+    if not pillar_cfg:
+        return None
+    cefr = pillar_cfg.get('cefr', 'A1')
+    return CEFR_DIFFICULTY_MAP.get(cefr, 1)
+
+
+def _auto_adjust_difficulty(lang, exercise_type, user_language):
+    """
+    Auto-adjust difficulty based on a sliding window of recent results.
+    Returns (new_difficulty, changed) or (current, False).
+    """
+    if not user_language:
+        return 1, False
+
+    progress = user_language.pillar_progress or {}
+    current_diff = progress.get('_exercise_difficulty', 1)
+
+    # If user manually overrode, wait for AUTO_WINDOW more exercises before re-enabling
+    if progress.get('_difficulty_manual_override'):
+        override_count = progress.get('_manual_override_count', 0) + 1
+        progress['_manual_override_count'] = override_count
+        if override_count < AUTO_WINDOW:
+            flag_modified(user_language, 'pillar_progress')
+            return current_diff, False
+        # Release manual override
+        progress.pop('_difficulty_manual_override', None)
+        progress.pop('_manual_override_count', None)
+        flag_modified(user_language, 'pillar_progress')
+
+    # Get last AUTO_WINDOW results for this exercise type + language
+    recent = PillarExerciseResult.query.filter_by(
+        user_id=g.user.id,
+        language_code=lang,
+        exercise_type=exercise_type,
+    ).order_by(PillarExerciseResult.id.desc()).limit(AUTO_WINDOW).all()
+
+    if len(recent) < AUTO_WINDOW:
+        return current_diff, False
+
+    correct_count = sum(1 for r in recent if r.correct)
+    rate = correct_count / len(recent)
+
+    new_diff = current_diff
+    if rate >= AUTO_UP_THRESHOLD and current_diff < 5:
+        new_diff = current_diff + 1
+    elif rate < AUTO_DOWN_THRESHOLD and current_diff > 1:
+        new_diff = current_diff - 1
+
+    if new_diff != current_diff:
+        progress['_exercise_difficulty'] = new_diff
+        progress.pop('_difficulty_manual_override', None)
+        progress.pop('_manual_override_count', None)
+        flag_modified(user_language, 'pillar_progress')
+        return new_diff, True
+
+    return current_diff, False
 
 
 # =============================================================================
@@ -147,8 +227,17 @@ def exercise_session(lang, exercise_type):
         return redirect(url_for('pillar_exercises.exercises_list', lang=lang))
 
     difficulty = _get_exercise_difficulty(user_language)
+
+    # If coming from a specific pillar, suggest difficulty based on its CEFR level
+    pillar_filter = request.args.get('pillar')
+    suggested_diff = _get_suggested_difficulty_for_pillar(lang_config, pillar_filter)
+    if suggested_diff and suggested_diff != difficulty:
+        _set_exercise_difficulty(user_language, suggested_diff)
+        difficulty = suggested_diff
+
     type_name = next((t[1] for t in available if t[0] == exercise_type), exercise_type)
     skip_advice = (user_language.pillar_progress or {}).get('_skip_advice', False)
+    is_auto_mode = not (user_language.pillar_progress or {}).get('_difficulty_manual_override', False)
 
     return render_template(
         'pillars/exercise_session.html',
@@ -161,6 +250,8 @@ def exercise_session(lang, exercise_type):
         pronouns=get_pronouns(lang),
         tenses=get_tenses(lang),
         skip_advice=skip_advice,
+        is_auto_mode=is_auto_mode,
+        pillar_filter=pillar_filter,
     )
 
 
@@ -193,7 +284,9 @@ def _build_user_context(user, user_language):
 
 @bp.route('/api/pillars/<lang>/exercises/generate', methods=['POST'])
 def api_generate(lang):
-    """Génère un batch d'exercices (arrière-plan ou synchrone)."""
+    """Génère un batch d'exercices (arrière-plan ou synchrone).
+    First checks if pre-generated exercises exist in DB. Only calls LLM if stock is empty.
+    """
     if not g.user:
         return jsonify({'error': 'Non connecte'}), 401
     lang_config = get_language(lang)
@@ -212,6 +305,26 @@ def api_generate(lang):
     count = max(1, min(20, count))
     difficulty = max(1, min(5, difficulty))
 
+    # Check if we already have enough unseen pre-generated exercises
+    sub = db.session.query(PillarExerciseResult.exercise_id).filter(
+        PillarExerciseResult.user_id == g.user.id,
+        PillarExerciseResult.correct == True,
+    )
+    existing_count = PillarExercise.query.filter(
+        PillarExercise.language_code == lang,
+        PillarExercise.exercise_type == exercise_type,
+        PillarExercise.difficulty == difficulty,
+        ~PillarExercise.id.in_(sub),
+    ).count()
+    
+    if existing_count >= count:
+        # Enough pre-generated exercises available — no need to call LLM
+        return jsonify({
+            'created': existing_count,
+            'batch_id': 'pregenerated',
+            'source': 'pregenerated',
+        })
+
     # Construire le contexte utilisateur pour personnaliser la génération
     user_language = _get_user_language(lang)
     user_context = _build_user_context(g.user, user_language)
@@ -223,10 +336,24 @@ def api_generate(lang):
             user_context=user_context,
         )
         if not created:
+            # Even if LLM fails, check if we have ANY exercises at all
+            if existing_count > 0:
+                return jsonify({
+                    'created': existing_count,
+                    'batch_id': 'pregenerated',
+                    'source': 'pregenerated_fallback',
+                })
             return jsonify({'created': 0, 'batch_id': None, 'warning': 'Le LLM n\'a pas pu generer d\'exercices. Verifiez que le serveur LLM est accessible.'}), 200
         return jsonify({'created': len(created), 'batch_id': created[0].batch_id})
     except Exception as e:
         db.session.rollback()
+        # Fallback to pre-generated if LLM errors
+        if existing_count > 0:
+            return jsonify({
+                'created': existing_count,
+                'batch_id': 'pregenerated',
+                'source': 'pregenerated_error_fallback',
+            })
         return jsonify({'error': str(e)}), 500
 
 
@@ -273,13 +400,26 @@ def api_check(lang):
     # Weakness tracking: update error patterns
     _update_weakness_profile(lang, ex.exercise_type, correct, ex.content, diff)
 
+    # Auto-adjust difficulty based on sliding window
+    user_language = _get_user_language(lang)
+    new_diff, diff_changed = _auto_adjust_difficulty(lang, ex.exercise_type, user_language)
+
     db.session.commit()
-    return jsonify({
+
+    response = {
         'correct': correct,
         'feedback': feedback,
         'expected': _get_expected_answer(ex),
         'mastery_update': mastery_info,
-    })
+    }
+    if diff_changed:
+        direction = 'up' if new_diff > diff else 'down'
+        response['difficulty_changed'] = {
+            'new_difficulty': new_diff,
+            'old_difficulty': diff,
+            'direction': direction,
+        }
+    return jsonify(response)
 
 
 def _update_weakness_profile(lang, exercise_type, correct, content, difficulty):
@@ -407,44 +547,104 @@ def _update_pillar_mastery(lang, exercise_type, correct, difficulty):
 
 
 def _normalize(s):
+    """Basic normalization: lowercase, strip, collapse whitespace."""
     if s is None:
         return ''
     return ' '.join(str(s).lower().strip().split())
 
 
+def _normalize_strict(s):
+    """Strict normalization: remove ALL punctuation, accents-tolerant."""
+    import re, unicodedata
+    if s is None:
+        return ''
+    s = str(s).lower().strip()
+    # Remove punctuation (.,;:!?'"()[]{}…–—) 
+    s = re.sub(r'[^\w\s]', '', s)
+    # Collapse whitespace
+    s = ' '.join(s.split())
+    return s
+
+
+def _fuzzy_match(user, expected):
+    """
+    Fuzzy matching: returns (is_correct, is_close, feedback).
+    - is_correct: exact match (after stripping punctuation)
+    - is_close: only minor differences (1-2 chars, punctuation, capitalization)
+    """
+    norm_user = _normalize_strict(user)
+    norm_expected = _normalize_strict(expected)
+    
+    # Exact match after stripping punctuation
+    if norm_user == norm_expected:
+        return True, False, ""
+    
+    # Check if only difference is very minor (Levenshtein distance <= 2)
+    dist = _levenshtein(norm_user, norm_expected)
+    
+    # Close enough: 1-2 character difference for short answers, or <10% for longer
+    max_dist = max(2, len(norm_expected) // 10)
+    if dist <= max_dist:
+        return True, True, ""
+    
+    return False, False, ""
+
+
+def _levenshtein(s1, s2):
+    """Simple Levenshtein distance."""
+    if len(s1) < len(s2):
+        return _levenshtein(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    
+    prev_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        curr_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = prev_row[j + 1] + 1
+            deletions = curr_row[j] + 1
+            substitutions = prev_row[j] + (c1 != c2)
+            curr_row.append(min(insertions, deletions, substitutions))
+        prev_row = curr_row
+    
+    return prev_row[-1]
+
+
 def _validate_answer(ex, user_answer):
-    """Return (correct: bool, feedback: str)."""
+    """Return (correct: bool, feedback: str). 
+    Uses fuzzy matching to be tolerant on punctuation, minor typos, accents."""
     c = ex.content or {}
+    
     if ex.exercise_type == 'conjugation':
-        # user_answer can be JSON dict { "io": "vado", ... } or single string for one cell
         if isinstance(user_answer, dict):
             answers = c.get('answers') or {}
+            errors = []
             for pron, expected in answers.items():
-                if _normalize(user_answer.get(pron, '')) != _normalize(expected):
-                    return False, f"'{pron}': attendu « {expected} »."
+                user_val = user_answer.get(pron, '')
+                is_correct, is_close, _ = _fuzzy_match(user_val, expected)
+                if not is_correct:
+                    errors.append(f"'{pron}': attendu \u00ab {expected} \u00bb.")
+            if errors:
+                return False, errors[0]
             return True, "Tout est correct."
-        # single line validation: not used for full grid; assume we get dict from front
-        return False, "Réponse invalide (format grille)."
-    if ex.exercise_type == 'fill_blank':
+        return False, "Reponse invalide (format grille)."
+    
+    if ex.exercise_type in ('fill_blank', 'transform', 'word_order', 'particles', 'gender'):
         expected = c.get('answer', '')
-        ok = _normalize(user_answer) == _normalize(expected)
-        return ok, expected if not ok else "Correct."
-    if ex.exercise_type == 'transform':
-        expected = c.get('answer', '')
-        ok = _normalize(user_answer) == _normalize(expected)
-        return ok, expected if not ok else "Correct."
-    if ex.exercise_type == 'word_order':
-        expected = c.get('answer', '')
-        ok = _normalize(user_answer) == _normalize(expected)
-        return ok, expected if not ok else "Correct."
-    if ex.exercise_type == 'particles':
-        expected = c.get('answer', '')
-        ok = _normalize(user_answer) == _normalize(expected)
-        return ok, (c.get('explanation') or expected) if not ok else "Correct."
-    if ex.exercise_type == 'gender':
-        expected = c.get('answer', '')
-        ok = _normalize(user_answer) == _normalize(expected)
-        return ok, (c.get('full') or expected) if not ok else "Correct."
+        is_correct, is_close, _ = _fuzzy_match(user_answer, expected)
+        
+        if is_correct:
+            if is_close:
+                return True, f"Accepte ! (forme exacte : {expected})"
+            return True, "Correct."
+        
+        # Fallback feedback
+        if ex.exercise_type == 'particles':
+            return False, c.get('explanation') or expected
+        if ex.exercise_type == 'gender':
+            return False, c.get('full') or expected
+        return False, expected
+    
     return False, "Type inconnu."
 
 
@@ -499,8 +699,8 @@ def api_difficulty(lang):
         value = max(1, min(5, int(value)))
     except (TypeError, ValueError):
         value = 1
-    _set_exercise_difficulty(user_language, value)
-    return jsonify({'difficulty': value})
+    _set_exercise_difficulty(user_language, value, manual=True)
+    return jsonify({'difficulty': value, 'mode': 'manual'})
 
 
 @bp.route('/api/pillars/<lang>/exercises/next')
@@ -512,6 +712,7 @@ def api_next(lang):
     difficulty = request.args.get('difficulty', type=int) or 1
     limit = request.args.get('limit', type=int) or 5
     verb_mode = request.args.get('verb_mode', 'both')  # 'regular', 'irregular', 'both'
+    pillar_id = request.args.get('pillar_id')
     limit = max(1, min(20, limit))
     if not exercise_type:
         return jsonify({'error': 'exercise_type manquant'}), 400
@@ -526,6 +727,9 @@ def api_next(lang):
         PillarExercise.difficulty == difficulty,
         ~PillarExercise.id.in_(sub),
     )
+    # Filter by pillar if specified
+    if pillar_id:
+        q = q.filter(PillarExercise.pillar_id == pillar_id)
     # Filter by verb mode (conjugation only)
     if exercise_type == 'conjugation' and verb_mode in ('regular', 'irregular'):
         all_ex = q.all()

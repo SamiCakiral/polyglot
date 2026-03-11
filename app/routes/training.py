@@ -622,6 +622,28 @@ def session_complete():
     if not training:
         return redirect(url_for('main.index'))
     
+    # Check if this training was launched from a program session
+    if training.get('session_return'):
+        results = training['results']
+        total_reviewed = results['correct'] + results['incorrect']
+        
+        # Update program session results
+        from app.routes.session import get_current_session
+        ps = get_current_session()
+        if ps:
+            ps_results = ps.results or {}
+            ps_results['flashcards'] = {
+                'completed': True,
+                'correct': results['correct'],
+                'total': total_reviewed
+            }
+            ps.results = ps_results
+            flag_modified(ps, 'results')
+            db.session.commit()
+        
+        session.pop('training_session_id', None)
+        return redirect(url_for('session.next_module'))
+    
     deck = Deck.query.get(training['deck_id'])
     results = training['results']
     total_reviewed = results['correct'] + results['incorrect']
@@ -631,7 +653,7 @@ def session_complete():
     else:
         accuracy = 0
     
-    # Clean up session cookie (optional, data remains in DB for history if needed)
+    # Clean up session cookie
     session.pop('training_session_id', None)
     
     return render_template('training/complete.html',
@@ -647,6 +669,11 @@ def stop_training():
     ts, training = get_current_training_session()
     
     if training:
+        # If from a program session, redirect to next module
+        if training.get('session_return'):
+            session.pop('training_session_id', None)
+            return redirect(url_for('session.next_module'))
+        
         deck_id = training['deck_id']
         session.pop('training_session_id', None)
         flash('Session d\'entraînement arrêtée.', 'info')

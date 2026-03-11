@@ -9,7 +9,8 @@
             <h1>Bienvenue, {{ user.username }} ! 👋</h1>
             {% if streak.current > 0 %}
             <p style="margin: 0.25rem 0 0; color: var(--gray-600);">
-                🔥 Série de {{ streak.current }} jour{% if streak.current > 1 %}s{% endif %} | {{ streak.today }} cartes aujourd'hui
+                🔥 Série de {{ streak.current }} jour{% if streak.current > 1 %}s{% endif %} | {{ streak.today }} cartes
+                aujourd'hui
             </p>
             {% endif %}
         </div>
@@ -26,9 +27,10 @@
                 + Nouvelle langue
             </a>
         </div>
-        
+
         {% if user_languages and user_languages|length > 0 %}
-        <div class="languages-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+        <div class="languages-cards"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
             {% for lang_data in user_languages %}
             <a href="{{ url_for('pillars.language_view', lang=lang_data.code) }}" class="language-card-dashboard" style="
                 background: var(--card-bg);
@@ -53,9 +55,10 @@
                         font-size: 0.8rem;
                     ">{{ lang_data.level }}</span>
                 </div>
-                
+
                 <div style="margin-bottom: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.4rem;">
                         <span style="color: var(--text-muted);">Progression piliers</span>
                         <span style="font-weight: 600;">{{ lang_data.completed }}/{{ lang_data.total }}</span>
                     </div>
@@ -68,8 +71,9 @@
                         "></div>
                     </div>
                 </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted);">
                     <span>{{ lang_data.mastery|round|int }}% maîtrise</span>
                     <span style="color: var(--primary);">Voir les piliers →</span>
                 </div>
@@ -87,7 +91,8 @@
         ">
             <div style="font-size: 3rem; margin-bottom: 1rem;">🌍</div>
             <h3 style="margin: 0 0 0.5rem;">Commencez votre aventure linguistique</h3>
-            <p style="color: var(--text-muted); margin: 0 0 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">
+            <p
+                style="color: var(--text-muted); margin: 0 0 1.5rem; max-width: 400px; margin-left: auto; margin-right: auto;">
                 Choisissez une langue et apprenez ses piliers fondamentaux : alphabet, grammaire, verbes essentiels...
             </p>
             <a href="{{ url_for('pillars.index') }}" class="btn btn-primary">
@@ -198,8 +203,10 @@
                     <span style="font-size: 1.5rem;">
                         {% if program.target_language == 'italian' %}🇮🇹{% elif program.target_language == 'japanese'
                         %}🇯🇵{% elif program.target_language == 'spanish' %}🇪🇸{% elif program.target_language ==
-                        'german' %}🇩🇪{% elif program.target_language == 'turkish' %}🇹🇷{% elif program.target_language ==
-                        'russian' %}🇷🇺{% elif program.target_language == 'chinese' %}🇨🇳{% elif program.target_language ==
+                        'german' %}🇩🇪{% elif program.target_language == 'turkish' %}🇹🇷{% elif
+                        program.target_language ==
+                        'russian' %}🇷🇺{% elif program.target_language == 'chinese' %}🇨🇳{% elif
+                        program.target_language ==
                         'korean' %}🇰🇷{% else %}🌍{% endif %}
                     </span>
                     <span
@@ -286,7 +293,7 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
-    
+
     .language-card-dashboard:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
@@ -313,13 +320,31 @@
         background: var(--danger);
         color: white;
     }
-    
+
     /* Level badges */
-    .level-badge-sm.level-a0, .level-badge-sm.level-a1 { background: #e8f5e9; color: #2e7d32; }
-    .level-badge-sm.level-a2 { background: #e3f2fd; color: #1565c0; }
-    .level-badge-sm.level-b1, .level-badge-sm.level-b2 { background: #fff3e0; color: #ef6c00; }
-    .level-badge-sm.level-c1, .level-badge-sm.level-c2 { background: #fce4ec; color: #c2185b; }
-    
+    .level-badge-sm.level-a0,
+    .level-badge-sm.level-a1 {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .level-badge-sm.level-a2 {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .level-badge-sm.level-b1,
+    .level-badge-sm.level-b2 {
+        background: #fff3e0;
+        color: #ef6c00;
+    }
+
+    .level-badge-sm.level-c1,
+    .level-badge-sm.level-c2 {
+        background: #fce4ec;
+        color: #c2185b;
+    }
+
     /* Flag icons inline */
     .language-flag {
         display: inline-block;
@@ -328,24 +353,72 @@
         border-radius: 4px;
         border: 1px solid var(--border-color);
     }
-    
-    .flag-jp { background: white; position: relative; }
-    .flag-jp::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #bc002d; border-radius: 50%; }
-    .flag-cn { background: #de2910; }
-    .flag-kr { background: white; }
-    .flag-ru { background: linear-gradient(white 33%, #0039a6 33%, #0039a6 66%, #d52b1e 66%); }
-    .flag-tr { background: #e30a17; }
-    .flag-es { background: linear-gradient(#c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%); }
-    .flag-it { background: linear-gradient(90deg, #009246 33%, white 33%, white 66%, #ce2b37 66%); }
+
+    .flag-jp {
+        background: white;
+        position: relative;
+    }
+
+    .flag-jp::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 12px;
+        height: 12px;
+        background: #bc002d;
+        border-radius: 50%;
+    }
+
+    .flag-cn {
+        background: #de2910;
+    }
+
+    .flag-kr {
+        background: white;
+    }
+
+    .flag-ru {
+        background: linear-gradient(white 33%, #0039a6 33%, #0039a6 66%, #d52b1e 66%);
+    }
+
+    .flag-tr {
+        background: #e30a17;
+    }
+
+    .flag-es {
+        background: linear-gradient(#c60b1e 25%, #ffc400 25%, #ffc400 75%, #c60b1e 75%);
+    }
+
+    .flag-it {
+        background: linear-gradient(90deg, #009246 33%, white 33%, white 66%, #ce2b37 66%);
+    }
 
     @media (max-width: 768px) {
-        .pillars-grid {
-            grid-template-columns: 1fr !important;
+        .dashboard-header {
+            flex-direction: column;
+            text-align: center;
+            align-items: center;
+            padding: 1rem;
+            gap: 0.75rem;
         }
-        
-        .languages-cards {
+
+        .dashboard-header h1 { font-size: 1.3rem; }
+
+        .pillars-grid,
+        .languages-cards,
+        .programs-grid,
+        .deck-grid {
             grid-template-columns: 1fr !important;
+            gap: 0.75rem;
         }
+
+        .dashboard-section { padding: 0.75rem; margin-bottom: 1rem; }
+        .dashboard-section h2 { font-size: 1.1rem; }
+
+        .stats-row { flex-wrap: wrap; gap: 0.5rem; }
+        .stats-row > div { flex: 1 1 45%; min-width: 0; }
     }
 </style>
 {% endblock %}

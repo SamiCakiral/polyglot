@@ -737,11 +737,34 @@ document.addEventListener('DOMContentLoaded', initExam);
 .dialogue-input { flex: 1; }
 .dialogue-complete { text-align: center; color: #16a34a; font-weight: 600; font-size: 0.9rem; }
 
-@media (max-width: 640px) {
-    .exam-topbar { flex-wrap: wrap; gap: 0.5rem; }
+@media (max-width: 768px) {
+    .exam-page { padding: 0; }
+    .exam-topbar { flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem; }
     .exam-topbar-center { max-width: 100%; order: 3; margin: 0; flex-basis: 100%; }
-    .exam-body { padding: 1rem; }
-    .chat-message { max-width: 90%; }
+    .exam-body { padding: 0.75rem; }
+    .exam-section { padding: 1rem; border-radius: 10px; }
+    .exam-section h2 { font-size: 1.1rem; }
+
+    /* Chat / dialogue */
+    .chat-message { max-width: 92%; font-size: 0.9rem; }
+    .chat-input { font-size: 16px; } /* prevent iOS zoom */
+
+    /* Options */
+    .exam-options { gap: 0.5rem; }
+    .exam-option { padding: 0.7rem; font-size: 0.9rem; }
+
+    /* Writing section */
+    .exam-textarea { font-size: 16px; min-height: 120px; }
+
+    /* Timer */
+    .exam-timer { font-size: 0.85rem; }
+
+    /* Actions */
+    .exam-actions { flex-direction: column; gap: 0.5rem; }
+    .exam-actions .btn { width: 100%; justify-content: center; }
+
+    /* Dialogue bubbles */
+    .dialogue-bubble { max-width: 85%; padding: 0.6rem 0.8rem; font-size: 0.88rem; }
 }
 </style>
 {% endblock %}

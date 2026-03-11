@@ -2,13 +2,14 @@
 Routes for Language Pillars - Foundation learning system.
 """
 from flask import Blueprint, render_template, redirect, url_for, session, g, request, jsonify, flash
-from app.models import User, UserLanguage, Deck, Card, Category, TrainingProgram
+from app.models import User, UserLanguage, Deck, Card, Category, TrainingProgram, PillarExercise
 from app import db
 from app.pillar_config import (
     LANGUAGES, SUPPORTED_LANGUAGES, get_language, get_language_name,
     get_pillars_for_language, get_pillar, get_pillars_by_level,
     get_required_pillars, check_pillar_available, get_onboarding_questions,
-    get_all_languages_summary
+    get_all_languages_summary, get_cefr_for_pillar, get_pillars_by_cefr,
+    ONBOARDING_LEVELS, CEFR_LEVEL_NAMES, CECRL_LEVELS
 )
 from datetime import datetime
 from sqlalchemy.orm.attributes import flag_modified
@@ -153,6 +154,77 @@ def language_view(lang):
                          total_count=len(lang_config['pillars']))
 
 
+@bp.route('/<lang>/<pillar_id>')
+def pillar_detail(lang, pillar_id):
+    """Dedicated page for a single pillar — lesson + exercises + LLM chat."""
+    if not g.user:
+        return redirect(url_for('auth.login'))
+    
+    lang_config = get_language(lang)
+    if not lang_config:
+        flash(f"Langue '{lang}' non supportee", 'error')
+        return redirect(url_for('pillars.index'))
+    
+    user_language = UserLanguage.query.filter_by(
+        user_id=g.user.id, language_code=lang
+    ).first()
+    if not user_language:
+        return redirect(url_for('pillars.onboarding', lang=lang))
+    
+    pillar_config = get_pillar(lang, pillar_id)
+    if not pillar_config:
+        flash(f"Pilier '{pillar_id}' non trouve", 'error')
+        return redirect(url_for('pillars.language_view', lang=lang))
+    
+    progress = user_language.get_pillar_status(pillar_id)
+    
+    # Load lesson from pre-generated JSON
+    lesson = None
+    content_path = os.path.join('pillar_content', lang, f'{pillar_id}.json')
+    if os.path.exists(content_path):
+        try:
+            with open(content_path, 'r', encoding='utf-8') as f:
+                content = json.load(f)
+            lesson = content.get('lesson', {})
+        except Exception:
+            pass
+    
+    # Exercise type labels
+    ex_labels = {
+        'conjugation': {'name': 'Conjugaison', 'icon': '📝', 'desc': 'Grille pronoms + temps'},
+        'fill_blank': {'name': 'Phrases à trous', 'icon': '✏️', 'desc': 'Compléter la bonne forme'},
+        'transform': {'name': 'Transformation', 'icon': '🔄', 'desc': 'Négation, question, temps'},
+        'word_order': {'name': 'Ordre des mots', 'icon': '🔀', 'desc': "Remettre dans l'ordre"},
+        'particles': {'name': 'Particules', 'icon': '⚙️', 'desc': 'Choisir la bonne particule'},
+        'gender': {'name': 'Genre / articles', 'icon': '♀️', 'desc': 'Accord et déterminants'},
+    }
+    
+    # Filter to only this pillar's exercise types
+    pillar_exercises = []
+    for et in pillar_config.get('exercise_types', []):
+        if et in ex_labels:
+            pillar_exercises.append({**ex_labels[et], 'type': et})
+    
+    # Check if cards exist for this pillar
+    deck_id = progress.get('deck_id')
+    has_cards = False
+    if deck_id:
+        from app.models import Card
+        has_cards = Card.query.filter_by(deck_id=deck_id).count() > 0
+    
+    return render_template('pillars/pillar_detail.html',
+                         lang_config=lang_config,
+                         lang_code=lang,
+                         user_language=user_language,
+                         pillar=pillar_config,
+                         progress=progress,
+                         lesson=lesson,
+                         pillar_exercises=pillar_exercises,
+                         has_exercises=len(pillar_exercises) > 0,
+                         has_cards=has_cards,
+                         deck_id=deck_id)
+
+
 @bp.route('/<lang>/onboarding')
 def onboarding(lang):
     """Onboarding flow for starting a new language."""
@@ -173,13 +245,14 @@ def onboarding(lang):
     if existing:
         return redirect(url_for('pillars.language_view', lang=lang))
     
-    # Get onboarding questions
-    questions = get_onboarding_questions(lang)
-    
+    # Get onboarding levels for CEFR picker
+    onboarding_levels = get_onboarding_questions(lang)
+
     return render_template('pillars/onboarding.html',
                          lang_config=lang_config,
                          lang_code=lang,
-                         questions=questions)
+                         onboarding_levels=onboarding_levels,
+                         cefr_level_names=CEFR_LEVEL_NAMES)
 
 
 # =============================================================================
@@ -205,30 +278,35 @@ def start_language(lang):
     if existing:
         return jsonify({'error': 'Langue deja commencee', 'redirect': url_for('pillars.language_view', lang=lang)})
     
-    # Get onboarding answers from form
-    answers = request.json.get('answers', {}) if request.is_json else {}
-    
-    # Determine which pillars to skip based on answers
-    skipped_pillars = []
-    for q in get_onboarding_questions(lang):
-        answer = answers.get(q['pillar'])
-        # If user says "Oui" (index 2), mark as completed
-        if answer == 2:
-            skipped_pillars.append(q['pillar'])
-    
+    # Get onboarding data from form
+    data = request.json if request.is_json else {}
+
+    # New system: read estimated CEFR level chosen by user
+    chosen_cefr = data.get('estimated_level', 'A0')
+    if chosen_cefr not in CECRL_LEVELS:
+        chosen_cefr = 'A0'
+
+    cefr_index = CECRL_LEVELS.index(chosen_cefr)
+
+    # Backwards compat: if old-style 'answers' dict is passed, convert
+    answers = data.get('answers', {})
+    if answers and not data.get('estimated_level'):
+        # Old format - just start at A0
+        chosen_cefr = 'A0'
+        cefr_index = 0
+
     # Create UserLanguage
     user_language = UserLanguage(
         user_id=g.user.id,
         language_code=lang,
-        estimated_level='A0',
+        estimated_level=chosen_cefr,
         pillar_progress={}
     )
-    
+
     # Set bridge language from user profile
     profile = g.user.learner_profile or {}
     known_langs = profile.get('known_languages', [])
     if known_langs:
-        # Pick the highest level known language as bridge
         best_bridge = None
         best_level = -1
         level_order = {'A1': 1, 'A2': 2, 'B1': 3, 'B2': 4, 'C1': 5, 'C2': 6}
@@ -239,42 +317,71 @@ def start_language(lang):
                     best_level = lvl
                     best_bridge = kl.get('code')
         user_language.bridge_language = best_bridge
-    
+
     # Initialize pillar progress
+    # - Pillars at CEFR levels STRICTLY BELOW chosen level => auto-completed
+    # - Pillars at chosen CEFR level => available (if prereqs met)
+    # - Pillars above => locked
     pillars = get_pillars_for_language(lang)
     initial_progress = {}
-    
+    skipped_pillars = set()
+
+    # First pass: mark auto-completed pillars
     for pillar in pillars:
         pid = pillar['id']
-        if pid in skipped_pillars:
+        pillar_cefr = pillar.get('cefr', 'A0')
+        pillar_cefr_idx = CECRL_LEVELS.index(pillar_cefr) if pillar_cefr in CECRL_LEVELS else 0
+
+        if pillar_cefr_idx < cefr_index:
+            # Auto-complete all pillars below chosen level
             initial_progress[pid] = {
                 'status': 'completed',
                 'mastery': 100,
                 'completed_at': datetime.utcnow().isoformat(),
                 'skipped': True
             }
-        elif not pillar.get('prereq'):
-            # First pillar of each level 0 track - make available
+            skipped_pillars.add(pid)
+
+    # Second pass: set status for remaining pillars
+    for pillar in pillars:
+        pid = pillar['id']
+        if pid in skipped_pillars:
+            continue
+
+        prereqs = pillar.get('prereq', [])
+        prereqs_met = all(p in skipped_pillars for p in prereqs)
+
+        pillar_cefr = pillar.get('cefr', 'A0')
+        pillar_cefr_idx = CECRL_LEVELS.index(pillar_cefr) if pillar_cefr in CECRL_LEVELS else 0
+
+        if pillar_cefr_idx == cefr_index:
+            # At chosen level: available if prereqs met, else locked
+            initial_progress[pid] = {
+                'status': 'available' if prereqs_met else 'locked',
+                'mastery': 0
+            }
+        elif not prereqs:
+            # No prereqs (entry point) => available
             initial_progress[pid] = {
                 'status': 'available',
                 'mastery': 0
             }
         else:
-            # Check if prereqs are in skipped
-            prereqs_met = all(p in skipped_pillars for p in pillar.get('prereq', []))
             initial_progress[pid] = {
                 'status': 'available' if prereqs_met else 'locked',
                 'mastery': 0
             }
-    
+
     user_language.pillar_progress = initial_progress
-    
+
     db.session.add(user_language)
     db.session.commit()
-    
+
     return jsonify({
         'success': True,
-        'redirect': url_for('pillars.language_view', lang=lang)
+        'redirect': url_for('pillars.language_view', lang=lang),
+        'auto_completed': len(skipped_pillars),
+        'estimated_level': chosen_cefr
     })
 
 
@@ -298,10 +405,9 @@ def start_pillar(lang, pillar_id):
     if not pillar_config:
         return jsonify({'error': f"Pilier '{pillar_id}' non trouve"}), 400
     
-    # Check if available
+    # Check status
     progress = user_language.get_pillar_status(pillar_id)
-    if progress.get('status') == 'locked':
-        return jsonify({'error': 'Pilier non debloque - completez les prerequis'}), 400
+    # No lock check - user can start any pillar freely
     
     if progress.get('status') == 'completed':
         return jsonify({'error': 'Pilier deja complete', 'deck_id': progress.get('deck_id')})
@@ -330,6 +436,12 @@ def start_pillar(lang, pillar_id):
     # Try to load pre-generated content
     content_path = os.path.join('pillar_content', lang, f"{pillar_id}.json")
     cards_loaded = 0
+    exercises_loaded = 0
+    
+    # CEFR to difficulty mapping
+    cefr_difficulty = {'A0': 1, 'A1': 2, 'A2': 3, 'B1': 3, 'B2': 4, 'C1': 5, 'C2': 5}
+    pillar_cefr = pillar_config.get('cefr', 'A0')
+    pillar_difficulty = cefr_difficulty.get(pillar_cefr, 1)
     
     if os.path.exists(content_path):
         try:
@@ -346,6 +458,22 @@ def start_pillar(lang, pillar_id):
                 )
                 db.session.add(card)
                 cards_loaded += 1
+            
+            # Load pre-generated exercises
+            for ex_type, ex_list in content.get('exercises', {}).items():
+                if not isinstance(ex_list, list):
+                    continue
+                for ex_data in ex_list:
+                    exercise = PillarExercise(
+                        language_code=lang,
+                        exercise_type=ex_type,
+                        difficulty=pillar_difficulty,
+                        content=ex_data,
+                        pillar_id=pillar_id,
+                        batch_id=f"pregenerated_{pillar_id}",
+                    )
+                    db.session.add(exercise)
+                    exercises_loaded += 1
         except Exception as e:
             print(f"Error loading pillar content: {e}")
     
@@ -359,7 +487,8 @@ def start_pillar(lang, pillar_id):
         'success': True,
         'deck_id': deck.id,
         'cards_loaded': cards_loaded,
-        'message': f'Deck cree avec {cards_loaded} cartes' if cards_loaded > 0 else 'Deck cree (contenu a generer)'
+        'exercises_loaded': exercises_loaded,
+        'message': f'Deck cree avec {cards_loaded} cartes et {exercises_loaded} exercices'
     })
 
 
@@ -399,13 +528,16 @@ def complete_pillar(lang, pillar_id):
             if check_pillar_available(lang, pid, completed_pillars):
                 user_language.update_pillar(pid, status='available')
     
-    # Update estimated level based on completed pillars
-    max_level_completed = max(
-        (get_pillar(lang, pid)['level'] for pid in completed_pillars if get_pillar(lang, pid)),
-        default=0
-    )
-    level_map = {0: 'A0', 1: 'A1', 2: 'A1', 3: 'A2', 4: 'A2', 5: 'B1'}
-    user_language.estimated_level = level_map.get(max_level_completed, 'A0')
+    # Update estimated level based on completed pillars (CEFR field)
+    cefr_order = {c: i for i, c in enumerate(CECRL_LEVELS)}
+    max_cefr = 'A0'
+    for pid in completed_pillars:
+        p = get_pillar(lang, pid)
+        if p:
+            c = p.get('cefr', 'A0')
+            if cefr_order.get(c, 0) > cefr_order.get(max_cefr, 0):
+                max_cefr = c
+    user_language.estimated_level = max_cefr
     
     flag_modified(user_language, 'pillar_progress')
     db.session.commit()
@@ -473,6 +605,61 @@ def delete_language(lang):
         'success': True,
         'message': f"Langue supprimee",
         'redirect': url_for('pillars.index')
+    })
+
+
+# =============================================================================
+# LESSON API
+# =============================================================================
+
+@bp.route('/<lang>/<pillar_id>/lesson')
+def api_lesson(lang, pillar_id):
+    """Return lesson content for a pillar from pre-generated JSON."""
+    if not g.user:
+        return jsonify({'error': 'Non connecte'}), 401
+    
+    content_path = os.path.join('pillar_content', lang, f'{pillar_id}.json')
+    if not os.path.exists(content_path):
+        return jsonify({'lesson': None, 'message': 'Pas de contenu pre-genere'})
+    
+    try:
+        with open(content_path, 'r', encoding='utf-8') as f:
+            content = json.load(f)
+        lesson = content.get('lesson', {})
+        return jsonify({
+            'lesson': lesson,
+            'pillar_id': pillar_id,
+            'name': content.get('name', ''),
+            'cefr': content.get('cefr', ''),
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@bp.route('/<lang>/<pillar_id>/cards')
+def api_cards(lang, pillar_id):
+    """Return flashcards for a pillar's deck."""
+    if not g.user:
+        return jsonify({'error': 'Non connecte'}), 401
+    
+    user_language = UserLanguage.query.filter_by(
+        user_id=g.user.id, language_code=lang
+    ).first()
+    if not user_language:
+        return jsonify({'cards': []})
+    
+    progress = user_language.get_pillar_status(pillar_id)
+    deck_id = progress.get('deck_id')
+    if not deck_id:
+        return jsonify({'cards': []})
+    
+    from app.models import Card
+    cards = Card.query.filter_by(deck_id=deck_id).all()
+    return jsonify({
+        'cards': [
+            {'id': c.id, 'front': c.front, 'back': c.back}
+            for c in cards
+        ]
     })
 
 

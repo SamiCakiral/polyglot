@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 SPARK_HOST = os.environ.get("SPARK_HOST", "spark-8144.local")
 TTS_PORT = os.environ.get("TTS_PORT", "9100")
 TTS_BASE_URL = f"http://{SPARK_HOST}:{TTS_PORT}"
-TTS_TIMEOUT = int(os.environ.get("TTS_TIMEOUT", "30"))
+TTS_TIMEOUT = 60
 
 # Languages supported by Qwen3-TTS
 TTS_SUPPORTED_LANGUAGES = {

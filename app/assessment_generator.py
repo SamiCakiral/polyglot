@@ -661,6 +661,29 @@ def grade_section(section, user_answers):
     correct_count = 0
     details = []
 
+    import re
+    
+    def _norm_strict(s):
+        """Strip punctuation, lowercase, collapse whitespace."""
+        if s is None:
+            return ''
+        s = str(s).lower().strip()
+        s = re.sub(r'[^\w\s]', '', s)
+        return ' '.join(s.split())
+    
+    def _levenshtein_local(s1, s2):
+        if len(s1) < len(s2):
+            return _levenshtein_local(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        prev = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            curr = [i + 1]
+            for j, c2 in enumerate(s2):
+                curr.append(min(prev[j + 1] + 1, curr[j] + 1, prev[j] + (c1 != c2)))
+            prev = curr
+        return prev[-1]
+    
     for i, q in enumerate(questions):
         user_ans = answers_list[i] if i < len(answers_list) else None
         expected = q.get('answer')
@@ -668,8 +691,15 @@ def grade_section(section, user_answers):
         if q.get('type') == 'true_false':
             is_correct = (user_ans is True and expected is True) or (user_ans is False and expected is False)
         else:
-            norm = lambda s: (str(s) if s is not None else '').strip().lower()
-            is_correct = norm(user_ans) == norm(expected)
+            nu = _norm_strict(user_ans)
+            ne = _norm_strict(expected)
+            if nu == ne:
+                is_correct = True
+            else:
+                # Fuzzy: tolerate 1-2 char difference or <10% for longer answers
+                dist = _levenshtein_local(nu, ne)
+                max_dist = max(2, len(ne) // 10)
+                is_correct = dist <= max_dist
 
         if is_correct:
             correct_count += 1

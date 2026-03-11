@@ -487,39 +487,110 @@
         const container = document.getElementById('feedback-area');
         container.style.display = 'block';
 
-        let html = `<div class="alert alert-info">
-            <strong>🤔 Indices pour s'améliorer :</strong>
-            <ul class="mt-2 mb-0 pl-4">`;
-
+        let html = '';
+        
+        // Hints on translation meaning (vague, no answers)
         if (analysis.hints && analysis.hints.length > 0) {
+            html += `<div class="alert alert-info" style="border-radius:12px;">
+                <strong>Pistes :</strong>
+                <ul style="margin:0.5rem 0 0 1rem; padding:0;">`;
             analysis.hints.forEach(hint => {
-                html += `<li>${hint}</li>`;
+                html += `<li style="margin-bottom:0.3rem;">${hint}</li>`;
             });
-        } else {
-            html += `<li>Quelques erreurs détectées. Relisez-vous !</li>`;
+            html += `</ul></div>`;
         }
-
-        html += `</ul></div>`;
+        
+        // Unknown words: show original + hint, user CHOOSES to reveal translation
+        const uw = analysis.unknown_words || [];
+        if (uw.length > 0) {
+            html += `<div style="background:#fef3c7; border:1px solid #fcd34d; border-radius:12px; padding:1rem; margin-top:0.75rem;">
+                <strong style="color:#92400e;">Mots que tu n'as pas compris :</strong>
+                <div style="margin-top:0.5rem;">`;
+            uw.forEach((w, i) => {
+                const original = w.original || '';
+                const hint = w.hint || w.context || '';
+                const translation = w.translation || '';
+                html += `<div id="uw-${i}" style="padding:0.6rem 0.75rem; background:white; border-radius:8px; margin-bottom:0.4rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong style="color:#1e293b; font-size:1.05rem;">${original}</strong>
+                            ${hint ? '<div style="font-size:0.82rem; color:#64748b; margin-top:0.15rem; font-style:italic;">' + hint + '</div>' : ''}
+                        </div>
+                        <div style="display:flex; gap:0.4rem; align-items:center;">
+                            <span id="uw-translation-${i}" style="display:none; color:#15803d; font-weight:600; margin-right:0.5rem;">${translation}</span>
+                            <button onclick="revealUnknownWord(${i}, '${original.replace(/'/g, "\\'")}', '${translation.replace(/'/g, "\\'")}')" 
+                                    id="uw-btn-${i}"
+                                    style="background:#f59e0b; color:white; border:none; padding:0.35rem 0.75rem; border-radius:6px; font-size:0.8rem; cursor:pointer; white-space:nowrap;">
+                                Voir la traduction
+                            </button>
+                        </div>
+                    </div>
+                    <div id="uw-warning-${i}" style="display:none; font-size:0.75rem; color:#dc2626; margin-top:0.3rem;">
+                        Ce mot sera ajoute a ta dette de vocabulaire pour demain.
+                    </div>
+                </div>`;
+            });
+            html += `</div></div>`;
+        }
+        
+        if (!html) {
+            html = `<div class="alert alert-info" style="border-radius:12px;">Quelques erreurs detectees. Relis-toi !</div>`;
+        }
+        
         container.innerHTML = html;
+    }
+    
+    async function revealUnknownWord(index, original, translation) {
+        const btn = document.getElementById(`uw-btn-${index}`);
+        const translationEl = document.getElementById(`uw-translation-${index}`);
+        const warningEl = document.getElementById(`uw-warning-${index}`);
+        
+        // Show warning first if not yet confirmed
+        if (btn.dataset.confirmed !== 'true') {
+            warningEl.style.display = 'block';
+            btn.textContent = 'Confirmer (dette +1)';
+            btn.style.background = '#dc2626';
+            btn.dataset.confirmed = 'true';
+            return;
+        }
+        
+        // Reveal translation
+        translationEl.style.display = 'inline';
+        btn.textContent = 'Ajoute !';
+        btn.disabled = true;
+        btn.style.background = '#94a3b8';
+        warningEl.innerHTML = 'Mot ajoute a ta wordbank pour demain.';
+        warningEl.style.color = '#15803d';
+        
+        // Add to debt via server
+        try {
+            await fetch('/session/wordbank/reveal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ front: original, back: translation, source: 'git_input_unknown' })
+            });
+        } catch (e) {
+            console.error('Debt add failed', e);
+        }
     }
 
     function displayCorrection(analysis) {
         const content = document.getElementById('correction-content');
         const score = analysis.score || {};
 
-        // Build Score Grid
+        // Build Score Grid (translation-focused: comprehension, completeness, accuracy)
         let gridHtml = `<div class="score-grid mb-4" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem;">
             <div class="score-item" style="background:#f8fafc; padding:1rem; border-radius:8px; text-align:center;">
-                <label style="display:block; font-weight:bold; color:#64748b;">Grammaire</label>
-                <div style="font-size:1.5rem; font-weight:bold; color:#334155;">${score.grammar || 0}/10</div>
+                <label style="display:block; font-weight:bold; color:#64748b;">Comprehension</label>
+                <div style="font-size:1.5rem; font-weight:bold; color:#334155;">${score.comprehension || score.grammar || 0}/10</div>
             </div>
             <div class="score-item" style="background:#f8fafc; padding:1rem; border-radius:8px; text-align:center;">
-                <label style="display:block; font-weight:bold; color:#64748b;">Orthographe</label>
-                <div style="font-size:1.5rem; font-weight:bold; color:#334155;">${score.spelling || 0}/10</div>
+                <label style="display:block; font-weight:bold; color:#64748b;">Completude</label>
+                <div style="font-size:1.5rem; font-weight:bold; color:#334155;">${score.completeness || score.spelling || 0}/10</div>
             </div>
             <div class="score-item" style="background:#f8fafc; padding:1rem; border-radius:8px; text-align:center;">
-                <label style="display:block; font-weight:bold; color:#64748b;">Qualité</label>
-                <div style="font-size:1.5rem; font-weight:bold; color:#334155;">${score.quality || 0}/10</div>
+                <label style="display:block; font-weight:bold; color:#64748b;">Precision</label>
+                <div style="font-size:1.5rem; font-weight:bold; color:#334155;">${score.accuracy || score.quality || 0}/10</div>
             </div>
         </div>`;
 
@@ -537,9 +608,68 @@
             </div>
         </div>`;
 
-        content.innerHTML = gridHtml + feedbackHtml + correctionHtml;
+        // Unknown words - interactive reveal (same as in hints mode)
+        let unknownHtml = '';
+        const uw = analysis.unknown_words || [];
+        if (uw.length > 0) {
+            unknownHtml = `<div style="margin-bottom:1.5rem;">
+                <h4 style="color:#92400e; margin-bottom:0.75rem;">Mots non compris</h4>`;
+            uw.forEach((w, i) => {
+                const original = w.original || '';
+                const hint = w.hint || w.context || '';
+                const translation = w.translation || '';
+                const uid = 'corr-uw-' + i;
+                unknownHtml += `<div id="${uid}" style="padding:0.6rem 0.75rem; background:#fef3c7; border-radius:8px; margin-bottom:0.4rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <strong style="color:#1e293b; font-size:1.05rem;">${original}</strong>
+                            ${hint ? '<div style="font-size:0.82rem; color:#64748b; margin-top:0.15rem; font-style:italic;">' + hint + '</div>' : ''}
+                        </div>
+                        <div style="display:flex; gap:0.4rem; align-items:center;">
+                            <span id="${uid}-tr" style="display:none; color:#15803d; font-weight:600; margin-right:0.5rem;">${translation}</span>
+                            <button onclick="revealCorrWord('${uid}', '${original.replace(/'/g, "\\'")}', '${translation.replace(/'/g, "\\'")}')" 
+                                    id="${uid}-btn"
+                                    style="background:#f59e0b; color:white; border:none; padding:0.35rem 0.75rem; border-radius:6px; font-size:0.8rem; cursor:pointer; white-space:nowrap;">
+                                Voir
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            unknownHtml += `</div>`;
+        }
+
+        content.innerHTML = gridHtml + unknownHtml + feedbackHtml + correctionHtml;
     }
 
+    // Reveal unknown word in correction view
+    async function revealCorrWord(uid, original, translation) {
+        const btn = document.getElementById(`${uid}-btn`);
+        const trEl = document.getElementById(`${uid}-tr`);
+        
+        if (btn.dataset.confirmed !== 'true') {
+            btn.textContent = 'dette +1';
+            btn.style.background = '#dc2626';
+            btn.dataset.confirmed = 'true';
+            return;
+        }
+        
+        trEl.style.display = 'inline';
+        btn.textContent = 'OK';
+        btn.disabled = true;
+        btn.style.background = '#94a3b8';
+        
+        try {
+            await fetch('/session/wordbank/reveal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ front: original, back: translation, source: 'git_input_unknown' })
+            });
+        } catch (e) {
+            console.error('Debt add failed', e);
+        }
+    }
+    
     // revealWord is now handled by _vocab_sidebar.html component
 
     function useSOS() {

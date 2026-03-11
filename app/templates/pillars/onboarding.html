@@ -4,7 +4,7 @@
 {% block content %}
 <div class="onboarding-container">
     <a href="{{ url_for('pillars.index') }}" class="back-link">← Retour</a>
-    
+
     <div class="onboarding-card">
         <div class="onboarding-header">
             <div class="language-intro">
@@ -14,7 +14,7 @@
                     <span class="native-name">{{ lang_config.native_name }}</span>
                 </div>
             </div>
-            
+
             <div class="language-traits">
                 {% if lang_config.writing_system != 'latin' %}
                 <span class="trait"><span class="trait-icon">✍️</span> Nouvel alphabet</span>
@@ -28,92 +28,106 @@
                 {% if lang_config.has_particles %}
                 <span class="trait"><span class="trait-icon">🔤</span> Particules</span>
                 {% endif %}
-                <span class="trait"><span class="trait-icon">📊</span> Difficulte: 
+                <span class="trait"><span class="trait-icon">📊</span> Difficulte:
                     {% for i in range(lang_config.difficulty) %}★{% endfor %}{% for i in range(5 - lang_config.difficulty) %}☆{% endfor %}
                 </span>
             </div>
         </div>
-        
+
         <div class="onboarding-body">
+            <!-- STEP 1: Intro -->
             <div id="step-intro" class="step active">
                 <h2>Bienvenue dans ton aventure {{ lang_config.name }} !</h2>
                 <p>
-                    Avant de commencer, quelques questions pour adapter ton parcours.
-                    Cela nous aidera a savoir quels piliers tu dois travailler.
+                    On va adapter ton parcours a ton niveau actuel.
+                    Selectionne le niveau qui te correspond le mieux, et on s'occupe du reste.
                 </p>
-                
+
                 <div class="pillar-preview">
-                    <h3>Ce que tu vas apprendre :</h3>
+                    <h3>Apercu du programme :</h3>
                     <div class="preview-levels">
-                        {% for level in range(6) %}
-                        {% set level_pillars = lang_config.pillars | selectattr('level', 'equalto', level) | list %}
-                        {% if level_pillars %}
+                        {% set cefr_labels = {'A0': 'Prerequis', 'A1': 'Decouverte', 'A2': 'Survie', 'B1': 'Seuil', 'B2': 'Avance', 'C1': 'Autonome', 'C2': 'Maitrise'} %}
+                        {% for cefr in ['A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'] %}
+                        {% set cefr_pillars = lang_config.pillars | selectattr('cefr', 'equalto', cefr) | list %}
+                        {% if cefr_pillars %}
                         <div class="preview-level">
-                            <span class="level-num">{{ level }}</span>
+                            <span class="level-badge">{{ cefr }}</span>
                             <span class="level-content">
-                                {{ level_pillars | map(attribute='name') | join(', ') }}
+                                <strong>{{ cefr_labels.get(cefr, cefr) }}</strong> - 
+                                {{ cefr_pillars | length }} pilier{{ 's' if cefr_pillars | length > 1 else '' }}
                             </span>
                         </div>
                         {% endif %}
                         {% endfor %}
                     </div>
                 </div>
-                
-                <button class="btn btn-primary btn-lg" onclick="startQuestions()">
-                    Commencer l'evaluation
+
+                <button class="btn btn-primary btn-lg" onclick="showLevelPicker()">
+                    Choisir mon niveau
                 </button>
             </div>
-            
-            {% if questions %}
-            <div id="step-questions" class="step" style="display: none;">
-                <div class="progress-indicator">
-                    <span id="question-progress">Question 1/{{ questions | length }}</span>
-                    <div class="progress-dots">
-                        {% for q in questions %}
-                        <span class="dot" data-index="{{ loop.index0 }}"></span>
-                        {% endfor %}
+
+            <!-- STEP 2: CEFR Level Picker -->
+            <div id="step-level" class="step" style="display: none;">
+                <h2>Quel est ton niveau actuel ?</h2>
+                <p>Pas d'inquietude, tu pourras toujours revenir sur les cours precedents.</p>
+
+                <div class="cefr-grid">
+                    {% for lvl in onboarding_levels %}
+                    {% set cefr_pillars = lang_config.pillars | selectattr('cefr', 'equalto', lvl.cefr) | list %}
+                    <div class="cefr-card" data-cefr="{{ lvl.cefr }}" onclick="selectLevel('{{ lvl.cefr }}')">
+                        <div class="cefr-card-header">
+                            <span class="cefr-badge cefr-{{ lvl.cefr[:1] | lower }}">{{ lvl.cefr }}</span>
+                            <span class="cefr-label">{{ lvl.label }}</span>
+                        </div>
+                        <p class="cefr-desc">{{ lvl.desc }}</p>
+                        {% if cefr_pillars %}
+                        <span class="cefr-count">{{ cefr_pillars | length }} pilier{{ 's' if cefr_pillars | length > 1 else '' }}</span>
+                        {% endif %}
                     </div>
+                    {% endfor %}
                 </div>
-                
-                {% for q in questions %}
-                <div class="question-card" id="question-{{ loop.index0 }}" style="{% if loop.index0 > 0 %}display: none;{% endif %}">
-                    <h3>{{ q.question }}</h3>
-                    <div class="options">
-                        {% for opt in q.options %}
-                        <button class="option-btn" 
-                                onclick="selectAnswer('{{ q.pillar }}', {{ loop.index0 }}, {{ 'true' if loop.index0 == (questions | length - 1) else 'false' }})">
-                            <span class="option-icon">
-                                {% if loop.index0 == 0 %}❌{% elif loop.index0 == 1 %}🤔{% else %}✅{% endif %}
-                            </span>
-                            {{ opt }}
-                        </button>
-                        {% endfor %}
-                    </div>
+
+                <div class="level-hint" id="level-hint" style="display: none;">
+                    <span class="hint-icon">💡</span>
+                    <span id="level-hint-text"></span>
                 </div>
-                {% endfor %}
+
+                <button class="btn btn-primary btn-lg" id="confirm-level-btn" onclick="showSummary()" disabled>
+                    Confirmer mon niveau
+                </button>
             </div>
-            {% endif %}
-            
+
+            <!-- STEP 3: Summary -->
             <div id="step-summary" class="step" style="display: none;">
                 <h2>Parfait ! Voici ton parcours personnalise</h2>
-                
+
                 <div class="summary-results">
                     <div class="result-item result-skip">
                         <span class="result-icon">✓</span>
                         <div class="result-content">
-                            <span class="result-label">Piliers que tu connais deja</span>
-                            <span class="result-list" id="skipped-pillars">Aucun</span>
+                            <span class="result-label">Piliers auto-valides</span>
+                            <span class="result-list" id="skipped-count">0 piliers</span>
+                            <span class="result-detail" id="skipped-detail"></span>
                         </div>
                     </div>
                     <div class="result-item result-todo">
                         <span class="result-icon">→</span>
                         <div class="result-content">
                             <span class="result-label">Piliers a travailler</span>
-                            <span class="result-list" id="todo-pillars">Tous</span>
+                            <span class="result-list" id="todo-count">Tous</span>
+                            <span class="result-detail" id="todo-detail"></span>
+                        </div>
+                    </div>
+                    <div class="result-item result-level">
+                        <span class="result-icon">🎯</span>
+                        <div class="result-content">
+                            <span class="result-label">Niveau estime</span>
+                            <span class="result-list" id="chosen-level-display">A0</span>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="bridge-language-section">
                     <h3>Langue pont (optionnel)</h3>
                     <p>Si tu connais bien une autre langue, on peut l'utiliser pour t'expliquer certains concepts.</p>
@@ -127,12 +141,16 @@
                         <option value="pt">Portugais</option>
                     </select>
                 </div>
-                
-                <button class="btn btn-primary btn-lg" onclick="finishOnboarding()" id="finish-btn">
-                    Commencer mon apprentissage
-                </button>
+
+                <div class="summary-actions">
+                    <button class="btn btn-secondary" onclick="backToLevel()">← Changer de niveau</button>
+                    <button class="btn btn-primary btn-lg" onclick="finishOnboarding()" id="finish-btn">
+                        Commencer mon apprentissage
+                    </button>
+                </div>
             </div>
-            
+
+            <!-- STEP 4: Loading -->
             <div id="step-loading" class="step" style="display: none;">
                 <div class="loading-state">
                     <div class="spinner"></div>
@@ -149,153 +167,131 @@
 
 {% block scripts %}
 <script>
-const langCode = '{{ lang_code }}';
-const totalQuestions = {{ questions | length }};
-let currentQuestion = 0;
-let answers = {};
+(function() {
+    const langCode = {{ lang_code | tojson }};
+    const allPillars = {{ lang_config.pillars | tojson }};
+    const cefrOrder = ['A0', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    let chosenCefr = null;
 
-// Pillar names mapping
-const pillarNames = {
-    {% for pillar in lang_config.pillars %}
-    '{{ pillar.id }}': '{{ pillar.name }}',
-    {% endfor %}
-};
+    // Expose functions to global scope for onclick handlers
+    window.showLevelPicker = function() {
+        document.getElementById('step-intro').style.display = 'none';
+        document.getElementById('step-level').style.display = 'block';
+    };
 
-function startQuestions() {
-    if (totalQuestions === 0) {
-        // No questions, go straight to summary
-        showSummary();
-        return;
-    }
-    
-    document.getElementById('step-intro').style.display = 'none';
-    document.getElementById('step-questions').style.display = 'block';
-    updateProgress();
-}
+    window.selectLevel = function(cefr) {
+        chosenCefr = cefr;
 
-function selectAnswer(pillarId, answerIndex, isLast) {
-    answers[pillarId] = answerIndex;
-    
-    // Highlight selected option
-    const questionCard = document.getElementById('question-' + currentQuestion);
-    questionCard.querySelectorAll('.option-btn').forEach((btn, idx) => {
-        btn.classList.toggle('selected', idx === answerIndex);
-    });
-    
-    // Update dot
-    document.querySelector(`.dot[data-index="${currentQuestion}"]`).classList.add('answered');
-    
-    // Move to next question or summary
-    setTimeout(() => {
-        if (isLast || currentQuestion >= totalQuestions - 1) {
-            showSummary();
-        } else {
-            currentQuestion++;
-            showQuestion(currentQuestion);
-        }
-    }, 300);
-}
-
-function showQuestion(index) {
-    document.querySelectorAll('.question-card').forEach((card, i) => {
-        card.style.display = i === index ? 'block' : 'none';
-    });
-    updateProgress();
-}
-
-function updateProgress() {
-    document.getElementById('question-progress').textContent = 
-        `Question ${currentQuestion + 1}/${totalQuestions}`;
-    
-    document.querySelectorAll('.dot').forEach((dot, i) => {
-        dot.classList.toggle('active', i === currentQuestion);
-    });
-}
-
-function showSummary() {
-    document.getElementById('step-questions').style.display = 'none';
-    document.getElementById('step-summary').style.display = 'block';
-    
-    // Calculate skipped and todo pillars
-    const skipped = [];
-    const todo = [];
-    
-    for (const [pillarId, answer] of Object.entries(answers)) {
-        if (answer === 2) { // "Oui" = skip
-            skipped.push(pillarNames[pillarId] || pillarId);
-        } else {
-            todo.push(pillarNames[pillarId] || pillarId);
-        }
-    }
-    
-    // All pillars not in answers are todo
-    for (const [id, name] of Object.entries(pillarNames)) {
-        if (!(id in answers) && !todo.includes(name)) {
-            todo.push(name);
-        }
-    }
-    
-    document.getElementById('skipped-pillars').textContent = 
-        skipped.length > 0 ? skipped.join(', ') : 'Aucun';
-    document.getElementById('todo-pillars').textContent = 
-        todo.length > 0 ? todo.slice(0, 5).join(', ') + (todo.length > 5 ? '...' : '') : 'Aucun';
-}
-
-async function finishOnboarding() {
-    const finishBtn = document.getElementById('finish-btn');
-    finishBtn.disabled = true;
-    finishBtn.textContent = 'Configuration...';
-    
-    document.getElementById('step-summary').style.display = 'none';
-    document.getElementById('step-loading').style.display = 'block';
-    
-    try {
-        const response = await fetch(`/pillars/${langCode}/start`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                answers: answers,
-                bridge_language: document.getElementById('bridge-language').value
-            })
+        // Update card selection
+        document.querySelectorAll('.cefr-card').forEach(card => {
+            card.classList.toggle('selected', card.dataset.cefr === cefr);
         });
-        
-        const data = await response.json();
-        
-        if (data.success || data.redirect) {
-            window.location.href = data.redirect || `/pillars/${langCode}`;
+
+        // Enable confirm button
+        document.getElementById('confirm-level-btn').disabled = false;
+
+        // Show hint
+        const cefrIdx = cefrOrder.indexOf(cefr);
+        const skippedCount = allPillars.filter(p => {
+            const pIdx = cefrOrder.indexOf(p.cefr || 'A0');
+            return pIdx < cefrIdx;
+        }).length;
+        const todoCount = allPillars.length - skippedCount;
+
+        const hint = document.getElementById('level-hint');
+        const hintText = document.getElementById('level-hint-text');
+
+        if (cefrIdx === 0) {
+            hintText.textContent = 'Tu commences depuis le debut. Tous les piliers seront disponibles progressivement.';
         } else {
-            showToast(data.error || 'Erreur', 'error');
+            hintText.textContent = `${skippedCount} pilier${skippedCount > 1 ? 's' : ''} seront auto-valides. Tu attaqueras directement le niveau ${cefr}.`;
+        }
+        hint.style.display = 'flex';
+    };
+
+    window.showSummary = function() {
+        if (!chosenCefr) return;
+
+        document.getElementById('step-level').style.display = 'none';
+        document.getElementById('step-summary').style.display = 'block';
+
+        const cefrIdx = cefrOrder.indexOf(chosenCefr);
+        const skipped = allPillars.filter(p => cefrOrder.indexOf(p.cefr || 'A0') < cefrIdx);
+        const todo = allPillars.filter(p => cefrOrder.indexOf(p.cefr || 'A0') >= cefrIdx);
+
+        document.getElementById('skipped-count').textContent =
+            skipped.length > 0 ? `${skipped.length} pilier${skipped.length > 1 ? 's' : ''}` : 'Aucun';
+        document.getElementById('skipped-detail').textContent =
+            skipped.length > 0 ? skipped.slice(0, 4).map(p => p.name).join(', ') + (skipped.length > 4 ? '...' : '') : '';
+
+        document.getElementById('todo-count').textContent =
+            `${todo.length} pilier${todo.length > 1 ? 's' : ''}`;
+        document.getElementById('todo-detail').textContent =
+            todo.slice(0, 4).map(p => p.name).join(', ') + (todo.length > 4 ? '...' : '');
+
+        document.getElementById('chosen-level-display').textContent = chosenCefr;
+    };
+
+    window.backToLevel = function() {
+        document.getElementById('step-summary').style.display = 'none';
+        document.getElementById('step-level').style.display = 'block';
+    };
+
+    window.finishOnboarding = async function() {
+        const finishBtn = document.getElementById('finish-btn');
+        finishBtn.disabled = true;
+        finishBtn.textContent = 'Configuration...';
+
+        document.getElementById('step-summary').style.display = 'none';
+        document.getElementById('step-loading').style.display = 'block';
+
+        try {
+            const response = await fetch(`/pillars/${langCode}/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    estimated_level: chosenCefr,
+                    bridge_language: document.getElementById('bridge-language').value
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success || data.redirect) {
+                window.location.href = data.redirect || `/pillars/${langCode}`;
+            } else {
+                showToast(data.error || 'Erreur', 'error');
+                document.getElementById('step-loading').style.display = 'none';
+                document.getElementById('step-summary').style.display = 'block';
+                finishBtn.disabled = false;
+                finishBtn.textContent = 'Commencer mon apprentissage';
+            }
+        } catch (error) {
+            showToast('Erreur de connexion', 'error');
             document.getElementById('step-loading').style.display = 'none';
             document.getElementById('step-summary').style.display = 'block';
             finishBtn.disabled = false;
             finishBtn.textContent = 'Commencer mon apprentissage';
         }
-    } catch (error) {
-        showToast('Erreur de connexion', 'error');
-        document.getElementById('step-loading').style.display = 'none';
-        document.getElementById('step-summary').style.display = 'block';
-        finishBtn.disabled = false;
-        finishBtn.textContent = 'Commencer mon apprentissage';
-    }
-}
+    };
 
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('toast-fade');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
+    function showToast(message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type || 'info'}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('toast-fade');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+})();
 </script>
 
 <style>
 .onboarding-container {
-    max-width: 700px;
+    max-width: 720px;
     margin: 0 auto;
     padding: 2rem;
 }
@@ -306,10 +302,7 @@ function showToast(message, type = 'info') {
     display: inline-block;
     margin-bottom: 1.5rem;
 }
-
-.back-link:hover {
-    color: var(--primary);
-}
+.back-link:hover { color: var(--primary); }
 
 .onboarding-card {
     background: var(--card-bg);
@@ -330,15 +323,8 @@ function showToast(message, type = 'info') {
     gap: 1rem;
     margin-bottom: 1.5rem;
 }
-
-.language-intro h1 {
-    margin: 0;
-    font-size: 1.75rem;
-}
-
-.native-name {
-    opacity: 0.9;
-}
+.language-intro h1 { margin: 0; font-size: 1.75rem; }
+.native-name { opacity: 0.9; }
 
 .language-traits {
     display: flex;
@@ -356,136 +342,126 @@ function showToast(message, type = 'info') {
     gap: 0.4rem;
 }
 
-.onboarding-body {
-    padding: 2rem;
-}
+.onboarding-body { padding: 2rem; }
+.step h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+.step p { color: var(--text-secondary); margin-bottom: 1.5rem; }
 
-.step h2 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-}
-
-.step p {
-    color: var(--text-secondary);
-    margin-bottom: 1.5rem;
-}
-
+/* Pillar preview */
 .pillar-preview {
     background: var(--bg-secondary);
     border-radius: 12px;
     padding: 1.25rem;
     margin-bottom: 2rem;
 }
-
-.pillar-preview h3 {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-}
+.pillar-preview h3 { font-size: 1rem; margin-bottom: 1rem; }
 
 .preview-levels {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.6rem;
 }
 
 .preview-level {
     display: flex;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.75rem;
     font-size: 0.9rem;
 }
 
-.level-num {
+.level-badge {
     background: var(--primary);
     color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 32px;
+    text-align: center;
     flex-shrink: 0;
 }
+.level-content { color: var(--text-secondary); }
 
-.level-content {
-    color: var(--text-secondary);
-}
-
-/* Questions */
-.progress-indicator {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-#question-progress {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.progress-dots {
-    display: flex;
-    justify-content: center;
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-}
-
-.dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--border-color);
-    transition: all 0.2s;
-}
-
-.dot.active {
-    background: var(--primary);
-    transform: scale(1.2);
-}
-
-.dot.answered {
-    background: #10b981;
-}
-
-.question-card h3 {
-    font-size: 1.25rem;
-    margin-bottom: 1.5rem;
-    text-align: center;
-}
-
-.options {
+/* CEFR Grid */
+.cefr-grid {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
-.option-btn {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.cefr-card {
     padding: 1rem 1.25rem;
     background: var(--bg-secondary);
     border: 2px solid var(--border-color);
-    border-radius: 12px;
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 1rem;
-    text-align: left;
 }
-
-.option-btn:hover {
+.cefr-card:hover {
     border-color: var(--primary);
     background: var(--card-bg);
+    transform: translateX(4px);
 }
-
-.option-btn.selected {
+.cefr-card.selected {
     border-color: var(--primary);
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(99, 102, 241, 0.08);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
-.option-icon {
-    font-size: 1.25rem;
+.cefr-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
 }
+
+.cefr-badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    min-width: 38px;
+    text-align: center;
+}
+.cefr-a { background: #dcfce7; color: #166534; }
+.cefr-b { background: #dbeafe; color: #1e40af; }
+.cefr-c { background: #fef3c7; color: #92400e; }
+
+.cefr-label {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.cefr-desc {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    padding-left: calc(38px + 0.75rem);
+}
+
+.cefr-count {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted, #9ca3af);
+    padding-left: calc(38px + 0.75rem);
+    margin-top: 0.2rem;
+}
+
+/* Hint */
+.level-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.hint-icon { font-size: 1.25rem; flex-shrink: 0; }
 
 /* Summary */
 .summary-results {
@@ -511,48 +487,28 @@ function showToast(message, type = 'info') {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    font-size: 1.1rem;
 }
-
-.result-skip .result-icon {
-    background: #10b981;
-    color: white;
-}
-
-.result-todo .result-icon {
-    background: var(--primary);
-    color: white;
-}
+.result-skip .result-icon { background: #10b981; color: white; }
+.result-todo .result-icon { background: var(--primary); color: white; }
+.result-level .result-icon { background: transparent; }
 
 .result-content {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.2rem;
 }
-
-.result-label {
-    font-weight: 600;
-}
-
-.result-list {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
+.result-label { font-weight: 600; }
+.result-list { color: var(--text-secondary); font-size: 0.95rem; }
+.result-detail { color: var(--text-muted, #9ca3af); font-size: 0.85rem; }
 
 .bridge-language-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-color);
 }
-
-.bridge-language-section h3 {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-}
-
-.bridge-language-section p {
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-}
+.bridge-language-section h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+.bridge-language-section p { font-size: 0.9rem; margin-bottom: 1rem; }
 
 .form-select {
     width: 100%;
@@ -564,12 +520,26 @@ function showToast(message, type = 'info') {
     font-size: 1rem;
 }
 
-/* Loading */
-.loading-state {
-    text-align: center;
-    padding: 3rem;
+.summary-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
+.summary-actions .btn-secondary {
+    flex: 0 0 auto;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+}
+.summary-actions .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+.summary-actions .btn-primary { flex: 1; }
 
+/* Loading */
+.loading-state { text-align: center; padding: 3rem; }
 .spinner {
     width: 48px;
     height: 48px;
@@ -579,10 +549,7 @@ function showToast(message, type = 'info') {
     animation: spin 1s linear infinite;
     margin: 0 auto 1rem;
 }
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Buttons */
 .btn {
@@ -598,25 +565,10 @@ function showToast(message, type = 'info') {
     border: none;
     width: 100%;
 }
-
-.btn-primary {
-    background: var(--primary);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark, #4f46e5);
-}
-
-.btn-primary:disabled {
-    background: var(--border-color);
-    cursor: not-allowed;
-}
-
-.btn-lg {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark, #4f46e5); }
+.btn-primary:disabled { background: var(--border-color); cursor: not-allowed; }
+.btn-lg { padding: 1rem 2rem; font-size: 1.1rem; }
 
 /* Flag */
 .flag-icon {
@@ -625,7 +577,6 @@ function showToast(message, type = 'info') {
     height: 36px;
     border-radius: 4px;
 }
-
 .flag-jp { background: white; position: relative; }
 .flag-jp::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; background: #bc002d; border-radius: 50%; }
 .flag-cn { background: #de2910; }
@@ -643,7 +594,6 @@ function showToast(message, type = 'info') {
     transform: translateX(-50%);
     z-index: 2000;
 }
-
 .toast {
     padding: 0.75rem 1.5rem;
     border-radius: 10px;
@@ -651,38 +601,45 @@ function showToast(message, type = 'info') {
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+.toast-error { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+.toast-fade { animation: toast-out 0.3s ease forwards; }
+@keyframes toast-out { to { opacity: 0; transform: translateY(-20px); } }
 
-.toast-error {
-    border-color: #ef4444;
-    background: #fef2f2;
-    color: #991b1b;
+@media (max-width: 768px) {
+    .onboarding-container { padding: 0.75rem; max-width: 100%; }
+    .onboarding-header { padding: 1.25rem; border-radius: 14px 14px 0 0; }
+    .onboarding-header h1 { font-size: 1.3rem; }
+    .onboarding-body { padding: 1.25rem; }
+    .language-intro { flex-direction: column; text-align: center; gap: 0.75rem; }
+    .language-intro .flag-icon { font-size: 2.5rem; }
+
+    /* Steps */
+    .step-indicators { gap: 0.25rem; }
+    .step-indicator { padding: 0.4rem 0.75rem; font-size: 0.8rem; }
+
+    /* CEFR cards */
+    .cefr-grid { gap: 0.5rem; }
+    .cefr-card { padding: 0.75rem; border-radius: 10px; }
+    .cefr-badge { min-width: 36px; font-size: 0.8rem; }
+    .cefr-label { font-size: 0.9rem; }
+    .cefr-desc { font-size: 0.78rem; padding-left: 0; }
+    .cefr-count { font-size: 0.75rem; padding-left: 0; }
+
+    /* Summary */
+    .summary-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+    .summary-actions { flex-direction: column; gap: 0.5rem; }
+    .summary-actions .btn, .summary-actions .btn-secondary { width: 100%; text-align: center; }
+
+    /* Nav buttons */
+    .step-nav { flex-direction: column-reverse; gap: 0.5rem; }
+    .step-nav .btn { width: 100%; justify-content: center; }
 }
 
-.toast-fade {
-    animation: toast-out 0.3s ease forwards;
-}
-
-@keyframes toast-out {
-    to { opacity: 0; transform: translateY(-20px); }
-}
-
-@media (max-width: 600px) {
-    .onboarding-container {
-        padding: 1rem;
-    }
-    
-    .onboarding-header {
-        padding: 1.5rem;
-    }
-    
-    .onboarding-body {
-        padding: 1.5rem;
-    }
-    
-    .language-intro {
-        flex-direction: column;
-        text-align: center;
-    }
+@media (max-width: 400px) {
+    .onboarding-container { padding: 0.5rem; }
+    .onboarding-header { padding: 1rem; }
+    .onboarding-body { padding: 1rem; }
+    .cefr-card { padding: 0.6rem; }
 }
 </style>
 {% endblock %}

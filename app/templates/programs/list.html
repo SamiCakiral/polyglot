@@ -242,5 +242,33 @@
         color: var(--text-muted);
         margin-bottom: 1.5rem;
     }
+
+    @media (max-width: 768px) {
+        .programs-header {
+            flex-direction: column;
+            gap: 0.75rem;
+            text-align: center;
+            align-items: stretch;
+        }
+
+        .programs-header h1 { font-size: 1.4rem; }
+
+        .programs-header .btn-lg {
+            width: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .programs-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .program-card { padding: 1rem; }
+        .program-name { font-size: 1.1rem; }
+        .program-meta { flex-wrap: wrap; gap: 0.5rem; }
+        .program-actions { flex-wrap: wrap; }
+        .program-actions .btn { flex: 1; min-width: 0; text-align: center; justify-content: center; }
+    }
 </style>
 {% endblock %}

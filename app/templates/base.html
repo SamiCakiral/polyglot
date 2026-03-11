@@ -32,11 +32,13 @@
             <ul class="nav-links">
                 <li><a href="{{ url_for('main.index') }}"
                         class="{% if request.endpoint == 'main.index' %}active{% endif %}">
-                        Dashboard
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-label">Dashboard</span>
                     </a></li>
                 <li><a href="{{ url_for('stats.global_stats') }}"
                         class="{% if 'stats' in request.endpoint %}active{% endif %}">
-                        Statistiques
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-label">Statistiques</span>
                     </a></li>
                 {% if g.user %}
                 <li class="nav-user-section">
@@ -146,7 +148,7 @@
                     onkeypress="handleHelperKey(event)">
                 <button onclick="sendHelperMessage()">➤</button>
             </div>
-            
+
             <!-- TTS Panel -->
             <div id="tts-panel" class="tts-panel" style="display: none;">
                 <div class="tts-input-row">
@@ -339,16 +341,16 @@
             margin-bottom: 0.5rem;
             display: none;
         }
-        
+
         /* Prof Chatbot Header Actions */
         .header-actions {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        
+
         .tts-btn {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border: none;
             border-radius: 8px;
             padding: 0.4rem 0.6rem;
@@ -357,17 +359,17 @@
             opacity: 0.7;
             transition: all 0.2s;
         }
-        
+
         .tts-btn:hover {
             opacity: 1;
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
         }
-        
+
         .tts-btn.active {
             opacity: 1;
             background: rgba(99, 102, 241, 0.5);
         }
-        
+
         /* Inline TTS Buttons (used across all pages) */
         .tts-inline-btn {
             display: inline-flex;
@@ -385,34 +387,49 @@
             padding: 0;
             flex-shrink: 0;
         }
+
         .tts-inline-btn:hover {
             background: rgba(99, 102, 241, 0.25);
             transform: scale(1.1);
         }
+
         .tts-inline-btn.tts-inline-loading {
             pointer-events: none;
             opacity: 0.7;
         }
+
         .tts-inline-btn.tts-inline-playing {
             background: rgba(99, 102, 241, 0.3);
             animation: tts-pulse 1s ease-in-out infinite;
         }
+
         .tts-inline-btn.tts-inline-error {
             background: rgba(239, 68, 68, 0.15);
         }
+
         .tts-inline-btn.tts-inline-unsupported {
             opacity: 0.3;
             cursor: not-allowed;
         }
+
         .tts-inline-btn.tts-sm {
             width: 26px;
             height: 26px;
             font-size: 0.75rem;
         }
+
         @keyframes tts-pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
         }
+
         .tts-spinner {
             display: inline-block;
             width: 14px;
@@ -422,22 +439,25 @@
             border-radius: 50%;
             animation: spin 0.6s linear infinite;
         }
+
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
-        
+
         /* TTS Panel */
         .tts-panel {
             background: linear-gradient(135deg, #ede9fe, #e0e7ff);
             padding: 0.75rem;
             border-top: 1px solid #c4b5fd;
         }
-        
+
         .tts-input-row {
             display: flex;
             gap: 0.5rem;
         }
-        
+
         .tts-input-row input {
             flex: 1;
             padding: 0.5rem 0.75rem;
@@ -447,12 +467,12 @@
             background: white;
             outline: none;
         }
-        
+
         .tts-input-row input:focus {
             border-color: #6366f1;
             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
         }
-        
+
         .tts-input-row button {
             background: #6366f1;
             color: white;
@@ -463,37 +483,37 @@
             font-size: 1rem;
             transition: background 0.2s;
         }
-        
+
         .tts-input-row button:hover {
             background: #4f46e5;
         }
-        
+
         .tts-input-row button:disabled {
             background: #a5b4fc;
             cursor: not-allowed;
         }
-        
+
         .tts-status {
             font-size: 0.75rem;
             color: #6b7280;
             margin-top: 0.4rem;
             min-height: 1rem;
         }
-        
+
         .tts-status.error {
             color: #ef4444;
         }
-        
+
         .tts-status.success {
             color: #10b981;
         }
-        
+
         /* System message styling */
         .message.system ul {
             margin: 0.5rem 0;
             padding-left: 1.25rem;
         }
-        
+
         .message.system li {
             margin: 0.25rem 0;
         }
@@ -553,7 +573,7 @@
                     addMessage('bot', data.message);
                 }
 
-                // If word added to debt, show small notification in chat
+                // If word added to debt, show small notification in chat + update sidebar
                 if (data.added_to_debt) {
                     const notif = document.createElement('div');
                     notif.style.textAlign = 'center';
@@ -566,6 +586,11 @@
                     // Update main UI debt counter if it exists
                     const debtBadge = document.getElementById('debt-badge');
                     if (debtBadge && data.debt_count) debtBadge.textContent = data.debt_count;
+                    
+                    // Add word to sidebar if addWordToSidebar function exists
+                    if (typeof addWordToSidebar === 'function' && data.vocab_word) {
+                        addWordToSidebar(data.vocab_word, data.vocab_translation || '');
+                    }
                 }
 
             } catch (e) {
@@ -578,10 +603,10 @@
         function addMessage(type, text) {
             const div = document.createElement('div');
             div.className = `message ${type}`;
-            
+
             // Parse [VOCAB]word[/VOCAB] tags into styled spans
             const parsedText = text.replace(
-                /\[VOCAB\](.*?)\[\/VOCAB\]/g, 
+                /\[VOCAB\](.*?)\[\/VOCAB\]/g,
                 '<span class="vocab-highlight">$1</span>'
             );
             div.innerHTML = parsedText;
@@ -590,26 +615,26 @@
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
         }
-        
+
         // =============================================================
         // TTS (Qwen3-TTS) Functions
         // =============================================================
         let ttsAvailable = null; // cached availability
-        
+
         function toggleTtsPanel() {
             const panel = document.getElementById('tts-panel');
             const btn = document.querySelector('.tts-btn');
             const isVisible = panel.style.display !== 'none';
-            
+
             panel.style.display = isVisible ? 'none' : 'block';
             btn.classList.toggle('active', !isVisible);
-            
+
             // Check TTS availability on first open
             if (!isVisible && ttsAvailable === null) {
                 checkTtsAvailability();
             }
         }
-        
+
         async function checkTtsAvailability() {
             const status = document.getElementById('tts-status');
             try {
@@ -629,13 +654,13 @@
                 status.className = 'tts-status error';
             }
         }
-        
+
         async function playTts(text, lang) {
             const input = document.getElementById('tts-text-input');
             const statusEl = document.getElementById('tts-status');
             const playBtn = document.getElementById('tts-play-btn');
             const audio = document.getElementById('tts-audio');
-            
+
             // Use provided text or input field
             const ttsText = text || input.value.trim();
             if (!ttsText) {
@@ -643,15 +668,15 @@
                 statusEl.className = 'tts-status error';
                 return;
             }
-            
+
             // Detect language from page context or default
             const ttsLang = lang || document.body.dataset.ttsLanguage || 'auto';
-            
+
             playBtn.disabled = true;
             playBtn.textContent = '⏳';
             statusEl.textContent = 'Generation en cours...';
             statusEl.className = 'tts-status';
-            
+
             try {
                 const resp = await fetch('/api/tts', {
                     method: 'POST',
@@ -662,17 +687,17 @@
                         instruct: 'Speak clearly and at a moderate pace'
                     })
                 });
-                
+
                 if (resp.ok) {
                     const blob = await resp.blob();
                     const url = URL.createObjectURL(blob);
                     audio.src = url;
                     audio.play();
-                    
+
                     const durationMs = resp.headers.get('X-TTS-Duration-Ms') || '?';
                     statusEl.textContent = `Audio genere (${durationMs}ms)`;
                     statusEl.className = 'tts-status success';
-                    
+
                     // Cleanup URL after play
                     audio.onended = () => URL.revokeObjectURL(url);
                 } else {
@@ -688,10 +713,10 @@
                 playBtn.textContent = '▶';
             }
         }
-        
+
         // Global function to play TTS from anywhere in the app
         // Usage: playTtsText("Bonjour", "fr")
-        window.playTtsText = function(text, lang) {
+        window.playTtsText = function (text, lang) {
             // Open the TTS panel if closed
             const panel = document.getElementById('tts-panel');
             if (panel.style.display === 'none') {
@@ -719,7 +744,7 @@
         };
 
         const TTS_UNSUPPORTED = new Set(['tr', 'turkish', 'turc']);
-        
+
         // Audio cache to avoid re-generating the same text
         const _ttsCache = new Map();
         let _ttsCurrentAudio = null;
@@ -730,7 +755,7 @@
          * @param {string} lang - Language name or code (e.g. 'japanese', 'ja', 'italien')
          * @param {HTMLElement} [btn] - Optional button element to show loading state
          */
-        window.ttsInline = async function(text, lang, btn) {
+        window.ttsInline = async function (text, lang, btn) {
             if (!text || !text.trim()) return;
             text = text.trim();
 
@@ -823,7 +848,7 @@
          * @param {string} lang - Language
          * @param {HTMLElement} btn - Button that was clicked
          */
-        window.ttsFromElement = function(elementId, lang, btn) {
+        window.ttsFromElement = function (elementId, lang, btn) {
             const el = document.getElementById(elementId);
             if (el) ttsInline(el.textContent, lang, btn);
         };

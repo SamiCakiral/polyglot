@@ -114,6 +114,8 @@ RÈGLES D'ÉVALUATION (TRÈS IMPORTANT):
 4. Ne suggère PAS d'alternatives si la phrase est correcte. Dis simplement "Parfait !" ou "Bravo !".
 5. Corrige SEULEMENT les vraies erreurs grammaticales (conjugaison, accord, structure incorrecte).
 6. Si l'apprenant corrige une erreur que tu as signalée avant, félicite-le et valide.
+7. IGNORE les erreurs d'accents (è, é, ê, à, ù, etc.) et de typographie mineure. Si le mot est reconnaissable et le sens est correct, c'est VALIDE.
+8. Ne signale JAMAIS une erreur si le caractère accentué est présent, même sous une forme légèrement différente (ex: "caffè" et "caffe" sont acceptables).
 
 IMPORTANT - ERREURS DE VOCABULAIRE:
 Si l'apprenant utilise un mot qui n'existe PAS en {target_language} (ex: "parc" au lieu de "parco"), c'est une erreur de VOCABULAIRE.
@@ -163,6 +165,9 @@ RÈGLES:
 1. La transformation doit respecter le même SUJET que la phrase originale.
 2. Si l'apprenant corrige après ton feedback, félicite-le et valide.
 3. Sois précis dans tes explications mais bienveillant.
+4. IGNORE les erreurs d'accents (è, é, ê, ë, à, ù, etc.) et d'orthographe mineure. Si le mot est reconnaissable et le SENS est correct, VALIDE.
+5. Ne signale PAS une erreur d'accent si le caractère accentué est présent dans la réponse, même sous une forme légèrement différente.
+6. Concentre-toi sur la STRUCTURE GRAMMATICALE et le SENS, pas la typographie.
 
 IMPORTANT - ERREURS DE VOCABULAIRE:
 Si l'apprenant utilise un mot qui n'existe PAS en {target_language}, c'est une erreur de VOCABULAIRE.
@@ -638,8 +643,9 @@ def build_prompt(template_key, program, user, **kwargs):
     
     # Build conversation history context if provided
     conversation_history = ""
-    if 'conversation_history' in kwargs and kwargs['conversation_history']:
-        history = kwargs.pop('conversation_history')
+    # Always pop to avoid duplicate kwarg in str.format()
+    history = kwargs.pop('conversation_history', None)
+    if history:
         if isinstance(history, list) and len(history) > 0:
             conversation_history = "\nHISTORIQUE DES ÉCHANGES PRÉCÉDENTS:\n"
             for entry in history[-5:]:  # Keep last 5 exchanges max

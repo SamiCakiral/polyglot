@@ -384,22 +384,30 @@
     
     <div class="vocab-sidebar-content" id="vocab-list">
         {% if daily_vocab %}
+            {# Deduplicate: skip reverse cards (old bidirectional format) #}
+            {% set seen = [] %}
             {% for word in daily_vocab %}
-            <div class="vocab-card" 
-                 data-front="{{ word.front }}" 
-                 data-back="{{ word.back }}"
-                 onclick="revealVocabWord(this)">
-                {# Display based on exercise direction #}
-                {% if exercise_direction == 'native_to_target' %}
-                    {# User translates native → target, show native (back) #}
-                    <div class="vocab-word">{{ word.back }}</div>
-                    <div class="vocab-translation">?</div>
-                {% else %}
-                    {# User translates target → native, show target (front) #}
-                    <div class="vocab-word">{{ word.front }}</div>
-                    <div class="vocab-translation">?</div>
+                {% if word.direction is not defined or word.direction != 'reverse' %}
+                    {% set _key = word.front ~ '|' ~ word.back %}
+                    {% if _key not in seen %}
+                        {% if seen.append(_key) %}{% endif %}
+                        <div class="vocab-card" 
+                             data-front="{{ word.front }}" 
+                             data-back="{{ word.back }}"
+                             onclick="revealVocabWord(this)">
+                            {# Display based on exercise direction #}
+                            {% if exercise_direction == 'native_to_target' %}
+                                {# User translates native → target, show native (back) #}
+                                <div class="vocab-word">{{ word.back }}</div>
+                                <div class="vocab-translation">?</div>
+                            {% else %}
+                                {# User translates target → native, show target (front) #}
+                                <div class="vocab-word">{{ word.front }}</div>
+                                <div class="vocab-translation">?</div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 {% endif %}
-            </div>
             {% endfor %}
         {% else %}
             <div class="vocab-empty">

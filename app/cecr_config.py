@@ -19,7 +19,7 @@ NIVEAUX:
 
 CECR_PILLAR_MAPPING = {
     'A1': {
-        'pillar_levels': [0, 1],
+        'pillar_levels': [0, 1],  # A0 + A1 requis
         'label': 'Decouverte',
         'description': 'Mots isoles, phrases tres simples: se presenter, saluer, compter',
         'min_mastery': 60,
@@ -28,7 +28,7 @@ CECR_PILLAR_MAPPING = {
         'passing_score': 50,
     },
     'A2': {
-        'pillar_levels': [2, 3],
+        'pillar_levels': [2],  # A2 pillars
         'label': 'Survie',
         'description': 'Phrases courtes sur le quotidien: achats, transports, repas',
         'min_mastery': 65,
@@ -37,7 +37,7 @@ CECR_PILLAR_MAPPING = {
         'passing_score': 55,
     },
     'B1': {
-        'pillar_levels': [4, 5],
+        'pillar_levels': [3],  # B1 pillars
         'label': 'Seuil',
         'description': 'Paragraphes structures, exprimer son avis, raconter au passe',
         'min_mastery': 70,
@@ -46,7 +46,7 @@ CECR_PILLAR_MAPPING = {
         'passing_score': 60,
     },
     'B2': {
-        'pillar_levels': [],
+        'pillar_levels': [4],  # B2 pillars
         'label': 'Avance',
         'description': 'Argumentation, textes complexes, nuances et expressions idiomatiques',
         'min_mastery': 75,
@@ -55,7 +55,7 @@ CECR_PILLAR_MAPPING = {
         'passing_score': 60,
     },
     'C1': {
-        'pillar_levels': [],
+        'pillar_levels': [5],  # C1 pillars
         'label': 'Autonome',
         'description': 'Textes longs, subtilites, registres formels et informels',
         'min_mastery': 80,
@@ -64,7 +64,7 @@ CECR_PILLAR_MAPPING = {
         'passing_score': 65,
     },
     'C2': {
-        'pillar_levels': [],
+        'pillar_levels': [6],  # C2 pillars
         'label': 'Maitrise',
         'description': 'Comprehension quasi-native, production sophistiquee, ironie et style',
         'min_mastery': 85,
@@ -445,19 +445,20 @@ def get_level_config(level):
 def get_required_pillars_for_level(lang_config, target_level):
     """
     Get the list of pillar IDs required to reach a target CECR level.
-    Accumulates all levels up to and including target.
+    Uses the 'cefr' field on each pillar. To pass level X, all required pillars
+    at CEFR levels BELOW X must be mastered.
+    
+    Ex: to pass A2 exam, you need all required A0 + A1 pillars mastered.
     """
-    required = []
     pillars = lang_config.get('pillars', [])
     target_idx = CECR_ORDER.index(target_level) if target_level in CECR_ORDER else 0
 
-    needed_levels = set()
-    for level_name in CECR_ORDER[1:target_idx + 1]:
-        config = CECR_PILLAR_MAPPING.get(level_name, {})
-        needed_levels.update(config.get('pillar_levels', []))
+    # All CEFR levels strictly below target
+    needed_cefrs = set(CECR_ORDER[:target_idx])
 
+    required = []
     for p in pillars:
-        if p.get('level') in needed_levels:
+        if p.get('cefr') in needed_cefrs and p.get('required', False):
             required.append(p['id'])
 
     return required
@@ -504,12 +505,17 @@ def check_level_readiness(user_language, lang_config, target_level):
 
 def get_exercise_types_for_pillar(pillar_config):
     """
-    Reverse mapping: given a pillar config dict (with 'category' and 'level'),
-    return list of exercise type IDs that reinforce this pillar.
+    Return list of exercise type IDs that reinforce this pillar.
+    Reads directly from the pillar's 'exercise_types' field.
+    Falls back to old category/level mapping if 'exercise_types' not present.
     """
+    # New system: direct field on pillar
+    if 'exercise_types' in pillar_config:
+        return pillar_config['exercise_types']
+
+    # Fallback: old category/level mapping
     cat = pillar_config.get('category', '')
     lvl = pillar_config.get('level', -1)
-
     matching = []
     for ex_type, categories in EXERCISE_PILLAR_CATEGORIES.items():
         if cat in categories:
@@ -522,13 +528,20 @@ def get_exercise_types_for_pillar(pillar_config):
 def get_pillars_for_exercise_type(lang_config, exercise_type):
     """
     Get the list of pillar IDs that are reinforced by a given exercise type.
+    Reads directly from each pillar's 'exercise_types' field.
+    Falls back to old category/level mapping if 'exercise_types' not present.
     """
-    categories = EXERCISE_PILLAR_CATEGORIES.get(exercise_type, [])
-    levels = EXERCISE_PILLAR_LEVELS.get(exercise_type, [])
-
     matching = []
     for p in lang_config.get('pillars', []):
-        if p.get('category') in categories and p.get('level') in levels:
-            matching.append(p['id'])
+        # New system: direct field
+        if 'exercise_types' in p:
+            if exercise_type in p['exercise_types']:
+                matching.append(p['id'])
+        else:
+            # Fallback: old system
+            categories = EXERCISE_PILLAR_CATEGORIES.get(exercise_type, [])
+            levels = EXERCISE_PILLAR_LEVELS.get(exercise_type, [])
+            if p.get('category') in categories and p.get('level') in levels:
+                matching.append(p['id'])
 
     return matching

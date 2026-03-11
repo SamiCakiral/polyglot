@@ -344,40 +344,88 @@
         {% else %}
         <!-- TTS FALLBACK MODE -->
         <div id="tts-mode">
-            {% if phrases %}
-            <div class="tts-container" id="phrase-card">
-                <div class="phrase-display" id="phrase-display">
-                    {{ phrases[0] if phrases else 'Chargement...' }}
-                </div>
-                
-                <div class="tts-controls">
-                    <button class="btn-audio secondary" onclick="pauseTTS()">⏸️</button>
-                    <button class="btn-audio primary" onclick="playTTS()">▶️</button>
-                    <button class="btn-audio secondary" onclick="replayTTS()">🔁</button>
+            <!-- Choice screen: generate text or use existing phrases -->
+            <div id="tts-choice" {% if phrases %}style="display:none;"{% endif %}>
+                <div class="empty-state" style="background:rgba(255,255,255,0.05); border-radius:16px; padding:3rem 2rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎙️</div>
+                    <h3>Pas de video disponible</h3>
+                    <p style="color: rgba(255,255,255,0.6); margin-bottom: 2rem;">Tu peux generer un texte coherent dans la langue cible et le lire a voix haute en l'ecoutant.</p>
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <button class="btn-control primary" id="gen-text-btn" onclick="generateShadowingText()">
+                            Generer un texte (10-15 lignes)
+                        </button>
+                        <button class="btn-control secondary" onclick="skipModule()">
+                            Passer ce module
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="controls-card">
-                <div class="feedback-buttons">
-                    <button class="feedback-btn difficult" onclick="markPhrase('difficult')">
-                        😕 Difficile
-                    </button>
-                    <button class="feedback-btn done" onclick="markPhrase('done')">
-                        ✅ Maîtrisé
-                    </button>
-                    <button class="feedback-btn next-video" onclick="markPhrase('skip')">
-                        ⏭️ Skip
-                    </button>
+            <!-- Generated full text mode -->
+            <div id="tts-fulltext" style="display:none;">
+                <div class="tts-container" style="text-align:left;">
+                    <div id="fulltext-display" style="font-size:1.2rem; line-height:2; font-family:'Georgia',serif; white-space:pre-line;"></div>
+                    
+                    <div class="tts-controls" style="margin-top:1.5rem;">
+                        <button class="btn-audio secondary" onclick="pauseFullTTS()">⏸️</button>
+                        <button class="btn-audio primary" onclick="playFullTTS()">▶️</button>
+                        <button class="btn-audio secondary" onclick="slowDownTTS()">🐢</button>
+                    </div>
+                    <p style="color:rgba(255,255,255,0.4); font-size:0.8rem; margin-top:0.75rem; text-align:center;" id="tts-speed-label">Vitesse: normale</p>
+                </div>
+
+                <div class="controls-card" style="margin-top:1.5rem;">
+                    <div class="instructions-box">
+                        <h4>Technique</h4>
+                        <p>Lis le texte a voix haute EN MEME TEMPS que l'audio. Imite l'intonation et le rythme !</p>
+                    </div>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn difficult" onclick="replayFullTTS()">
+                            🔁 Relire
+                        </button>
+                        <button class="feedback-btn done" onclick="finishShadowing()">
+                            ✅ Termine
+                        </button>
+                        <button class="feedback-btn next-video" onclick="generateShadowingText()">
+                            🔄 Autre texte
+                        </button>
+                    </div>
                 </div>
             </div>
-            {% else %}
-            <div class="empty-state">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
-                <h3>Aucune ressource disponible</h3>
-                <p style="color: rgba(255,255,255,0.6); margin-bottom: 2rem;">Ajoutez des vidéos YouTube dans les paramètres du programme.</p>
-                <button class="btn-control primary" onclick="skipModule()">
-                    Passer ce module →
-                </button>
+
+            <!-- Phrases mode (existing, if we have some from daily words) -->
+            {% if phrases %}
+            <div id="tts-phrases">
+                <div class="tts-container" id="phrase-card">
+                    <div class="phrase-display" id="phrase-display">
+                        {{ phrases[0] if phrases else 'Chargement...' }}
+                    </div>
+                    
+                    <div class="tts-controls">
+                        <button class="btn-audio secondary" onclick="pauseTTS()">⏸️</button>
+                        <button class="btn-audio primary" onclick="playTTS()">▶️</button>
+                        <button class="btn-audio secondary" onclick="replayTTS()">🔁</button>
+                    </div>
+                </div>
+
+                <div class="controls-card">
+                    <div style="text-align:center; margin-bottom:1rem;">
+                        <button class="btn-control secondary" onclick="switchToFullText()" style="font-size:0.85rem;">
+                            Preferer un texte complet genere ?
+                        </button>
+                    </div>
+                    <div class="feedback-buttons">
+                        <button class="feedback-btn difficult" onclick="markPhrase('difficult')">
+                            😕 Difficile
+                        </button>
+                        <button class="feedback-btn done" onclick="markPhrase('done')">
+                            ✅ Maitrise
+                        </button>
+                        <button class="feedback-btn next-video" onclick="markPhrase('skip')">
+                            ⏭️ Skip
+                        </button>
+                    </div>
+                </div>
             </div>
             {% endif %}
         </div>
@@ -463,18 +511,13 @@
     // =========================================================
     // TTS MODE - Using Qwen3-TTS via API
     // =========================================================
-    async function playTTS() {
-        const text = state.phrases[state.currentPhraseIndex];
+    async function _playTtsText(text) {
         if (!text) return;
+        if (_shadowAudio) { _shadowAudio.pause(); _shadowAudio.currentTime = 0; }
 
-        // Stop any current audio
-        if (_shadowAudio) {
-            _shadowAudio.pause();
-            _shadowAudio.currentTime = 0;
-        }
-
-        // Check cache first
-        const cacheKey = `shadow_${_shadowLang}:${text}`;
+        const langCode = LANG_NAME_TO_CODE[(_shadowLang || '').toLowerCase()] || 'auto';
+        const cacheKey = `shadow_${langCode}:${text.substring(0, 80)}`;
+        
         if (_ttsCache && _ttsCache.has(cacheKey)) {
             _shadowAudio = new Audio(_ttsCache.get(cacheKey));
             _shadowAudio.play();
@@ -486,12 +529,11 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    text: text,
-                    language: LANG_NAME_TO_CODE[(_shadowLang || '').toLowerCase()] || 'auto',
-                    instruct: 'Speak clearly and at a moderate pace'
+                    text: text.substring(0, 3000),
+                    language: langCode,
+                    instruct: 'Speak clearly and at a natural pace, like reading a story aloud'
                 })
             });
-
             if (resp.ok) {
                 const blob = await resp.blob();
                 const url = URL.createObjectURL(blob);
@@ -499,27 +541,23 @@
                 _shadowAudio = new Audio(url);
                 _shadowAudio.play();
             } else {
-                console.warn('TTS error for shadowing:', resp.status);
+                console.warn('TTS error:', resp.status);
             }
         } catch (e) {
             console.warn('TTS connection error:', e);
         }
     }
 
-    function replayTTS() { playTTS(); }
-    
-    function pauseTTS() {
-        if (_shadowAudio) {
-            _shadowAudio.pause();
-        }
+    async function playTTS() {
+        const text = state.phrases[state.currentPhraseIndex];
+        await _playTtsText(text);
     }
 
+    function replayTTS() { playTTS(); }
+    function pauseTTS() { if (_shadowAudio) _shadowAudio.pause(); }
+
     function markPhrase(result) {
-        if (_shadowAudio) {
-            _shadowAudio.pause();
-            _shadowAudio.currentTime = 0;
-        }
-        
+        if (_shadowAudio) { _shadowAudio.pause(); _shadowAudio.currentTime = 0; }
         if (result === 'done') state.doneCount++;
         state.currentPhraseIndex++;
         
@@ -530,6 +568,77 @@
             const phraseCounter = document.getElementById('current-phrase');
             if (phraseCounter) phraseCounter.textContent = state.currentPhraseIndex + 1;
         }
+    }
+
+    // =========================================================
+    // FULL TEXT GENERATION MODE
+    // =========================================================
+    let fullTextContent = '';
+
+    function switchToFullText() {
+        const phrasesEl = document.getElementById('tts-phrases');
+        if (phrasesEl) phrasesEl.style.display = 'none';
+        document.getElementById('tts-choice').style.display = 'block';
+    }
+
+    async function generateShadowingText() {
+        const btn = document.getElementById('gen-text-btn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Generation en cours...'; }
+
+        try {
+            const resp = await fetch('{{ url_for("session.generate_shadowing_text") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await resp.json();
+
+            if (data.success) {
+                fullTextContent = data.text;
+                document.getElementById('fulltext-display').textContent = data.text;
+                document.getElementById('tts-choice').style.display = 'none';
+                const phrasesEl = document.getElementById('tts-phrases');
+                if (phrasesEl) phrasesEl.style.display = 'none';
+                document.getElementById('tts-fulltext').style.display = 'block';
+                
+                // Auto-play TTS
+                setTimeout(() => playFullTTS(), 500);
+            } else {
+                if (btn) { btn.disabled = false; btn.textContent = 'Reessayer'; }
+            }
+        } catch (e) {
+            console.error(e);
+            if (btn) { btn.disabled = false; btn.textContent = 'Reessayer'; }
+        }
+    }
+
+    async function playFullTTS() {
+        await _playTtsText(fullTextContent);
+    }
+
+    function replayFullTTS() {
+        playFullTTS();
+    }
+
+    function pauseFullTTS() {
+        if (_shadowAudio) _shadowAudio.pause();
+    }
+
+    function slowDownTTS() {
+        // Toggle slow mode via new generation with instruction
+        if (_shadowAudio) {
+            if (_shadowAudio.playbackRate === 1.0) {
+                _shadowAudio.playbackRate = 0.75;
+                document.getElementById('tts-speed-label').textContent = 'Vitesse: lente (0.75x)';
+            } else {
+                _shadowAudio.playbackRate = 1.0;
+                document.getElementById('tts-speed-label').textContent = 'Vitesse: normale';
+            }
+        }
+    }
+
+    function finishShadowing() {
+        state.doneCount++;
+        showComplete();
     }
 
     // =========================================================

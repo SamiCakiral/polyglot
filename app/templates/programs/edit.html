@@ -3,6 +3,7 @@
 {% block title %}Modifier {{ program.name }} - FlashCards{% endblock %}
 
 {% block content %}
+<div class="edit-wrapper">
 <div class="edit-container">
     <div class="edit-header">
         <a href="{{ url_for('programs.view_program', program_id=program.id) }}" class="back-link">← Retour</a>
@@ -169,6 +170,7 @@
         </div>
     </form>
 </div>
+</div>
 
 <template id="legoTemplate">
     <div class="lego-item">
@@ -194,9 +196,24 @@
 </template>
 
 <style>
+    .edit-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        z-index: 1;
+        overflow-y: auto;
+        padding-top: 80px;
+    }
+
     .edit-container {
         max-width: 900px;
         margin: 0 auto;
+        padding: 2rem 1rem;
+        position: relative;
+        z-index: 2;
     }
 
     .edit-header {
@@ -204,16 +221,38 @@
     }
 
     .back-link {
-        color: var(--text-muted);
+        color: rgba(255, 255, 255, 0.9);
         text-decoration: none;
         font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        transition: all 0.2s;
+    }
+
+    .back-link:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(-4px);
+    }
+
+    .edit-header h1 {
+        color: white;
+        margin-top: 1rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .edit-form {
-        background: var(--card-bg);
-        border-radius: 12px;
+        background: white;
+        border-radius: 16px;
         padding: 2rem;
-        border: 1px solid var(--border-color);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        border: none;
+        position: relative;
+        z-index: 3;
     }
 
     .form-section {
@@ -372,6 +411,16 @@
         margin-top: 2rem;
         padding-top: 1.5rem;
         border-top: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+        .edit-wrapper { padding-top: 60px !important; }
+        .edit-container { padding: 0.75rem !important; }
+        .edit-form { padding: 1.25rem !important; }
+        .edit-form .form-row { grid-template-columns: 1fr !important; }
+        .edit-header h1 { font-size: 1.4rem !important; }
+        .edit-actions { flex-direction: column; gap: 0.5rem; }
+        .edit-actions .btn { width: 100%; text-align: center; justify-content: center; }
     }
 </style>
 
