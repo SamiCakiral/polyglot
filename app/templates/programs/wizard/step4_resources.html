@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouveau Programme - Ressources{% endblock %}
+
+{% block content %}
+<div class="wizard-wrapper">
+<div class="wizard-container">
+    <div class="wizard-header">
+        <h1>Nouveau Programme d'Entraînement</h1>
+        {% include 'programs/wizard/_progress.html' %}
+    </div>
+
+    <form method="POST" class="wizard-form" id="step4Form">
+        <div class="form-section">
+            <h2>Ressources Shadowing</h2>
+            <p class="section-desc">Ajoute des videos YouTube ou podcasts pour les exercices d'ecoute et repetition. Tu pourras en ajouter d'autres plus tard.</p>
+
+            <div id="shadowingContainer"></div>
+
+            <button type="button" class="btn btn-outline add-btn" id="addShadowingBtn">+ Ajouter une ressource</button>
+            <input type="hidden" name="shadowing_resources" id="shadowingInput" value="[]">
+        </div>
+
+        <div class="form-section">
+            <p class="skip-hint">Pas de ressources ? Pas de souci, tu peux sauter cette etape et en ajouter plus tard.</p>
+        </div>
+
+        <div class="wizard-actions">
+            <a href="{{ url_for('programs.wizard_step', step=3) }}" class="btn btn-secondary">Precedent</a>
+            <button type="submit" class="btn btn-primary">Suivant</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<template id="shadowingTemplate">
+    <div class="shadowing-item">
+        <select class="shadowing-type">
+            <option value="youtube">YouTube</option>
+            <option value="podcast">Podcast</option>
+        </select>
+        <input type="text" class="shadowing-url" placeholder="URL de la video ou du podcast">
+        <input type="text" class="shadowing-title" placeholder="Titre (optionnel)">
+        <button type="button" class="btn btn-danger btn-sm remove-btn">&times;</button>
+    </div>
+</template>
+
+<style>
+    .wizard-wrapper {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        z-index: 1;
+        overflow-y: auto;
+        padding-top: 80px;
+    }
+    
+    .wizard-container { 
+        max-width: 720px; 
+        margin: 0 auto; 
+        padding: 2rem 1rem;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .wizard-header { 
+        text-align: center; 
+        margin-bottom: 0;
+    }
+    
+    .wizard-header h1 { 
+        margin-bottom: 2rem; 
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-size: 2rem;
+    }
+    
+    .wizard-form { 
+        background: white; 
+        border-radius: 16px; 
+        padding: 2rem; 
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        border: none;
+        position: relative;
+        z-index: 3;
+    }
+    .form-section { margin-bottom: 1.5rem; }
+    .form-section h2 { margin-bottom: 0.5rem; }
+    .section-desc { color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem; }
+    .skip-hint { text-align: center; color: var(--text-muted); font-style: italic; font-size: 0.9rem; }
+    #shadowingContainer { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+    .shadowing-item { display: flex; gap: 0.5rem; align-items: center; padding: 0.75rem; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color); }
+    .shadowing-item select, .shadowing-item input { padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: var(--card-bg); color: var(--text-color); }
+    .shadowing-item select { width: 110px; }
+    .shadowing-item input { flex: 1; }
+    .add-btn { width: 100%; padding: 0.75rem; border-style: dashed; }
+    .remove-btn { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .btn-danger { background: var(--danger-color); color: white; border: none; }
+    .wizard-actions { display: flex; justify-content: space-between; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
+</style>
+
+<script>
+    let shadowingResources = {{ data.get('shadowing_resources', []) | tojson | safe }};
+    const container = document.getElementById('shadowingContainer');
+
+    function render() {
+        container.innerHTML = '';
+        shadowingResources.forEach((r) => {
+            const tpl = document.getElementById('shadowingTemplate').content.cloneNode(true);
+            const item = tpl.querySelector('.shadowing-item');
+            item.querySelector('.shadowing-type').value = r.type || 'youtube';
+            item.querySelector('.shadowing-url').value = r.url || '';
+            item.querySelector('.shadowing-title').value = r.title || '';
+            container.appendChild(tpl);
+        });
+        update();
+    }
+
+    function update() {
+        const items = container.querySelectorAll('.shadowing-item');
+        shadowingResources = [];
+        items.forEach(item => {
+            shadowingResources.push({
+                type: item.querySelector('.shadowing-type').value,
+                url: item.querySelector('.shadowing-url').value,
+                title: item.querySelector('.shadowing-title').value
+            });
+        });
+        document.getElementById('shadowingInput').value = JSON.stringify(shadowingResources);
+    }
+
+    document.getElementById('addShadowingBtn').addEventListener('click', () => {
+        shadowingResources.push({ type: 'youtube', url: '', title: '' });
+        render();
+    });
+
+    container.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-btn')) { e.target.closest('.shadowing-item').remove(); update(); }
+    });
+    container.addEventListener('input', update);
+    container.addEventListener('change', update);
+
+    document.getElementById('step4Form').addEventListener('submit', update);
+    render();
+</script>
+{% endblock %}
