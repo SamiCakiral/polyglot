@@ -97,13 +97,61 @@ Polyglot/
 └── pillar_content/             # Contenu pédagogique généré
 ```
 
-## Backends LLM
+## Configurer un LLM local
 
-L'application utilise des LLMs locaux via une API OpenAI-compatible, avec chaîne de fallback :
+L'application génère les exercices, corrections et conversations via un **LLM local** (aucune API cloud requise). Trois backends sont supportés avec un système de fallback automatique :
 
-1. **LM Studio** (principal) – serveur local/NAS
-2. **vLLM** (fallback) – serveur GPU pour contenu complexe
-3. **Ollama** (dernier recours)
+### Option 1 : LM Studio (recommandé pour débuter)
+
+1. Télécharger [LM Studio](https://lmstudio.ai/) et installer un modèle (ex: Qwen, Llama, Mistral)
+2. Activer le serveur local dans LM Studio (onglet "Local Server")
+3. Configurer le `.env` :
+
+```env
+LLM_BACKEND=lmstudio
+LMSTUDIO_HOST=localhost
+LMSTUDIO_PORT=1234
+```
+
+### Option 2 : Ollama
+
+1. Installer [Ollama](https://ollama.com/) et télécharger un modèle :
+
+```bash
+ollama pull llama3.2
+ollama serve
+```
+
+2. Configurer le `.env` :
+
+```env
+LLM_BACKEND=ollama
+SPARK_HOST=localhost
+OLLAMA_PORT=11434
+```
+
+### Option 3 : vLLM (GPU dédié)
+
+Pour les machines avec un GPU NVIDIA — meilleure performance sur les contenus complexes.
+
+```bash
+pip install vllm
+vllm serve openai/gpt-oss-20b --port 8000
+```
+
+```env
+LLM_BACKEND=vllm
+SPARK_HOST=localhost
+VLLM_PORT=8000
+```
+
+### Chaîne de fallback
+
+Si le backend principal ne répond pas, l'application tente automatiquement le suivant :
+
+**LM Studio** → **vLLM** → **Ollama**
+
+Cela garantit que l'application reste fonctionnelle même si un service est temporairement indisponible.
 
 ## Licence
 
