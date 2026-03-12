@@ -1,4 +1,4 @@
-# Anki2 – Application d'apprentissage de langues
+# Polyglot – Application d'apprentissage de langues
 
 Application web Flask pour l'apprentissage de langues étrangères, avec répétition espacée (SM-2 / FSRS), exercices générés par IA, et synthèse vocale.
 
@@ -18,8 +18,8 @@ Application web Flask pour l'apprentissage de langues étrangères, avec répét
 
 ```bash
 # Cloner le dépôt
-git clone https://github.com/<user>/anki2.git
-cd anki2
+git clone https://github.com/<user>/polyglot.git
+cd polyglot
 
 # Créer l'environnement virtuel
 python3 -m venv venv
@@ -62,7 +62,7 @@ L'application démarre sur [http://localhost:9001](http://localhost:9001).
 ## Structure du projet
 
 ```
-anki2/
+Polyglot/
 ├── app/                        # Application Flask
 │   ├── __init__.py             # Factory + blueprints
 │   ├── models.py               # Modèles SQLAlchemy
