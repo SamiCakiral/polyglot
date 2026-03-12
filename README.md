@@ -2,6 +2,12 @@
 
 Application web Flask pour l'apprentissage de langues étrangères, avec répétition espacée (SM-2 / FSRS), exercices générés par IA, et synthèse vocale.
 
+## Pourquoi ce projet ?
+
+En voulant apprendre de nouvelles langues, j'avais besoin d'une application avec des fonctionnalités précises que je ne trouvais nulle part — alors je me suis dit : autant la coder moi-même, et l'améliorer au fur et à mesure.
+
+Le projet a commencé comme un simple outil de révision de vocabulaire avec des flashcards. Mais j'ai vite réalisé que mémoriser des mots isolés ne suffit pas pour vraiment apprendre une langue. J'ai donc ajouté des exercices structurés (traduction, construction de phrases, quêtes d'écriture), puis des cours rapides pour assimiler les spécificités de chaque langue, et enfin une estimation du niveau CECRL avec un LLM qui corrige en temps réel. Ce qui devait être un petit side project est devenu une vraie plateforme d'apprentissage.
+
 ## Fonctionnalités
 
 - **Flashcards** avec algorithmes de répétition espacée (SM-2 et FSRS)
