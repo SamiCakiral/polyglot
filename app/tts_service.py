@@ -1,8 +1,8 @@
 """
-TTS Service for Qwen3-TTS on NVIDIA DGX Spark (spark-8144).
+TTS Service for Qwen3-TTS.
 
 Provides text-to-speech functionality for the language learning app.
-Communicates with the Qwen3-TTS Docker container running on spark-8144.
+Communicates with a Qwen3-TTS Docker container (configurable via .env).
 
 Supported languages: zh, en, ja, ko, de, fr, ru, pt, es, it
 NOT supported: tr (Turkish)
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # Configuration
 # =============================================================================
-SPARK_HOST = os.environ.get("SPARK_HOST", "spark-8144.local")
+SPARK_HOST = os.environ.get("SPARK_HOST", "localhost")
 TTS_PORT = os.environ.get("TTS_PORT", "9100")
 TTS_BASE_URL = f"http://{SPARK_HOST}:{TTS_PORT}"
 TTS_TIMEOUT = 60

@@ -2,7 +2,7 @@
 TTS (Text-to-Speech) routes for the language learning app.
 
 Provides endpoints to generate speech audio from text using
-Qwen3-TTS running on the NVIDIA DGX Spark (spark-8144).
+Qwen3-TTS (configurable via .env).
 
 Endpoints:
     POST /api/tts       - Generate speech from text

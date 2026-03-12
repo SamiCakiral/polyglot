@@ -2,11 +2,12 @@
 LLM Service for interacting with local LLMs.
 
 Backends (par ordre de priorite) :
-1. LM Studio (192.168.0.100:1234) - Backend principal, toujours allume, rapide
-2. vLLM (spark-8144:8000)         - Fallback / cours complexes (GPU lourd)
-3. Ollama (spark-8144:11434)      - Dernier recours
+1. LM Studio - Backend principal, rapide
+2. vLLM      - Fallback / cours complexes (GPU lourd)
+3. Ollama    - Dernier recours
 
 Tous utilisent l'API OpenAI-compatible sauf Ollama (API native).
+Les adresses sont configurables via variables d'environnement (.env).
 """
 import os
 import requests
@@ -17,13 +18,13 @@ import json
 # =============================================================================
 
 # LM Studio - Default runtime backend (local Mac / NAS)
-LMSTUDIO_HOST = os.environ.get("LMSTUDIO_HOST", "192.168.0.100")
+LMSTUDIO_HOST = os.environ.get("LMSTUDIO_HOST", "localhost")
 LMSTUDIO_PORT = os.environ.get("LMSTUDIO_PORT", "1234")
 LMSTUDIO_ENDPOINT = f"http://{LMSTUDIO_HOST}:{LMSTUDIO_PORT}/v1/chat/completions"
 LMSTUDIO_MODEL = os.environ.get("LMSTUDIO_MODEL", "openai/gpt-oss-20b")
 
 # vLLM on Spark - Heavy GPU, for complex content generation
-SPARK_HOST = os.environ.get("SPARK_HOST", "spark-8144.local")
+SPARK_HOST = os.environ.get("SPARK_HOST", "localhost")
 VLLM_PORT = os.environ.get("VLLM_PORT", "8000")
 VLLM_ENDPOINT = f"http://{SPARK_HOST}:{VLLM_PORT}/v1/chat/completions"
 VLLM_MODEL = "openai/gpt-oss-20b"
