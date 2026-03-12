@@ -51,8 +51,8 @@ Les principaux paramètres :
 |---|---|---|
 | `SECRET_KEY` | Clé secrète Flask | `dev-secret-key-change-in-prod` |
 | `LLM_BACKEND` | Backend LLM (`lmstudio`, `vllm`, `ollama`) | `lmstudio` |
-| `LMSTUDIO_HOST` | Adresse du serveur LM Studio | `192.168.0.100` |
-| `SPARK_HOST` | Adresse du serveur GPU (vLLM/Ollama/TTS) | `spark-8144.local` |
+| `LMSTUDIO_HOST` | Adresse du serveur LM Studio | `localhost` |
+| `SPARK_HOST` | Adresse du serveur GPU (vLLM/Ollama/TTS) | `localhost` |
 
 Voir [`.env.example`](.env.example) pour la liste complète.
 
@@ -104,11 +104,6 @@ L'application utilise des LLMs locaux via une API OpenAI-compatible, avec chaîn
 1. **LM Studio** (principal) – serveur local/NAS
 2. **vLLM** (fallback) – serveur GPU pour contenu complexe
 3. **Ollama** (dernier recours)
-
-## Guides
-
-- [`LOCAL_LLM_GUIDE.md`](LOCAL_LLM_GUIDE.md) – Configuration détaillée des LLMs locaux
-- [`DOCKER_GPU_GUIDE.md`](DOCKER_GPU_GUIDE.md) – Déploiement Docker avec GPU
 
 ## Licence
 

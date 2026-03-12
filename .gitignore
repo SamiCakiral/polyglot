@@ -65,3 +65,5 @@ docker/
 # Divers
 # =============================================================================
 *.pdf
+LOCAL_LLM_GUIDE.md
+DOCKER_GPU_GUIDE.md
