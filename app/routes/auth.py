@@ -5,10 +5,20 @@ from app import db
 from sqlalchemy.orm.attributes import flag_modified
 import random
 import json
+from urllib.parse import urljoin, urlparse
 
 bp = Blueprint('auth', __name__)
 
 COLORS = ['#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#f1c40f', '#e67e22', '#1abc9c', '#34495e']
+
+
+def is_safe_redirect_url(target):
+    """Allow redirects only inside the current host."""
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
 
 
 @bp.before_app_request
@@ -93,7 +103,7 @@ def login():
         
         # Redirect to next page if it exists
         next_page = request.args.get('next')
-        if next_page:
+        if is_safe_redirect_url(next_page):
             return redirect(next_page)
         return redirect(url_for('main.index'))
     

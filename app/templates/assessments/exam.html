@@ -50,6 +50,34 @@ let sectionAnswers = {};
 let timerSeconds = timeLimitMin * 60;
 let timerInterval = null;
 
+function escapeHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = value || '';
+    return div.innerHTML;
+}
+
+function ttsButton(text) {
+    return `<button class="chat-tts-btn" type="button" data-tts="${escapeHtml(text)}">🔊</button>`;
+}
+
+function dialogueMessageHtml(role, name, text, includeTts = false) {
+    const safeRole = role === 'user' ? 'user' : 'ai';
+    return `
+        <div class="chat-message ${safeRole}">
+            <span class="chat-name">${escapeHtml(name)}</span>
+            <p>${escapeHtml(text)}</p>
+            ${includeTts ? ttsButton(text) : ''}
+        </div>
+    `;
+}
+
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('.chat-tts-btn');
+    if (button && button.dataset.tts !== undefined) {
+        ttsDialogueLine(button.dataset.tts);
+    }
+});
+
 // =========================================================================
 // INITIALIZATION
 // =========================================================================
@@ -376,25 +404,20 @@ function renderDialogueSection(container, section, idx) {
     let html = `
         <div class="exam-dialogue">
             <div class="dialogue-context">
-                <p>${content.context || ''}</p>
+                <p>${escapeHtml(content.context || '')}</p>
                 <div class="dialogue-objectives">
                     <strong>Objectifs :</strong>
-                    <ul>${objectives.map(o => `<li>${o}</li>`).join('')}</ul>
+                    <ul>${objectives.map(o => `<li>${escapeHtml(o)}</li>`).join('')}</ul>
                 </div>
             </div>
             <div class="dialogue-chat" id="dialogue-chat">
-                <div class="chat-message ai">
-                    <span class="chat-name">${character.name || 'Personnage'}</span>
-                    <p>${firstMessage}</p>
-                    <button class="chat-tts-btn" onclick="ttsDialogueLine('${firstMessage.replace(/'/g, "\\'")}')">🔊</button>
-                </div>
-                ${messages.map(m => `
-                    <div class="chat-message ${m.role === 'user' ? 'user' : 'ai'}">
-                        <span class="chat-name">${m.name || (m.role === 'user' ? 'Vous' : character.name)}</span>
-                        <p>${m.text}</p>
-                        ${m.role !== 'user' ? `<button class="chat-tts-btn" onclick="ttsDialogueLine('${(m.text||'').replace(/'/g, "\\'")}')">🔊</button>` : ''}
-                    </div>
-                `).join('')}
+                ${dialogueMessageHtml('ai', character.name || 'Personnage', firstMessage, true)}
+                ${messages.map(m => dialogueMessageHtml(
+                    m.role,
+                    m.name || (m.role === 'user' ? 'Vous' : character.name),
+                    m.text || '',
+                    m.role !== 'user'
+                )).join('')}
             </div>
             <div class="dialogue-input-area" id="dialogue-input-area">
                 <div class="dialogue-exchange-count" id="dialogue-count">
@@ -429,8 +452,8 @@ async function sendDialogueMessage(sectionIdx, sectionId) {
 
     // Add user message to chat
     const chat = document.getElementById('dialogue-chat');
-    chat.innerHTML += `<div class="chat-message user"><span class="chat-name">Vous</span><p>${message}</p></div>`;
-    chat.innerHTML += `<div class="chat-message ai typing" id="typing-indicator"><span class="chat-name">...</span><p>En train d'ecrire...</p></div>`;
+    chat.insertAdjacentHTML('beforeend', dialogueMessageHtml('user', 'Vous', message));
+    chat.insertAdjacentHTML('beforeend', "<div class=\"chat-message ai typing\" id=\"typing-indicator\"><span class=\"chat-name\">...</span><p>En train d'ecrire...</p></div>");
     scrollChat();
 
     try {
@@ -446,14 +469,10 @@ async function sendDialogueMessage(sectionIdx, sectionId) {
         if (typing) typing.remove();
 
         // Add AI response
-        const escapedText = (data.response || '').replace(/'/g, "\\'");
-        chat.innerHTML += `
-            <div class="chat-message ai">
-                <span class="chat-name">${data.character_name || 'Personnage'}</span>
-                <p>${data.response}</p>
-                <button class="chat-tts-btn" onclick="ttsDialogueLine('${escapedText}')">🔊</button>
-            </div>
-        `;
+        chat.insertAdjacentHTML(
+            'beforeend',
+            dialogueMessageHtml('ai', data.character_name || 'Personnage', data.response || '', true)
+        );
 
         // Update exchange count
         const countEl = document.getElementById('dialogue-count');
@@ -475,7 +494,7 @@ async function sendDialogueMessage(sectionIdx, sectionId) {
     } catch (e) {
         const typing = document.getElementById('typing-indicator');
         if (typing) typing.remove();
-        chat.innerHTML += `<div class="chat-message ai error"><p>Erreur de connexion. Reessayez.</p></div>`;
+        chat.insertAdjacentHTML('beforeend', '<div class="chat-message ai error"><p>Erreur de connexion. Reessayez.</p></div>');
     }
 
     input.disabled = false;

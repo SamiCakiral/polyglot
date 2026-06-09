@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, g
 from app.models import Deck, Card, User
 from app import db
+from app.authz import owned_deck_or_404
 
 bp = Blueprint('decks', __name__, url_prefix='/decks')
 
@@ -148,7 +149,7 @@ def view_deck(deck_id):
 @bp.route('/<int:deck_id>/edit', methods=['GET', 'POST'])
 def edit_deck(deck_id):
     """Edit a deck."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -171,7 +172,7 @@ def edit_deck(deck_id):
 @bp.route('/<int:deck_id>/delete', methods=['POST'])
 def delete_deck(deck_id):
     """Delete a deck."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     name = deck.name
     db.session.delete(deck)
     db.session.commit()
@@ -183,7 +184,7 @@ def delete_deck(deck_id):
 @bp.route('/<int:deck_id>/reset', methods=['GET', 'POST'])
 def reset_deck(deck_id):
     """Reset deck progress - set all cards back to new state."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     
     if request.method == 'POST':
         # Reset all cards in the deck
@@ -222,4 +223,3 @@ def reset_deck(deck_id):
         return redirect(url_for('decks.view_deck', deck_id=deck.id))
     
     return render_template('decks/reset.html', deck=deck)
-

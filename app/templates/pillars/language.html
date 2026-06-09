@@ -1262,19 +1262,19 @@
     {% for level in sorted_levels %}
     {% for pillar in pillars_by_level[level] %}
     P[{{ pillar.config.id | tojson }}] = {
-        id: { { pillar.config.id | tojson } },
-        name: { { pillar.config.name | tojson } },
-        nativeName: { { (pillar.config.native_name or "") | tojson } },
-        desc: { { (pillar.config.description or "") | tojson } },
-        cards: { { pillar.config.cards | default (0) | tojson } },
-        hours: { { (pillar.config.estimated_hours or 5) | tojson } },
-        status: { { pillar.status | tojson } },
-        mastery: { { (pillar.mastery or 0) | tojson } },
-        deckId: { { pillar.deck_id | tojson } },
-        prereq: { { pillar.config.prereq | tojson } },
-        cat: { { (pillar.config.category or "") | tojson } },
-        lvl: { { pillar.config.level | default (0) | tojson } },
-        progId: { { pillar.program_id | tojson } }
+        id: {{ pillar.config.id | tojson }},
+        name: {{ pillar.config.name | tojson }},
+        nativeName: {{ (pillar.config.native_name or "") | tojson }},
+        desc: {{ (pillar.config.description or "") | tojson }},
+        cards: {{ pillar.config.cards | default(0) | tojson }},
+        hours: {{ (pillar.config.estimated_hours or 5) | tojson }},
+        status: {{ pillar.status | tojson }},
+        mastery: {{ (pillar.mastery or 0) | tojson }},
+        deckId: {{ pillar.deck_id | tojson }},
+        prereq: {{ pillar.config.prereq | tojson }},
+        cat: {{ (pillar.config.category or "") | tojson }},
+        lvl: {{ pillar.config.level | default(0) | tojson }},
+        progId: {{ pillar.program_id | tojson }}
     };
     {% endfor %}
     {% endfor %}

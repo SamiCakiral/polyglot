@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, g
 from app.models import Category, Deck
 from app import db
+from app.authz import owned_category_or_404, owned_deck_or_404
 
 bp = Blueprint('categories', __name__, url_prefix='/categories')
 
@@ -14,16 +15,14 @@ def check_login():
 @bp.route('/deck/<int:deck_id>')
 def list_categories(deck_id):
     """List all categories for a deck."""
-    deck = Deck.query.get_or_404(deck_id)
-    if deck.user_id != g.user.id:
-        return redirect(url_for('main.index'))
+    deck = owned_deck_or_404(deck_id)
     return render_template('categories/list.html', deck=deck)
 
 
 @bp.route('/deck/<int:deck_id>/new', methods=['GET', 'POST'])
 def new_category(deck_id):
     """Create a new category."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -52,8 +51,8 @@ def new_category(deck_id):
 @bp.route('/<int:category_id>/edit', methods=['GET', 'POST'])
 def edit_category(category_id):
     """Edit a category."""
-    category = Category.query.get_or_404(category_id)
-    deck = Deck.query.get(category.deck_id)
+    category = owned_category_or_404(category_id)
+    deck = category.deck
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -82,7 +81,7 @@ def edit_category(category_id):
 @bp.route('/<int:category_id>/delete', methods=['POST'])
 def delete_category(category_id):
     """Delete a category (cards keep their other categories)."""
-    category = Category.query.get_or_404(category_id)
+    category = owned_category_or_404(category_id)
     deck_id = category.deck_id
     name = category.name
     
@@ -96,8 +95,8 @@ def delete_category(category_id):
 @bp.route('/<int:category_id>/stats')
 def category_stats(category_id):
     """Get stats for a specific category."""
-    category = Category.query.get_or_404(category_id)
-    deck = Deck.query.get(category.deck_id)
+    category = owned_category_or_404(category_id)
+    deck = category.deck
     stats = category.get_stats()
     
     return render_template('categories/stats.html', deck=deck, category=category, stats=stats)

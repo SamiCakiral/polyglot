@@ -49,7 +49,7 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         from werkzeug.security import check_password_hash
         if not self.password_hash:
-            return True
+            return False
         return check_password_hash(self.password_hash, password)
     
     def to_dict(self):
@@ -1182,5 +1182,4 @@ class WeeklyTheme(db.Model):
             'completed': self.completed,
             'days_completed': self.days_completed
         }
-
 

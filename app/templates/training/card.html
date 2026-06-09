@@ -369,7 +369,7 @@
     let revealed = false;
     let canSubmit = true;  // Prevent immediate submit after reveal
 
-    const expectedAnswer = "{% if mode == 'type_back' %}{{ card.back|replace('"', '\\"')|replace("'", "\\'")|replace('\n', ' ') }}{% else %}{{ card.front|replace('"', '\\"')|replace("'", "\\'")|replace('\n', ' ') }}{% endif %}";
+    const expectedAnswer = {{ (card.back if mode == 'type_back' else card.front) | tojson }};
 
     function checkAnswer() {
         if (checked || revealed) return;
@@ -428,7 +428,11 @@
             input.classList.add('incorrect');
             feedback.innerHTML = revealed ? '👁️ Révélé' : '✗ Incorrect';
             feedback.className = 'typing-feedback incorrect';
-            expectedDiv.innerHTML = '<strong>Réponse :</strong> ' + expected;
+            expectedDiv.textContent = '';
+            const label = document.createElement('strong');
+            label.textContent = 'Réponse :';
+            expectedDiv.appendChild(label);
+            expectedDiv.appendChild(document.createTextNode(' ' + expected));
             expectedDiv.style.display = 'block';
         }
 

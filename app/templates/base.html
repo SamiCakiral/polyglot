@@ -604,12 +604,18 @@
             const div = document.createElement('div');
             div.className = `message ${type}`;
 
+            const escapeHtml = (value) => {
+                const tmp = document.createElement('div');
+                tmp.textContent = value || '';
+                return tmp.innerHTML;
+            };
+
             // Parse [VOCAB]word[/VOCAB] tags into styled spans
-            const parsedText = text.replace(
+            const parsedHtml = escapeHtml(text).replace(
                 /\[VOCAB\](.*?)\[\/VOCAB\]/g,
                 '<span class="vocab-highlight">$1</span>'
             );
-            div.innerHTML = parsedText;
+            div.innerHTML = parsedHtml;
 
             const container = document.getElementById('helper-messages');
             container.appendChild(div);

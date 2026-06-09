@@ -135,6 +135,9 @@ def create_assessment(user_id, language_code, target_level, user_context=None):
         content = _generate_section_content(
             section_type, language_code, lang_name, target_level, user_context
         )
+        if not _section_has_required_content(section_type, content):
+            db.session.rollback()
+            return None
 
         section = AssessmentSection(
             assessment_id=assessment.id,
@@ -147,6 +150,38 @@ def create_assessment(user_id, language_code, target_level, user_context=None):
 
     db.session.commit()
     return assessment
+
+
+def _has_items(value):
+    return isinstance(value, list) and any(item for item in value)
+
+
+def _section_has_required_content(section_type, content):
+    """Reject generated exam sections that would render as empty screens."""
+    if not isinstance(content, dict):
+        return False
+
+    if section_type in ('grammar', 'vocabulary'):
+        return _has_items(content.get('questions'))
+
+    if section_type == 'reading':
+        return bool(str(content.get('text', '')).strip()) and _has_items(content.get('questions'))
+
+    if section_type == 'listening':
+        return _has_items(content.get('dialogue')) and _has_items(content.get('questions'))
+
+    if section_type == 'writing':
+        return _has_items(content.get('prompts'))
+
+    if section_type == 'dialogue':
+        character = content.get('character')
+        return (
+            isinstance(character, dict)
+            and bool(str(content.get('first_message', '')).strip())
+            and _has_items(content.get('objectives'))
+        )
+
+    return False
 
 
 def _generate_section_content(section_type, lang_code, lang_name, target_level, user_context=None):

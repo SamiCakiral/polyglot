@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from app.models import Card, Deck, Category, Review, TrainingSession
 from app.sm2 import calculate_sm2, get_review_buttons
 from app import db
+from app.authz import owned_deck_or_404, owned_training_session_or_none
 from datetime import datetime, timedelta
 import random
 from collections import defaultdict
@@ -21,10 +22,7 @@ def check_login():
 @bp.route('/deck/<int:deck_id>')
 def start_training(deck_id):
     """Start a training session for a deck, optionally filtered by categories."""
-    deck = Deck.query.get_or_404(deck_id)
-    if deck.user_id != g.user.id:
-        flash('Accès non autorisé.', 'error')
-        return redirect(url_for('main.index'))
+    deck = owned_deck_or_404(deck_id)
     
     # Get category filter from query params
     category_ids = request.args.getlist('categories', type=int)
@@ -119,7 +117,7 @@ def get_due_cards_with_direction(deck_id, category_ids=None, required_category_i
 @bp.route('/deck/<int:deck_id>/count')
 def count_cards(deck_id):
     """API endpoint to count cards based on selected categories and grade filter."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     category_ids = request.args.getlist('categories', type=int)
     required_category_ids = request.args.getlist('required_categories', type=int)
     filter_mode = request.args.get('filter_mode', 'or')
@@ -145,9 +143,7 @@ def count_cards(deck_id):
 @bp.route('/deck/<int:deck_id>/session', methods=['POST'])
 def create_session(deck_id):
     """Create a training session and redirect to first card."""
-    deck = Deck.query.get_or_404(deck_id)
-    if deck.user_id != g.user.id:
-        return redirect(url_for('main.index'))
+    deck = owned_deck_or_404(deck_id)
     
     # Store params in session for restart
     params = {
@@ -184,6 +180,7 @@ def restart_session():
 
 def _create_session_logic(deck_id, params):
     """Internal logic to create a session from params."""
+    owned_deck_or_404(deck_id)
     category_ids = params['categories']
     required_category_ids = params.get('required_categories')
     filter_mode = params['filter_mode']
@@ -357,8 +354,9 @@ def get_current_training_session():
     if not session_id:
         return None, None
     
-    ts = TrainingSession.query.get(session_id)
+    ts = owned_training_session_or_none(session_id)
     if not ts:
+        session.pop('training_session_id', None)
         return None, None
         
     return ts, ts.data
@@ -718,4 +716,3 @@ def go_forward():
         db.session.commit()
     
     return redirect(url_for('training.show_card'))
-

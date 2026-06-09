@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, g
 from app.models import Card, Deck, Category
 from app import db
+from app.authz import categories_for_deck, owned_card_or_404, owned_deck_or_404
 from app.utils import find_duplicates, check_import_duplicates, normalize_text
 import json
 
@@ -16,10 +17,7 @@ def check_login():
 @bp.route('/deck/<int:deck_id>/new', methods=['GET', 'POST'])
 def new_card(deck_id):
     """Create a new card in a deck."""
-    deck = Deck.query.get_or_404(deck_id)
-    if deck.user_id != g.user.id:
-        flash('Accès non autorisé.', 'error')
-        return redirect(url_for('main.index'))
+    deck = owned_deck_or_404(deck_id)
     
     if request.method == 'POST':
         front = request.form.get('front', '').strip()
@@ -47,7 +45,7 @@ def new_card(deck_id):
         
         # Add categories
         if category_ids:
-            categories = Category.query.filter(Category.id.in_(category_ids)).all()
+            categories = categories_for_deck(deck.id, category_ids)
             card.categories = categories
         
         db.session.add(card)
@@ -67,12 +65,8 @@ def new_card(deck_id):
 @bp.route('/<int:card_id>/edit', methods=['GET', 'POST'])
 def edit_card(card_id):
     """Edit a card."""
-    card = Card.query.get_or_404(card_id)
+    card = owned_card_or_404(card_id)
     deck = card.deck
-    
-    if deck.user_id != g.user.id:
-        flash('Accès non autorisé.', 'error')
-        return redirect(url_for('main.index'))
     
     if request.method == 'POST':
         front = request.form.get('front', '').strip()
@@ -101,7 +95,7 @@ def edit_card(card_id):
         
         # Update categories
         if category_ids:
-            categories = Category.query.filter(Category.id.in_(category_ids)).all()
+            categories = categories_for_deck(deck.id, category_ids)
             card.categories = categories
         else:
             card.categories = []
@@ -117,7 +111,7 @@ def edit_card(card_id):
 @bp.route('/<int:card_id>/delete', methods=['POST'])
 def delete_card(card_id):
     """Delete a card."""
-    card = Card.query.get_or_404(card_id)
+    card = owned_card_or_404(card_id)
     deck_id = card.deck_id
     db.session.delete(card)
     db.session.commit()
@@ -129,7 +123,7 @@ def delete_card(card_id):
 @bp.route('/bulk-create/<int:deck_id>', methods=['GET', 'POST'])
 def bulk_create(deck_id):
     """Bulk create cards from a text list (automated creation)."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     
     if request.method == 'POST':
         raw_data = request.form.get('data', '').strip()
@@ -144,7 +138,7 @@ def bulk_create(deck_id):
         # Get categories
         categories = []
         if category_ids:
-            categories = Category.query.filter(Category.id.in_(category_ids)).all()
+            categories = categories_for_deck(deck.id, category_ids)
         
         # Parse lines
         lines = raw_data.strip().split('\n')
@@ -194,7 +188,7 @@ def bulk_create(deck_id):
 @bp.route('/json-import/<int:deck_id>', methods=['GET', 'POST'])
 def json_import(deck_id):
     """Import cards from JSON file."""
-    deck = Deck.query.get_or_404(deck_id)
+    deck = owned_deck_or_404(deck_id)
     
     if request.method == 'POST':
         json_data = None
