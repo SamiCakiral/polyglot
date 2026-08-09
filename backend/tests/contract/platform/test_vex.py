@@ -1,5 +1,5 @@
 import json
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -43,5 +43,7 @@ def test_trivy_ignore_matches_vex_scope_and_is_wired_to_image_gate() -> None:
     assert entry["paths"] == ["usr/local/bin/gosu"]
     assert POSTGRES_IMAGE in entry["statement"]
     assert "platform-security" in entry["statement"]
-    assert entry["expired_at"] == vex["x_polyglot"]["expires_on"]
+    assert entry["expired_at"].endswith("Z")
+    ignore_expiry = datetime.fromisoformat(entry["expired_at"].replace("Z", "+00:00"))
+    assert ignore_expiry.date().isoformat() == vex["x_polyglot"]["expires_on"]
     assert "trivyignores: .trivyignore.yaml" in workflow
