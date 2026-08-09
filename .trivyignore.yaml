@@ -1,0 +1,10 @@
+{
+  "vulnerabilities": [
+    {
+      "id": "CVE-2025-68121",
+      "paths": ["usr/local/bin/gosu"],
+      "statement": "platform-security reviewed postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193; gosu does not import or execute the affected crypto/tls session-resumption path; replace digest and remove exception when the official image is rebuilt",
+      "expired_at": "2026-09-30"
+    }
+  ]
+}
