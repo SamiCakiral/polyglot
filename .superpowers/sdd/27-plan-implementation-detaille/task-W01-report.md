@@ -23,6 +23,18 @@ prepared but has not been run or claimed green.
 - `3aee0a3` fix(platform): canonicalize JSON across runtimes
 - `3f4041c` test(ci): capture uv audit export red
 - `4a9bd2e` fix(ci): audit exported uv lock
+- `59f93b5` docs(w01): record review fix evidence
+- `5e3afaa` test(platform): capture scoped purge requirements
+- `33ff638` fix(platform): authorize scoped private-event purge
+- `43489be` test(platform): capture database-time lease fencing
+- `25e6c13` fix(platform): fence terminal writes with database time
+- `a8651a9` test(platform): capture closed receipt replay contract
+- `3bfc585` fix(platform): bound command replay descriptors
+- `23ffa84` test(ci): capture digest-scoped CVE disposition
+- `6a11e4b` fix(ci): pin postgres and encode CVE disposition
+- `ec582a2` docs(w01): preserve round-two review evidence
+- `d58bf29` test(ci): capture Trivy expiry timestamp format
+- `ed6ca4c` fix(ci): use Trivy-compatible VEX expiry
 
 ## RED evidence
 
@@ -44,6 +56,16 @@ prepared but has not been run or claimed green.
   fingerprints.
 - Dependency gate first failed because `pip-audit --locked` does not consume
   `uv.lock`; the final gate audits uv's fully pinned, hashed export.
+- Round-two private-event RED: 5 contract cases failed because `DomainEvent`
+  lacked account/profile subject scope; the integration contract also required
+  the absent exact-subject purge function and schema columns.
+- Round-two lease RED: 4 adversarial tests failed because backdated semantic
+  timestamps let expired job success/failure and outbox ack/fail consume leases.
+- Round-two receipt RED: 5 malformed/open descriptors persisted and the migration
+  test failed on the absent replay-shape constraint (6 failures total).
+- Round-two CI/VEX RED: 3 tests failed on the moving CI service tag and absent
+  VEX/ignore artifacts. The actual Trivy gate then exposed its required RFC 3339
+  expiry format; the added format test failed once before the ignore was fixed.
 
 ## GREEN evidence
 
@@ -56,16 +78,30 @@ prepared but has not been run or claimed green.
 - Compose recreated the digest-pinned PostgreSQL service and reported healthy.
 - Alembic: downgrade to base, upgrade to `0001_platform (head)`, one head,
   current at head, and `No new upgrade operations detected`.
-- Integration/contract: 50 passed in 3.73s. This includes job claim/renewal/
+- Integration/contract: 66 passed in 3.82s. This includes job claim/renewal/
   takeover/success/failure/retry, immutable attempts, controlled purge,
   stable idempotency replay, inbox divergence, outbox fencing, migration
-  completeness, installed-wheel migration round trip, RFC 9457, event boundary,
-  FX-OPS, Compose and OpenAPI checks.
+  completeness, RFC 9457, event boundary, FX-OPS, Compose and OpenAPI checks.
 - Deterministic OpenAPI check: passed.
 - Repository plus full Git history secret scan: clean.
 - `pip-audit` over uv's hashed production dependency export: no known
   vulnerabilities.
 - `git diff --check`: passed before report update.
+- Round-two focused GREEN: scoped purge/event/migration `18 passed`; job/outbox
+  fencing `14 passed`; receipt/migration `15 passed`; digest/VEX/Compose `7
+  passed`; VEX expiry `2 passed`. Ruff and strict Mypy remained clean.
+- Final W00: 22 tool fixtures, 6 policy cases, documentation links, artifact
+  boundary and registry valid; unittest discovery `23 passed`.
+- Final W01: `uv lock --check` resolved 39 packages without drift; Ruff clean;
+  strict Mypy clean across 27 source files; unit/property `16 passed`; Compose
+  PostgreSQL healthy at the reviewed digest.
+- Final migration/artifact: downgrade to base, upgrade to `0001_platform (head)`,
+  exactly one head, current at head, no upgrade operations detected, installed
+  wheel migration `1 passed`.
+- Final security: repository/history secret scan clean; `pip-audit` found no
+  known vulnerabilities; Trivy 0.69.1 filesystem scan found 0 Critical findings;
+  the pinned PostgreSQL image scan found 0 unsuppressed Critical findings and
+  reported the reviewed `gosu` finding suppressed by the scoped exception.
 
 ## Architecture disposition
 
@@ -74,18 +110,34 @@ prepared but has not been run or claimed green.
 - Domain events and security audit remain append-only for ordinary writes.
   Expired rows can only be removed through the transaction-authorized,
   `SECURITY DEFINER` purge function, which writes a new audit entry.
+- Account/profile deletion uses a separate transaction authorization scoped to
+  the exact subject and private privacy classes. It removes matching outbox/event
+  rows, leaves other subjects untouched, and appends a retained audit entry.
+- Job terminal writes and outbox terminal acknowledgements fence lease ownership
+  against PostgreSQL `clock_timestamp()` in the same SQL statement while keeping
+  caller timestamps as semantic fact timestamps.
+- Command receipts accept only bounded success or problem descriptors. Their
+  canonical payload limit is 512 bytes and the database enforces the closed
+  status/result shape.
 - Object storage remains the explicit local filesystem placeholder. A real
   object-store adapter remains deferred to W15.
 - OpenAPI validation is deliberately a W01 route-membership guard for the two
   health routes, not a claim of complete W00 API compatibility.
 
+## Round-two CVE disposition
+
+- `CVE-2025-68121` is recorded as `not_affected` for only
+  `postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193`
+  and `usr/local/bin/gosu`: the affected `crypto/tls` path is not imported or
+  executed by `gosu`'s credential-switch/exec surface.
+- Owner: `platform-security`. Recheck: `2026-09-15`. Expiry:
+  `2026-09-30T23:59:59Z`. The exception must be removed when an official rebuilt
+  digest is adopted, and the tests/gate fail after the review window expires.
+
 ## Concerns
 
-- Local Trivy found one fixed Critical in the official pinned PostgreSQL image:
-  `CVE-2025-68121` in the Go standard library embedded in `gosu` 1.24.6. The
-  current official `postgres:17-alpine` digest is unchanged. The prepared hosted
-  Trivy gate is expected to surface this until the official image is rebuilt or
-  a reviewed VEX exception is approved.
-- Docker Scout could not run without Docker Hub authentication; Trivy provided
-  the local image evidence instead.
-- GitHub-hosted CI has not been run. The parent must push and verify it.
+- GitHub-hosted CI has not been run or claimed green. The parent must push and
+  verify the prepared workflow.
+- The digest-scoped CVE exception requires recheck by `2026-09-15` and expires
+  on `2026-09-30`; replacing the PostgreSQL digest requires updating Compose,
+  CI, Trivy, VEX and the parity tests together.
