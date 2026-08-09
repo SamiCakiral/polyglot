@@ -1,7 +1,7 @@
 from pathlib import Path
 from uuid import UUID
 
-from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 
 
 class ReadinessStub:
@@ -13,11 +13,18 @@ class ReadinessStub:
         return self.result
 
 
-def test_liveness_returns_a_generated_correlation_id() -> None:
+async def get(app: object, path: str, headers: dict[str, str] | None = None) -> object:
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://testserver",
+    ) as client:
+        return await client.get(path, headers=headers)
+
+
+async def test_liveness_returns_a_generated_correlation_id() -> None:
     from polyglot.interfaces.http.app import create_app
 
-    with TestClient(create_app()) as client:
-        response = client.get("/api/v1/health/live")
+    response = await get(create_app(), "/api/v1/health/live")
 
     correlation_id = UUID(response.headers["X-Correlation-ID"])
     assert response.status_code == 200
@@ -25,15 +32,15 @@ def test_liveness_returns_a_generated_correlation_id() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_valid_correlation_id_is_preserved_in_problem_details() -> None:
+async def test_valid_correlation_id_is_preserved_in_problem_details() -> None:
     from polyglot.interfaces.http.app import create_app
 
     correlation_id = "019fe680-5d40-7001-8203-040506070809"
-    with TestClient(create_app()) as client:
-        response = client.get(
-            "/api/v1/does-not-exist",
-            headers={"X-Correlation-ID": correlation_id},
-        )
+    response = await get(
+        create_app(),
+        "/api/v1/does-not-exist",
+        headers={"X-Correlation-ID": correlation_id},
+    )
 
     problem = response.json()
     assert response.status_code == 404
@@ -47,14 +54,14 @@ def test_valid_correlation_id_is_preserved_in_problem_details() -> None:
     assert UUID(problem["request_id"]).version == 7
 
 
-def test_invalid_correlation_id_is_replaced() -> None:
+async def test_invalid_correlation_id_is_replaced() -> None:
     from polyglot.interfaces.http.app import create_app
 
-    with TestClient(create_app()) as client:
-        response = client.get(
-            "/api/v1/does-not-exist",
-            headers={"X-Correlation-ID": "not-an-id"},
-        )
+    response = await get(
+        create_app(),
+        "/api/v1/does-not-exist",
+        headers={"X-Correlation-ID": "not-an-id"},
+    )
 
     generated = response.headers["X-Correlation-ID"]
     assert generated != "not-an-id"
@@ -62,15 +69,14 @@ def test_invalid_correlation_id_is_replaced() -> None:
     assert response.json()["correlation_id"] == generated
 
 
-def test_readiness_reports_each_required_local_dependency() -> None:
+async def test_readiness_reports_each_required_local_dependency() -> None:
     from polyglot.interfaces.http.app import create_app
 
     checks = (
         ReadinessStub("database", True),
         ReadinessStub("object_storage", True),
     )
-    with TestClient(create_app(readiness_checks=checks)) as client:
-        response = client.get("/api/v1/health/ready")
+    response = await get(create_app(readiness_checks=checks), "/api/v1/health/ready")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -79,15 +85,14 @@ def test_readiness_reports_each_required_local_dependency() -> None:
     }
 
 
-def test_readiness_is_unavailable_when_the_filesystem_placeholder_is_missing() -> None:
+async def test_readiness_is_unavailable_when_the_filesystem_placeholder_is_missing() -> None:
     from polyglot.interfaces.http.app import create_app
 
     checks = (
         ReadinessStub("database", True),
         ReadinessStub("object_storage", False),
     )
-    with TestClient(create_app(readiness_checks=checks)) as client:
-        response = client.get("/api/v1/health/ready")
+    response = await get(create_app(readiness_checks=checks), "/api/v1/health/ready")
 
     assert response.status_code == 503
     assert response.json() == {
