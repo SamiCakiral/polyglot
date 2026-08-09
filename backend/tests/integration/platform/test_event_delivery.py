@@ -27,7 +27,7 @@ def make_event() -> object:
         causation_id=None,
         command_id=uuid4(),
         privacy_class="internal",
-        policy_revision_ids=[],
+        policy_versions={},
         payload={"schema_version": 1},
     )
 

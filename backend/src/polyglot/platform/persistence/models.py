@@ -66,7 +66,7 @@ domain_events = Table(
     Column("causation_id", UUID(as_uuid=True)),
     Column("command_id", UUID(as_uuid=True), nullable=False),
     Column("privacy_class", String(24), nullable=False),
-    Column("policy_revision_ids", ARRAY(UUID(as_uuid=True)), nullable=False, server_default="{}"),
+    Column("policy_versions", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
     Column("payload", JSONB, nullable=False),
     CheckConstraint("schema_version >= 1", name="ck_domain_event_schema_version"),
     CheckConstraint("aggregate_version >= 1", name="ck_domain_event_aggregate_version"),

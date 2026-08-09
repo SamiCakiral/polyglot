@@ -44,8 +44,32 @@ class DomainEvent:
     causation_id: UUID | None
     command_id: UUID
     privacy_class: str
-    policy_revision_ids: list[UUID]
+    policy_versions: dict[str, JsonValue]
     payload: dict[str, JsonValue]
+
+    def to_envelope(self) -> dict[str, JsonValue]:
+        envelope: dict[str, JsonValue] = {
+            "event_id": str(self.event_id),
+            "event_type": self.event_type,
+            "schema_version": self.schema_version,
+            "aggregate_type": self.aggregate_type,
+            "aggregate_id": str(self.aggregate_id),
+            "aggregate_version": self.aggregate_version,
+            "actor_type": self.actor_type,
+            "actor_id": str(self.actor_id),
+            "occurred_at": self.occurred_at.isoformat(),
+            "recorded_at": self.recorded_at.isoformat(),
+            "correlation_id": str(self.correlation_id),
+            "command_id": str(self.command_id),
+            "payload": self.payload,
+            "privacy_class": self.privacy_class,
+            "policy_versions": self.policy_versions,
+        }
+        if self.profile_id is not None:
+            envelope["profile_id"] = str(self.profile_id)
+        if self.causation_id is not None:
+            envelope["causation_id"] = str(self.causation_id)
+        return envelope
 
 
 @dataclass(frozen=True, slots=True)

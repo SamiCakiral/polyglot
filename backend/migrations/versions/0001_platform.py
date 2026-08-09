@@ -53,7 +53,7 @@ CREATE TABLE platform.domain_events (
     causation_id uuid,
     command_id uuid NOT NULL,
     privacy_class varchar(24) NOT NULL,
-    policy_revision_ids uuid[] NOT NULL DEFAULT '{}',
+    policy_versions jsonb NOT NULL DEFAULT '{}'::jsonb,
     payload jsonb NOT NULL,
     CONSTRAINT ck_domain_event_schema_version CHECK (schema_version >= 1),
     CONSTRAINT ck_domain_event_aggregate_version CHECK (aggregate_version >= 1),
