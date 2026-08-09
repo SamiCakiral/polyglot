@@ -58,6 +58,8 @@ CREATE TABLE platform.domain_events (
     policy_versions jsonb NOT NULL DEFAULT '{}'::jsonb,
     payload jsonb NOT NULL,
     expires_at timestamptz,
+    subject_type varchar(32),
+    subject_id uuid,
     CONSTRAINT ck_domain_event_schema_version CHECK (schema_version >= 1),
     CONSTRAINT ck_domain_event_aggregate_version CHECK (aggregate_version >= 1),
     CONSTRAINT ck_domain_event_privacy_class
@@ -65,7 +67,11 @@ CREATE TABLE platform.domain_events (
     CONSTRAINT ck_domain_event_no_secret CHECK (privacy_class <> 'secret'),
     CONSTRAINT ck_domain_event_private_retention CHECK (
         privacy_class NOT IN ('personal', 'sensitive')
-        OR (profile_id IS NOT NULL AND expires_at IS NOT NULL)
+        OR (
+            expires_at IS NOT NULL
+            AND subject_type IN ('account', 'profile')
+            AND subject_id IS NOT NULL
+        )
     ),
     CONSTRAINT uq_domain_event_aggregate_version
         UNIQUE (aggregate_type, aggregate_id, aggregate_version)
@@ -76,6 +82,8 @@ CREATE INDEX ix_domain_events_correlation_id
     ON platform.domain_events (correlation_id);
 CREATE INDEX ix_domain_events_expires_at
     ON platform.domain_events (expires_at);
+CREATE INDEX ix_domain_events_subject
+    ON platform.domain_events (subject_type, subject_id);
 
 CREATE TABLE platform.outbox_messages (
     outbox_id uuid PRIMARY KEY,
@@ -278,13 +286,55 @@ CREATE INDEX ix_deletion_tombstones_expires_at
 
 CREATE TABLE platform.retention_purge_authorizations (
     transaction_id bigint PRIMARY KEY,
-    cutoff timestamptz NOT NULL
+    purge_kind varchar(24) NOT NULL,
+    cutoff timestamptz,
+    subject_type varchar(32),
+    subject_id uuid,
+    CONSTRAINT ck_retention_purge_authorization_scope CHECK (
+        (
+            purge_kind = 'expiry'
+            AND cutoff IS NOT NULL
+            AND subject_type IS NULL
+            AND subject_id IS NULL
+        ) OR (
+            purge_kind = 'subject'
+            AND cutoff IS NULL
+            AND subject_type IN ('account', 'profile')
+            AND subject_id IS NOT NULL
+        )
+    )
 );
 REVOKE ALL ON platform.retention_purge_authorizations FROM PUBLIC;
 
 CREATE FUNCTION platform.reject_append_only_mutation() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
+    RAISE EXCEPTION '% is append-only', TG_TABLE_NAME USING ERRCODE = '55000';
+END;
+$$;
+
+CREATE FUNCTION platform.guard_domain_event_mutation() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_OP = 'DELETE' AND EXISTS (
+        SELECT 1
+        FROM platform.retention_purge_authorizations AS auth
+        WHERE auth.transaction_id = txid_current()
+          AND (
+              (
+                  auth.purge_kind = 'expiry'
+                  AND OLD.expires_at IS NOT NULL
+                  AND OLD.expires_at <= auth.cutoff
+              ) OR (
+                  auth.purge_kind = 'subject'
+                  AND OLD.privacy_class IN ('personal', 'sensitive')
+                  AND OLD.subject_type = auth.subject_type
+                  AND OLD.subject_id = auth.subject_id
+              )
+          )
+    ) THEN
+        RETURN OLD;
+    END IF;
     RAISE EXCEPTION '% is append-only', TG_TABLE_NAME USING ERRCODE = '55000';
 END;
 $$;
@@ -296,6 +346,7 @@ BEGIN
         SELECT 1
         FROM platform.retention_purge_authorizations
         WHERE transaction_id = txid_current()
+          AND purge_kind = 'expiry'
           AND OLD.expires_at IS NOT NULL
           AND OLD.expires_at <= cutoff
     ) THEN
@@ -307,7 +358,7 @@ $$;
 
 CREATE TRIGGER domain_events_append_only
 BEFORE UPDATE OR DELETE ON platform.domain_events
-FOR EACH ROW EXECUTE FUNCTION platform.guard_retained_append_only_mutation();
+FOR EACH ROW EXECUTE FUNCTION platform.guard_domain_event_mutation();
 
 CREATE TRIGGER job_attempts_append_only
 BEFORE UPDATE OR DELETE ON platform.job_attempts
@@ -333,8 +384,9 @@ DECLARE
     deleted_events bigint;
     deleted_audits bigint;
 BEGIN
-    INSERT INTO platform.retention_purge_authorizations(transaction_id, cutoff)
-    VALUES (txid_current(), p_cutoff);
+    INSERT INTO platform.retention_purge_authorizations(
+        transaction_id, purge_kind, cutoff
+    ) VALUES (txid_current(), 'expiry', p_cutoff);
 
     DELETE FROM platform.outbox_messages AS outbox
     USING platform.domain_events AS event
@@ -368,6 +420,63 @@ END;
 $$;
 REVOKE ALL ON FUNCTION platform.purge_expired_append_only(
     timestamptz, uuid, varchar, varchar, uuid, uuid
+) FROM PUBLIC;
+
+CREATE FUNCTION platform.purge_subject_private_events(
+    p_subject_type varchar,
+    p_subject_id uuid,
+    p_audit_id uuid,
+    p_actor_pseudonym varchar,
+    p_reason_code varchar,
+    p_request_id uuid,
+    p_correlation_id uuid
+) RETURNS bigint
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = platform, pg_temp
+AS $$
+DECLARE
+    deleted_events bigint;
+BEGIN
+    IF p_subject_type NOT IN ('account', 'profile') THEN
+        RAISE EXCEPTION 'unsupported private event subject type' USING ERRCODE = '22023';
+    END IF;
+
+    INSERT INTO platform.retention_purge_authorizations(
+        transaction_id, purge_kind, subject_type, subject_id
+    ) VALUES (txid_current(), 'subject', p_subject_type, p_subject_id);
+
+    DELETE FROM platform.outbox_messages AS outbox
+    USING platform.domain_events AS event
+    WHERE outbox.event_id = event.event_id
+      AND event.privacy_class IN ('personal', 'sensitive')
+      AND event.subject_type = p_subject_type
+      AND event.subject_id = p_subject_id;
+
+    DELETE FROM platform.domain_events
+    WHERE privacy_class IN ('personal', 'sensitive')
+      AND subject_type = p_subject_type
+      AND subject_id = p_subject_id;
+    GET DIAGNOSTICS deleted_events = ROW_COUNT;
+
+    DELETE FROM platform.retention_purge_authorizations
+    WHERE transaction_id = txid_current();
+
+    INSERT INTO platform.security_audit_entries (
+        audit_id, actor_pseudonym, action_code, resource_type, resource_id,
+        result, reason_code, occurred_at, request_id, correlation_id,
+        session_fingerprint, truncated_ip, expires_at
+    ) VALUES (
+        p_audit_id, p_actor_pseudonym, 'privacy.subject_purge', p_subject_type, p_subject_id,
+        'succeeded', p_reason_code, clock_timestamp(), p_request_id, p_correlation_id,
+        repeat('0', 64), 'system', clock_timestamp() + interval '180 days'
+    );
+
+    RETURN deleted_events;
+END;
+$$;
+REVOKE ALL ON FUNCTION platform.purge_subject_private_events(
+    varchar, uuid, uuid, varchar, varchar, uuid, uuid
 ) FROM PUBLIC;
 """
 

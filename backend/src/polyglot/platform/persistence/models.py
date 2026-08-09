@@ -73,6 +73,8 @@ domain_events = Table(
     Column("policy_versions", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
     Column("payload", JSONB, nullable=False),
     Column("expires_at", DateTime(timezone=True)),
+    Column("subject_type", String(32)),
+    Column("subject_id", UUID(as_uuid=True)),
     CheckConstraint("schema_version >= 1", name="ck_domain_event_schema_version"),
     CheckConstraint("aggregate_version >= 1", name="ck_domain_event_aggregate_version"),
     CheckConstraint(
@@ -82,7 +84,8 @@ domain_events = Table(
     CheckConstraint("privacy_class <> 'secret'", name="ck_domain_event_no_secret"),
     CheckConstraint(
         "privacy_class NOT IN ('personal', 'sensitive') "
-        "OR (profile_id IS NOT NULL AND expires_at IS NOT NULL)",
+        "OR (expires_at IS NOT NULL AND subject_type IN ('account', 'profile') "
+        "AND subject_id IS NOT NULL)",
         name="ck_domain_event_private_retention",
     ),
     UniqueConstraint(
@@ -95,6 +98,7 @@ domain_events = Table(
 Index("ix_domain_events_recorded_at", domain_events.c.recorded_at, domain_events.c.event_id)
 Index("ix_domain_events_correlation_id", domain_events.c.correlation_id)
 Index("ix_domain_events_expires_at", domain_events.c.expires_at)
+Index("ix_domain_events_subject", domain_events.c.subject_type, domain_events.c.subject_id)
 
 outbox_messages = Table(
     "outbox_messages",
@@ -362,5 +366,15 @@ retention_purge_authorizations = Table(
     "retention_purge_authorizations",
     metadata,
     Column("transaction_id", BigInteger, primary_key=True),
-    Column("cutoff", DateTime(timezone=True), nullable=False),
+    Column("purge_kind", String(24), nullable=False),
+    Column("cutoff", DateTime(timezone=True)),
+    Column("subject_type", String(32)),
+    Column("subject_id", UUID(as_uuid=True)),
+    CheckConstraint(
+        "(purge_kind = 'expiry' AND cutoff IS NOT NULL "
+        "AND subject_type IS NULL AND subject_id IS NULL) OR "
+        "(purge_kind = 'subject' AND cutoff IS NULL "
+        "AND subject_type IN ('account', 'profile') AND subject_id IS NOT NULL)",
+        name="ck_retention_purge_authorization_scope",
+    ),
 )

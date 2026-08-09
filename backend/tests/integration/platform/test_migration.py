@@ -87,8 +87,6 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
             "result_payload",
             "status",
             "expires_at",
-            "subject_type",
-            "subject_id",
         },
         "domain_events": {
             "event_id",
@@ -109,6 +107,8 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
             "policy_versions",
             "payload",
             "expires_at",
+            "subject_type",
+            "subject_id",
         },
         "outbox_messages": {
             "outbox_id",

@@ -26,6 +26,7 @@ _FORBIDDEN_PAYLOAD_KEYS = frozenset(
     }
 )
 _MAX_EVENT_PAYLOAD_BYTES = 65_536
+_ALLOWED_PRIVATE_SUBJECT_TYPES = frozenset({"account", "profile"})
 
 
 def _invalid_event(field: str, code: str = "invalid") -> DomainError:
@@ -93,6 +94,8 @@ class DomainEvent:
     policy_versions: dict[str, JsonValue]
     payload: dict[str, JsonValue]
     expires_at: datetime | None = None
+    subject_type: str | None = None
+    subject_id: UUID | None = None
 
     def __post_init__(self) -> None:
         if (self.event_type, self.schema_version) not in canonical_event_versions():
@@ -108,6 +111,8 @@ class DomainEvent:
             identifiers["profile_id"] = self.profile_id
         if self.causation_id is not None:
             identifiers["causation_id"] = self.causation_id
+        if self.subject_id is not None:
+            identifiers["subject_id"] = self.subject_id
         for field, identifier in identifiers.items():
             if identifier.version != 7:
                 raise _invalid_event(field)
@@ -126,8 +131,10 @@ class DomainEvent:
         if self.privacy_class in {"personal", "sensitive"}:
             if self.expires_at is None:
                 raise _invalid_event("expires_at", "required_for_private_event")
-            if self.profile_id is None:
-                raise _invalid_event("profile_id", "required_for_private_event")
+            if self.subject_type not in _ALLOWED_PRIVATE_SUBJECT_TYPES:
+                raise _invalid_event("subject_type", "required_for_private_event")
+            if self.subject_id is None:
+                raise _invalid_event("subject_id", "required_for_private_event")
         try:
             payload_size = len(canonical_json_bytes(self.payload))
         except (TypeError, ValueError):
