@@ -1,0 +1,21 @@
+{
+  "fixture_code": "FX-OPS",
+  "business_data": [],
+  "platform_state": {
+    "blocked_outbox": {
+      "count": 1,
+      "destination": "local"
+    },
+    "expired_job_claim": {
+      "count": 1,
+      "lease_owner": "fx-ops-expired-worker"
+    },
+    "deletion_tombstone": {
+      "count": 1,
+      "subject_type": "synthetic_profile"
+    },
+    "version_n_minus_1": {
+      "schema_revision": "base-1"
+    }
+  }
+}

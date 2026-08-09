@@ -42,6 +42,42 @@ jobs:
         working-directory: backend
         run: uv run pytest tests/unit tests/property -q
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.18"
+          enable-cache: true
+      - name: Install locked backend
+        working-directory: backend
+        run: uv sync --locked
+      - name: Scan tracked files and Git history for secrets
+        working-directory: backend
+        run: uv run python -m polyglot.platform.security_checks --repository-root ..
+      - name: Audit locked Python dependencies
+        working-directory: backend
+        run: uvx --from pip-audit==2.9.0 pip-audit --locked .
+      - name: Scan repository dependencies and configuration
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+      - name: Scan pinned PostgreSQL image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: image
+          image-ref: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+
   postgres-platform:
     runs-on: ubuntu-latest
     services:

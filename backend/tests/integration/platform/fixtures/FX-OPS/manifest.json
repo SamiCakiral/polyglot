@@ -1,0 +1,12 @@
+{
+  "fixture_code": "FX-OPS",
+  "schema_version": 1,
+  "synthetic": true,
+  "business_records": 0,
+  "scenarios": [
+    "blocked_outbox",
+    "expired_job_claim",
+    "deletion_tombstone",
+    "version_n_minus_1"
+  ]
+}
