@@ -3,7 +3,8 @@ from importlib import import_module
 from uuid import UUID
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 
 def domain() -> object:

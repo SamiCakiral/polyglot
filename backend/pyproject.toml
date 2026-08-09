@@ -5,6 +5,7 @@ description = "Polyglot V2 modular backend"
 requires-python = "==3.13.11"
 dependencies = [
   "alembic==1.19.1",
+  "argon2-cffi==25.1.0",
   "asyncpg==0.31.0",
   "fastapi==0.141.1",
   "greenlet==3.5.4",

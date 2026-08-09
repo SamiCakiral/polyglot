@@ -4,7 +4,6 @@ from uuid import UUID
 
 import pytest
 
-
 NOW = datetime(2026, 8, 10, 8, 0, tzinfo=UTC)
 ACCOUNT_ID = UUID("019fe900-0000-7000-8000-000000000001")
 SESSION_ID = UUID("019fe900-0000-7000-8000-000000000002")
