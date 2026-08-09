@@ -198,6 +198,59 @@ async def test_stale_outbox_claim_cannot_ack_after_same_worker_reclaims(
     )
 
 
+@pytest.mark.parametrize("terminal_action", ["publish", "fail"])
+async def test_outbox_terminal_action_rejects_expired_lease_with_backdated_timestamp(
+    session: AsyncSession,
+    terminal_action: str,
+) -> None:
+    from polyglot.platform.persistence.models import outbox_messages
+    from polyglot.platform.persistence.repositories import (
+        SqlEventOutboxRepository,
+        SqlOutboxRepository,
+    )
+
+    event = make_event()
+    await SqlEventOutboxRepository(session).add(event, destinations=("local",))
+    await session.commit()
+    store = SqlOutboxRepository(session)
+    claimed_at = datetime.now(UTC)
+    claim = (
+        await store.claim(
+            worker_id="late-worker",
+            now=claimed_at,
+            lease_for=timedelta(minutes=5),
+            limit=1,
+        )
+    )[0]
+    await session.execute(
+        outbox_messages.update()
+        .where(outbox_messages.c.outbox_id == claim.outbox_id)
+        .values(lease_expires_at=func.clock_timestamp() - timedelta(seconds=1))
+    )
+
+    if terminal_action == "publish":
+        accepted = await store.mark_published(
+            claim=claim,
+            published_at=claimed_at - timedelta(days=1),
+        )
+    else:
+        accepted = await store.mark_failed(
+            claim=claim,
+            failed_at=claimed_at - timedelta(days=1),
+            error_code="late_failure",
+        )
+
+    assert not accepted
+    row = (
+        await session.execute(
+            select(outbox_messages).where(outbox_messages.c.outbox_id == claim.outbox_id)
+        )
+    ).mappings().one()
+    assert row["published_at"] is None
+    assert row["attempt_count"] == 0
+    assert row["lease_token"] == claim.lease_token
+
+
 async def test_domain_events_are_append_only(session: AsyncSession) -> None:
     from polyglot.platform.persistence.models import domain_events
     from polyglot.platform.persistence.repositories import SqlEventOutboxRepository

@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+import pytest
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.platform.ids import Uuid7Generator
@@ -162,3 +163,51 @@ async def test_retryable_failure_waits_then_appends_a_new_terminal_attempt(
     )
     assert statuses == ["retryable_failed", "failed"]
     assert await session.scalar(select(jobs.c.status).where(jobs.c.job_id == job_id)) == "failed"
+
+
+@pytest.mark.parametrize("terminal_action", ["succeed", "fail"])
+async def test_job_terminal_action_rejects_expired_lease_with_backdated_timestamp(
+    session: AsyncSession,
+    terminal_action: str,
+) -> None:
+    from polyglot.platform.persistence.models import job_attempts, job_claims, jobs
+    from polyglot.platform.persistence.repositories import SqlJobStore
+
+    job_id = await insert_queued_job(session)
+    store = SqlJobStore(session)
+    claimed_at = datetime.now(UTC)
+    claim = await store.claim(
+        job_id=job_id,
+        worker_id="late-worker",
+        now=claimed_at,
+        lease_for=timedelta(minutes=5),
+    )
+    assert claim is not None
+    await session.execute(
+        job_claims.update()
+        .where(job_claims.c.job_id == job_id)
+        .values(lease_expires_at=func.clock_timestamp() - timedelta(seconds=1))
+    )
+
+    if terminal_action == "succeed":
+        accepted = await store.succeed(
+            claim=claim,
+            finished_at=claimed_at - timedelta(days=1),
+            result_ref=new_id(),
+        )
+    else:
+        accepted = await store.fail(
+            claim=claim,
+            finished_at=claimed_at - timedelta(days=1),
+            error_code="late_failure",
+            retry_not_before_at=None,
+        )
+
+    assert not accepted
+    assert await session.scalar(
+        select(func.count()).select_from(job_attempts).where(job_attempts.c.job_id == job_id)
+    ) == 0
+    assert await session.scalar(select(jobs.c.status).where(jobs.c.job_id == job_id)) == "running"
+    assert await session.scalar(
+        select(job_claims.c.lease_token).where(job_claims.c.job_id == job_id)
+    ) == claim.lease_token
