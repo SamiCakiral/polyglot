@@ -36,6 +36,13 @@ def _invalid_event(field: str, code: str = "invalid") -> DomainError:
     )
 
 
+def _invalid_receipt(field: str) -> DomainError:
+    return DomainError(
+        ErrorCode.VALIDATION_FAILED,
+        field_errors=[{"location": field, "code": "invalid_reservation_state"}],
+    )
+
+
 def _contains_forbidden_key(value: JsonValue) -> bool:
     if isinstance(value, dict):
         return any(
@@ -66,6 +73,17 @@ class CommandReceipt:
     result_payload: dict[str, JsonValue] | None
     status: str
     expires_at: datetime
+
+    def __post_init__(self) -> None:
+        self.validate_reservation()
+
+    def validate_reservation(self) -> None:
+        if self.status != "started":
+            raise _invalid_receipt("status")
+        if self.result_ref is not None:
+            raise _invalid_receipt("result_ref")
+        if self.result_payload is not None:
+            raise _invalid_receipt("result_payload")
 
 
 @dataclass(frozen=True, slots=True)

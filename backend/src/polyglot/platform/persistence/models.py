@@ -44,21 +44,28 @@ command_receipts = Table(
         name="ck_command_receipt_status",
     ),
     CheckConstraint(
-        "(status = 'started' AND result_ref IS NULL AND result_payload IS NULL) OR "
-        "(status = 'succeeded' AND result_ref IS NOT NULL "
+        "(((status = 'started' AND result_ref IS NULL AND result_payload IS NULL) OR "
+        "(status = 'succeeded' AND result_ref IS NOT NULL AND result_payload IS NOT NULL "
         "AND octet_length(result_payload::text) <= 512 "
+        "AND jsonb_typeof(result_payload) = 'object' "
         "AND result_payload = jsonb_build_object("
         "'resource_id', result_payload->'resource_id', "
         "'version', result_payload->'version') "
         "AND result_payload->>'resource_id' = result_ref::text "
-        "AND jsonb_typeof(result_payload->'version') = 'number') OR "
+        "AND jsonb_typeof(result_payload->'version') = 'number' "
+        "AND result_payload->>'version' ~ '^[1-9][0-9]*$') OR "
         "(status IN ('rejected', 'failed') AND result_ref IS NULL "
+        "AND result_payload IS NOT NULL "
         "AND octet_length(result_payload::text) <= 512 "
+        "AND jsonb_typeof(result_payload) = 'object' "
         "AND result_payload = jsonb_build_object("
         "'code', result_payload->'code', "
         "'message_key', result_payload->'message_key') "
         "AND jsonb_typeof(result_payload->'code') = 'string' "
-        "AND jsonb_typeof(result_payload->'message_key') = 'string')",
+        "AND jsonb_typeof(result_payload->'message_key') = 'string' "
+        "AND platform.is_command_error_code(result_payload->>'code') "
+        "AND result_payload->>'message_key' = "
+        "'errors.' || (result_payload->>'code')))) IS TRUE",
         name="ck_command_receipt_replay_shape",
     ),
     UniqueConstraint(

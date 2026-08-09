@@ -31,6 +31,55 @@ $roles$;
 
 CREATE SCHEMA platform;
 
+CREATE FUNCTION platform.is_command_error_code(p_code text) RETURNS boolean
+LANGUAGE sql IMMUTABLE PARALLEL SAFE
+AS $errors$
+    SELECT p_code = ANY(ARRAY[
+        'account_locked', 'active_export_or_job', 'active_run_exists',
+        'answer_leak_detected', 'answer_shape_invalid', 'assessment_expired',
+        'assessment_unavailable', 'attempt_already_open', 'attempt_not_submitted',
+        'block_required', 'blueprint_mismatch', 'budget_exceeded',
+        'budget_infeasible', 'canonical_sense_immutable', 'case_already_open',
+        'completion_criteria_missing', 'confidence_inconsistent',
+        'conflict_action_invalid', 'consent_purpose_unknown', 'content_unavailable',
+        'correction_path_missing', 'cursor_invalid', 'day_revision_invalid',
+        'delayed_source_invalid', 'dependency_unavailable', 'diagnostic_unavailable',
+        'draft_not_found', 'draft_stale', 'duplicate_candidate',
+        'evidence_scope_forbidden', 'field_group_forbidden', 'filter_invalid',
+        'forbidden', 'foundation_pack_missing', 'gate_not_ready',
+        'hint_not_available', 'historical_rights_conflict', 'idempotency_conflict',
+        'identity_conflict', 'identity_provider_mismatch', 'incompatible_protocols',
+        'insufficient_coverage', 'internal_error', 'invalid_credentials',
+        'invalid_transition', 'job_not_cancellable', 'language_not_certified',
+        'license_missing', 'list_merge_conflict', 'list_not_shareable',
+        'load_budget_exceeded', 'mandate_missing', 'media_integrity_failed',
+        'media_not_ready', 'media_quota_exceeded', 'media_still_required',
+        'member_conflict', 'merge_ambiguous', 'mode_unsupported',
+        'module_exit_unmeasurable', 'module_validation_failed',
+        'no_valid_composition', 'not_found', 'novelty_limit_exceeded',
+        'observation_target_not_discriminant', 'pack_incompatible',
+        'pack_not_published', 'pause_not_allowed', 'prerequisite_cycle',
+        'prerequisite_missing', 'preview_stale', 'primitive_unknown',
+        'private_context_forbidden', 'private_context_not_consented',
+        'private_context_present', 'profile_already_exists', 'profile_deleted',
+        'projection_version_unavailable', 'prompt_conflict', 'provider_unavailable',
+        'publication_not_active', 'rate_limited', 'rating_not_allowed',
+        'recommendation_expired', 'reference_not_found',
+        'reference_not_publishable', 'relation_invalid', 'report_scope_forbidden',
+        'required_block_incomplete', 'required_block_not_correctable',
+        'resource_reused', 'resource_revision_missing', 'response_conflict',
+        'response_stale', 'review_conflict', 'rubric_mismatch', 'rubric_stale',
+        'run_already_started', 'run_expired', 'self_approval_forbidden',
+        'scope_forbidden', 'sense_ambiguous', 'sense_out_of_scope',
+        'size_limit_exceeded', 'snapshot_immutable', 'snapshot_stale',
+        'source_revision_missing', 'support_language_not_allowed',
+        'target_not_published', 'target_revision_unavailable', 'timeout',
+        'tool_not_allowed', 'tool_schema_invalid', 'unauthenticated',
+        'unresolved_conflict', 'unsupported_import_format', 'validation_failed',
+        'validator_pack_incompatible', 'validator_unavailable', 'version_conflict'
+    ]::text[])
+$errors$;
+
 CREATE TABLE platform.command_receipts (
     command_id uuid PRIMARY KEY,
     command_type varchar(120) NOT NULL,
@@ -49,30 +98,38 @@ CREATE TABLE platform.command_receipts (
         CHECK (request_fingerprint ~ '^[0-9a-f]{64}$'),
     CONSTRAINT ck_command_receipt_status
         CHECK (status IN ('started', 'succeeded', 'rejected', 'failed')),
-    CONSTRAINT ck_command_receipt_replay_shape CHECK (
+    CONSTRAINT ck_command_receipt_replay_shape CHECK ((
         (status = 'started' AND result_ref IS NULL AND result_payload IS NULL)
         OR (
             status = 'succeeded'
             AND result_ref IS NOT NULL
+            AND result_payload IS NOT NULL
             AND octet_length(result_payload::text) <= 512
+            AND jsonb_typeof(result_payload) = 'object'
             AND result_payload = jsonb_build_object(
                 'resource_id', result_payload->'resource_id',
                 'version', result_payload->'version'
             )
             AND result_payload->>'resource_id' = result_ref::text
             AND jsonb_typeof(result_payload->'version') = 'number'
+            AND result_payload->>'version' ~ '^[1-9][0-9]*$'
         ) OR (
             status IN ('rejected', 'failed')
             AND result_ref IS NULL
+            AND result_payload IS NOT NULL
             AND octet_length(result_payload::text) <= 512
+            AND jsonb_typeof(result_payload) = 'object'
             AND result_payload = jsonb_build_object(
                 'code', result_payload->'code',
                 'message_key', result_payload->'message_key'
             )
             AND jsonb_typeof(result_payload->'code') = 'string'
             AND jsonb_typeof(result_payload->'message_key') = 'string'
+            AND platform.is_command_error_code(result_payload->>'code')
+            AND result_payload->>'message_key' =
+                'errors.' || (result_payload->>'code')
         )
-    ),
+    ) IS TRUE),
     CONSTRAINT uq_command_receipt_scope UNIQUE (actor_id, command_type, idempotency_key)
 );
 CREATE INDEX ix_command_receipts_expires_at ON platform.command_receipts (expires_at);

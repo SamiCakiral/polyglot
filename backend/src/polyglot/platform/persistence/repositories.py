@@ -80,11 +80,19 @@ def _validate_receipt_replay(
         raise _invalid_receipt_replay()
 
 
+def _stored_command_receipt(row: RowMapping) -> CommandReceipt:
+    receipt = object.__new__(CommandReceipt)
+    for field in CommandReceipt.__dataclass_fields__:
+        object.__setattr__(receipt, field, row[field])
+    return receipt
+
+
 class SqlCommandReceiptStore:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def reserve(self, receipt: CommandReceipt) -> CommandReservation:
+        receipt.validate_reservation()
         statement = (
             postgresql_insert(command_receipts)
             .values(asdict(receipt))
@@ -114,12 +122,7 @@ class SqlCommandReceiptStore:
         )
         if any(existing[field] != getattr(receipt, field) for field in immutable_identity):
             raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
-        stored = CommandReceipt(
-            **{
-                field: existing[field]
-                for field in CommandReceipt.__dataclass_fields__
-            }
-        )
+        stored = _stored_command_receipt(existing)
         return CommandReservation(receipt=stored, created=False)
 
     async def complete(
@@ -166,9 +169,7 @@ class SqlCommandReceiptStore:
             or completed["result_payload"] != result_payload
         ):
             raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
-        return CommandReceipt(
-            **{field: completed[field] for field in CommandReceipt.__dataclass_fields__}
-        )
+        return _stored_command_receipt(completed)
 
 
 class SqlEventOutboxRepository:
