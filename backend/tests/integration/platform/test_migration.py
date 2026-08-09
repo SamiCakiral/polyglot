@@ -1,4 +1,6 @@
+import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -186,6 +188,7 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
         "uq_domain_event_aggregate_version",
         "uq_job_attempt_number",
         "uq_job_idempotency_scope",
+        "uq_tombstone_subject",
     } <= constraint_names
 
     foreign_keys = set(
@@ -249,3 +252,52 @@ async def test_0001_platform_installs_append_only_and_controlled_purge_guards(
         ("purge_expired_append_only", True, False),
         ("purge_subject_private_events", True, False),
     }
+
+
+async def test_purge_functions_are_owned_and_executable_only_by_dedicated_roles(
+    session: AsyncSession,
+) -> None:
+    roles = set(
+        (
+            await session.execute(
+                text(
+                    "SELECT rolname FROM pg_roles WHERE rolname IN "
+                    "('polyglot_migration', 'polyglot_runtime', 'polyglot_retention')"
+                )
+            )
+        ).scalars()
+    )
+    privileges = (
+        await session.execute(
+            text(
+                "SELECT procedure.proname, owner.rolname, "
+                "has_function_privilege('polyglot_migration', procedure.oid, 'EXECUTE'), "
+                "has_function_privilege('polyglot_runtime', procedure.oid, 'EXECUTE'), "
+                "has_function_privilege('polyglot_retention', procedure.oid, 'EXECUTE') "
+                "FROM pg_proc AS procedure "
+                "JOIN pg_namespace AS namespace ON namespace.oid = procedure.pronamespace "
+                "JOIN pg_roles AS owner ON owner.oid = procedure.proowner "
+                "WHERE namespace.nspname = 'platform' AND procedure.proname IN "
+                "('purge_expired_append_only', 'purge_subject_private_events')"
+            )
+        )
+    ).all()
+
+    assert roles == {"polyglot_migration", "polyglot_runtime", "polyglot_retention"}
+    assert set(privileges) == {
+        ("purge_expired_append_only", "polyglot_migration", False, False, True),
+        ("purge_subject_private_events", "polyglot_migration", False, False, True),
+    }
+
+    await session.execute(text("SET LOCAL ROLE polyglot_runtime"))
+    with pytest.raises(DBAPIError):
+        await session.execute(
+            text(
+                "SELECT * FROM platform.purge_expired_append_only("
+                "clock_timestamp(), '00000000-0000-0000-0000-000000000001'::uuid, "
+                "'runtime', 'forbidden', "
+                "'00000000-0000-0000-0000-000000000002'::uuid, "
+                "'00000000-0000-0000-0000-000000000003'::uuid)"
+            )
+        )
+    await session.rollback()
