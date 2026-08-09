@@ -87,15 +87,15 @@ def test_compose_bootstraps_and_exposes_only_dedicated_workload_logins() -> None
     assert "polyglot_runtime_login" in postgres["healthcheck"]["test"][-1]
     assert "polyglot_bootstrap" not in postgres["healthcheck"]["test"][-1]
     assert configuration["x-polyglot-database-urls"] == {
-        "migration": (
+        "POLYGLOT_MIGRATION_DATABASE_URL": (
             "postgresql+asyncpg://polyglot_migration_login:"
             "contract-migration-only@127.0.0.1:55432/polyglot"
         ),
-        "retention": (
+        "POLYGLOT_RETENTION_DATABASE_URL": (
             "postgresql+asyncpg://polyglot_retention_login:"
             "contract-retention-only@127.0.0.1:55432/polyglot"
         ),
-        "runtime": (
+        "POLYGLOT_DATABASE_URL": (
             "postgresql+asyncpg://polyglot_runtime_login:"
             "contract-runtime-only@127.0.0.1:55432/polyglot"
         ),

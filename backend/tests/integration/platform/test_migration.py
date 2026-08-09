@@ -11,7 +11,7 @@ LOGIN_GROUPS = {
 
 
 async def test_0001_platform_creates_the_complete_platform_schema(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
     expected_tables = {
         "command_receipts",
@@ -31,7 +31,7 @@ async def test_0001_platform_creates_the_complete_platform_schema(
         "security_audit_entries",
     }
 
-    rows = await session.execute(
+    rows = await migration_session.execute(
         text(
             "SELECT table_name FROM information_schema.tables "
             "WHERE table_schema = 'platform'"
@@ -42,9 +42,9 @@ async def test_0001_platform_creates_the_complete_platform_schema(
 
 
 async def test_0001_platform_uses_postgresql_json_and_expiration_indexes(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
-    payload_type = await session.scalar(
+    payload_type = await migration_session.scalar(
         text(
             "SELECT format_type(attribute.atttypid, attribute.atttypmod) "
             "FROM pg_attribute AS attribute "
@@ -57,7 +57,7 @@ async def test_0001_platform_uses_postgresql_json_and_expiration_indexes(
     )
     index_names = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text("SELECT indexname FROM pg_indexes WHERE schemaname = 'platform'")
             )
         ).scalars()
@@ -78,7 +78,7 @@ async def test_0001_platform_uses_postgresql_json_and_expiration_indexes(
 
 
 async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
     required_columns = {
         "command_receipts": {
@@ -154,7 +154,7 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
         },
     }
     columns = (
-        await session.execute(
+        await migration_session.execute(
             text(
                 "SELECT table_name, column_name FROM information_schema.columns "
                 "WHERE table_schema = 'platform'"
@@ -169,7 +169,7 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
 
     constraint_names = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text(
                     "SELECT conname FROM pg_constraint AS c "
                     "JOIN pg_namespace AS namespace ON namespace.oid = c.connamespace "
@@ -199,7 +199,7 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
 
     foreign_keys = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text(
                     "SELECT source.relname, source_column.attname, target.relname, "
                     "target_column.attname FROM pg_constraint AS c "
@@ -224,11 +224,11 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
 
 
 async def test_0001_platform_installs_append_only_and_controlled_purge_guards(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
     triggers = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text(
                     "SELECT event_object_table, trigger_name "
                     "FROM information_schema.triggers WHERE trigger_schema = 'platform'"
@@ -242,7 +242,7 @@ async def test_0001_platform_installs_append_only_and_controlled_purge_guards(
         ("security_audit_entries", "security_audit_entries_append_only"),
     } <= triggers
     purge_functions = (
-        await session.execute(
+        await migration_session.execute(
             text(
                 "SELECT procedure.proname, procedure.prosecdef, "
                 "has_function_privilege('public', procedure.oid, 'EXECUTE') "
@@ -261,11 +261,12 @@ async def test_0001_platform_installs_append_only_and_controlled_purge_guards(
 
 
 async def test_purge_functions_are_owned_and_executable_only_by_dedicated_roles(
+    migration_session: AsyncSession,
     session: AsyncSession,
 ) -> None:
     roles = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text(
                     "SELECT rolname FROM pg_roles WHERE rolname IN "
                     "('polyglot_migration', 'polyglot_runtime', 'polyglot_retention')"
@@ -274,7 +275,7 @@ async def test_purge_functions_are_owned_and_executable_only_by_dedicated_roles(
         ).scalars()
     )
     privileges = (
-        await session.execute(
+        await migration_session.execute(
             text(
                 "SELECT procedure.proname, owner.rolname, "
                 "has_function_privilege('polyglot_migration', procedure.oid, 'EXECUTE'), "
@@ -357,9 +358,9 @@ async def test_workload_logins_receive_only_their_intended_database_rights(
     retention_database_url: str,
 ) -> None:
     expected_privileges = {
-        "polyglot_migration_login": (True, True, False),
-        "polyglot_runtime_login": (False, False, False),
-        "polyglot_retention_login": (False, False, True),
+        "polyglot_migration_login": (True, True, False, True),
+        "polyglot_runtime_login": (False, False, False, True),
+        "polyglot_retention_login": (False, False, True, False),
     }
 
     for database_url_under_test in (
@@ -380,7 +381,9 @@ async def test_workload_logins_receive_only_their_intended_database_rights(
                             "has_schema_privilege(current_user, 'platform', 'CREATE'), "
                             "has_function_privilege(current_user, "
                             "'platform.purge_expired_append_only(timestamptz,uuid,varchar,"
-                            "varchar,uuid,uuid)', 'EXECUTE')"
+                            "varchar,uuid,uuid)', 'EXECUTE'), "
+                            "has_table_privilege(current_user, "
+                            "'platform.domain_events', 'SELECT')"
                         )
                     )
                 ).one()

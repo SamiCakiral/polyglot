@@ -91,19 +91,22 @@ jobs:
         image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
         env:
           POSTGRES_DB: polyglot
-          POSTGRES_PASSWORD: ci-only
-          POSTGRES_USER: polyglot
+          POSTGRES_PASSWORD: ci-bootstrap-only
+          POSTGRES_USER: polyglot_bootstrap
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U polyglot -d polyglot"
+          --health-cmd "pg_isready -U polyglot_bootstrap -d polyglot"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
     env:
-      POLYGLOT_DATABASE_URL: postgresql+asyncpg://polyglot:ci-only@127.0.0.1:5432/polyglot
-      POLYGLOT_TEST_DATABASE_URL: postgresql+asyncpg://polyglot:ci-only@127.0.0.1:5432/polyglot
-      POLYGLOT_POSTGRES_PASSWORD: ci-only
+      POLYGLOT_MIGRATION_DATABASE_URL: postgresql+asyncpg://polyglot_migration_login:ci-migration-only@127.0.0.1:5432/polyglot
+      POLYGLOT_DATABASE_URL: postgresql+asyncpg://polyglot_runtime_login:ci-runtime-only@127.0.0.1:5432/polyglot
+      POLYGLOT_RETENTION_DATABASE_URL: postgresql+asyncpg://polyglot_retention_login:ci-retention-only@127.0.0.1:5432/polyglot
+      POLYGLOT_MIGRATION_DB_PASSWORD: ci-migration-only
+      POLYGLOT_RUNTIME_DB_PASSWORD: ci-runtime-only
+      POLYGLOT_RETENTION_DB_PASSWORD: ci-retention-only
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -113,6 +116,10 @@ jobs:
       - name: Install locked backend
         working-directory: backend
         run: uv sync --locked
+      - name: Provision PostgreSQL identities
+        env:
+          POLYGLOT_BOOTSTRAP_DATABASE_URL: postgresql://polyglot_bootstrap:ci-bootstrap-only@127.0.0.1:5432/polyglot
+        run: ops/postgres/bootstrap-identities.sh
       - name: Upgrade empty database
         working-directory: backend
         run: uv run alembic upgrade head

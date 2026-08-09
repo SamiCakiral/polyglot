@@ -4,15 +4,24 @@ services:
     environment:
       POSTGRES_DB: polyglot
       POSTGRES_PASSWORD: ${POLYGLOT_POSTGRES_PASSWORD:?POLYGLOT_POSTGRES_PASSWORD must be set}
-      POSTGRES_USER: polyglot
+      POSTGRES_USER: polyglot_bootstrap
+      POLYGLOT_MIGRATION_DB_PASSWORD: ${POLYGLOT_MIGRATION_DB_PASSWORD:?POLYGLOT_MIGRATION_DB_PASSWORD must be set}
+      POLYGLOT_RUNTIME_DB_PASSWORD: ${POLYGLOT_RUNTIME_DB_PASSWORD:?POLYGLOT_RUNTIME_DB_PASSWORD must be set}
+      POLYGLOT_RETENTION_DB_PASSWORD: ${POLYGLOT_RETENTION_DB_PASSWORD:?POLYGLOT_RETENTION_DB_PASSWORD must be set}
     ports:
       - "127.0.0.1:${POLYGLOT_POSTGRES_PORT:-55432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U polyglot -d polyglot"]
+      test:
+        - CMD-SHELL
+        - >-
+          PGPASSWORD="$$POLYGLOT_RUNTIME_DB_PASSWORD"
+          psql --host 127.0.0.1 --username polyglot_runtime_login --dbname polyglot
+          --tuples-only --no-align --command 'SELECT 1' | grep -qx 1
       interval: 2s
       timeout: 3s
       retries: 30
     volumes:
+      - ./ops/postgres/bootstrap-identities.sh:/docker-entrypoint-initdb.d/10-polyglot-identities.sh:ro
       - polyglot-postgres:/var/lib/postgresql/data
 
 volumes:
@@ -21,3 +30,8 @@ volumes:
 x-polyglot-object-storage:
   mode: filesystem-placeholder
   path: ${POLYGLOT_OBJECT_STORAGE_PATH:-.local/object-storage}
+
+x-polyglot-database-urls:
+  POLYGLOT_MIGRATION_DATABASE_URL: postgresql+asyncpg://polyglot_migration_login:${POLYGLOT_MIGRATION_DB_PASSWORD:?POLYGLOT_MIGRATION_DB_PASSWORD must be set}@127.0.0.1:${POLYGLOT_POSTGRES_PORT:-55432}/polyglot
+  POLYGLOT_DATABASE_URL: postgresql+asyncpg://polyglot_runtime_login:${POLYGLOT_RUNTIME_DB_PASSWORD:?POLYGLOT_RUNTIME_DB_PASSWORD must be set}@127.0.0.1:${POLYGLOT_POSTGRES_PORT:-55432}/polyglot
+  POLYGLOT_RETENTION_DATABASE_URL: postgresql+asyncpg://polyglot_retention_login:${POLYGLOT_RETENTION_DB_PASSWORD:?POLYGLOT_RETENTION_DB_PASSWORD must be set}@127.0.0.1:${POLYGLOT_POSTGRES_PORT:-55432}/polyglot

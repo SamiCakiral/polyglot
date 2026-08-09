@@ -41,6 +41,16 @@ async def retention_session(retention_database_url: str) -> AsyncIterator[AsyncS
     await engine.dispose()
 
 
+@pytest.fixture
+async def migration_session(migration_database_url: str) -> AsyncIterator[AsyncSession]:
+    engine = create_async_engine(migration_database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with factory() as database_session:
+        yield database_session
+        await database_session.rollback()
+    await engine.dispose()
+
+
 @pytest.fixture(autouse=True)
 async def clean_platform_tables(migration_database_url: str) -> AsyncIterator[None]:
     engine = create_async_engine(migration_database_url)

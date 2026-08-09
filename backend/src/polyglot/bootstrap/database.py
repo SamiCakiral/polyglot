@@ -14,6 +14,10 @@ def database_url_from_environment() -> str:
     return os.environ["POLYGLOT_DATABASE_URL"]
 
 
+def retention_database_url_from_environment() -> str:
+    return os.environ["POLYGLOT_RETENTION_DATABASE_URL"]
+
+
 def create_database_engine(database_url: str) -> AsyncEngine:
     return create_async_engine(database_url, pool_pre_ping=True)
 

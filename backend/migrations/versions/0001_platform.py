@@ -15,20 +15,6 @@ depends_on = None
 
 
 PLATFORM_DDL = """
-DO $roles$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'polyglot_migration') THEN
-        CREATE ROLE polyglot_migration NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'polyglot_runtime') THEN
-        CREATE ROLE polyglot_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'polyglot_retention') THEN
-        CREATE ROLE polyglot_retention NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
-    END IF;
-END
-$roles$;
-
 CREATE SCHEMA platform;
 
 CREATE FUNCTION platform.is_command_error_code(p_code text) RETURNS boolean
@@ -621,7 +607,8 @@ REVOKE ALL ON FUNCTION platform.purge_subject_private_events(
     uuid, varchar, uuid, varchar, uuid, uuid, uuid, uuid
 ) FROM PUBLIC;
 
-GRANT USAGE ON SCHEMA platform TO polyglot_migration, polyglot_runtime, polyglot_retention;
+GRANT USAGE, CREATE ON SCHEMA platform TO polyglot_migration;
+GRANT USAGE ON SCHEMA platform TO polyglot_runtime, polyglot_retention;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA platform
     TO polyglot_migration, polyglot_runtime;
 REVOKE ALL ON TABLE platform.retention_purge_authorizations FROM polyglot_runtime;

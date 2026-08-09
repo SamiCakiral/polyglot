@@ -19,7 +19,7 @@ target_metadata = metadata
 
 
 def database_url() -> str:
-    return os.environ["POLYGLOT_DATABASE_URL"]
+    return os.environ["POLYGLOT_MIGRATION_DATABASE_URL"]
 
 
 def run_migrations_offline() -> None:
