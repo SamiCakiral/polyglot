@@ -52,8 +52,10 @@ POLICY_CONTEXT_FIELDS = {
     "requested_effect",
 }
 SDD_TASK_BOOKKEEPING = re.compile(
-    r"^\.superpowers/sdd/27-plan-implementation-detaille/"
-    r"task-W\d{2}-(?:brief|report|review|rereview-\d+)\.md$"
+    r"^\.superpowers/sdd/27-plan-implementation-detaille/(?:"
+    r"task-W\d{2}-(?:brief|report|review|rereview-\d+)\.md|"
+    r"review-[0-9a-f]{7,40}\.\.[0-9a-f]{7,40}\.diff"
+    r")$"
 )
 SUBPROCESS_TIMEOUT_SECONDS = 10
 
