@@ -2,8 +2,8 @@
 
 ## Status
 
-DONE_WITH_CONCERNS - review fixes implemented and locally verified. Hosted CI is
-prepared but has not been run or claimed green.
+DONE_WITH_CONCERNS - round-four operational database identity fix implemented
+and locally verified. Hosted CI is prepared but has not been run or claimed green.
 
 ## Review-fix commits
 
@@ -42,6 +42,8 @@ prepared but has not been run or claimed green.
 - `d6fbc54` test(platform): capture reservation boundary red
 - `6fe85e3` fix(platform): close command reservation state
 - `d89477c` docs(w01): preserve round-three review evidence
+- `bdee1e6` test(platform): require workload database logins
+- `5c7ccc2` fix(platform): isolate database workload identities
 
 ## RED evidence
 
@@ -83,6 +85,13 @@ prepared but has not been run or claimed green.
 - Round-three reservation RED: 9 tests failed because terminal/malformed
   reservations passed the domain/store boundaries and SQL accepted null/open
   terminal shapes.
+- Round-four identity RED: Compose still rendered `POSTGRES_USER=polyglot`, CI
+  had no provisioning step, all three integration URLs authenticated as the
+  same `polyglot` account, and the retention environment reader did not exist.
+  The focused contract run failed `2` of `11`; the real-login run failed all
+  `3` identity/configuration cases. Purge tests were changed before production
+  code to require independent runtime and retention connections without
+  `SET ROLE`.
 
 ## GREEN evidence
 
@@ -126,6 +135,23 @@ prepared but has not been run or claimed green.
   `refs/tags/v0.36.0^{}` to full commit
   `ed142fd0673e97e23eac54620cfb913e5ce36c25`. Both workflow steps use that SHA,
   annotate `v0.36.0`, and pin Aqua-advisory-safe Trivy binary `v0.69.3`.
+- Round-four focused GREEN: an empty Compose volume bootstrapped three
+  non-superuser login identities, the bootstrap script reran successfully,
+  migration-login-only downgrade/re-upgrade succeeded, and the identity,
+  retention, runtime-health, Compose/CI and installed-artifact selection passed
+  `26` tests. Ruff remained clean and strict Mypy remained clean across `27`
+  source files.
+- Round-four final W00/W01: registry validation passed; W00 unittest discovery
+  passed `23`; `uv lock --check` resolved `39` packages; unit/property passed
+  `16`; the digest-pinned Compose database was healthy; Alembic reported one
+  `0001_platform (head)`, current at head and no upgrade operations; the
+  installed wheel migration passed `1`; integration/contract passed `88`; and
+  deterministic OpenAPI validation passed.
+- Round-four final security: repository/full-history secret scan was clean;
+  `pip-audit 2.9.0` found no known vulnerabilities in the frozen hashed export;
+  Trivy `0.69.3` reported `0` Critical repository findings and `0` unsuppressed
+  Critical findings for the pinned PostgreSQL digest. The reviewed `gosu`
+  exception remained the only suppressed image finding.
 
 ## Architecture disposition
 
@@ -140,10 +166,18 @@ prepared but has not been run or claimed green.
   to completed, removes matching outbox/event rows, leaves other subjects
   untouched, upserts the deletion tombstone and appends an audit linked to the
   deletion request.
-- PostgreSQL roles are explicit and distinct: `polyglot_migration` owns the purge
-  functions but has execute revoked, `polyglot_runtime` is denied, and only
-  `polyglot_retention` can execute them. Focused tests exercise actual `SET ROLE`
-  execution and denial in PostgreSQL.
+- PostgreSQL group roles are explicit and distinct: `polyglot_migration` owns
+  the purge functions but has execute revoked, `polyglot_runtime` is denied,
+  and only `polyglot_retention` can execute them. Bootstrap provisions separate
+  `polyglot_migration_login`, `polyglot_runtime_login` and
+  `polyglot_retention_login` identities, each inheriting exactly one group.
+  Alembic, application and retention connections authenticate independently;
+  focused tests prove session identity, non-superuser attributes, single-group
+  membership, runtime denial and retention success without `SET ROLE`.
+- Cluster-global identities are owned by the bootstrap layer, not Alembic.
+  Downgrade removes the application schema while preserving the identities, so
+  the dedicated migration login can recreate the schema without `CREATEROLE`;
+  deleting the Compose volume performs complete local identity cleanup.
 - Job terminal writes and outbox terminal acknowledgements fence lease ownership
   against PostgreSQL `clock_timestamp()` in the same SQL statement while keeping
   caller timestamps as semantic fact timestamps.
