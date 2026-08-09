@@ -7,7 +7,7 @@ from pathlib import Path
 
 def test_installed_wheel_contains_contracts_and_runs_its_own_migrations(
     tmp_path: Path,
-    database_url: str,
+    migration_database_url: str,
 ) -> None:
     backend = Path(__file__).resolve().parents[3]
     distribution = tmp_path / "dist"
@@ -42,7 +42,7 @@ def test_installed_wheel_contains_contracts_and_runs_its_own_migrations(
     assert install.returncode == 0, install.stdout + install.stderr
     environment = {
         **os.environ,
-        "POLYGLOT_DATABASE_URL": database_url,
+        "POLYGLOT_MIGRATION_DATABASE_URL": migration_database_url,
         "PYTHONPATH": str(target),
     }
     smoke = subprocess.run(

@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -70,6 +70,7 @@ async def insert_deletion_request(
 
 async def test_controlled_retention_purges_only_expired_append_only_rows_and_audits(
     session: AsyncSession,
+    retention_session: AsyncSession,
 ) -> None:
     from polyglot.platform.persistence.models import domain_events, security_audit_entries
     from polyglot.platform.persistence.records import DomainEvent
@@ -112,8 +113,7 @@ async def test_controlled_retention_purges_only_expired_append_only_rows_and_aud
         await session.commit()
     await session.rollback()
 
-    await session.execute(text("SET LOCAL ROLE polyglot_retention"))
-    result = await SqlRetentionStore(session).purge_expired(
+    result = await SqlRetentionStore(retention_session).purge_expired(
         cutoff=now,
         audit_id=new_id(),
         actor_pseudonym="retention-worker",
@@ -121,7 +121,7 @@ async def test_controlled_retention_purges_only_expired_append_only_rows_and_aud
         request_id=new_id(),
         correlation_id=new_id(),
     )
-    await session.commit()
+    await retention_session.commit()
 
     assert result.domain_event_count == 1
     assert result.security_audit_count == 0
@@ -143,6 +143,7 @@ async def test_controlled_retention_purges_only_expired_append_only_rows_and_aud
 
 async def test_subject_purge_removes_only_authorized_private_events_and_audits(
     session: AsyncSession,
+    retention_session: AsyncSession,
 ) -> None:
     from polyglot.platform.persistence.models import (
         deletion_requests,
@@ -181,8 +182,7 @@ async def test_subject_purge_removes_only_authorized_private_events_and_audits(
         await session.commit()
     await session.rollback()
 
-    await session.execute(text("SET LOCAL ROLE polyglot_retention"))
-    result = await SqlRetentionStore(session).purge_subject_private_events(
+    result = await SqlRetentionStore(retention_session).purge_subject_private_events(
         deletion_request_id=deletion_request_id,
         subject_type="account",
         subject_id=target_subject_id,
@@ -192,7 +192,7 @@ async def test_subject_purge_removes_only_authorized_private_events_and_audits(
         request_id=request_id,
         correlation_id=new_id(),
     )
-    await session.commit()
+    await retention_session.commit()
 
     remaining_ids = set(
         (
@@ -244,6 +244,7 @@ async def test_subject_purge_removes_only_authorized_private_events_and_audits(
 @pytest.mark.parametrize("request_case", ["absent", "unconfirmed", "mismatched"])
 async def test_subject_purge_rejects_unauthorized_deletion_requests(
     session: AsyncSession,
+    retention_session: AsyncSession,
     request_case: str,
 ) -> None:
     from polyglot.platform.persistence.models import deletion_tombstones, domain_events
@@ -268,9 +269,8 @@ async def test_subject_purge_rejects_unauthorized_deletion_requests(
         )
     await session.commit()
 
-    await session.execute(text("SET LOCAL ROLE polyglot_retention"))
     with pytest.raises(DBAPIError):
-        await SqlRetentionStore(session).purge_subject_private_events(
+        await SqlRetentionStore(retention_session).purge_subject_private_events(
             deletion_request_id=deletion_request_id,
             subject_type="account",
             subject_id=subject_id,
@@ -280,7 +280,7 @@ async def test_subject_purge_rejects_unauthorized_deletion_requests(
             request_id=new_id(),
             correlation_id=new_id(),
         )
-    await session.rollback()
+    await retention_session.rollback()
 
     assert await session.scalar(
         select(func.count()).select_from(domain_events).where(

@@ -78,6 +78,32 @@ def test_ci_uses_the_compose_postgres_digest_for_service_and_scan() -> None:
     assert workflow.count(f"image-ref: {POSTGRES_IMAGE}") == 1
 
 
+def test_ci_bootstraps_then_uses_distinct_non_superuser_database_logins() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+
+    bootstrap = workflow.index("Provision PostgreSQL identities")
+    migration = workflow.index("uv run alembic upgrade head")
+    assert bootstrap < migration
+    assert "POSTGRES_USER: polyglot_bootstrap" in workflow
+    assert workflow.count("POLYGLOT_BOOTSTRAP_DATABASE_URL:") == 1
+    assert (
+        "POLYGLOT_MIGRATION_DATABASE_URL: "
+        "postgresql+asyncpg://polyglot_migration_login:ci-migration-only@"
+        "127.0.0.1:5432/polyglot"
+    ) in workflow
+    assert (
+        "POLYGLOT_DATABASE_URL: "
+        "postgresql+asyncpg://polyglot_runtime_login:ci-runtime-only@"
+        "127.0.0.1:5432/polyglot"
+    ) in workflow
+    assert (
+        "POLYGLOT_RETENTION_DATABASE_URL: "
+        "postgresql+asyncpg://polyglot_retention_login:ci-retention-only@"
+        "127.0.0.1:5432/polyglot"
+    ) in workflow
+    assert "POLYGLOT_TEST_DATABASE_URL" not in workflow
+
+
 @pytest.mark.parametrize(
     "mutation",
     [

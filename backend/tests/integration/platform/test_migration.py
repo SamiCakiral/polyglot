@@ -1,7 +1,13 @@
 import pytest
-from sqlalchemy import text
+from sqlalchemy import make_url, text
 from sqlalchemy.exc import DBAPIError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+LOGIN_GROUPS = {
+    "polyglot_migration_login": "polyglot_migration",
+    "polyglot_runtime_login": "polyglot_runtime",
+    "polyglot_retention_login": "polyglot_retention",
+}
 
 
 async def test_0001_platform_creates_the_complete_platform_schema(
@@ -289,7 +295,6 @@ async def test_purge_functions_are_owned_and_executable_only_by_dedicated_roles(
         ("purge_subject_private_events", "polyglot_migration", False, False, True),
     }
 
-    await session.execute(text("SET LOCAL ROLE polyglot_runtime"))
     with pytest.raises(DBAPIError):
         await session.execute(
             text(
@@ -301,3 +306,85 @@ async def test_purge_functions_are_owned_and_executable_only_by_dedicated_roles(
             )
         )
     await session.rollback()
+
+
+async def test_database_logins_are_distinct_non_privileged_and_single_group(
+    database_url: str,
+    migration_database_url: str,
+    retention_database_url: str,
+) -> None:
+    urls = (migration_database_url, database_url, retention_database_url)
+    assert {make_url(url).username for url in urls} == set(LOGIN_GROUPS)
+
+    for database_url_under_test in urls:
+        expected_login = make_url(database_url_under_test).username
+        assert expected_login is not None
+        engine = create_async_engine(database_url_under_test)
+        try:
+            async with engine.connect() as connection:
+                identity = (
+                    await connection.execute(
+                        text(
+                            "SELECT current_user, session_user, role.rolsuper, "
+                            "role.rolcreatedb, role.rolcreaterole, role.rolreplication, "
+                            "role.rolbypassrls FROM pg_roles AS role "
+                            "WHERE role.rolname = current_user"
+                        )
+                    )
+                ).one()
+                memberships = set(
+                    (
+                        await connection.execute(
+                            text(
+                                "SELECT parent.rolname FROM pg_auth_members AS membership "
+                                "JOIN pg_roles AS parent ON parent.oid = membership.roleid "
+                                "JOIN pg_roles AS member ON member.oid = membership.member "
+                                "WHERE member.rolname = current_user"
+                            )
+                        )
+                    ).scalars()
+                )
+        finally:
+            await engine.dispose()
+
+        assert identity == (expected_login, expected_login, False, False, False, False, False)
+        assert memberships == {LOGIN_GROUPS[expected_login]}
+
+
+async def test_workload_logins_receive_only_their_intended_database_rights(
+    database_url: str,
+    migration_database_url: str,
+    retention_database_url: str,
+) -> None:
+    expected_privileges = {
+        "polyglot_migration_login": (True, True, False),
+        "polyglot_runtime_login": (False, False, False),
+        "polyglot_retention_login": (False, False, True),
+    }
+
+    for database_url_under_test in (
+        migration_database_url,
+        database_url,
+        retention_database_url,
+    ):
+        login = make_url(database_url_under_test).username
+        assert login is not None
+        engine = create_async_engine(database_url_under_test)
+        try:
+            async with engine.connect() as connection:
+                privileges = (
+                    await connection.execute(
+                        text(
+                            "SELECT "
+                            "has_database_privilege(current_user, current_database(), 'CREATE'), "
+                            "has_schema_privilege(current_user, 'platform', 'CREATE'), "
+                            "has_function_privilege(current_user, "
+                            "'platform.purge_expired_append_only(timestamptz,uuid,varchar,"
+                            "varchar,uuid,uuid)', 'EXECUTE')"
+                        )
+                    )
+                ).one()
+        finally:
+            await engine.dispose()
+
+        assert privileges == expected_privileges[login]

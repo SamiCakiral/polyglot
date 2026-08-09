@@ -6,15 +6,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 
 
-def test_compose_uses_postgres_17_and_no_fake_object_storage_service() -> None:
-    environment = {
+def compose_environment() -> dict[str, str]:
+    return {
         **os.environ,
-        "POLYGLOT_POSTGRES_PASSWORD": "contract-only",
+        "POLYGLOT_POSTGRES_PASSWORD": "contract-bootstrap-only",
+        "POLYGLOT_MIGRATION_DB_PASSWORD": "contract-migration-only",
+        "POLYGLOT_RUNTIME_DB_PASSWORD": "contract-runtime-only",
+        "POLYGLOT_RETENTION_DB_PASSWORD": "contract-retention-only",
     }
+
+
+def test_compose_uses_postgres_17_and_no_fake_object_storage_service() -> None:
     result = subprocess.run(
         ["docker", "compose", "config", "--format", "json"],
         cwd=ROOT,
-        env=environment,
+        env=compose_environment(),
         capture_output=True,
         text=True,
         check=False,
@@ -30,14 +36,10 @@ def test_compose_uses_postgres_17_and_no_fake_object_storage_service() -> None:
 
 
 def test_compose_declares_the_w01_filesystem_placeholder() -> None:
-    environment = {
-        **os.environ,
-        "POLYGLOT_POSTGRES_PASSWORD": "contract-only",
-    }
     result = subprocess.run(
         ["docker", "compose", "config", "--format", "json"],
         cwd=ROOT,
-        env=environment,
+        env=compose_environment(),
         capture_output=True,
         text=True,
         check=False,
@@ -50,4 +52,51 @@ def test_compose_declares_the_w01_filesystem_placeholder() -> None:
     assert placeholder == {
         "mode": "filesystem-placeholder",
         "path": ".local/object-storage",
+    }
+
+
+def test_compose_bootstraps_and_exposes_only_dedicated_workload_logins() -> None:
+    result = subprocess.run(
+        ["docker", "compose", "config", "--format", "json"],
+        cwd=ROOT,
+        env=compose_environment(),
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    configuration = json.loads(result.stdout)
+    postgres = configuration["services"]["postgres"]
+    assert postgres["environment"]["POSTGRES_USER"] == "polyglot_bootstrap"
+    assert postgres["environment"]["POLYGLOT_MIGRATION_DB_PASSWORD"] == (
+        "contract-migration-only"
+    )
+    assert postgres["environment"]["POLYGLOT_RUNTIME_DB_PASSWORD"] == (
+        "contract-runtime-only"
+    )
+    assert postgres["environment"]["POLYGLOT_RETENTION_DB_PASSWORD"] == (
+        "contract-retention-only"
+    )
+    assert any(
+        volume["target"] == "/docker-entrypoint-initdb.d/10-polyglot-identities.sh"
+        and volume["read_only"] is True
+        for volume in postgres["volumes"]
+    )
+    assert "polyglot_runtime_login" in postgres["healthcheck"]["test"][-1]
+    assert "polyglot_bootstrap" not in postgres["healthcheck"]["test"][-1]
+    assert configuration["x-polyglot-database-urls"] == {
+        "migration": (
+            "postgresql+asyncpg://polyglot_migration_login:"
+            "contract-migration-only@127.0.0.1:55432/polyglot"
+        ),
+        "retention": (
+            "postgresql+asyncpg://polyglot_retention_login:"
+            "contract-retention-only@127.0.0.1:55432/polyglot"
+        ),
+        "runtime": (
+            "postgresql+asyncpg://polyglot_runtime_login:"
+            "contract-runtime-only@127.0.0.1:55432/polyglot"
+        ),
     }

@@ -5,6 +5,24 @@ from httpx import ASGITransport, AsyncClient
 from pytest import MonkeyPatch
 
 
+def test_database_environment_urls_are_closed_by_workload(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    from polyglot.bootstrap.database import (
+        database_url_from_environment,
+        retention_database_url_from_environment,
+    )
+
+    monkeypatch.setenv("POLYGLOT_DATABASE_URL", "postgresql+asyncpg://runtime")
+    monkeypatch.setenv(
+        "POLYGLOT_RETENTION_DATABASE_URL",
+        "postgresql+asyncpg://retention",
+    )
+
+    assert database_url_from_environment() == "postgresql+asyncpg://runtime"
+    assert retention_database_url_from_environment() == "postgresql+asyncpg://retention"
+
+
 async def test_runtime_readiness_checks_postgres_and_filesystem(
     database_url: str,
     tmp_path: Path,
