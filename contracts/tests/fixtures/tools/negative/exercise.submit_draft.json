@@ -12,8 +12,7 @@
     "accepted_answers_or_rubric": [],
     "hints": [],
     "difficulty_profile": "x",
-    "provenance_inputs": [],
-    "unexpected_field": true
+    "provenance_inputs": []
   },
   "output": {
     "draft_id": "x",
@@ -23,5 +22,5 @@
     "checksum": "x",
     "status": "published"
   },
-  "expected_error": "additional property"
+  "expected_error": "value outside enum"
 }

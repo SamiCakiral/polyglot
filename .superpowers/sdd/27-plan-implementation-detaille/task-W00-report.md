@@ -81,3 +81,19 @@ of the final completion check.
 - The W00 schema evaluator intentionally implements only the JSON Schema
   keywords used by these shipped contracts; W01 may adopt a fuller validator
   with its runtime dependency set.
+
+## Fix Round 2
+
+### RED evidence
+
+- Canonical HTTP method/route/idempotency changes and an untracked V1 `app/`
+  runtime were initially accepted by the validator.
+
+### GREEN evidence
+
+- `python3 contracts/tests/test_validate_contract_registry.py`: 4 passed
+  against copied shipped contracts.
+- `python3 contracts/tests/test_w00_contract_delivery.py`: 9 passed.
+- The registry command validated 22 tool fixtures, six explicit meta-cases,
+  docs links, and artifact boundaries. `exercise.submit_draft` accepts only
+  `draft`; its `published` fixture is rejected.

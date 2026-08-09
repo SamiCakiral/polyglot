@@ -36,10 +36,11 @@ class ContractRegistryValidatorTest(unittest.TestCase):
         case = json.loads((FIXTURES / "negative" / fixture_name / "case.json").read_text())
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            registry = root / "registry"
-            tests = root / "tests"
-            self.write_valid_registry(root, tests)
-            self.apply_mutation(root, case["mutation"])
+            contracts = root / "contracts"
+            shutil.copytree(ROOT / "contracts", contracts)
+            registry = contracts / "registry"
+            tests = contracts / "tests"
+            self.apply_mutation(contracts, case["mutation"])
             result = subprocess.run(
                 [sys.executable, str(VALIDATOR), str(registry), str(tests)],
                 capture_output=True,

@@ -46,7 +46,7 @@
     "status": {
       "type": "string",
       "enum": [
-        "published"
+        "draft"
       ],
       "maxLength": 16
     }

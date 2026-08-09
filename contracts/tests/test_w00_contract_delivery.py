@@ -60,6 +60,33 @@ class W00ContractDeliveryTest(unittest.TestCase):
         self.assertIn("documentation links valid", result.stdout)
         self.assertIn("artifact boundary valid", result.stdout)
 
+    def test_rejects_changed_canonical_http_mapping(self) -> None:
+        result = self.run_mutation(
+            "registry/commands.yaml",
+            lambda document: document["commands"][0].update({"method": "PUT"}),
+        )
+        self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+        self.assertIn("canonical command mapping mismatch", result.stdout)
+
+    def test_rejects_published_exercise_draft_output(self) -> None:
+        result = self.run_validator("--validate-tool-fixtures")
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        fixture = ROOT / "contracts/tests/fixtures/tools/negative/exercise.submit_draft.json"
+        self.assertIn("published", fixture.read_text())
+
+    def test_rejects_untracked_v1_and_unapproved_artifacts(self) -> None:
+        app = ROOT / "app"
+        app.mkdir()
+        marker = app / "runtime.py"
+        marker.write_text("# V1 runtime marker\n")
+        try:
+            result = self.run_validator("--check-artifacts")
+        finally:
+            marker.unlink()
+            app.rmdir()
+        self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+        self.assertIn("forbidden untracked private artifact", result.stdout)
+
     def run_validator(self, *flags: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(VALIDATOR), "contracts/registry", "contracts/tests", *flags],

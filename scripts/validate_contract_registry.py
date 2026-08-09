@@ -248,6 +248,17 @@ def validate_registry(registry: Path, tests: Path) -> tuple[Path, dict[str, obje
     expected_errors = set(array(snapshot.get("errors"), "canonical errors"))
     if command_names != expected_commands:
         raise ValueError("canonical command set mismatch")
+    command_mappings = [
+        {key: item.get(key) for key in ("name", "method", "route", "idempotency")}
+        for item in commands
+    ]
+    if command_mappings != array(snapshot.get("command_mappings"), "canonical command mappings"):
+        raise ValueError("canonical command mapping mismatch")
+    if [
+        {"method": item.get("method"), "route": item.get("route")}
+        for item in array(queries.get("queries"), "queries")
+    ] != array(snapshot.get("query_mappings"), "canonical query mappings"):
+        raise ValueError("canonical query mapping mismatch")
     if set(queries.get("application_query_names", [])) != expected_queries:
         raise ValueError("canonical query set mismatch")
     if tool_names != expected_tools:
@@ -272,6 +283,7 @@ def validate_tool_fixtures(tests: Path, tool_schemas: dict[str, tuple[dict[str, 
             else:
                 try:
                     validate_instance(fixture.get("input"), input_schema, f"{fixture_path.name}.input")
+                    validate_instance(fixture.get("output"), output_schema, f"{fixture_path.name}.output")
                 except ValueError as error:
                     if fixture.get("expected_error") not in str(error):
                         raise
@@ -280,6 +292,17 @@ def validate_tool_fixtures(tests: Path, tool_schemas: dict[str, tuple[dict[str, 
             valid += 1
     if valid != len(tool_schemas) * 2:
         raise ValueError(f"tool fixture count mismatch: {valid}")
+    errors = set(array(obj(load(tests.parent / "registry" / "errors.yaml"), "errors").get("errors"), "errors"))
+    meta_cases = array(load(tests / "fixtures" / "tools" / "meta-cases.json"), "tool meta cases")
+    expected_cases = {"idempotency_conflict", "role_denial", "stale_reference", "size_limit", "timeout", "forbidden_effect"}
+    if {item.get("case") for item in meta_cases if isinstance(item, dict)} != expected_cases:
+        raise ValueError("tool meta case set mismatch")
+    for case in meta_cases:
+        item = obj(case, "tool meta case")
+        if item.get("tool_name") not in tool_schemas or item.get("expected_error") not in errors:
+            raise ValueError(f"invalid tool meta case: {item.get('case')}")
+        if obj(item.get("expected_output"), "tool meta output") != {"status": "error", "error": item["expected_error"]} or item.get("expected_effect") != "none":
+            raise ValueError(f"unsafe tool meta case: {item.get('case')}")
     return valid
 
 
@@ -304,8 +327,11 @@ def check_artifacts(root: Path) -> None:
     ignored = subprocess.run(["git", "status", "--porcelain", "--ignored", "--untracked-files=all"], cwd=root, text=True, capture_output=True, check=True).stdout.splitlines()
     for line in ignored:
         path = line[3:]
-        if path.startswith((".env", "venv/", ".venv/", "card_sets/", "pillar_content/")) or path.endswith((".db", ".sqlite", ".sqlite3")):
+        if path.startswith((".superpowers/sdd/", "contracts/", "scripts/", "docs/", "README.md", "CONTRIBUTING.md", ".gitignore", "contracts/tests/__pycache__/")):
+            continue
+        if path.startswith(("app/", "tests/", ".env", "venv/", ".venv/", "card_sets/", "pillar_content/")) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden untracked private artifact: {path}")
+        raise ValueError(f"forbidden untracked private artifact: {path}")
 
 
 def main(argv: list[str]) -> int:

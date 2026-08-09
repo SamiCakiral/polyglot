@@ -1,0 +1,8 @@
+[
+  {"case":"idempotency_conflict","tool_name":"exercise.submit_draft","expected_error":"idempotency_conflict","expected_output":{"status":"error","error":"idempotency_conflict"},"expected_effect":"none"},
+  {"case":"role_denial","tool_name":"exercise.submit_draft","expected_error":"tool_not_allowed","expected_output":{"status":"error","error":"tool_not_allowed"},"expected_effect":"none"},
+  {"case":"stale_reference","tool_name":"content.validate_draft","expected_error":"version_conflict","expected_output":{"status":"error","error":"version_conflict"},"expected_effect":"none"},
+  {"case":"size_limit","tool_name":"quality.report_ambiguity","expected_error":"size_limit_exceeded","expected_output":{"status":"error","error":"size_limit_exceeded"},"expected_effect":"none"},
+  {"case":"timeout","tool_name":"content.validate_draft","expected_error":"timeout","expected_output":{"status":"error","error":"timeout"},"expected_effect":"none"},
+  {"case":"forbidden_effect","tool_name":"exercise.submit_draft","expected_error":"tool_not_allowed","expected_output":{"status":"error","error":"tool_not_allowed"},"expected_effect":"none"}
+]
