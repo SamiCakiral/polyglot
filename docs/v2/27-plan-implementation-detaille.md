@@ -1124,6 +1124,14 @@ oui pour GATE-G6/release complete.
 
 ## W19 - Exploitation, preuves transversales et release
 
+### Split approuve W19L/W19C
+
+`W19L` couvre la readiness de release locale reproductible et les preuves hors
+cloud. `W19C`, distinct et differe, couvre la livraison cloud: infrastructure
+geree, IAM/secrets, observabilite hebergee, sauvegarde/restauration et canary.
+Une preuve W19L ne constitue jamais une preuve W19C. Cette separation est
+enregistree dans `docs/adr/0007-w19-release-split.md`.
+
 **Objectif :** rendre la livraison observable, restaurable, reversible et
 qualifiable sans confondre suite verte, canary, UX ou validation pedagogique.
 
