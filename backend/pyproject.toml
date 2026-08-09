@@ -21,6 +21,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/polyglot"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"alembic.ini" = "polyglot/migrations/alembic.ini"
+"migrations" = "polyglot/migrations"
+"../contracts/events/envelope.schema.json" = "polyglot/platform/contracts/envelope.schema.json"
+"../contracts/events/event-catalogue.yaml" = "polyglot/platform/contracts/event-catalogue.yaml"
+
 [dependency-groups]
 dev = [
   "hypothesis==6.165.2",

@@ -74,14 +74,24 @@ jobs:
       - name: Upgrade empty database
         working-directory: backend
         run: uv run alembic upgrade head
+      - name: Verify downgrade and clean re-upgrade
+        working-directory: backend
+        run: |
+          uv run alembic downgrade base
+          uv run alembic upgrade head
       - name: Verify one head and no metadata drift
         working-directory: backend
         run: |
           test "$(uv run alembic heads | grep -c '(head)')" -eq 1
           uv run alembic check
+      - name: Build, install, and migrate from wheel
+        working-directory: backend
+        run: uv run pytest tests/integration/platform/test_installed_artifact.py -q
       - name: Integration and contract tests
         working-directory: backend
-        run: uv run pytest tests/integration tests/contract -q
+        run: >-
+          uv run pytest tests/integration tests/contract
+          --ignore=tests/integration/platform/test_installed_artifact.py -q
       - name: Verify deterministic OpenAPI
         working-directory: backend
         run: >-

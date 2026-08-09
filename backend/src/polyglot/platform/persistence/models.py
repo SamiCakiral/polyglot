@@ -35,7 +35,10 @@ command_receipts = Table(
     Column("result_payload", JSONB),
     Column("status", String(24), nullable=False),
     Column("expires_at", DateTime(timezone=True), nullable=False),
-    CheckConstraint("length(request_fingerprint) = 64", name="ck_command_receipt_fingerprint"),
+    CheckConstraint(
+        "request_fingerprint ~ '^[0-9a-f]{64}$'",
+        name="ck_command_receipt_fingerprint_hex",
+    ),
     CheckConstraint(
         "status IN ('started', 'succeeded', 'rejected', 'failed')",
         name="ck_command_receipt_status",
@@ -134,7 +137,10 @@ inbox_receipts = Table(
     Column("event_id", UUID(as_uuid=True), primary_key=True),
     Column("processed_at", DateTime(timezone=True), nullable=False),
     Column("result_checksum", String(64), nullable=False),
-    CheckConstraint("length(result_checksum) = 64", name="ck_inbox_result_checksum"),
+    CheckConstraint(
+        "result_checksum ~ '^[0-9a-f]{64}$'",
+        name="ck_inbox_result_checksum_hex",
+    ),
 )
 Index("ix_inbox_receipts_processed_at", inbox_receipts.c.processed_at)
 
@@ -172,7 +178,10 @@ jobs = Table(
     Column("result_ref", UUID(as_uuid=True)),
     Column("error_code", String(120)),
     Column("version", Integer, nullable=False, server_default="1"),
-    CheckConstraint("length(request_fingerprint) = 64", name="ck_job_request_fingerprint"),
+    CheckConstraint(
+        "request_fingerprint ~ '^[0-9a-f]{64}$'",
+        name="ck_job_request_fingerprint_hex",
+    ),
     CheckConstraint("payload_schema_version >= 1", name="ck_job_payload_schema_version"),
     CheckConstraint("progress_completed >= 0", name="ck_job_progress_completed"),
     CheckConstraint("progress_total >= 0", name="ck_job_progress_total"),
@@ -253,7 +262,10 @@ provenance_records = Table(
     Column("transformation_chain", JSONB, nullable=False),
     Column("input_fingerprint", String(64), nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
-    CheckConstraint("length(input_fingerprint) = 64", name="ck_provenance_input_fingerprint"),
+    CheckConstraint(
+        "input_fingerprint ~ '^[0-9a-f]{64}$'",
+        name="ck_provenance_input_fingerprint_hex",
+    ),
 )
 
 security_audit_entries = Table(
@@ -272,6 +284,10 @@ security_audit_entries = Table(
     Column("session_fingerprint", String(64), nullable=False),
     Column("truncated_ip", String(64), nullable=False),
     Column("expires_at", DateTime(timezone=True), nullable=False),
+    CheckConstraint(
+        "session_fingerprint ~ '^[0-9a-f]{64}$'",
+        name="ck_security_audit_session_fingerprint_hex",
+    ),
 )
 Index("ix_security_audit_entries_expires_at", security_audit_entries.c.expires_at)
 Index("ix_security_audit_entries_correlation_id", security_audit_entries.c.correlation_id)
@@ -335,7 +351,10 @@ deletion_tombstones = Table(
     Column("purged_scopes", ARRAY(String(120)), nullable=False, server_default="{}"),
     Column("last_applied_at", DateTime(timezone=True), nullable=False),
     Column("expires_at", DateTime(timezone=True)),
-    CheckConstraint("length(subject_fingerprint) = 64", name="ck_tombstone_fingerprint"),
+    CheckConstraint(
+        "subject_fingerprint ~ '^[0-9a-f]{64}$'",
+        name="ck_tombstone_fingerprint_hex",
+    ),
 )
 Index("ix_deletion_tombstones_expires_at", deletion_tombstones.c.expires_at)
 

@@ -31,7 +31,8 @@ CREATE TABLE platform.command_receipts (
     result_payload jsonb,
     status varchar(24) NOT NULL,
     expires_at timestamptz NOT NULL,
-    CONSTRAINT ck_command_receipt_fingerprint CHECK (length(request_fingerprint) = 64),
+    CONSTRAINT ck_command_receipt_fingerprint_hex
+        CHECK (request_fingerprint ~ '^[0-9a-f]{64}$'),
     CONSTRAINT ck_command_receipt_status
         CHECK (status IN ('started', 'succeeded', 'rejected', 'failed')),
     CONSTRAINT uq_command_receipt_scope UNIQUE (actor_id, command_type, idempotency_key)
@@ -102,7 +103,7 @@ CREATE TABLE platform.inbox_receipts (
     event_id uuid NOT NULL,
     processed_at timestamptz NOT NULL,
     result_checksum varchar(64) NOT NULL,
-    CONSTRAINT ck_inbox_result_checksum CHECK (length(result_checksum) = 64),
+    CONSTRAINT ck_inbox_result_checksum_hex CHECK (result_checksum ~ '^[0-9a-f]{64}$'),
     PRIMARY KEY (consumer_code, event_id)
 );
 CREATE INDEX ix_inbox_receipts_processed_at ON platform.inbox_receipts (processed_at);
@@ -142,7 +143,8 @@ CREATE TABLE platform.jobs (
         status IN ('requested', 'queued', 'running', 'retry_wait', 'cancel_requested',
                    'succeeded', 'failed', 'cancelled')
     ),
-    CONSTRAINT ck_job_request_fingerprint CHECK (length(request_fingerprint) = 64),
+    CONSTRAINT ck_job_request_fingerprint_hex
+        CHECK (request_fingerprint ~ '^[0-9a-f]{64}$'),
     CONSTRAINT ck_job_payload_schema_version CHECK (payload_schema_version >= 1),
     CONSTRAINT ck_job_progress_completed CHECK (progress_completed >= 0),
     CONSTRAINT ck_job_progress_total CHECK (progress_total >= 0),
@@ -196,7 +198,8 @@ CREATE TABLE platform.provenance_records (
     transformation_chain jsonb NOT NULL,
     input_fingerprint varchar(64) NOT NULL,
     created_at timestamptz NOT NULL,
-    CONSTRAINT ck_provenance_input_fingerprint CHECK (length(input_fingerprint) = 64)
+    CONSTRAINT ck_provenance_input_fingerprint_hex
+        CHECK (input_fingerprint ~ '^[0-9a-f]{64}$')
 );
 
 CREATE TABLE platform.security_audit_entries (
@@ -212,7 +215,9 @@ CREATE TABLE platform.security_audit_entries (
     correlation_id uuid NOT NULL,
     session_fingerprint varchar(64) NOT NULL,
     truncated_ip varchar(64) NOT NULL,
-    expires_at timestamptz NOT NULL
+    expires_at timestamptz NOT NULL,
+    CONSTRAINT ck_security_audit_session_fingerprint_hex
+        CHECK (session_fingerprint ~ '^[0-9a-f]{64}$')
 );
 CREATE INDEX ix_security_audit_entries_expires_at
     ON platform.security_audit_entries (expires_at);
@@ -265,7 +270,8 @@ CREATE TABLE platform.deletion_tombstones (
     purged_scopes varchar(120)[] NOT NULL DEFAULT '{}',
     last_applied_at timestamptz NOT NULL,
     expires_at timestamptz,
-    CONSTRAINT ck_tombstone_fingerprint CHECK (length(subject_fingerprint) = 64)
+    CONSTRAINT ck_tombstone_fingerprint_hex
+        CHECK (subject_fingerprint ~ '^[0-9a-f]{64}$')
 );
 CREATE INDEX ix_deletion_tombstones_expires_at
     ON platform.deletion_tombstones (expires_at);
