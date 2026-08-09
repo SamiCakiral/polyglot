@@ -1,0 +1,19 @@
+{
+  "id": "content.validate_draft.positive",
+  "kind": "positive",
+  "tool_name": "content.validate_draft",
+  "input": {
+    "draft_revision_id": "x",
+    "validator_profile_id": "x",
+    "validator_revision_ids": [],
+    "requested_checks": [],
+    "seed": 1
+  },
+  "output": {
+    "report_id": "x",
+    "findings": [],
+    "coverage": [],
+    "decision": "x",
+    "report_truncated": false
+  }
+}

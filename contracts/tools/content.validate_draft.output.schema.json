@@ -11,10 +11,34 @@
     "report_truncated"
   ],
   "properties": {
-    "report_id": {},
-    "findings": {},
-    "coverage": {},
-    "decision": {},
-    "report_truncated": {}
+    "report_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "coverage": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "string",
+        "maxLength": 20000
+      }
+    },
+    "decision": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "report_truncated": {
+      "type": "boolean"
+    }
   }
 }

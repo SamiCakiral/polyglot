@@ -12,11 +12,47 @@
     "max_senses"
   ],
   "properties": {
-    "profile_id": {},
-    "planning_snapshot_id": {},
-    "roles": {},
-    "target_refs": {},
-    "list_snapshot_ids": {},
-    "max_senses": {}
+    "profile_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "planning_snapshot_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "roles": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "target_refs": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "list_snapshot_ids": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "max_senses": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    }
   }
 }

@@ -1,0 +1,21 @@
+{
+  "id": "lexicon.read_session_scope.positive",
+  "kind": "positive",
+  "tool_name": "lexicon.read_session_scope",
+  "input": {
+    "profile_id": "x",
+    "planning_snapshot_id": "x",
+    "roles": [],
+    "target_refs": [],
+    "list_snapshot_ids": [],
+    "max_senses": []
+  },
+  "output": {
+    "senses": [],
+    "forms": [],
+    "session_roles": [],
+    "familiarity": "x",
+    "constraints": [],
+    "provenance": "x"
+  }
+}

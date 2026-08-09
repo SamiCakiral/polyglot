@@ -1,0 +1,23 @@
+{
+  "id": "quality.report_ambiguity.negative",
+  "kind": "negative",
+  "tool_name": "quality.report_ambiguity",
+  "input": {
+    "resource_ref": "x",
+    "resource_revision_id": "x",
+    "ambiguity_type": "x",
+    "location": "x",
+    "description": "x",
+    "candidate_interpretations": [],
+    "private_context_consent": false,
+    "unexpected_field": true
+  },
+  "output": {
+    "report_id": "x",
+    "deduplication_fingerprint": "x",
+    "visibility": "x",
+    "status": "published",
+    "existing_report_id": "x"
+  },
+  "expected_error": "additional property"
+}

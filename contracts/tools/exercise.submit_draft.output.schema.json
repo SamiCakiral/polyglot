@@ -12,11 +12,43 @@
     "status"
   ],
   "properties": {
-    "draft_id": {},
-    "revision": {},
-    "findings": {},
-    "resolved_references": {},
-    "checksum": {},
-    "status": {}
+    "draft_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "resolved_references": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "checksum": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published"
+      ],
+      "maxLength": 16
+    }
   }
 }

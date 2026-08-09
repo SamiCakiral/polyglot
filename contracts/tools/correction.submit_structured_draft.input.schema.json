@@ -18,17 +18,80 @@
     "provenance"
   ],
   "properties": {
-    "attempt_id": {},
-    "attempt_version": {},
-    "strategy": {},
-    "verdict": {},
-    "criterion_scores": {},
-    "error_codes": {},
-    "proposed_answer": {},
-    "alternatives": {},
-    "explanation_codes": {},
-    "confidence": {},
-    "target_observations": {},
-    "provenance": {}
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "attempt_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "strategy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "verdict": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "criterion_scores": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "error_codes": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "proposed_answer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "alternatives": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 20000
+      }
+    },
+    "explanation_codes": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "target_observations": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

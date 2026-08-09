@@ -1,0 +1,24 @@
+{
+  "id": "curriculum.submit_module_draft.positive",
+  "kind": "positive",
+  "tool_name": "curriculum.submit_module_draft",
+  "input": {
+    "pack_revision_id": "x",
+    "module": "x",
+    "audience": "x",
+    "objectives": [],
+    "prerequisites": [],
+    "exit_policy": "x",
+    "day_draft_refs": [],
+    "length": "x",
+    "context": "x",
+    "provenance": "x"
+  },
+  "output": {
+    "module_draft": {},
+    "resolved_graph": {},
+    "total_load": {},
+    "findings": [],
+    "checksum": "x"
+  }
+}

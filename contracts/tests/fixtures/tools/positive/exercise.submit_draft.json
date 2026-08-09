@@ -1,0 +1,25 @@
+{
+  "id": "exercise.submit_draft.positive",
+  "kind": "positive",
+  "tool_name": "exercise.submit_draft",
+  "input": {
+    "pack_revision_id": "x",
+    "primitive_id": "x",
+    "blueprint_version": 1,
+    "stimulus": [],
+    "response_contract": "x",
+    "target_bindings": [],
+    "accepted_answers_or_rubric": [],
+    "hints": [],
+    "difficulty_profile": "x",
+    "provenance_inputs": []
+  },
+  "output": {
+    "draft_id": "x",
+    "revision": 1,
+    "findings": [],
+    "resolved_references": [],
+    "checksum": "x",
+    "status": "published"
+  }
+}

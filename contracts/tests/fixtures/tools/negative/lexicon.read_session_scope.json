@@ -1,0 +1,23 @@
+{
+  "id": "lexicon.read_session_scope.negative",
+  "kind": "negative",
+  "tool_name": "lexicon.read_session_scope",
+  "input": {
+    "profile_id": "x",
+    "planning_snapshot_id": "x",
+    "roles": [],
+    "target_refs": [],
+    "list_snapshot_ids": [],
+    "max_senses": [],
+    "unexpected_field": true
+  },
+  "output": {
+    "senses": [],
+    "forms": [],
+    "session_roles": [],
+    "familiarity": "x",
+    "constraints": [],
+    "provenance": "x"
+  },
+  "expected_error": "additional property"
+}

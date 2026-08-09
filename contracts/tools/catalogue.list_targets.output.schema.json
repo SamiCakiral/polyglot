@@ -8,7 +8,18 @@
     "next_cursor"
   ],
   "properties": {
-    "targets": {},
-    "next_cursor": {}
+    "targets": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "next_cursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

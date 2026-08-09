@@ -11,10 +11,36 @@
     "checksum"
   ],
   "properties": {
-    "day_draft": {},
-    "reference_plans": {},
-    "budget_validation": {},
-    "observable_targets": {},
-    "checksum": {}
+    "day_draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "reference_plans": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "budget_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "observable_targets": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "checksum": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

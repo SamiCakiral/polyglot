@@ -11,10 +11,34 @@
     "review_required"
   ],
   "properties": {
-    "correction_draft": {},
-    "criterion_coverage": {},
-    "candidate_observations": {},
-    "conflicts": {},
-    "review_required": {}
+    "correction_draft": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "criterion_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "candidate_observations": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "review_required": {
+      "type": "boolean"
+    }
   }
 }

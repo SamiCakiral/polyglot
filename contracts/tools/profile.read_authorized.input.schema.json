@@ -9,8 +9,34 @@
     "field_groups"
   ],
   "properties": {
-    "profile_id": {},
-    "purpose": {},
-    "field_groups": {}
+    "profile_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "session_authoring",
+        "correction_review",
+        "recommendation_explanation"
+      ],
+      "maxLength": 32
+    },
+    "field_groups": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "enum": [
+          "goals",
+          "constraints",
+          "mastery_summary",
+          "due_summary",
+          "module_position"
+        ],
+        "maxLength": 32
+      }
+    }
   }
 }

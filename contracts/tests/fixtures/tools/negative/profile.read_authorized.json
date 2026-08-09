@@ -1,0 +1,22 @@
+{
+  "id": "profile.read_authorized.negative",
+  "kind": "negative",
+  "tool_name": "profile.read_authorized",
+  "input": {
+    "profile_id": "x",
+    "purpose": "session_authoring",
+    "field_groups": [],
+    "unexpected_field": true
+  },
+  "output": {
+    "profile": {},
+    "varieties": [],
+    "goals": [],
+    "constraints": [],
+    "mastery_summary": {},
+    "due_summary": {},
+    "module_position": {},
+    "cutoff_at": "x"
+  },
+  "expected_error": "additional property"
+}

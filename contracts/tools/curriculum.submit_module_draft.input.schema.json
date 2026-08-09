@@ -16,15 +16,64 @@
     "provenance"
   ],
   "properties": {
-    "pack_revision_id": {},
-    "module": {},
-    "audience": {},
-    "objectives": {},
-    "prerequisites": {},
-    "exit_policy": {},
-    "day_draft_refs": {},
-    "length": {},
-    "context": {},
-    "provenance": {}
+    "pack_revision_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "module": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "audience": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "objectives": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "prerequisites": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "exit_policy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "day_draft_refs": {
+      "type": "array",
+      "maxItems": 31,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "length": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "context": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

@@ -14,13 +14,60 @@
     "fixtures"
   ],
   "properties": {
-    "stimulus_schema": {},
-    "response_schema": {},
-    "target_schema": {},
-    "correction_strategies": {},
-    "hints": {},
-    "observation_constraints": {},
-    "budgets": {},
-    "fixtures": {}
+    "stimulus_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "response_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "target_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "correction_strategies": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "hints": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 20000
+      }
+    },
+    "observation_constraints": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "budgets": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "fixtures": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    }
   }
 }

@@ -11,10 +11,36 @@
     "seed"
   ],
   "properties": {
-    "draft_revision_id": {},
-    "validator_profile_id": {},
-    "validator_revision_ids": {},
-    "requested_checks": {},
-    "seed": {}
+    "draft_revision_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "validator_profile_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "validator_revision_ids": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "requested_checks": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    }
   }
 }

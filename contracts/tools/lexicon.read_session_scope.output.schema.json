@@ -12,11 +12,47 @@
     "provenance"
   ],
   "properties": {
-    "senses": {},
-    "forms": {},
-    "session_roles": {},
-    "familiarity": {},
-    "constraints": {},
-    "provenance": {}
+    "senses": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "forms": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "session_roles": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "familiarity": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "constraints": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "provenance": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

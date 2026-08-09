@@ -12,11 +12,47 @@
     "disappearance_conditions"
   ],
   "properties": {
-    "reason": {},
-    "targets": {},
-    "authorized_facts": {},
-    "policy": {},
-    "alternatives": {},
-    "disappearance_conditions": {}
+    "reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "targets": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "authorized_facts": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "alternatives": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 20000
+      }
+    },
+    "disappearance_conditions": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    }
   }
 }

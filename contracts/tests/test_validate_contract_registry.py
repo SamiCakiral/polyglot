@@ -76,6 +76,18 @@ class ContractRegistryValidatorTest(unittest.TestCase):
             "events/envelope.schema.json": {"type": "object", "required": ["event_id", "event_type", "schema_version"]},
             "events/event-catalogue.yaml": {"events": [{"event_type": "account_registered", "schema_version": 1}]},
             "tools/manifest.yaml": {
+                "common_limits": {
+                    "max_input_bytes": 262144,
+                    "max_output_bytes": 1048576,
+                    "max_free_text_characters": 20000,
+                },
+                "forbidden_effects": [
+                    "approve",
+                    "publish",
+                    "retire",
+                    "award_mastery",
+                    "modify_fsrs_schedule",
+                ],
                 "tools": [
                     {
                         "tool_name": "profile.read_authorized",

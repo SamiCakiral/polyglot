@@ -1,0 +1,26 @@
+{
+  "id": "curriculum.submit_day_draft.positive",
+  "kind": "positive",
+  "tool_name": "curriculum.submit_day_draft",
+  "input": {
+    "module_draft_id": "x",
+    "ordinal": 1,
+    "arc": "x",
+    "context": "x",
+    "objectives": [],
+    "novelty": "x",
+    "reviews": [],
+    "next_day_needs": [],
+    "lists": [],
+    "compositions": [],
+    "provenance": "x",
+    "expected_version": 1
+  },
+  "output": {
+    "day_draft": {},
+    "reference_plans": [],
+    "budget_validation": {},
+    "observable_targets": [],
+    "checksum": "x"
+  }
+}

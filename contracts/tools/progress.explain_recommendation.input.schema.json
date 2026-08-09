@@ -10,9 +10,29 @@
     "detail_level"
   ],
   "properties": {
-    "profile_id": {},
-    "recommendation_id": {},
-    "as_of_projection_version": {},
-    "detail_level": {}
+    "profile_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "recommendation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "as_of_projection_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "detail_level": {
+      "type": "string",
+      "enum": [
+        "summary",
+        "evidence",
+        "policy"
+      ],
+      "maxLength": 16
+    }
   }
 }

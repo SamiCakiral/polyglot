@@ -16,16 +16,75 @@
     "provenance_inputs"
   ],
   "properties": {
-    "reserved_draft_id": {},
-    "pack_revision_id": {},
-    "primitive_id": {},
-    "blueprint_version": {},
-    "stimulus": {},
-    "response_contract": {},
-    "target_bindings": {},
-    "accepted_answers_or_rubric": {},
-    "hints": {},
-    "difficulty_profile": {},
-    "provenance_inputs": {}
+    "reserved_draft_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "pack_revision_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "primitive_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "blueprint_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "stimulus": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "response_contract": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "target_bindings": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "accepted_answers_or_rubric": {
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "string",
+        "maxLength": 20000
+      }
+    },
+    "hints": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 20000
+      }
+    },
+    "difficulty_profile": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "provenance_inputs": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    }
   }
 }

@@ -1,0 +1,28 @@
+{
+  "id": "correction.submit_structured_draft.negative",
+  "kind": "negative",
+  "tool_name": "correction.submit_structured_draft",
+  "input": {
+    "attempt_id": "x",
+    "attempt_version": 1,
+    "strategy": "x",
+    "verdict": "x",
+    "criterion_scores": [],
+    "error_codes": [],
+    "proposed_answer": "x",
+    "alternatives": [],
+    "explanation_codes": [],
+    "confidence": 0.5,
+    "target_observations": [],
+    "provenance": "x",
+    "unexpected_field": true
+  },
+  "output": {
+    "correction_draft": {},
+    "criterion_coverage": {},
+    "candidate_observations": [],
+    "conflicts": [],
+    "review_required": false
+  },
+  "expected_error": "additional property"
+}

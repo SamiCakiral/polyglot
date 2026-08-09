@@ -11,10 +11,33 @@
     "accessibility_capabilities"
   ],
   "properties": {
-    "primitive_id": {},
-    "primitive_contract_version": {},
-    "language_pack_revision_id": {},
-    "mode": {},
-    "accessibility_capabilities": {}
+    "primitive_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "primitive_contract_version": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "language_pack_revision_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "mode": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "accessibility_capabilities": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    }
   }
 }

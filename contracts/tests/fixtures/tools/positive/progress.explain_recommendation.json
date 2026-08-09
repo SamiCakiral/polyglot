@@ -1,0 +1,19 @@
+{
+  "id": "progress.explain_recommendation.positive",
+  "kind": "positive",
+  "tool_name": "progress.explain_recommendation",
+  "input": {
+    "profile_id": "x",
+    "recommendation_id": "x",
+    "as_of_projection_version": 1,
+    "detail_level": "summary"
+  },
+  "output": {
+    "reason": {},
+    "targets": [],
+    "authorized_facts": [],
+    "policy": {},
+    "alternatives": [],
+    "disappearance_conditions": []
+  }
+}

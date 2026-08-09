@@ -1,0 +1,26 @@
+{
+  "id": "curriculum.submit_module_draft.negative",
+  "kind": "negative",
+  "tool_name": "curriculum.submit_module_draft",
+  "input": {
+    "pack_revision_id": "x",
+    "module": "x",
+    "audience": "x",
+    "objectives": [],
+    "prerequisites": [],
+    "exit_policy": "x",
+    "day_draft_refs": [],
+    "length": "x",
+    "context": "x",
+    "provenance": "x",
+    "unexpected_field": true
+  },
+  "output": {
+    "module_draft": {},
+    "resolved_graph": {},
+    "total_load": {},
+    "findings": [],
+    "checksum": "x"
+  },
+  "expected_error": "additional property"
+}

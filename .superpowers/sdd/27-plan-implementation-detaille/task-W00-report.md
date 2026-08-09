@@ -46,3 +46,38 @@ tools missing limits.
 - OpenAPI generation and application/runtime validation are deferred to W01.
 - W19C cloud delivery, the always-on tutor, and provider-backed STT remain
   deferred by approved decision.
+
+## Fix Round 1
+
+### Status
+
+Review findings addressed; post-commit clean-status verification remains part
+of the final completion check.
+
+### RED evidence
+
+- `contracts/tests/test_w00_contract_delivery.py` first failed five cases:
+  unknown command/tool errors and an incomplete canonical tool set were
+  accepted; fixture execution and repeatable scans were absent.
+- The subsequent common-limits test failed because the validator accepted a
+  manifest with `common_limits` removed.
+
+### GREEN evidence
+
+- The error registry now contains 116 canonical errors from documents 25 and
+  30. Command and tool error references are rejected unless registered.
+- Canonical snapshots protect the exact public command, query, error, and tool
+  sets.
+- All 22 tool schemas are concrete, closed JSON schemas. Catalogue filters
+  remain optional; `pack_revision_id` is required and `limit` is bounded at
+  200.
+- `python3 contracts/tests/test_validate_contract_registry.py`: 4 passed.
+- `python3 contracts/tests/test_w00_contract_delivery.py`: 6 passed.
+- The registry command executed 22 tool fixtures and completed both the
+  documentation-link and V1/private-artifact scans.
+
+### Remaining concerns
+
+- The W00 schema evaluator intentionally implements only the JSON Schema
+  keywords used by these shipped contracts; W01 may adopt a fuller validator
+  with its runtime dependency set.

@@ -11,10 +11,32 @@
     "existing_report_id"
   ],
   "properties": {
-    "report_id": {},
-    "deduplication_fingerprint": {},
-    "visibility": {},
-    "status": {},
-    "existing_report_id": {}
+    "report_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "deduplication_fingerprint": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "visibility": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published"
+      ],
+      "maxLength": 16
+    },
+    "existing_report_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

@@ -1,0 +1,14 @@
+{
+  "id": "catalogue.list_targets.negative",
+  "kind": "negative",
+  "tool_name": "catalogue.list_targets",
+  "input": {
+    "pack_revision_id": "x",
+    "unexpected_field": true
+  },
+  "output": {
+    "targets": [],
+    "next_cursor": "x"
+  },
+  "expected_error": "additional property"
+}

@@ -14,13 +14,54 @@
     "cutoff_at"
   ],
   "properties": {
-    "profile": {},
-    "varieties": {},
-    "goals": {},
-    "constraints": {},
-    "mastery_summary": {},
-    "due_summary": {},
-    "module_position": {},
-    "cutoff_at": {}
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "varieties": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "goals": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "constraints": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "string",
+        "maxLength": 128
+      }
+    },
+    "mastery_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "due_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "module_position": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {}
+    },
+    "cutoff_at": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
+    }
   }
 }

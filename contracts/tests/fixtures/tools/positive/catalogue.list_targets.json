@@ -1,0 +1,12 @@
+{
+  "id": "catalogue.list_targets.positive",
+  "kind": "positive",
+  "tool_name": "catalogue.list_targets",
+  "input": {
+    "pack_revision_id": "x"
+  },
+  "output": {
+    "targets": [],
+    "next_cursor": "x"
+  }
+}
