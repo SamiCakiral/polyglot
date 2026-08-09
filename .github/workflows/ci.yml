@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, codex/v2-rebuild]
+
+permissions:
+  contents: read
+
+jobs:
+  registry-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.11"
+      - name: Validate canonical W00 registries
+        run: python3 scripts/validate_contract_registry.py contracts/registry contracts/tests
+      - name: Execute W00 validator tests
+        run: python3 -m unittest discover -s contracts/tests -p 'test_*.py'
+
+  backend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.18"
+          enable-cache: true
+      - name: Install locked backend
+        working-directory: backend
+        run: uv sync --locked
+      - name: Ruff
+        working-directory: backend
+        run: uv run ruff check src tests
+      - name: Mypy
+        working-directory: backend
+        run: uv run mypy src
+      - name: Unit and property tests
+        working-directory: backend
+        run: uv run pytest tests/unit tests/property -q
+
+  postgres-platform:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: polyglot
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_USER: polyglot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U polyglot -d polyglot"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      POLYGLOT_DATABASE_URL: postgresql+asyncpg://polyglot:ci-only@127.0.0.1:5432/polyglot
+      POLYGLOT_TEST_DATABASE_URL: postgresql+asyncpg://polyglot:ci-only@127.0.0.1:5432/polyglot
+      POLYGLOT_POSTGRES_PASSWORD: ci-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.9.18"
+          enable-cache: true
+      - name: Install locked backend
+        working-directory: backend
+        run: uv sync --locked
+      - name: Upgrade empty database
+        working-directory: backend
+        run: uv run alembic upgrade head
+      - name: Verify one head and no metadata drift
+        working-directory: backend
+        run: |
+          test "$(uv run alembic heads | grep -c '(head)')" -eq 1
+          uv run alembic check
+      - name: Integration and contract tests
+        working-directory: backend
+        run: uv run pytest tests/integration tests/contract -q
+      - name: Verify deterministic OpenAPI
+        working-directory: backend
+        run: >-
+          uv run python -m polyglot.interfaces.http.export_openapi
+          --check ../contracts/openapi/v1.json
