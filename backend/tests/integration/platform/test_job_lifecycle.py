@@ -127,7 +127,8 @@ async def test_retryable_failure_waits_then_appends_a_new_terminal_attempt(
     )
     await session.commit()
 
-    assert await session.scalar(select(jobs.c.status).where(jobs.c.job_id == job_id)) == "retry_wait"
+    job_status = await session.scalar(select(jobs.c.status).where(jobs.c.job_id == job_id))
+    assert job_status == "retry_wait"
     assert await store.claim(
         job_id=job_id,
         worker_id="worker-b",

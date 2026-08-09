@@ -68,11 +68,18 @@ domain_events = Table(
     Column("privacy_class", String(24), nullable=False),
     Column("policy_versions", JSONB, nullable=False, server_default=text("'{}'::jsonb")),
     Column("payload", JSONB, nullable=False),
+    Column("expires_at", DateTime(timezone=True)),
     CheckConstraint("schema_version >= 1", name="ck_domain_event_schema_version"),
     CheckConstraint("aggregate_version >= 1", name="ck_domain_event_aggregate_version"),
     CheckConstraint(
         "privacy_class IN ('public', 'internal', 'personal', 'sensitive', 'secret')",
         name="ck_domain_event_privacy_class",
+    ),
+    CheckConstraint("privacy_class <> 'secret'", name="ck_domain_event_no_secret"),
+    CheckConstraint(
+        "privacy_class NOT IN ('personal', 'sensitive') "
+        "OR (profile_id IS NOT NULL AND expires_at IS NOT NULL)",
+        name="ck_domain_event_private_retention",
     ),
     UniqueConstraint(
         "aggregate_type",
@@ -83,6 +90,7 @@ domain_events = Table(
 )
 Index("ix_domain_events_recorded_at", domain_events.c.recorded_at, domain_events.c.event_id)
 Index("ix_domain_events_correlation_id", domain_events.c.correlation_id)
+Index("ix_domain_events_expires_at", domain_events.c.expires_at)
 
 outbox_messages = Table(
     "outbox_messages",
@@ -150,6 +158,7 @@ jobs = Table(
     Column("started_at", DateTime(timezone=True)),
     Column("finished_at", DateTime(timezone=True)),
     Column("cancel_requested_at", DateTime(timezone=True)),
+    Column("retry_not_before_at", DateTime(timezone=True)),
     Column("progress_completed", BigInteger, nullable=False, server_default="0"),
     Column("progress_total", BigInteger, nullable=False, server_default="0"),
     Column("result_ref", UUID(as_uuid=True)),
@@ -174,6 +183,25 @@ jobs = Table(
     ),
 )
 Index("ix_jobs_profile_status", jobs.c.profile_id, jobs.c.status)
+Index("ix_jobs_retry_not_before_at", jobs.c.retry_not_before_at)
+
+job_claims = Table(
+    "job_claims",
+    metadata,
+    Column(
+        "job_id",
+        UUID(as_uuid=True),
+        ForeignKey("platform.jobs.job_id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("attempt_no", Integer, nullable=False),
+    Column("worker_id", String(120), nullable=False),
+    Column("lease_token", UUID(as_uuid=True), nullable=False, unique=True),
+    Column("lease_expires_at", DateTime(timezone=True), nullable=False),
+    Column("started_at", DateTime(timezone=True), nullable=False),
+    CheckConstraint("attempt_no >= 1", name="ck_job_claim_attempt_number"),
+)
+Index("ix_job_claims_lease_expires_at", job_claims.c.lease_expires_at)
 
 job_attempts = Table(
     "job_attempts",
@@ -187,10 +215,9 @@ job_attempts = Table(
     ),
     Column("attempt_no", Integer, nullable=False),
     Column("status", String(32), nullable=False),
-    Column("lease_owner", String(120)),
-    Column("lease_expires_at", DateTime(timezone=True)),
+    Column("worker_id", String(120), nullable=False),
     Column("started_at", DateTime(timezone=True), nullable=False),
-    Column("finished_at", DateTime(timezone=True)),
+    Column("finished_at", DateTime(timezone=True), nullable=False),
     Column("retry_not_before_at", DateTime(timezone=True)),
     Column("provider_code", String(120)),
     Column("operation_code", String(120)),
@@ -198,12 +225,12 @@ job_attempts = Table(
     Column("retryable", Boolean, nullable=False, server_default=text("false")),
     CheckConstraint("attempt_no >= 1", name="ck_job_attempt_number"),
     CheckConstraint(
-        "status IN ('running', 'succeeded', 'retryable_failed', 'failed', 'cancelled')",
+        "status IN ('succeeded', 'retryable_failed', 'failed', 'cancelled')",
         name="ck_job_attempt_status",
     ),
     UniqueConstraint("job_id", "attempt_no", name="uq_job_attempt_number"),
 )
-Index("ix_job_attempts_lease_expires_at", job_attempts.c.lease_expires_at)
+Index("ix_job_attempts_finished_at", job_attempts.c.finished_at)
 
 provenance_records = Table(
     "provenance_records",
@@ -303,3 +330,10 @@ deletion_tombstones = Table(
     CheckConstraint("length(subject_fingerprint) = 64", name="ck_tombstone_fingerprint"),
 )
 Index("ix_deletion_tombstones_expires_at", deletion_tombstones.c.expires_at)
+
+retention_purge_authorizations = Table(
+    "retention_purge_authorizations",
+    metadata,
+    Column("transaction_id", BigInteger, primary_key=True),
+    Column("cutoff", DateTime(timezone=True), nullable=False),
+)

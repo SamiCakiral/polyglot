@@ -17,7 +17,10 @@ async def test_controlled_retention_purges_only_expired_append_only_rows_and_aud
 ) -> None:
     from polyglot.platform.persistence.models import domain_events, security_audit_entries
     from polyglot.platform.persistence.records import DomainEvent
-    from polyglot.platform.persistence.repositories import SqlEventOutboxRepository, SqlRetentionStore
+    from polyglot.platform.persistence.repositories import (
+        SqlEventOutboxRepository,
+        SqlRetentionStore,
+    )
 
     now = datetime.now(UTC)
     expired_event = DomainEvent(

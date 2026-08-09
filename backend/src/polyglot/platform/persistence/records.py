@@ -46,6 +46,7 @@ class DomainEvent:
     privacy_class: str
     policy_versions: dict[str, JsonValue]
     payload: dict[str, JsonValue]
+    expires_at: datetime | None = None
 
     def to_envelope(self) -> dict[str, JsonValue]:
         envelope: dict[str, JsonValue] = {
@@ -90,3 +91,20 @@ class OutboxClaim:
     attempt_count: int
     lease_owner: str
     lease_expires_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class JobClaim:
+    job_id: UUID
+    attempt_no: int
+    worker_id: str
+    lease_token: UUID
+    lease_expires_at: datetime
+    started_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class RetentionPurgeResult:
+    audit_id: UUID
+    domain_event_count: int
+    security_audit_count: int

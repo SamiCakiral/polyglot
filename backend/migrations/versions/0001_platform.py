@@ -55,10 +55,16 @@ CREATE TABLE platform.domain_events (
     privacy_class varchar(24) NOT NULL,
     policy_versions jsonb NOT NULL DEFAULT '{}'::jsonb,
     payload jsonb NOT NULL,
+    expires_at timestamptz,
     CONSTRAINT ck_domain_event_schema_version CHECK (schema_version >= 1),
     CONSTRAINT ck_domain_event_aggregate_version CHECK (aggregate_version >= 1),
     CONSTRAINT ck_domain_event_privacy_class
         CHECK (privacy_class IN ('public', 'internal', 'personal', 'sensitive', 'secret')),
+    CONSTRAINT ck_domain_event_no_secret CHECK (privacy_class <> 'secret'),
+    CONSTRAINT ck_domain_event_private_retention CHECK (
+        privacy_class NOT IN ('personal', 'sensitive')
+        OR (profile_id IS NOT NULL AND expires_at IS NOT NULL)
+    ),
     CONSTRAINT uq_domain_event_aggregate_version
         UNIQUE (aggregate_type, aggregate_id, aggregate_version)
 );
@@ -66,6 +72,8 @@ CREATE INDEX ix_domain_events_recorded_at
     ON platform.domain_events (recorded_at, event_id);
 CREATE INDEX ix_domain_events_correlation_id
     ON platform.domain_events (correlation_id);
+CREATE INDEX ix_domain_events_expires_at
+    ON platform.domain_events (expires_at);
 
 CREATE TABLE platform.outbox_messages (
     outbox_id uuid PRIMARY KEY,
@@ -118,6 +126,7 @@ CREATE TABLE platform.jobs (
     started_at timestamptz,
     finished_at timestamptz,
     cancel_requested_at timestamptz,
+    retry_not_before_at timestamptz,
     progress_completed bigint NOT NULL DEFAULT 0,
     progress_total bigint NOT NULL DEFAULT 0,
     result_ref uuid,
@@ -137,16 +146,27 @@ CREATE TABLE platform.jobs (
         UNIQUE (requested_by_actor_id, job_type, idempotency_key)
 );
 CREATE INDEX ix_jobs_profile_status ON platform.jobs (profile_id, status);
+CREATE INDEX ix_jobs_retry_not_before_at ON platform.jobs (retry_not_before_at);
+
+CREATE TABLE platform.job_claims (
+    job_id uuid PRIMARY KEY REFERENCES platform.jobs(job_id) ON DELETE CASCADE,
+    attempt_no integer NOT NULL,
+    worker_id varchar(120) NOT NULL,
+    lease_token uuid NOT NULL UNIQUE,
+    lease_expires_at timestamptz NOT NULL,
+    started_at timestamptz NOT NULL,
+    CONSTRAINT ck_job_claim_attempt_number CHECK (attempt_no >= 1)
+);
+CREATE INDEX ix_job_claims_lease_expires_at ON platform.job_claims (lease_expires_at);
 
 CREATE TABLE platform.job_attempts (
     job_attempt_id uuid PRIMARY KEY,
     job_id uuid NOT NULL REFERENCES platform.jobs(job_id) ON DELETE RESTRICT,
     attempt_no integer NOT NULL,
     status varchar(32) NOT NULL,
-    lease_owner varchar(120),
-    lease_expires_at timestamptz,
+    worker_id varchar(120) NOT NULL,
     started_at timestamptz NOT NULL,
-    finished_at timestamptz,
+    finished_at timestamptz NOT NULL,
     retry_not_before_at timestamptz,
     provider_code varchar(120),
     operation_code varchar(120),
@@ -154,10 +174,10 @@ CREATE TABLE platform.job_attempts (
     retryable boolean NOT NULL DEFAULT false,
     CONSTRAINT ck_job_attempt_number CHECK (attempt_no >= 1),
     CONSTRAINT ck_job_attempt_status
-        CHECK (status IN ('running', 'succeeded', 'retryable_failed', 'failed', 'cancelled')),
+        CHECK (status IN ('succeeded', 'retryable_failed', 'failed', 'cancelled')),
     CONSTRAINT uq_job_attempt_number UNIQUE (job_id, attempt_no)
 );
-CREATE INDEX ix_job_attempts_lease_expires_at ON platform.job_attempts (lease_expires_at);
+CREATE INDEX ix_job_attempts_finished_at ON platform.job_attempts (finished_at);
 
 CREATE TABLE platform.provenance_records (
     provenance_id uuid PRIMARY KEY,
@@ -244,6 +264,12 @@ CREATE TABLE platform.deletion_tombstones (
 CREATE INDEX ix_deletion_tombstones_expires_at
     ON platform.deletion_tombstones (expires_at);
 
+CREATE TABLE platform.retention_purge_authorizations (
+    transaction_id bigint PRIMARY KEY,
+    cutoff timestamptz NOT NULL
+);
+REVOKE ALL ON platform.retention_purge_authorizations FROM PUBLIC;
+
 CREATE FUNCTION platform.reject_append_only_mutation() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -251,9 +277,25 @@ BEGIN
 END;
 $$;
 
+CREATE FUNCTION platform.guard_retained_append_only_mutation() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_OP = 'DELETE' AND EXISTS (
+        SELECT 1
+        FROM platform.retention_purge_authorizations
+        WHERE transaction_id = txid_current()
+          AND OLD.expires_at IS NOT NULL
+          AND OLD.expires_at <= cutoff
+    ) THEN
+        RETURN OLD;
+    END IF;
+    RAISE EXCEPTION '% is append-only', TG_TABLE_NAME USING ERRCODE = '55000';
+END;
+$$;
+
 CREATE TRIGGER domain_events_append_only
 BEFORE UPDATE OR DELETE ON platform.domain_events
-FOR EACH ROW EXECUTE FUNCTION platform.reject_append_only_mutation();
+FOR EACH ROW EXECUTE FUNCTION platform.guard_retained_append_only_mutation();
 
 CREATE TRIGGER job_attempts_append_only
 BEFORE UPDATE OR DELETE ON platform.job_attempts
@@ -261,7 +303,60 @@ FOR EACH ROW EXECUTE FUNCTION platform.reject_append_only_mutation();
 
 CREATE TRIGGER security_audit_entries_append_only
 BEFORE UPDATE OR DELETE ON platform.security_audit_entries
-FOR EACH ROW EXECUTE FUNCTION platform.reject_append_only_mutation();
+FOR EACH ROW EXECUTE FUNCTION platform.guard_retained_append_only_mutation();
+
+CREATE FUNCTION platform.purge_expired_append_only(
+    p_cutoff timestamptz,
+    p_audit_id uuid,
+    p_actor_pseudonym varchar,
+    p_reason_code varchar,
+    p_request_id uuid,
+    p_correlation_id uuid
+) RETURNS TABLE (domain_event_count bigint, security_audit_count bigint)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = platform, pg_temp
+AS $$
+DECLARE
+    deleted_events bigint;
+    deleted_audits bigint;
+BEGIN
+    INSERT INTO platform.retention_purge_authorizations(transaction_id, cutoff)
+    VALUES (txid_current(), p_cutoff);
+
+    DELETE FROM platform.outbox_messages AS outbox
+    USING platform.domain_events AS event
+    WHERE outbox.event_id = event.event_id
+      AND event.expires_at IS NOT NULL
+      AND event.expires_at <= p_cutoff;
+
+    DELETE FROM platform.domain_events
+    WHERE expires_at IS NOT NULL AND expires_at <= p_cutoff;
+    GET DIAGNOSTICS deleted_events = ROW_COUNT;
+
+    DELETE FROM platform.security_audit_entries
+    WHERE expires_at <= p_cutoff;
+    GET DIAGNOSTICS deleted_audits = ROW_COUNT;
+
+    DELETE FROM platform.retention_purge_authorizations
+    WHERE transaction_id = txid_current();
+
+    INSERT INTO platform.security_audit_entries (
+        audit_id, actor_pseudonym, action_code, resource_type, resource_id,
+        result, reason_code, occurred_at, request_id, correlation_id,
+        session_fingerprint, truncated_ip, expires_at
+    ) VALUES (
+        p_audit_id, p_actor_pseudonym, 'retention.purge', 'retention_batch', p_audit_id,
+        'succeeded', p_reason_code, clock_timestamp(), p_request_id, p_correlation_id,
+        repeat('0', 64), 'system', clock_timestamp() + interval '180 days'
+    );
+
+    RETURN QUERY SELECT deleted_events, deleted_audits;
+END;
+$$;
+REVOKE ALL ON FUNCTION platform.purge_expired_append_only(
+    timestamptz, uuid, varchar, varchar, uuid, uuid
+) FROM PUBLIC;
 """
 
 

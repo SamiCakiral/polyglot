@@ -2,8 +2,9 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, func, select, text
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -12,6 +13,9 @@ from polyglot.platform.persistence.models import (
     command_receipts,
     domain_events,
     inbox_receipts,
+    job_attempts,
+    job_claims,
+    jobs,
     outbox_messages,
 )
 from polyglot.platform.persistence.records import (
@@ -19,7 +23,9 @@ from polyglot.platform.persistence.records import (
     CommandReservation,
     DomainEvent,
     InboxReceipt,
+    JobClaim,
     OutboxClaim,
+    RetentionPurgeResult,
 )
 
 
@@ -100,6 +106,260 @@ class SqlInboxRepository:
             .returning(inbox_receipts.c.event_id)
         )
         return await self._session.scalar(statement) is not None
+
+
+class SqlJobStore:
+    def __init__(
+        self,
+        session: AsyncSession,
+        id_generator: IdGenerator | None = None,
+    ) -> None:
+        self._session = session
+        self._id_generator = id_generator or Uuid7Generator()
+
+    async def claim(
+        self,
+        *,
+        job_id: UUID,
+        worker_id: str,
+        now: datetime,
+        lease_for: timedelta,
+    ) -> JobClaim | None:
+        job = (
+            await self._session.execute(
+                select(jobs).where(jobs.c.job_id == job_id).with_for_update()
+            )
+        ).mappings().one_or_none()
+        if job is None or job["status"] not in {"queued", "running", "retry_wait"}:
+            return None
+        if job["status"] == "retry_wait" and job["retry_not_before_at"] > now:
+            return None
+
+        existing = (
+            await self._session.execute(
+                select(job_claims).where(job_claims.c.job_id == job_id)
+            )
+        ).mappings().one_or_none()
+        if existing is not None and existing["lease_expires_at"] > now:
+            return None
+
+        if existing is None:
+            last_attempt = await self._session.scalar(
+                select(func.max(job_attempts.c.attempt_no)).where(job_attempts.c.job_id == job_id)
+            )
+            attempt_no = (last_attempt or 0) + 1
+            started_at = now
+        else:
+            attempt_no = existing["attempt_no"]
+            started_at = existing["started_at"]
+
+        lease_token = self._id_generator.new()
+        lease_expires_at = now + lease_for
+        statement = postgresql_insert(job_claims).values(
+            job_id=job_id,
+            attempt_no=attempt_no,
+            worker_id=worker_id,
+            lease_token=lease_token,
+            lease_expires_at=lease_expires_at,
+            started_at=started_at,
+        )
+        await self._session.execute(
+            statement.on_conflict_do_update(
+                index_elements=("job_id",),
+                set_={
+                    "worker_id": worker_id,
+                    "lease_token": lease_token,
+                    "lease_expires_at": lease_expires_at,
+                },
+            )
+        )
+        await self._session.execute(
+            jobs.update()
+            .where(jobs.c.job_id == job_id)
+            .values(
+                status="running",
+                started_at=func.coalesce(jobs.c.started_at, started_at),
+                retry_not_before_at=None,
+                version=jobs.c.version + 1,
+            )
+        )
+        return JobClaim(
+            job_id=job_id,
+            attempt_no=attempt_no,
+            worker_id=worker_id,
+            lease_token=lease_token,
+            lease_expires_at=lease_expires_at,
+            started_at=started_at,
+        )
+
+    async def renew(
+        self,
+        *,
+        claim: JobClaim,
+        now: datetime,
+        lease_for: timedelta,
+    ) -> bool:
+        renewed = await self._session.scalar(
+            job_claims.update()
+            .where(
+                job_claims.c.job_id == claim.job_id,
+                job_claims.c.worker_id == claim.worker_id,
+                job_claims.c.lease_token == claim.lease_token,
+                job_claims.c.lease_expires_at > now,
+            )
+            .values(lease_expires_at=now + lease_for)
+            .returning(job_claims.c.job_id)
+        )
+        return renewed is not None
+
+    async def succeed(
+        self,
+        *,
+        claim: JobClaim,
+        finished_at: datetime,
+        result_ref: UUID,
+    ) -> bool:
+        active = await self._consume_claim(claim=claim, finished_at=finished_at)
+        if active is None:
+            return False
+        await self._append_attempt(
+            active=active,
+            status="succeeded",
+            finished_at=finished_at,
+            error_code=None,
+            retry_not_before_at=None,
+            retryable=False,
+        )
+        await self._session.execute(
+            jobs.update()
+            .where(jobs.c.job_id == claim.job_id)
+            .values(
+                status="succeeded",
+                finished_at=finished_at,
+                result_ref=result_ref,
+                error_code=None,
+                version=jobs.c.version + 1,
+            )
+        )
+        return True
+
+    async def fail(
+        self,
+        *,
+        claim: JobClaim,
+        finished_at: datetime,
+        error_code: str,
+        retry_not_before_at: datetime | None,
+    ) -> bool:
+        active = await self._consume_claim(claim=claim, finished_at=finished_at)
+        if active is None:
+            return False
+        retryable = retry_not_before_at is not None
+        await self._append_attempt(
+            active=active,
+            status="retryable_failed" if retryable else "failed",
+            finished_at=finished_at,
+            error_code=error_code,
+            retry_not_before_at=retry_not_before_at,
+            retryable=retryable,
+        )
+        await self._session.execute(
+            jobs.update()
+            .where(jobs.c.job_id == claim.job_id)
+            .values(
+                status="retry_wait" if retryable else "failed",
+                finished_at=None if retryable else finished_at,
+                retry_not_before_at=retry_not_before_at,
+                error_code=error_code,
+                version=jobs.c.version + 1,
+            )
+        )
+        return True
+
+    async def _consume_claim(
+        self,
+        *,
+        claim: JobClaim,
+        finished_at: datetime,
+    ) -> RowMapping | None:
+        return (
+            await self._session.execute(
+                job_claims.delete()
+                .where(
+                    job_claims.c.job_id == claim.job_id,
+                    job_claims.c.worker_id == claim.worker_id,
+                    job_claims.c.lease_token == claim.lease_token,
+                    job_claims.c.lease_expires_at > finished_at,
+                )
+                .returning(*job_claims.c)
+            )
+        ).mappings().one_or_none()
+
+    async def _append_attempt(
+        self,
+        *,
+        active: RowMapping,
+        status: str,
+        finished_at: datetime,
+        error_code: str | None,
+        retry_not_before_at: datetime | None,
+        retryable: bool,
+    ) -> None:
+        await self._session.execute(
+            job_attempts.insert().values(
+                job_attempt_id=self._id_generator.new(),
+                job_id=active["job_id"],
+                attempt_no=active["attempt_no"],
+                status=status,
+                worker_id=active["worker_id"],
+                started_at=active["started_at"],
+                finished_at=finished_at,
+                retry_not_before_at=retry_not_before_at,
+                provider_code=None,
+                operation_code=None,
+                error_code=error_code,
+                retryable=retryable,
+            )
+        )
+
+
+class SqlRetentionStore:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def purge_expired(
+        self,
+        *,
+        cutoff: datetime,
+        audit_id: UUID,
+        actor_pseudonym: str,
+        reason_code: str,
+        request_id: UUID,
+        correlation_id: UUID,
+    ) -> RetentionPurgeResult:
+        row = (
+            await self._session.execute(
+                text(
+                    "SELECT domain_event_count, security_audit_count "
+                    "FROM platform.purge_expired_append_only("
+                    ":cutoff, :audit_id, :actor_pseudonym, :reason_code, "
+                    ":request_id, :correlation_id)"
+                ),
+                {
+                    "cutoff": cutoff,
+                    "audit_id": audit_id,
+                    "actor_pseudonym": actor_pseudonym,
+                    "reason_code": reason_code,
+                    "request_id": request_id,
+                    "correlation_id": correlation_id,
+                },
+            )
+        ).mappings().one()
+        return RetentionPurgeResult(
+            audit_id=audit_id,
+            domain_event_count=row["domain_event_count"],
+            security_audit_count=row["security_audit_count"],
+        )
 
 
 class SqlOutboxRepository:
