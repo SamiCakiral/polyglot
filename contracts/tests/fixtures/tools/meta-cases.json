@@ -1,8 +1,152 @@
 [
-  {"case":"idempotency_conflict","tool_name":"exercise.submit_draft","expected_error":"idempotency_conflict","expected_output":{"status":"error","error":"idempotency_conflict"},"expected_effect":"none"},
-  {"case":"role_denial","tool_name":"exercise.submit_draft","expected_error":"tool_not_allowed","expected_output":{"status":"error","error":"tool_not_allowed"},"expected_effect":"none"},
-  {"case":"stale_reference","tool_name":"content.validate_draft","expected_error":"version_conflict","expected_output":{"status":"error","error":"version_conflict"},"expected_effect":"none"},
-  {"case":"size_limit","tool_name":"quality.report_ambiguity","expected_error":"size_limit_exceeded","expected_output":{"status":"error","error":"size_limit_exceeded"},"expected_effect":"none"},
-  {"case":"timeout","tool_name":"content.validate_draft","expected_error":"timeout","expected_output":{"status":"error","error":"timeout"},"expected_effect":"none"},
-  {"case":"forbidden_effect","tool_name":"exercise.submit_draft","expected_error":"tool_not_allowed","expected_output":{"status":"error","error":"tool_not_allowed"},"expected_effect":"none"}
+  {
+    "case": "idempotency_conflict",
+    "tool_name": "exercise.submit_draft",
+    "invocation_context": {
+      "actor_role": "author",
+      "idempotency_key": "idem-exercise-001",
+      "request_fingerprint": "sha256:request-new",
+      "stored_fingerprint": "sha256:request-old",
+      "expected_version": 7,
+      "current_version": 7,
+      "input_bytes": 1024,
+      "elapsed_seconds": 1,
+      "requested_effect": "create_draft"
+    },
+    "expected_error": "idempotency_conflict",
+    "expected_output": {
+      "status": "error",
+      "error": {
+        "code": "idempotency_conflict",
+        "retryable": false,
+        "details_codes": []
+      }
+    },
+    "expected_effects": []
+  },
+  {
+    "case": "role_denial",
+    "tool_name": "exercise.submit_draft",
+    "invocation_context": {
+      "actor_role": "learner",
+      "idempotency_key": "idem-exercise-002",
+      "request_fingerprint": "sha256:request-role",
+      "stored_fingerprint": "sha256:request-role",
+      "expected_version": 7,
+      "current_version": 7,
+      "input_bytes": 1024,
+      "elapsed_seconds": 1,
+      "requested_effect": "create_draft"
+    },
+    "expected_error": "tool_not_allowed",
+    "expected_output": {
+      "status": "error",
+      "error": {
+        "code": "tool_not_allowed",
+        "retryable": false,
+        "details_codes": []
+      }
+    },
+    "expected_effects": []
+  },
+  {
+    "case": "stale_reference",
+    "tool_name": "content.validate_draft",
+    "invocation_context": {
+      "actor_role": "author",
+      "idempotency_key": "idem-validation-001",
+      "request_fingerprint": "sha256:request-stale",
+      "stored_fingerprint": "sha256:request-stale",
+      "expected_version": 6,
+      "current_version": 7,
+      "input_bytes": 1024,
+      "elapsed_seconds": 1,
+      "requested_effect": "create_validation_report"
+    },
+    "expected_error": "version_conflict",
+    "expected_output": {
+      "status": "error",
+      "error": {
+        "code": "version_conflict",
+        "retryable": false,
+        "details_codes": []
+      }
+    },
+    "expected_effects": []
+  },
+  {
+    "case": "size_limit",
+    "tool_name": "quality.report_ambiguity",
+    "invocation_context": {
+      "actor_role": "author",
+      "idempotency_key": "idem-quality-001",
+      "request_fingerprint": "sha256:request-size",
+      "stored_fingerprint": "sha256:request-size",
+      "expected_version": 7,
+      "current_version": 7,
+      "input_bytes": 262145,
+      "elapsed_seconds": 1,
+      "requested_effect": "create_quality_report"
+    },
+    "expected_error": "size_limit_exceeded",
+    "expected_output": {
+      "status": "error",
+      "error": {
+        "code": "size_limit_exceeded",
+        "retryable": false,
+        "details_codes": []
+      }
+    },
+    "expected_effects": []
+  },
+  {
+    "case": "timeout",
+    "tool_name": "content.validate_draft",
+    "invocation_context": {
+      "actor_role": "author",
+      "idempotency_key": "idem-validation-002",
+      "request_fingerprint": "sha256:request-timeout",
+      "stored_fingerprint": "sha256:request-timeout",
+      "expected_version": 7,
+      "current_version": 7,
+      "input_bytes": 1024,
+      "elapsed_seconds": 31,
+      "requested_effect": "create_validation_report"
+    },
+    "expected_error": "timeout",
+    "expected_output": {
+      "status": "error",
+      "error": {
+        "code": "timeout",
+        "retryable": false,
+        "details_codes": []
+      }
+    },
+    "expected_effects": []
+  },
+  {
+    "case": "forbidden_effect",
+    "tool_name": "exercise.submit_draft",
+    "invocation_context": {
+      "actor_role": "author",
+      "idempotency_key": "idem-exercise-003",
+      "request_fingerprint": "sha256:request-effect",
+      "stored_fingerprint": "sha256:request-effect",
+      "expected_version": 7,
+      "current_version": 7,
+      "input_bytes": 1024,
+      "elapsed_seconds": 1,
+      "requested_effect": "publish"
+    },
+    "expected_error": "tool_not_allowed",
+    "expected_output": {
+      "status": "error",
+      "error": {
+        "code": "tool_not_allowed",
+        "retryable": false,
+        "details_codes": []
+      }
+    },
+    "expected_effects": []
+  }
 ]

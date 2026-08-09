@@ -97,3 +97,57 @@ of the final completion check.
 - The registry command validated 22 tool fixtures, six explicit meta-cases,
   docs links, and artifact boundaries. `exercise.submit_draft` accepts only
   `draft`; its `published` fixture is rejected.
+
+## Fix Round 3
+
+### Status
+
+COMPLETE for the requested contract-policy simulation and artifact boundary.
+
+### Prior hang diagnosis
+
+- The hang was not reproducible at `4bf9849`: the original four registry tests
+  completed in 0.191 s, and the ten delivery tests completed in 0.561 s with
+  one ordinary artifact-policy failure caused by the newly present W01 brief.
+- The concrete harness defect was that validator children and both Git scans
+  had no timeout, so any stalled child could leave the suite waiting forever.
+  Test children and Git scans now have 10 s bounds; all final commands also ran
+  inside 30 s or 40 s outer bounds. Timeout policy itself is simulated from
+  logical elapsed time and never sleeps.
+
+### RED evidence
+
+- After adding invocation contexts and executable assertions, the 17-test
+  delivery suite failed as expected: static meta-case checking could not emit
+  closed transcripts, ignored repaired contexts, and did not consult manifest
+  roles or timeout limits.
+- Exact artifact assertions exposed the previous false-positive test path:
+  failures now have to name the injected file under `contracts/`, `scripts/`,
+  or `docs/`, and ignored bytecode is rejected as an arbitrary artifact.
+
+### GREEN evidence
+
+- `contracts/tests/test_validate_contract_registry.py`: 4 passed in 0.212 s.
+- `contracts/tests/test_w00_contract_delivery.py`: 17 passed in 1.307 s.
+- The dependency-free simulator executed exactly six cases and emitted the
+  closed errors `idempotency_conflict`, `tool_not_allowed`,
+  `version_conflict`, `size_limit_exceeded`, `timeout`, and
+  `tool_not_allowed`. Every transcript recorded `effects=[]` and
+  `forbidden_effects=[]`.
+- Counterfactual tests repair each triggering context and require the case to
+  stop rejecting. Separate mutations prove that manifest roles, timeout limits,
+  and each tool's common-plus-specific error allowlist are consulted.
+- The full validator reported 22 tool fixtures, 6 policy cases,
+  `documentation links valid`, `artifact boundary valid`, and
+  `contract registry valid`.
+- Standalone documentation-link and artifact checks passed. `git diff --check`
+  passed. A pre-existing ignored validator bytecode cache was removed so the
+  strict artifact baseline is genuinely clean.
+
+### Remaining concerns
+
+- This is deliberately a pre-handler contract-policy simulator, not production
+  tool execution. Runtime handler/effect integration remains deferred.
+- The existing canonical error snapshot still omits the document-30 common
+  codes `scope_forbidden` and `reference_not_found`. They are outside this
+  round's write scope and are not emitted by its six required cases.

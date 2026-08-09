@@ -46,6 +46,7 @@ class ContractRegistryValidatorTest(unittest.TestCase):
                 capture_output=True,
                 text=True,
                 check=False,
+                timeout=10,
             )
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn(case["expected_error"], result.stdout)

@@ -24,6 +24,37 @@ SIDE_EFFECTS = {
     "create_correction_revision_draft",
     "create_quality_report",
 }
+SIMULATED_POLICY_ERRORS = {
+    "tool_not_allowed",
+    "version_conflict",
+    "idempotency_conflict",
+    "size_limit_exceeded",
+    "timeout",
+}
+POLICY_CASES = {
+    "idempotency_conflict",
+    "role_denial",
+    "stale_reference",
+    "size_limit",
+    "timeout",
+    "forbidden_effect",
+}
+POLICY_CONTEXT_FIELDS = {
+    "actor_role",
+    "idempotency_key",
+    "request_fingerprint",
+    "stored_fingerprint",
+    "expected_version",
+    "current_version",
+    "input_bytes",
+    "elapsed_seconds",
+    "requested_effect",
+}
+SDD_TASK_BOOKKEEPING = re.compile(
+    r"^\.superpowers/sdd/27-plan-implementation-detaille/"
+    r"task-W\d{2}-(?:brief|report|review|rereview-\d+)\.md$"
+)
+SUBPROCESS_TIMEOUT_SECONDS = 10
 
 
 def load(path: Path) -> object:
@@ -207,7 +238,8 @@ def validate_registry(registry: Path, tests: Path) -> tuple[Path, dict[str, obje
         "max_free_text_characters": 20000,
     }:
         raise ValueError("common tool limits mismatch")
-    if set(array(manifest.get("forbidden_effects"), "forbidden effects")) != {
+    forbidden_effects = set(array(manifest.get("forbidden_effects"), "forbidden effects"))
+    if forbidden_effects != {
         "approve",
         "publish",
         "retire",
@@ -218,20 +250,30 @@ def validate_registry(registry: Path, tests: Path) -> tuple[Path, dict[str, obje
     tools = array(manifest.get("tools"), "tools")
     tool_names = set()
     tool_schemas: dict[str, tuple[dict[str, object], dict[str, object]]] = {}
+    tool_policies: dict[str, dict[str, object]] = {}
     for tool in tools:
         item = obj(tool, "tool")
         name = item.get("tool_name")
         if not isinstance(name, str) or not TOOL_NAME.fullmatch(name) or name in tool_names:
             raise ValueError(f"invalid or duplicate tool: {name}")
         tool_names.add(name)
+        roles = string_set(item.get("roles"), f"tool role: {name}")
+        if not roles:
+            raise ValueError(f"tool roles missing: {name}")
         if item.get("side_effect") not in SIDE_EFFECTS:
             raise ValueError(f"invalid tool side effect: {name}")
         limits = item.get("limits")
         if not isinstance(limits, dict) or not limits:
             raise ValueError(f"tool limits missing: {name}")
+        for limit_name in ("max_input_bytes", "timeout_seconds"):
+            limit = limits.get(limit_name)
+            if not isinstance(limit, int) or isinstance(limit, bool) or limit <= 0:
+                raise ValueError(f"invalid tool limit: {name}.{limit_name}")
+        specific_errors = set()
         for error in array(item.get("errors", []), f"tool errors: {name}"):
             if error not in known_errors:
                 raise ValueError(f"unknown tool error: {name}.{error}")
+            specific_errors.add(error)
         schema_pair = []
         for key in ("input_schema", "output_schema"):
             filename = item.get(key)
@@ -241,6 +283,12 @@ def validate_registry(registry: Path, tests: Path) -> tuple[Path, dict[str, obje
             validate_schema_shape(schema, filename)
             schema_pair.append(schema)
         tool_schemas[name] = (schema_pair[0], schema_pair[1])
+        tool_policies[name] = {
+            "roles": roles,
+            "side_effect": item["side_effect"],
+            "limits": limits,
+            "allowed_errors": SIMULATED_POLICY_ERRORS | specific_errors,
+        }
     snapshot = obj(load(tests / "fixtures" / "canonical-sets.json"), "canonical sets")
     expected_commands = set(array(snapshot.get("command_names"), "canonical commands"))
     expected_queries = set(array(snapshot.get("query_names"), "canonical queries"))
@@ -265,7 +313,116 @@ def validate_registry(registry: Path, tests: Path) -> tuple[Path, dict[str, obje
         raise ValueError("canonical tool set mismatch")
     if known_errors != expected_errors:
         raise ValueError("canonical error set mismatch")
-    return contracts, {"tools": tool_schemas, "manifest": manifest}
+    if not SIMULATED_POLICY_ERRORS <= known_errors:
+        raise ValueError("simulated tool policy error set mismatch")
+    return contracts, {
+        "tools": tool_schemas,
+        "tool_policies": tool_policies,
+        "registered_errors": known_errors,
+        "forbidden_effects": forbidden_effects,
+    }
+
+
+def closed_policy_error(code: str) -> dict[str, object]:
+    return {
+        "status": "error",
+        "error": {
+            "code": code,
+            "retryable": False,
+            "details_codes": [],
+        },
+    }
+
+
+def policy_context(case_name: str, value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise ValueError(f"tool policy invocation context missing: {case_name}")
+    if set(value) != POLICY_CONTEXT_FIELDS:
+        raise ValueError(f"tool policy invocation context fields mismatch: {case_name}")
+    for field in ("actor_role", "idempotency_key", "request_fingerprint", "stored_fingerprint", "requested_effect"):
+        if not isinstance(value[field], str) or not value[field]:
+            raise ValueError(f"invalid tool policy context: {case_name}.{field}")
+    for field in ("expected_version", "current_version", "input_bytes"):
+        if not isinstance(value[field], int) or isinstance(value[field], bool) or value[field] < 0:
+            raise ValueError(f"invalid tool policy context: {case_name}.{field}")
+    elapsed = value["elapsed_seconds"]
+    if not isinstance(elapsed, (int, float)) or isinstance(elapsed, bool) or elapsed < 0:
+        raise ValueError(f"invalid tool policy context: {case_name}.elapsed_seconds")
+    return value
+
+
+def simulate_tool_policy(
+    policy: dict[str, object],
+    context: dict[str, object],
+    forbidden_effects: set[str],
+) -> tuple[str | None, list[str]]:
+    if context["actor_role"] not in policy["roles"]:
+        return "tool_not_allowed", []
+    requested_effect = context["requested_effect"]
+    if requested_effect in forbidden_effects or requested_effect != policy["side_effect"]:
+        return "tool_not_allowed", []
+    if policy["side_effect"] != "none" and context["stored_fingerprint"] != context["request_fingerprint"]:
+        return "idempotency_conflict", []
+    if context["expected_version"] != context["current_version"]:
+        return "version_conflict", []
+    limits = policy["limits"]
+    if context["input_bytes"] > limits["max_input_bytes"]:
+        return "size_limit_exceeded", []
+    if context["elapsed_seconds"] > limits["timeout_seconds"]:
+        return "timeout", []
+    effects = [] if requested_effect == "none" else [requested_effect]
+    return None, effects
+
+
+def validate_tool_policy_cases(
+    tests: Path,
+    tool_policies: dict[str, dict[str, object]],
+    registered_errors: set[str],
+    forbidden_effects: set[str],
+) -> list[dict[str, object]]:
+    cases = array(load(tests / "fixtures" / "tools" / "meta-cases.json"), "tool policy cases")
+    case_names = [item.get("case") for item in cases if isinstance(item, dict)]
+    if len(cases) != len(POLICY_CASES) or len(case_names) != len(set(case_names)) or set(case_names) != POLICY_CASES:
+        raise ValueError("tool policy case set mismatch")
+    transcripts = []
+    for case in cases:
+        item = obj(case, "tool policy case")
+        case_name = item["case"]
+        tool_name = item.get("tool_name")
+        if tool_name not in tool_policies:
+            raise ValueError(f"invalid tool policy case: {case_name}")
+        expected_error = item.get("expected_error")
+        if not isinstance(expected_error, str) or expected_error not in registered_errors:
+            raise ValueError(f"unregistered tool policy error: {case_name}.{expected_error}")
+        policy = tool_policies[tool_name]
+        if expected_error not in policy["allowed_errors"]:
+            raise ValueError(f"tool policy error not allowed: {tool_name}.{expected_error}")
+        expected_output = closed_policy_error(expected_error)
+        if obj(item.get("expected_output"), f"tool policy output: {case_name}") != expected_output:
+            raise ValueError(f"tool policy output not closed: {case_name}")
+        if array(item.get("expected_effects"), f"tool policy effects: {case_name}"):
+            raise ValueError(f"unsafe tool policy effects: {case_name}")
+        context = policy_context(case_name, item.get("invocation_context"))
+        actual_error, effects = simulate_tool_policy(policy, context, forbidden_effects)
+        if actual_error is None:
+            raise ValueError(f"tool policy case did not reject: {case_name}")
+        if actual_error != expected_error:
+            raise ValueError(
+                f"tool policy result mismatch: {case_name}: "
+                f"expected {expected_error}, got {actual_error}"
+            )
+        observed_forbidden_effects = sorted(set(effects) & forbidden_effects)
+        transcript = {
+            "case": case_name,
+            "tool_name": tool_name,
+            "result": closed_policy_error(actual_error),
+            "effects": effects,
+            "forbidden_effects": observed_forbidden_effects,
+        }
+        if transcript["result"] != item["expected_output"] or effects != item["expected_effects"]:
+            raise ValueError(f"tool policy transcript mismatch: {case_name}")
+        transcripts.append(transcript)
+    return transcripts
 
 
 def validate_tool_fixtures(tests: Path, tool_schemas: dict[str, tuple[dict[str, object], dict[str, object]]]) -> int:
@@ -292,17 +449,6 @@ def validate_tool_fixtures(tests: Path, tool_schemas: dict[str, tuple[dict[str, 
             valid += 1
     if valid != len(tool_schemas) * 2:
         raise ValueError(f"tool fixture count mismatch: {valid}")
-    errors = set(array(obj(load(tests.parent / "registry" / "errors.yaml"), "errors").get("errors"), "errors"))
-    meta_cases = array(load(tests / "fixtures" / "tools" / "meta-cases.json"), "tool meta cases")
-    expected_cases = {"idempotency_conflict", "role_denial", "stale_reference", "size_limit", "timeout", "forbidden_effect"}
-    if {item.get("case") for item in meta_cases if isinstance(item, dict)} != expected_cases:
-        raise ValueError("tool meta case set mismatch")
-    for case in meta_cases:
-        item = obj(case, "tool meta case")
-        if item.get("tool_name") not in tool_schemas or item.get("expected_error") not in errors:
-            raise ValueError(f"invalid tool meta case: {item.get('case')}")
-        if obj(item.get("expected_output"), "tool meta output") != {"status": "error", "error": item["expected_error"]} or item.get("expected_effect") != "none":
-            raise ValueError(f"unsafe tool meta case: {item.get('case')}")
     return valid
 
 
@@ -319,25 +465,34 @@ def check_doc_links(root: Path) -> None:
 
 
 def check_artifacts(root: Path) -> None:
-    tracked = subprocess.run(["git", "ls-files"], cwd=root, text=True, capture_output=True, check=True).stdout.splitlines()
+    tracked = subprocess.run(
+        ["git", "ls-files"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
+    ).stdout.splitlines()
     forbidden = ("app/", "tests/", "card_sets/", "pillar_content/", ".env", "venv/", ".venv/")
     for path in tracked:
         if path in {"config.py", "run.py", "requirements.txt", ".env.example"} or path.startswith(forbidden) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden tracked V1/private artifact: {path}")
-    ignored = subprocess.run(["git", "status", "--porcelain", "--ignored", "--untracked-files=all"], cwd=root, text=True, capture_output=True, check=True).stdout.splitlines()
+    ignored = subprocess.run(
+        ["git", "status", "--porcelain", "--ignored", "--untracked-files=all"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
+    ).stdout.splitlines()
     for line in ignored:
         if not line.startswith(("??", "!!")):
             continue
         path = line[3:]
-        if path.startswith("contracts/tests/__pycache__/") or path in {
+        if path in {
             ".superpowers/sdd/.gitignore",
-            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-brief.md",
-            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-report.md",
-            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-rereview-1.md",
-            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-rereview-2.md",
-            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-review.md",
             ".superpowers/sdd/27-plan-implementation-detaille/progress.md",
-        }:
+        } or SDD_TASK_BOOKKEEPING.fullmatch(path):
             continue
         if path.startswith(("app/", "tests/", ".env", "venv/", ".venv/", "card_sets/", "pillar_content/")) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden untracked private artifact: {path}")
@@ -356,13 +511,25 @@ def main(argv: list[str]) -> int:
         contracts, state = validate_registry(Path(argv[1]), Path(argv[2]))
         if "--validate-tool-fixtures" in flags:
             print(f"{validate_tool_fixtures(Path(argv[2]), state['tools'])} tool fixtures valid")
+            policy_transcripts = validate_tool_policy_cases(
+                Path(argv[2]),
+                state["tool_policies"],
+                state["registered_errors"],
+                state["forbidden_effects"],
+            )
+            for transcript in policy_transcripts:
+                print(
+                    "tool policy simulation: "
+                    + json.dumps(transcript, sort_keys=True, separators=(",", ":"))
+                )
+            print(f"{len(policy_transcripts)} tool policy cases valid")
         if "--check-doc-links" in flags:
             check_doc_links(contracts.parent)
             print("documentation links valid")
         if "--check-artifacts" in flags:
             check_artifacts(contracts.parent)
             print("artifact boundary valid")
-    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+    except (OSError, ValueError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as error:
         print(f"ERROR: {error}")
         return 1
     print("contract registry valid")
