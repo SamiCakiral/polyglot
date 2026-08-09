@@ -15,6 +15,20 @@ depends_on = None
 
 
 PLATFORM_DDL = """
+DO $roles$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'polyglot_migration') THEN
+        CREATE ROLE polyglot_migration NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'polyglot_runtime') THEN
+        CREATE ROLE polyglot_runtime NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'polyglot_retention') THEN
+        CREATE ROLE polyglot_retention NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT;
+    END IF;
+END
+$roles$;
+
 CREATE SCHEMA platform;
 
 CREATE TABLE platform.command_receipts (
@@ -303,7 +317,8 @@ CREATE TABLE platform.deletion_tombstones (
     last_applied_at timestamptz NOT NULL,
     expires_at timestamptz,
     CONSTRAINT ck_tombstone_fingerprint_hex
-        CHECK (subject_fingerprint ~ '^[0-9a-f]{64}$')
+        CHECK (subject_fingerprint ~ '^[0-9a-f]{64}$'),
+    CONSTRAINT uq_tombstone_subject UNIQUE (subject_type, subject_fingerprint)
 );
 CREATE INDEX ix_deletion_tombstones_expires_at
     ON platform.deletion_tombstones (expires_at);
@@ -314,17 +329,20 @@ CREATE TABLE platform.retention_purge_authorizations (
     cutoff timestamptz,
     subject_type varchar(32),
     subject_id uuid,
+    deletion_request_id uuid,
     CONSTRAINT ck_retention_purge_authorization_scope CHECK (
         (
             purge_kind = 'expiry'
             AND cutoff IS NOT NULL
             AND subject_type IS NULL
             AND subject_id IS NULL
+            AND deletion_request_id IS NULL
         ) OR (
             purge_kind = 'subject'
             AND cutoff IS NULL
             AND subject_type IN ('account', 'profile')
             AND subject_id IS NOT NULL
+            AND deletion_request_id IS NOT NULL
         )
     )
 );
@@ -447,11 +465,12 @@ REVOKE ALL ON FUNCTION platform.purge_expired_append_only(
 ) FROM PUBLIC;
 
 CREATE FUNCTION platform.purge_subject_private_events(
+    p_deletion_request_id uuid,
     p_subject_type varchar,
     p_subject_id uuid,
+    p_subject_fingerprint varchar,
+    p_tombstone_id uuid,
     p_audit_id uuid,
-    p_actor_pseudonym varchar,
-    p_reason_code varchar,
     p_request_id uuid,
     p_correlation_id uuid
 ) RETURNS bigint
@@ -460,15 +479,38 @@ SECURITY DEFINER
 SET search_path = platform, pg_temp
 AS $$
 DECLARE
+    deletion platform.deletion_requests%ROWTYPE;
     deleted_events bigint;
+    applied_at timestamptz;
 BEGIN
     IF p_subject_type NOT IN ('account', 'profile') THEN
         RAISE EXCEPTION 'unsupported private event subject type' USING ERRCODE = '22023';
     END IF;
 
+    SELECT * INTO deletion
+    FROM platform.deletion_requests
+    WHERE deletion_request_id = p_deletion_request_id
+    FOR UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'deletion request not found' USING ERRCODE = 'P0002';
+    END IF;
+    IF deletion.status NOT IN ('confirmed', 'purging') OR deletion.confirmed_at IS NULL THEN
+        RAISE EXCEPTION 'deletion request is not confirmed' USING ERRCODE = '55000';
+    END IF;
+    IF deletion.subject_type <> p_subject_type OR deletion.subject_id <> p_subject_id THEN
+        RAISE EXCEPTION 'deletion request subject mismatch' USING ERRCODE = '22023';
+    END IF;
+
+    applied_at := clock_timestamp();
+    UPDATE platform.deletion_requests
+    SET status = 'purging'
+    WHERE deletion_request_id = p_deletion_request_id;
+
     INSERT INTO platform.retention_purge_authorizations(
-        transaction_id, purge_kind, subject_type, subject_id
-    ) VALUES (txid_current(), 'subject', p_subject_type, p_subject_id);
+        transaction_id, purge_kind, subject_type, subject_id, deletion_request_id
+    ) VALUES (
+        txid_current(), 'subject', p_subject_type, p_subject_id, p_deletion_request_id
+    );
 
     DELETE FROM platform.outbox_messages AS outbox
     USING platform.domain_events AS event
@@ -486,22 +528,66 @@ BEGIN
     DELETE FROM platform.retention_purge_authorizations
     WHERE transaction_id = txid_current();
 
+    INSERT INTO platform.deletion_tombstones (
+        tombstone_id, subject_type, subject_fingerprint, effective_at,
+        policy_revision_id, purged_scopes, last_applied_at, expires_at
+    ) VALUES (
+        p_tombstone_id, p_subject_type, p_subject_fingerprint, applied_at,
+        deletion.policy_revision_id, ARRAY['domain_events', 'outbox_messages'],
+        applied_at, NULL
+    )
+    ON CONFLICT (subject_type, subject_fingerprint) DO UPDATE SET
+        policy_revision_id = EXCLUDED.policy_revision_id,
+        purged_scopes = EXCLUDED.purged_scopes,
+        last_applied_at = EXCLUDED.last_applied_at;
+
+    UPDATE platform.deletion_requests
+    SET status = 'completed', completed_at = applied_at
+    WHERE deletion_request_id = p_deletion_request_id;
+
     INSERT INTO platform.security_audit_entries (
         audit_id, actor_pseudonym, action_code, resource_type, resource_id,
         result, reason_code, occurred_at, request_id, correlation_id,
         session_fingerprint, truncated_ip, expires_at
     ) VALUES (
-        p_audit_id, p_actor_pseudonym, 'privacy.subject_purge', p_subject_type, p_subject_id,
-        'succeeded', p_reason_code, clock_timestamp(), p_request_id, p_correlation_id,
-        repeat('0', 64), 'system', clock_timestamp() + interval '180 days'
+        p_audit_id, 'retention-worker', 'privacy.subject_purge',
+        'deletion_request', p_deletion_request_id,
+        'succeeded', 'confirmed_subject_deletion', applied_at,
+        p_request_id, p_correlation_id,
+        repeat('0', 64), 'system', applied_at + interval '180 days'
     );
 
     RETURN deleted_events;
 END;
 $$;
 REVOKE ALL ON FUNCTION platform.purge_subject_private_events(
-    varchar, uuid, uuid, varchar, varchar, uuid, uuid
+    uuid, varchar, uuid, varchar, uuid, uuid, uuid, uuid
 ) FROM PUBLIC;
+
+GRANT USAGE ON SCHEMA platform TO polyglot_migration, polyglot_runtime, polyglot_retention;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA platform
+    TO polyglot_migration, polyglot_runtime;
+REVOKE ALL ON TABLE platform.retention_purge_authorizations FROM polyglot_runtime;
+
+ALTER FUNCTION platform.purge_expired_append_only(
+    timestamptz, uuid, varchar, varchar, uuid, uuid
+) OWNER TO polyglot_migration;
+ALTER FUNCTION platform.purge_subject_private_events(
+    uuid, varchar, uuid, varchar, uuid, uuid, uuid, uuid
+) OWNER TO polyglot_migration;
+
+REVOKE ALL ON FUNCTION platform.purge_expired_append_only(
+    timestamptz, uuid, varchar, varchar, uuid, uuid
+) FROM PUBLIC, polyglot_migration, polyglot_runtime;
+REVOKE ALL ON FUNCTION platform.purge_subject_private_events(
+    uuid, varchar, uuid, varchar, uuid, uuid, uuid, uuid
+) FROM PUBLIC, polyglot_migration, polyglot_runtime;
+GRANT EXECUTE ON FUNCTION platform.purge_expired_append_only(
+    timestamptz, uuid, varchar, varchar, uuid, uuid
+) TO polyglot_retention;
+GRANT EXECUTE ON FUNCTION platform.purge_subject_private_events(
+    uuid, varchar, uuid, varchar, uuid, uuid, uuid, uuid
+) TO polyglot_retention;
 """
 
 

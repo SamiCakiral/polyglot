@@ -479,26 +479,29 @@ class SqlRetentionStore:
     async def purge_subject_private_events(
         self,
         *,
+        deletion_request_id: UUID,
         subject_type: str,
         subject_id: UUID,
+        subject_fingerprint: str,
+        tombstone_id: UUID,
         audit_id: UUID,
-        actor_pseudonym: str,
-        reason_code: str,
         request_id: UUID,
         correlation_id: UUID,
     ) -> RetentionPurgeResult:
         count = await self._session.scalar(
             text(
                 "SELECT platform.purge_subject_private_events("
-                ":subject_type, :subject_id, :audit_id, :actor_pseudonym, "
-                ":reason_code, :request_id, :correlation_id)"
+                ":deletion_request_id, :subject_type, :subject_id, "
+                ":subject_fingerprint, :tombstone_id, :audit_id, "
+                ":request_id, :correlation_id)"
             ),
             {
+                "deletion_request_id": deletion_request_id,
                 "subject_type": subject_type,
                 "subject_id": subject_id,
+                "subject_fingerprint": subject_fingerprint,
+                "tombstone_id": tombstone_id,
                 "audit_id": audit_id,
-                "actor_pseudonym": actor_pseudonym,
-                "reason_code": reason_code,
                 "request_id": request_id,
                 "correlation_id": correlation_id,
             },

@@ -377,6 +377,11 @@ deletion_tombstones = Table(
         "subject_fingerprint ~ '^[0-9a-f]{64}$'",
         name="ck_tombstone_fingerprint_hex",
     ),
+    UniqueConstraint(
+        "subject_type",
+        "subject_fingerprint",
+        name="uq_tombstone_subject",
+    ),
 )
 Index("ix_deletion_tombstones_expires_at", deletion_tombstones.c.expires_at)
 
@@ -388,11 +393,14 @@ retention_purge_authorizations = Table(
     Column("cutoff", DateTime(timezone=True)),
     Column("subject_type", String(32)),
     Column("subject_id", UUID(as_uuid=True)),
+    Column("deletion_request_id", UUID(as_uuid=True)),
     CheckConstraint(
         "(purge_kind = 'expiry' AND cutoff IS NOT NULL "
-        "AND subject_type IS NULL AND subject_id IS NULL) OR "
+        "AND subject_type IS NULL AND subject_id IS NULL "
+        "AND deletion_request_id IS NULL) OR "
         "(purge_kind = 'subject' AND cutoff IS NULL "
-        "AND subject_type IN ('account', 'profile') AND subject_id IS NOT NULL)",
+        "AND subject_type IN ('account', 'profile') AND subject_id IS NOT NULL "
+        "AND deletion_request_id IS NOT NULL)",
         name="ck_retention_purge_authorization_scope",
     ),
 )
