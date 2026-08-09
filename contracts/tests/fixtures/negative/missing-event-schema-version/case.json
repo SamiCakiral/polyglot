@@ -1,0 +1,9 @@
+{
+  "id": "missing-event-schema-version",
+  "kind": "negative",
+  "mutation": {
+    "path": "events/event-catalogue.yaml",
+    "operation": "remove_event_schema_version"
+  },
+  "expected_error": "event missing schema_version: account_registered"
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "quality.report_ambiguity output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "deduplication_fingerprint",
+    "visibility",
+    "status",
+    "existing_report_id"
+  ],
+  "properties": {
+    "report_id": {},
+    "deduplication_fingerprint": {},
+    "visibility": {},
+    "status": {},
+    "existing_report_id": {}
+  }
+}

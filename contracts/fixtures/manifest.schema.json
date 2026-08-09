@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Polyglot V2 contract fixture manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "expected_status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "kind": {
+      "enum": [
+        "positive",
+        "negative"
+      ]
+    },
+    "expected_status": {
+      "enum": [
+        "accepted",
+        "rejected"
+      ]
+    },
+    "expected_error": {
+      "type": "string"
+    }
+  }
+}

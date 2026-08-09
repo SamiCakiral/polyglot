@@ -1,0 +1,10 @@
+{
+  "id": "unknown-enum",
+  "kind": "negative",
+  "mutation": {
+    "path": "commands.yaml",
+    "operation": "set_enum_value",
+    "value": {"account_role": ["operator"]}
+  },
+  "expected_error": "unknown enum value: account_role.operator"
+}

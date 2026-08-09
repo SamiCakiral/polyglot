@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "exercise.get_blueprint output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "stimulus_schema",
+    "response_schema",
+    "target_schema",
+    "correction_strategies",
+    "hints",
+    "observation_constraints",
+    "budgets",
+    "fixtures"
+  ],
+  "properties": {
+    "stimulus_schema": {},
+    "response_schema": {},
+    "target_schema": {},
+    "correction_strategies": {},
+    "hints": {},
+    "observation_constraints": {},
+    "budgets": {},
+    "fixtures": {}
+  }
+}

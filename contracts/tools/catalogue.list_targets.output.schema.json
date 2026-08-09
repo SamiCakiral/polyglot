@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "catalogue.list_targets output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "targets",
+    "next_cursor"
+  ],
+  "properties": {
+    "targets": {},
+    "next_cursor": {}
+  }
+}

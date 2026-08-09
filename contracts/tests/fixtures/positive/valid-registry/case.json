@@ -1,0 +1,5 @@
+{
+  "id": "valid-registry",
+  "kind": "positive",
+  "expected_status": "accepted"
+}

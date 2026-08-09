@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "exercise.submit_draft output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "draft_id",
+    "revision",
+    "findings",
+    "resolved_references",
+    "checksum",
+    "status"
+  ],
+  "properties": {
+    "draft_id": {},
+    "revision": {},
+    "findings": {},
+    "resolved_references": {},
+    "checksum": {},
+    "status": {}
+  }
+}

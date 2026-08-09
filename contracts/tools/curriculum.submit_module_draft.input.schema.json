@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "curriculum.submit_module_draft input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_revision_id",
+    "module",
+    "audience",
+    "objectives",
+    "prerequisites",
+    "exit_policy",
+    "day_draft_refs",
+    "length",
+    "context",
+    "provenance"
+  ],
+  "properties": {
+    "pack_revision_id": {},
+    "module": {},
+    "audience": {},
+    "objectives": {},
+    "prerequisites": {},
+    "exit_policy": {},
+    "day_draft_refs": {},
+    "length": {},
+    "context": {},
+    "provenance": {}
+  }
+}

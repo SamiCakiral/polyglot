@@ -1,0 +1,517 @@
+{
+  "enums": {
+    "language_profile_status": [
+      "onboarding",
+      "foundations",
+      "active",
+      "paused",
+      "archived",
+      "deleting",
+      "deleted"
+    ],
+    "content_revision_status": [
+      "draft",
+      "validating",
+      "validated",
+      "approved",
+      "published",
+      "retired",
+      "superseded",
+      "rejected",
+      "abandoned"
+    ],
+    "module_enrollment_status": [
+      "planned",
+      "active",
+      "paused",
+      "completed",
+      "abandoned",
+      "cancelled"
+    ],
+    "session_plan_status": [
+      "draft",
+      "preparing",
+      "ready",
+      "failed",
+      "expired",
+      "cancelled"
+    ],
+    "sprint_run_status": [
+      "not_started",
+      "in_progress",
+      "interrupted",
+      "completed",
+      "stopped",
+      "cancelled"
+    ],
+    "exercise_block_status": [
+      "pending",
+      "available",
+      "in_progress",
+      "completed",
+      "skipped",
+      "abandoned",
+      "unavailable"
+    ],
+    "attempt_status": [
+      "draft",
+      "submitted",
+      "correcting",
+      "corrected",
+      "not_evaluable"
+    ],
+    "attempt_terminal_reason": [
+      "none",
+      "correction_unavailable",
+      "correction_ambiguous",
+      "answer_invalid",
+      "user_cancelled"
+    ],
+    "correction_case_status": [
+      "closed",
+      "contested",
+      "review_pending",
+      "resolved"
+    ],
+    "correction_verdict": [
+      "correct",
+      "partially_correct",
+      "incorrect",
+      "ambiguous",
+      "invalid_answer",
+      "not_evaluable"
+    ],
+    "learning_need_status": [
+      "open",
+      "planned",
+      "resolved",
+      "superseded"
+    ],
+    "assessment_run_status": [
+      "prepared",
+      "in_progress",
+      "paused",
+      "submitted",
+      "expired",
+      "scoring",
+      "review_required",
+      "completed",
+      "cancelled"
+    ],
+    "job_status": [
+      "requested",
+      "queued",
+      "running",
+      "retry_wait",
+      "cancel_requested",
+      "succeeded",
+      "failed",
+      "cancelled"
+    ],
+    "mastery_status": [
+      "non_observed",
+      "discovered",
+      "in_progress",
+      "reliable",
+      "mastered",
+      "review_due",
+      "not_evaluable"
+    ],
+    "memory_prompt_status": [
+      "active",
+      "suspended",
+      "superseded",
+      "archived",
+      "deleted"
+    ],
+    "memory_state": [
+      "new",
+      "learning",
+      "review",
+      "relearning"
+    ],
+    "memory_rating": [
+      "again",
+      "hard",
+      "good",
+      "easy"
+    ],
+    "media_status": [
+      "reserved",
+      "uploading",
+      "uploaded",
+      "verifying",
+      "quarantined",
+      "processing",
+      "ready",
+      "rejected",
+      "failed",
+      "deleting",
+      "deleted"
+    ],
+    "account_status": [
+      "active",
+      "locked",
+      "pending_deletion",
+      "deleted"
+    ],
+    "account_role": [
+      "learner",
+      "author",
+      "reviewer",
+      "support",
+      "admin",
+      "worker"
+    ],
+    "identity_provider_type": [
+      "local_password",
+      "oidc"
+    ],
+    "consent_status": [
+      "granted",
+      "withdrawn"
+    ],
+    "privacy_class": [
+      "public",
+      "internal",
+      "personal",
+      "sensitive",
+      "secret"
+    ],
+    "guided_run_status": [
+      "prepared",
+      "in_progress",
+      "interrupted",
+      "completed",
+      "expired",
+      "cancelled"
+    ],
+    "modality": [
+      "reading",
+      "listening",
+      "writing",
+      "speaking"
+    ],
+    "operation": [
+      "recognize",
+      "recall",
+      "discriminate",
+      "transform",
+      "produce",
+      "interact",
+      "repair",
+      "transfer"
+    ],
+    "prerequisite_edge_type": [
+      "required",
+      "recommended",
+      "contrast",
+      "transfer"
+    ],
+    "mention_analysis_status": [
+      "pending",
+      "ambiguous",
+      "resolved",
+      "disputed"
+    ],
+    "list_type": [
+      "manual",
+      "editorial",
+      "dynamic"
+    ],
+    "list_status": [
+      "active",
+      "archived"
+    ],
+    "session_purpose": [
+      "daily",
+      "free",
+      "foundation",
+      "assessment_prep"
+    ],
+    "module_arc_type": [
+      "discovery",
+      "guided_use",
+      "integration",
+      "transfer",
+      "consolidation"
+    ],
+    "session_block_family": [
+      "recall_warmup",
+      "lexical_acquisition",
+      "version_input",
+      "grammar_toolbox",
+      "transformation_gym",
+      "listening",
+      "shadowing",
+      "guided_output",
+      "free_writing",
+      "delayed_recode",
+      "reflection_close"
+    ],
+    "session_lexical_role": [
+      "new",
+      "due",
+      "debt",
+      "target",
+      "support",
+      "distractor",
+      "rescue"
+    ],
+    "exercise_language_certification_status": [
+      "certified",
+      "suspended",
+      "withdrawn"
+    ],
+    "primitive_maturity": [
+      "core",
+      "extended",
+      "future"
+    ],
+    "answer_kind": [
+      "acknowledgement",
+      "single_choice",
+      "graded_choice",
+      "selection",
+      "pairing",
+      "grouping",
+      "ordered_items",
+      "cells",
+      "spans",
+      "tokens",
+      "text",
+      "short_text",
+      "audio_ref",
+      "self_grade",
+      "self_assessment",
+      "no_answer"
+    ],
+    "hint_level": [
+      "h0",
+      "h1",
+      "h2",
+      "h3",
+      "h4"
+    ],
+    "correction_strategy": [
+      "exact_normalized",
+      "accepted_set",
+      "morphological",
+      "structural_constraints",
+      "bounded_translation",
+      "rubric",
+      "self_assessment",
+      "human_review",
+      "llm_review"
+    ],
+    "validation_report_status": [
+      "pending",
+      "running",
+      "passed",
+      "failed",
+      "human_required",
+      "cancelled"
+    ],
+    "assessment_section_status": [
+      "pending",
+      "in_progress",
+      "completed",
+      "skipped",
+      "expired"
+    ],
+    "assessment_result_status": [
+      "valid",
+      "indicative",
+      "not_evaluable"
+    ],
+    "assessment_band": [
+      "assess_b0",
+      "assess_b1",
+      "assess_b2",
+      "assess_b3",
+      "assess_b4"
+    ],
+    "tts_availability": [
+      "available",
+      "temporarily_unavailable",
+      "retired",
+      "unsupported"
+    ],
+    "job_attempt_status": [
+      "running",
+      "succeeded",
+      "retryable_failed",
+      "failed",
+      "cancelled"
+    ],
+    "tool_invocation_status": [
+      "requested",
+      "running",
+      "succeeded",
+      "failed",
+      "cancelled"
+    ],
+    "import_status": [
+      "uploaded",
+      "quarantined",
+      "parsing",
+      "invalid",
+      "preview_ready",
+      "awaiting_decision",
+      "committing",
+      "committed",
+      "failed",
+      "cancelled",
+      "reverted"
+    ],
+    "import_line_status": [
+      "pending",
+      "accepted",
+      "rejected",
+      "conflict",
+      "committed",
+      "reverted"
+    ],
+    "import_strategy": [
+      "fail_on_conflict",
+      "reuse_exact",
+      "create_distinct",
+      "interactive"
+    ],
+    "import_conflict_class": [
+      "exact_identity",
+      "same_sense",
+      "same_form_other_sense",
+      "same_prompt",
+      "content_revision_conflict",
+      "private_public_collision",
+      "ambiguous"
+    ],
+    "export_status": [
+      "requested",
+      "queued",
+      "running",
+      "ready",
+      "failed",
+      "expired",
+      "cancelled"
+    ],
+    "command_receipt_status": [
+      "started",
+      "succeeded",
+      "rejected",
+      "failed"
+    ],
+    "deletion_request_status": [
+      "requested",
+      "confirmed",
+      "blocked",
+      "purging",
+      "completed",
+      "cancelled",
+      "failed"
+    ],
+    "delivery_status": [
+      "specified",
+      "planned",
+      "implemented",
+      "verified",
+      "accepted",
+      "released"
+    ],
+    "learning_phase": [
+      "diagnostic",
+      "foundations",
+      "module_learning",
+      "paused",
+      "archived"
+    ],
+    "diagnostic_classification": [
+      "beginner",
+      "false_beginner",
+      "intermediate",
+      "undetermined"
+    ],
+    "foundation_block_status": [
+      "locked",
+      "available",
+      "in_progress",
+      "passed",
+      "waived"
+    ],
+    "foundation_run_block_status": [
+      "pending",
+      "available",
+      "in_progress",
+      "completed",
+      "failed",
+      "waived"
+    ],
+    "lexical_unit_type": [
+      "word",
+      "multiword_expression",
+      "proper_name",
+      "lexicalized_construction"
+    ],
+    "lexical_visibility": [
+      "shared",
+      "private"
+    ],
+    "delayed_task_type": [
+      "delayed_recode",
+      "delayed_recall",
+      "transfer_check"
+    ],
+    "delayed_task_due_rule": [
+      "next_active_session",
+      "after_24h",
+      "after_7d"
+    ],
+    "delayed_task_status": [
+      "scheduled",
+      "due",
+      "fulfilled",
+      "expired",
+      "cancelled"
+    ],
+    "observation_target_type": [
+      "skill",
+      "lexical_sense",
+      "lexical_form",
+      "grammar_structure",
+      "grammar_pattern",
+      "pronunciation_target"
+    ],
+    "observation_role": [
+      "primary",
+      "secondary",
+      "support",
+      "distractor"
+    ],
+    "observation_result": [
+      "success",
+      "partial_success",
+      "failure",
+      "inconclusive"
+    ],
+    "evidence_source_type": [
+      "assessment",
+      "daily_sprint",
+      "foundations",
+      "free_practice",
+      "diagnostic",
+      "declaration",
+      "exposure"
+    ],
+    "lexical_learning_preference": [
+      "normal",
+      "prioritize",
+      "ignore"
+    ],
+    "free_practice_challenge": [
+      "gentler",
+      "matched",
+      "stretch"
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "exercise.submit_draft input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_revision_id",
+    "primitive_id",
+    "blueprint_version",
+    "stimulus",
+    "response_contract",
+    "target_bindings",
+    "accepted_answers_or_rubric",
+    "hints",
+    "difficulty_profile",
+    "provenance_inputs"
+  ],
+  "properties": {
+    "reserved_draft_id": {},
+    "pack_revision_id": {},
+    "primitive_id": {},
+    "blueprint_version": {},
+    "stimulus": {},
+    "response_contract": {},
+    "target_bindings": {},
+    "accepted_answers_or_rubric": {},
+    "hints": {},
+    "difficulty_profile": {},
+    "provenance_inputs": {}
+  }
+}

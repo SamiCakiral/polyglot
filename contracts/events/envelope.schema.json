@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Polyglot V2 event envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "event_type",
+    "schema_version",
+    "aggregate_type",
+    "aggregate_id",
+    "aggregate_version",
+    "actor_type",
+    "actor_id",
+    "occurred_at",
+    "recorded_at",
+    "correlation_id",
+    "command_id",
+    "payload",
+    "privacy_class",
+    "policy_versions"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "aggregate_type": {
+      "type": "string"
+    },
+    "aggregate_id": {
+      "type": "string"
+    },
+    "aggregate_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "actor_type": {
+      "type": "string"
+    },
+    "actor_id": {
+      "type": "string"
+    },
+    "profile_id": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlation_id": {
+      "type": "string"
+    },
+    "causation_id": {
+      "type": "string"
+    },
+    "command_id": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "privacy_class": {
+      "enum": [
+        "public",
+        "internal",
+        "personal",
+        "sensitive",
+        "secret"
+      ]
+    },
+    "policy_versions": {
+      "type": "object"
+    }
+  }
+}

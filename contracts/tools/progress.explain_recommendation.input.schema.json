@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "progress.explain_recommendation input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "recommendation_id",
+    "as_of_projection_version",
+    "detail_level"
+  ],
+  "properties": {
+    "profile_id": {},
+    "recommendation_id": {},
+    "as_of_projection_version": {},
+    "detail_level": {}
+  }
+}

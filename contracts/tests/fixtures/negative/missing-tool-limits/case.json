@@ -1,0 +1,9 @@
+{
+  "id": "missing-tool-limits",
+  "kind": "negative",
+  "mutation": {
+    "path": "tools/manifest.yaml",
+    "operation": "remove_tool_limits"
+  },
+  "expected_error": "tool limits missing: profile.read_authorized"
+}

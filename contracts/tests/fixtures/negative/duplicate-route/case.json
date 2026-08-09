@@ -1,0 +1,16 @@
+{
+  "id": "duplicate-route",
+  "kind": "negative",
+  "mutation": {
+    "path": "commands.yaml",
+    "operation": "append_command",
+    "value": {
+      "name": "RegisterAccountAgain",
+      "method": "POST",
+      "route": "/api/v1/accounts",
+      "events": ["account_registered"],
+      "idempotency": "required"
+    }
+  },
+  "expected_error": "duplicate route: POST /api/v1/accounts"
+}

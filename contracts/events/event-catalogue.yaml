@@ -1,0 +1,400 @@
+{
+  "source": [
+    "docs/v2/25-registre-enums-commandes-api.md",
+    "docs/v2/09-etats-commandes-evenements.md"
+  ],
+  "events": [
+    {
+      "event_type": "account_registered",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_paused",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_prepared",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_response_saved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_resumed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_review_resolved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_started",
+      "schema_version": 1
+    },
+    {
+      "event_type": "assessment_submitted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "attempt_draft_saved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "authoring_tool_invoked",
+      "schema_version": 1
+    },
+    {
+      "event_type": "consent_updated",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_approved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_draft_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_draft_revised",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_published",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_retired",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_validated",
+      "schema_version": 1
+    },
+    {
+      "event_type": "content_validation_failed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "correction_case_resolved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "correction_contested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "correction_reviewed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "diagnostic_completed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "diagnostic_response_recorded",
+      "schema_version": 1
+    },
+    {
+      "event_type": "diagnostic_started",
+      "schema_version": 1
+    },
+    {
+      "event_type": "exercise_attempt_opened",
+      "schema_version": 1
+    },
+    {
+      "event_type": "exercise_attempt_submitted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "exercise_block_abandoned",
+      "schema_version": 1
+    },
+    {
+      "event_type": "exercise_block_skipped",
+      "schema_version": 1
+    },
+    {
+      "event_type": "exercise_hint_used",
+      "schema_version": 1
+    },
+    {
+      "event_type": "export_requested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "foundation_gate_completed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "foundation_run_started",
+      "schema_version": 1
+    },
+    {
+      "event_type": "free_practice_plan_composed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "generation_job_cancel_requested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "generation_job_requested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "import_committed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "import_conflict_resolved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "import_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "import_reverted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "job_cancel_requested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "language_profile_archived",
+      "schema_version": 1
+    },
+    {
+      "event_type": "language_profile_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "language_profile_deletion_requested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "language_profile_paused",
+      "schema_version": 1
+    },
+    {
+      "event_type": "language_profile_restored",
+      "schema_version": 1
+    },
+    {
+      "event_type": "learning_goals_updated",
+      "schema_version": 1
+    },
+    {
+      "event_type": "learning_module_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "learning_module_published",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_annotation_deleted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_annotation_upserted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_encounter_recorded",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_familiarity_declared",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_gap_captured",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_learning_preference_set",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_relation_asserted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_relation_retracted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_sense_split",
+      "schema_version": 1
+    },
+    {
+      "event_type": "lexical_units_merged",
+      "schema_version": 1
+    },
+    {
+      "event_type": "media_deletion_requested",
+      "schema_version": 1
+    },
+    {
+      "event_type": "media_upload_reserved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "media_uploaded",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompt_archived",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompt_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompt_deleted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompt_restored",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompt_resumed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompt_suspended",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_prompts_merged",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_review_recorded",
+      "schema_version": 1
+    },
+    {
+      "event_type": "memory_schedule_reset",
+      "schema_version": 1
+    },
+    {
+      "event_type": "mention_resolved",
+      "schema_version": 1
+    },
+    {
+      "event_type": "module_enrollment_completed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "module_enrollment_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "module_enrollment_paused",
+      "schema_version": 1
+    },
+    {
+      "event_type": "password_changed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "placement_decided",
+      "schema_version": 1
+    },
+    {
+      "event_type": "private_context_deleted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "private_lexical_unit_added",
+      "schema_version": 1
+    },
+    {
+      "event_type": "session_authenticated",
+      "schema_version": 1
+    },
+    {
+      "event_type": "session_plan_cancelled",
+      "schema_version": 1
+    },
+    {
+      "event_type": "session_plan_composed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "session_plan_failed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "session_plan_ready",
+      "schema_version": 1
+    },
+    {
+      "event_type": "session_revoked",
+      "schema_version": 1
+    },
+    {
+      "event_type": "sessions_revoked",
+      "schema_version": 1
+    },
+    {
+      "event_type": "shared_vocabulary_list_retired",
+      "schema_version": 1
+    },
+    {
+      "event_type": "sprint_run_completed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "sprint_run_interrupted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "sprint_run_resumed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "sprint_run_started",
+      "schema_version": 1
+    },
+    {
+      "event_type": "sprint_run_stopped",
+      "schema_version": 1
+    },
+    {
+      "event_type": "user_preferences_updated",
+      "schema_version": 1
+    },
+    {
+      "event_type": "vocabulary_list_cloned",
+      "schema_version": 1
+    },
+    {
+      "event_type": "vocabulary_list_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "vocabulary_list_revised",
+      "schema_version": 1
+    },
+    {
+      "event_type": "vocabulary_list_snapshot_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "vocabulary_list_snapshot_published",
+      "schema_version": 1
+    },
+    {
+      "event_type": "vocabulary_lists_merged",
+      "schema_version": 1
+    }
+  ]
+}

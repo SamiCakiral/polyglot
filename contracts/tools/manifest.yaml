@@ -1,0 +1,462 @@
+{
+  "source": "docs/v2/30-contrats-outils-auteur.md",
+  "common_limits": {
+    "max_input_bytes": 262144,
+    "max_output_bytes": 1048576,
+    "max_free_text_characters": 20000
+  },
+  "forbidden_effects": [
+    "approve",
+    "publish",
+    "retire",
+    "award_mastery",
+    "modify_fsrs_schedule"
+  ],
+  "tools": [
+    {
+      "tool_name": "profile.read_authorized",
+      "tool_version": "1.0.0",
+      "input_schema": "profile.read_authorized.input.schema.json",
+      "output_schema": "profile.read_authorized.output.schema.json",
+      "roles": [
+        "learner",
+        "author"
+      ],
+      "side_effect": "none",
+      "input": [
+        "profile_id",
+        "purpose",
+        "field_groups"
+      ],
+      "output": [
+        "profile",
+        "varieties",
+        "goals",
+        "constraints",
+        "mastery_summary",
+        "due_summary",
+        "module_position",
+        "cutoff_at"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_facets": 100,
+        "timeout_seconds": 10
+      },
+      "errors": [
+        "mandate_missing",
+        "field_group_forbidden",
+        "profile_deleted"
+      ]
+    },
+    {
+      "tool_name": "catalogue.list_targets",
+      "tool_version": "1.0.0",
+      "input_schema": "catalogue.list_targets.input.schema.json",
+      "output_schema": "catalogue.list_targets.output.schema.json",
+      "roles": [
+        "learner",
+        "author",
+        "reviewer",
+        "support",
+        "admin",
+        "worker"
+      ],
+      "side_effect": "none",
+      "input": [
+        "pack_revision_id",
+        "target_types",
+        "modality",
+        "operation",
+        "prerequisite_of",
+        "status",
+        "cursor",
+        "limit"
+      ],
+      "output": [
+        "targets",
+        "next_cursor"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_items": 200,
+        "timeout_seconds": 10
+      },
+      "errors": [
+        "pack_not_published",
+        "cursor_invalid",
+        "filter_invalid"
+      ]
+    },
+    {
+      "tool_name": "lexicon.read_session_scope",
+      "tool_version": "1.0.0",
+      "input_schema": "lexicon.read_session_scope.input.schema.json",
+      "output_schema": "lexicon.read_session_scope.output.schema.json",
+      "roles": [
+        "learner",
+        "author"
+      ],
+      "side_effect": "none",
+      "input": [
+        "profile_id",
+        "planning_snapshot_id",
+        "roles",
+        "target_refs",
+        "list_snapshot_ids",
+        "max_senses"
+      ],
+      "output": [
+        "senses",
+        "forms",
+        "session_roles",
+        "familiarity",
+        "constraints",
+        "provenance"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_senses": 200,
+        "timeout_seconds": 10
+      },
+      "errors": [
+        "snapshot_stale",
+        "sense_out_of_scope",
+        "private_context_forbidden"
+      ]
+    },
+    {
+      "tool_name": "exercise.get_blueprint",
+      "tool_version": "1.0.0",
+      "input_schema": "exercise.get_blueprint.input.schema.json",
+      "output_schema": "exercise.get_blueprint.output.schema.json",
+      "roles": [
+        "author",
+        "reviewer",
+        "worker"
+      ],
+      "side_effect": "none",
+      "input": [
+        "primitive_id",
+        "primitive_contract_version",
+        "language_pack_revision_id",
+        "mode",
+        "accessibility_capabilities"
+      ],
+      "output": [
+        "stimulus_schema",
+        "response_schema",
+        "target_schema",
+        "correction_strategies",
+        "hints",
+        "observation_constraints",
+        "budgets",
+        "fixtures"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_items": 1,
+        "timeout_seconds": 10
+      },
+      "errors": [
+        "primitive_unknown",
+        "language_not_certified",
+        "mode_unsupported"
+      ]
+    },
+    {
+      "tool_name": "exercise.submit_draft",
+      "tool_version": "1.0.0",
+      "input_schema": "exercise.submit_draft.input.schema.json",
+      "output_schema": "exercise.submit_draft.output.schema.json",
+      "roles": [
+        "author"
+      ],
+      "side_effect": "create_draft",
+      "input": [
+        "reserved_draft_id",
+        "pack_revision_id",
+        "primitive_id",
+        "blueprint_version",
+        "stimulus",
+        "response_contract",
+        "target_bindings",
+        "accepted_answers_or_rubric",
+        "hints",
+        "difficulty_profile",
+        "provenance_inputs"
+      ],
+      "output": [
+        "draft_id",
+        "revision",
+        "findings",
+        "resolved_references",
+        "checksum",
+        "status"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_targets": 100,
+        "max_accepted_answers": 100,
+        "max_hints": 20,
+        "timeout_seconds": 60
+      },
+      "errors": [
+        "blueprint_mismatch",
+        "target_not_published",
+        "correction_path_missing",
+        "answer_leak_detected"
+      ]
+    },
+    {
+      "tool_name": "content.validate_draft",
+      "tool_version": "1.0.0",
+      "input_schema": "content.validate_draft.input.schema.json",
+      "output_schema": "content.validate_draft.output.schema.json",
+      "roles": [
+        "author",
+        "reviewer"
+      ],
+      "side_effect": "create_validation_report",
+      "input": [
+        "draft_revision_id",
+        "validator_profile_id",
+        "validator_revision_ids",
+        "requested_checks",
+        "seed"
+      ],
+      "output": [
+        "report_id",
+        "findings",
+        "coverage",
+        "decision",
+        "report_truncated"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_findings": 10000,
+        "timeout_seconds": 30
+      },
+      "errors": [
+        "validator_unavailable",
+        "draft_not_found",
+        "validator_pack_incompatible"
+      ]
+    },
+    {
+      "tool_name": "curriculum.submit_module_draft",
+      "tool_version": "1.0.0",
+      "input_schema": "curriculum.submit_module_draft.input.schema.json",
+      "output_schema": "curriculum.submit_module_draft.output.schema.json",
+      "roles": [
+        "author"
+      ],
+      "side_effect": "create_module_draft",
+      "input": [
+        "pack_revision_id",
+        "module",
+        "audience",
+        "objectives",
+        "prerequisites",
+        "exit_policy",
+        "day_draft_refs",
+        "length",
+        "context",
+        "provenance"
+      ],
+      "output": [
+        "module_draft",
+        "resolved_graph",
+        "total_load",
+        "findings",
+        "checksum"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_days": 31,
+        "max_targets": 500,
+        "timeout_seconds": 60
+      },
+      "errors": [
+        "prerequisite_cycle",
+        "day_revision_invalid",
+        "module_exit_unmeasurable",
+        "load_budget_exceeded"
+      ]
+    },
+    {
+      "tool_name": "curriculum.submit_day_draft",
+      "tool_version": "1.0.0",
+      "input_schema": "curriculum.submit_day_draft.input.schema.json",
+      "output_schema": "curriculum.submit_day_draft.output.schema.json",
+      "roles": [
+        "author"
+      ],
+      "side_effect": "create_day_draft",
+      "input": [
+        "module_draft_id",
+        "ordinal",
+        "arc",
+        "context",
+        "objectives",
+        "novelty",
+        "reviews",
+        "next_day_needs",
+        "lists",
+        "compositions",
+        "provenance",
+        "expected_version"
+      ],
+      "output": [
+        "day_draft",
+        "reference_plans",
+        "budget_validation",
+        "observable_targets",
+        "checksum"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_candidate_blocks": 60,
+        "max_senses": 200,
+        "max_new_targets": 20,
+        "timeout_seconds": 60
+      },
+      "errors": [
+        "budget_infeasible",
+        "novelty_limit_exceeded",
+        "delayed_source_invalid",
+        "required_block_not_correctable"
+      ]
+    },
+    {
+      "tool_name": "correction.submit_structured_draft",
+      "tool_version": "1.0.0",
+      "input_schema": "correction.submit_structured_draft.input.schema.json",
+      "output_schema": "correction.submit_structured_draft.output.schema.json",
+      "roles": [
+        "reviewer",
+        "worker"
+      ],
+      "side_effect": "create_correction_revision_draft",
+      "input": [
+        "attempt_id",
+        "attempt_version",
+        "strategy",
+        "verdict",
+        "criterion_scores",
+        "error_codes",
+        "proposed_answer",
+        "alternatives",
+        "explanation_codes",
+        "confidence",
+        "target_observations",
+        "provenance"
+      ],
+      "output": [
+        "correction_draft",
+        "criterion_coverage",
+        "candidate_observations",
+        "conflicts",
+        "review_required"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_errors": 50,
+        "max_alternatives": 20,
+        "max_observations": 100,
+        "timeout_seconds": 60
+      },
+      "errors": [
+        "attempt_not_submitted",
+        "rubric_mismatch",
+        "observation_target_not_discriminant",
+        "confidence_inconsistent"
+      ]
+    },
+    {
+      "tool_name": "quality.report_ambiguity",
+      "tool_version": "1.0.0",
+      "input_schema": "quality.report_ambiguity.input.schema.json",
+      "output_schema": "quality.report_ambiguity.output.schema.json",
+      "roles": [
+        "learner",
+        "author",
+        "reviewer"
+      ],
+      "side_effect": "create_quality_report",
+      "input": [
+        "resource_ref",
+        "resource_revision_id",
+        "ambiguity_type",
+        "location",
+        "description",
+        "candidate_interpretations",
+        "private_context_consent"
+      ],
+      "output": [
+        "report_id",
+        "deduplication_fingerprint",
+        "visibility",
+        "status",
+        "existing_report_id"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_interpretations": 10,
+        "max_description_characters": 4000,
+        "timeout_seconds": 30
+      },
+      "errors": [
+        "resource_revision_missing",
+        "private_context_not_consented",
+        "report_scope_forbidden"
+      ]
+    },
+    {
+      "tool_name": "progress.explain_recommendation",
+      "tool_version": "1.0.0",
+      "input_schema": "progress.explain_recommendation.input.schema.json",
+      "output_schema": "progress.explain_recommendation.output.schema.json",
+      "roles": [
+        "learner",
+        "support"
+      ],
+      "side_effect": "none",
+      "input": [
+        "profile_id",
+        "recommendation_id",
+        "as_of_projection_version",
+        "detail_level"
+      ],
+      "output": [
+        "reason",
+        "targets",
+        "authorized_facts",
+        "policy",
+        "alternatives",
+        "disappearance_conditions"
+      ],
+      "limits": {
+        "max_input_bytes": 262144,
+        "max_output_bytes": 1048576,
+        "max_evidence_references": 100,
+        "timeout_seconds": 10
+      },
+      "errors": [
+        "projection_version_unavailable",
+        "recommendation_expired",
+        "evidence_scope_forbidden"
+      ]
+    }
+  ]
+}

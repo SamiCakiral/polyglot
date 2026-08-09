@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lexicon.read_session_scope input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "planning_snapshot_id",
+    "roles",
+    "target_refs",
+    "list_snapshot_ids",
+    "max_senses"
+  ],
+  "properties": {
+    "profile_id": {},
+    "planning_snapshot_id": {},
+    "roles": {},
+    "target_refs": {},
+    "list_snapshot_ids": {},
+    "max_senses": {}
+  }
+}

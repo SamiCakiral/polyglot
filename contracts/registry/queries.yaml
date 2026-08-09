@@ -1,0 +1,195 @@
+{
+  "source": [
+    "docs/v2/25-registre-enums-commandes-api.md",
+    "docs/v2/09-etats-commandes-evenements.md"
+  ],
+  "queries": [
+    {
+      "method": "GET",
+      "route": "/session"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/diagnostics/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/foundation-runs/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/catalogue/targets"
+    },
+    {
+      "method": "GET",
+      "route": "/language-packs"
+    },
+    {
+      "method": "GET",
+      "route": "/lexicon/search"
+    },
+    {
+      "method": "GET",
+      "route": "/lexical-senses/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{id}/word-bank"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{id}/lexical-annotations"
+    },
+    {
+      "method": "GET",
+      "route": "/vocabulary-lists"
+    },
+    {
+      "method": "GET",
+      "route": "/vocabulary-lists/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/shared-vocabulary-lists"
+    },
+    {
+      "method": "GET",
+      "route": "/shared-vocabulary-lists/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/memory-prompts/due"
+    },
+    {
+      "method": "GET",
+      "route": "/imports/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/exports/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/module-enrollments/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/session-plans/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/sprint-runs/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/exercise-instances/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/attempts/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/correction-cases/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{id}/progress"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{id}/recommendations"
+    },
+    {
+      "method": "GET",
+      "route": "/assessments/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring/drafts"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring/catalogue"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring/modules"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring/content/{id}/history"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring/previews/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/validation-reports/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/jobs/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/jobs/{id}/events"
+    },
+    {
+      "method": "GET",
+      "route": "/media/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/media/tts/capabilities"
+    }
+  ],
+  "application_query_names": [
+    "GetCurrentUser",
+    "GetUserPreferences",
+    "ListLanguageProfiles",
+    "GetLanguageProfile",
+    "GetOnboardingState",
+    "GetDiagnosticSummary",
+    "SearchLexicon",
+    "GetLexicalSense",
+    "GetSenseNeighborhood",
+    "GetWordBankOverview",
+    "ExplainLexicalKnowledgeState",
+    "ListLexicalEncounters",
+    "ListUnresolvedMentions",
+    "ListVocabularyLists",
+    "GetVocabularyList",
+    "PreviewDynamicList",
+    "ListDueMemoryPrompts",
+    "ListLearningNeeds",
+    "GetCurrentModule",
+    "GetModuleTimeline",
+    "GetTodayPlan",
+    "ExplainSessionSelection",
+    "GetActiveSprintRun",
+    "GetExerciseInstance",
+    "GetAttempt",
+    "GetCorrection",
+    "GetProgressOverview",
+    "ExplainMasteryState",
+    "ListRecommendations",
+    "ListAssessments",
+    "GetAssessmentRun",
+    "GetAssessmentResult",
+    "GetGenerationJob",
+    "ListContentDrafts",
+    "GetValidationReport",
+    "GetTtsCapabilities",
+    "GetMediaAvailability"
+  ]
+}

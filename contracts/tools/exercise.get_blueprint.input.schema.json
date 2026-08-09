@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "exercise.get_blueprint input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "primitive_id",
+    "primitive_contract_version",
+    "language_pack_revision_id",
+    "mode",
+    "accessibility_capabilities"
+  ],
+  "properties": {
+    "primitive_id": {},
+    "primitive_contract_version": {},
+    "language_pack_revision_id": {},
+    "mode": {},
+    "accessibility_capabilities": {}
+  }
+}

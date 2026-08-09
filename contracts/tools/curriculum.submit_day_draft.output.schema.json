@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "curriculum.submit_day_draft output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "day_draft",
+    "reference_plans",
+    "budget_validation",
+    "observable_targets",
+    "checksum"
+  ],
+  "properties": {
+    "day_draft": {},
+    "reference_plans": {},
+    "budget_validation": {},
+    "observable_targets": {},
+    "checksum": {}
+  }
+}

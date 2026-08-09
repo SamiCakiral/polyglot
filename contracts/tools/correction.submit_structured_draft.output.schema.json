@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "correction.submit_structured_draft output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "correction_draft",
+    "criterion_coverage",
+    "candidate_observations",
+    "conflicts",
+    "review_required"
+  ],
+  "properties": {
+    "correction_draft": {},
+    "criterion_coverage": {},
+    "candidate_observations": {},
+    "conflicts": {},
+    "review_required": {}
+  }
+}

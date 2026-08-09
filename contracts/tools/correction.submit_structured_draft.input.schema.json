@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "correction.submit_structured_draft input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "attempt_id",
+    "attempt_version",
+    "strategy",
+    "verdict",
+    "criterion_scores",
+    "error_codes",
+    "proposed_answer",
+    "alternatives",
+    "explanation_codes",
+    "confidence",
+    "target_observations",
+    "provenance"
+  ],
+  "properties": {
+    "attempt_id": {},
+    "attempt_version": {},
+    "strategy": {},
+    "verdict": {},
+    "criterion_scores": {},
+    "error_codes": {},
+    "proposed_answer": {},
+    "alternatives": {},
+    "explanation_codes": {},
+    "confidence": {},
+    "target_observations": {},
+    "provenance": {}
+  }
+}

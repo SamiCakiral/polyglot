@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "catalogue.list_targets input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pack_revision_id",
+    "target_types",
+    "modality",
+    "operation",
+    "prerequisite_of",
+    "status",
+    "cursor",
+    "limit"
+  ],
+  "properties": {
+    "pack_revision_id": {},
+    "target_types": {},
+    "modality": {},
+    "operation": {},
+    "prerequisite_of": {},
+    "status": {},
+    "cursor": {},
+    "limit": {}
+  }
+}

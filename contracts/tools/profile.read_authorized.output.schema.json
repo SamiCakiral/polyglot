@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "profile.read_authorized output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile",
+    "varieties",
+    "goals",
+    "constraints",
+    "mastery_summary",
+    "due_summary",
+    "module_position",
+    "cutoff_at"
+  ],
+  "properties": {
+    "profile": {},
+    "varieties": {},
+    "goals": {},
+    "constraints": {},
+    "mastery_summary": {},
+    "due_summary": {},
+    "module_position": {},
+    "cutoff_at": {}
+  }
+}

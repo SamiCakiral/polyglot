@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "curriculum.submit_module_draft output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "module_draft",
+    "resolved_graph",
+    "total_load",
+    "findings",
+    "checksum"
+  ],
+  "properties": {
+    "module_draft": {},
+    "resolved_graph": {},
+    "total_load": {},
+    "findings": {},
+    "checksum": {}
+  }
+}

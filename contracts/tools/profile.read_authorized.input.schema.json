@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "profile.read_authorized input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile_id",
+    "purpose",
+    "field_groups"
+  ],
+  "properties": {
+    "profile_id": {},
+    "purpose": {},
+    "field_groups": {}
+  }
+}

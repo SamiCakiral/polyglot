@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "progress.explain_recommendation output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "reason",
+    "targets",
+    "authorized_facts",
+    "policy",
+    "alternatives",
+    "disappearance_conditions"
+  ],
+  "properties": {
+    "reason": {},
+    "targets": {},
+    "authorized_facts": {},
+    "policy": {},
+    "alternatives": {},
+    "disappearance_conditions": {}
+  }
+}

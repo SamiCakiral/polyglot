@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "quality.report_ambiguity input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "resource_ref",
+    "resource_revision_id",
+    "ambiguity_type",
+    "location",
+    "description",
+    "candidate_interpretations",
+    "private_context_consent"
+  ],
+  "properties": {
+    "resource_ref": {},
+    "resource_revision_id": {},
+    "ambiguity_type": {},
+    "location": {},
+    "description": {},
+    "candidate_interpretations": {},
+    "private_context_consent": {}
+  }
+}

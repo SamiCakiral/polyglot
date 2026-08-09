@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "content.validate_draft output",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "findings",
+    "coverage",
+    "decision",
+    "report_truncated"
+  ],
+  "properties": {
+    "report_id": {},
+    "findings": {},
+    "coverage": {},
+    "decision": {},
+    "report_truncated": {}
+  }
+}

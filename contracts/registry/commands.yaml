@@ -1,0 +1,1100 @@
+{
+  "source": "docs/v2/25-registre-enums-commandes-api.md",
+  "commands": [
+    {
+      "name": "RegisterAccount",
+      "method": "POST",
+      "route": "/api/v1/accounts",
+      "events": [
+        "account_registered"
+      ],
+      "errors": [
+        "identity_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "AuthenticateSession",
+      "method": "POST",
+      "route": "/api/v1/session",
+      "events": [
+        "session_authenticated"
+      ],
+      "errors": [
+        "invalid_credentials",
+        "account_locked"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RevokeSession",
+      "method": "DELETE",
+      "route": "/api/v1/session",
+      "events": [
+        "session_revoked"
+      ],
+      "errors": [],
+      "idempotency": "supported"
+    },
+    {
+      "name": "ChangePassword",
+      "method": "PUT",
+      "route": "/api/v1/account/password",
+      "events": [
+        "password_changed",
+        "sessions_revoked"
+      ],
+      "errors": [
+        "identity_provider_mismatch"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "UpdateUserPreferences",
+      "method": "PATCH",
+      "route": "/api/v1/account/preferences",
+      "events": [
+        "user_preferences_updated"
+      ],
+      "errors": [],
+      "idempotency": "supported"
+    },
+    {
+      "name": "UpdateConsent",
+      "method": "PUT",
+      "route": "/api/v1/consents/{purpose}",
+      "events": [
+        "consent_updated"
+      ],
+      "errors": [
+        "consent_purpose_unknown"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateLanguageProfile",
+      "method": "POST",
+      "route": "/api/v1/language-profiles",
+      "events": [
+        "language_profile_created"
+      ],
+      "errors": [
+        "profile_already_exists"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "UpdateLearningGoals",
+      "method": "PATCH",
+      "route": "/api/v1/language-profiles/{profile_id}/goals",
+      "events": [
+        "learning_goals_updated"
+      ],
+      "errors": [],
+      "idempotency": "supported"
+    },
+    {
+      "name": "StartDiagnostic",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/diagnostics",
+      "events": [
+        "diagnostic_started"
+      ],
+      "errors": [
+        "diagnostic_unavailable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SubmitDiagnosticResponse",
+      "method": "POST",
+      "route": "/api/v1/diagnostics/{run_id}/responses",
+      "events": [
+        "diagnostic_response_recorded"
+      ],
+      "errors": [
+        "response_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CompleteDiagnostic",
+      "method": "POST",
+      "route": "/api/v1/diagnostics/{run_id}:complete",
+      "events": [
+        "diagnostic_completed",
+        "placement_decided"
+      ],
+      "errors": [
+        "insufficient_coverage"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "StartFoundationRun",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/foundation-runs",
+      "events": [
+        "foundation_run_started"
+      ],
+      "errors": [
+        "foundation_pack_missing"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CompleteFoundationGate",
+      "method": "POST",
+      "route": "/api/v1/foundation-runs/{run_id}:complete",
+      "events": [
+        "foundation_gate_completed"
+      ],
+      "errors": [
+        "gate_not_ready"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "PauseLanguageProfile",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}:pause",
+      "events": [
+        "language_profile_paused"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ArchiveLanguageProfile",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}:archive",
+      "events": [
+        "language_profile_archived"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "RestoreLanguageProfile",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}:restore",
+      "events": [
+        "language_profile_restored"
+      ],
+      "errors": [
+        "pack_incompatible"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "DeleteLanguageProfile",
+      "method": "DELETE",
+      "route": "/api/v1/language-profiles/{profile_id}",
+      "events": [
+        "language_profile_deletion_requested"
+      ],
+      "errors": [
+        "active_export_or_job"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RecordLexicalEncounter",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/encounters",
+      "events": [
+        "lexical_encounter_recorded"
+      ],
+      "errors": [
+        "source_revision_missing"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResolveMention",
+      "method": "POST",
+      "route": "/api/v1/lexical-mentions/{mention_id}:resolve",
+      "events": [
+        "mention_resolved"
+      ],
+      "errors": [
+        "sense_ambiguous"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "AddPrivateLexicalUnit",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/private-lexicon",
+      "events": [
+        "private_lexical_unit_added"
+      ],
+      "errors": [
+        "duplicate_candidate"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "AssertLexicalRelation",
+      "method": "POST",
+      "route": "/api/v1/lexical-senses/{sense_id}/personal-relations",
+      "events": [
+        "lexical_relation_asserted"
+      ],
+      "errors": [
+        "relation_invalid"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RetractLexicalRelation",
+      "method": "POST",
+      "route": "/api/v1/personal-lexical-relations/{relation_id}:retract",
+      "events": [
+        "lexical_relation_retracted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "MergeLexicalUnits",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/private-lexicon:merge",
+      "events": [
+        "lexical_units_merged"
+      ],
+      "errors": [
+        "merge_ambiguous"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SplitLexicalSense",
+      "method": "POST",
+      "route": "/api/v1/lexical-senses/{sense_id}:split-private",
+      "events": [
+        "lexical_sense_split"
+      ],
+      "errors": [
+        "canonical_sense_immutable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "DeletePrivateContext",
+      "method": "DELETE",
+      "route": "/api/v1/lexical-encounters/{encounter_id}/private-context",
+      "events": [
+        "private_context_deleted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CaptureLexicalGap",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}/lexical-gaps",
+      "events": [
+        "lexical_gap_captured"
+      ],
+      "errors": [
+        "support_language_not_allowed"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "DeclareLexicalFamiliarity",
+      "method": "PUT",
+      "route": "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration",
+      "events": [
+        "lexical_familiarity_declared"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "SetLexicalLearningPreference",
+      "method": "PUT",
+      "route": "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
+      "events": [
+        "lexical_learning_preference_set"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "UpsertLexicalAnnotation",
+      "method": "PUT",
+      "route": "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation",
+      "events": [
+        "lexical_annotation_upserted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "DeleteLexicalAnnotation",
+      "method": "DELETE",
+      "route": "/api/v1/lexical-annotations/{annotation_id}",
+      "events": [
+        "lexical_annotation_deleted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateVocabularyList",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/vocabulary-lists",
+      "events": [
+        "vocabulary_list_created"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviseVocabularyList",
+      "method": "PATCH",
+      "route": "/api/v1/vocabulary-lists/{list_id}",
+      "events": [
+        "vocabulary_list_revised"
+      ],
+      "errors": [
+        "snapshot_immutable"
+      ],
+      "idempotency": "supported"
+    },
+    {
+      "name": "ChangeListMembers",
+      "method": "POST",
+      "route": "/api/v1/vocabulary-lists/{list_id}/members:batch",
+      "events": [
+        "vocabulary_list_revised"
+      ],
+      "errors": [
+        "member_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "FreezeVocabularyList",
+      "method": "POST",
+      "route": "/api/v1/vocabulary-lists/{list_id}:snapshot",
+      "events": [
+        "vocabulary_list_snapshot_created"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CloneVocabularyList",
+      "method": "POST",
+      "route": "/api/v1/vocabulary-lists/{list_id}:clone",
+      "events": [
+        "vocabulary_list_cloned"
+      ],
+      "errors": [
+        "list_not_shareable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "MergeVocabularyLists",
+      "method": "POST",
+      "route": "/api/v1/vocabulary-lists:merge",
+      "events": [
+        "vocabulary_lists_merged"
+      ],
+      "errors": [
+        "list_merge_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "PublishVocabularyListSnapshot",
+      "method": "POST",
+      "route": "/api/v1/vocabulary-lists/{list_id}/snapshots/{snapshot_id}:publish",
+      "events": [
+        "vocabulary_list_snapshot_published"
+      ],
+      "errors": [
+        "license_missing",
+        "private_context_present"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RetireSharedVocabularyList",
+      "method": "POST",
+      "route": "/api/v1/shared-vocabulary-lists/{publication_id}:retire",
+      "events": [
+        "shared_vocabulary_list_retired"
+      ],
+      "errors": [
+        "publication_not_active"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateMemoryPrompt",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/memory-prompts",
+      "events": [
+        "memory_prompt_created"
+      ],
+      "errors": [
+        "prompt_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SubmitMemoryReview",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts/{prompt_id}/reviews",
+      "events": [
+        "memory_review_recorded"
+      ],
+      "errors": [
+        "rating_not_allowed"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SuspendMemoryPrompt",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts/{prompt_id}:suspend",
+      "events": [
+        "memory_prompt_suspended"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResumeMemoryPrompt",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts/{prompt_id}:resume",
+      "events": [
+        "memory_prompt_resumed"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResetMemoryPrompt",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts/{prompt_id}:reset",
+      "events": [
+        "memory_schedule_reset"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "MergeMemoryPrompts",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts:merge",
+      "events": [
+        "memory_prompts_merged"
+      ],
+      "errors": [
+        "incompatible_protocols"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ArchiveMemoryPrompt",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts/{prompt_id}:archive",
+      "events": [
+        "memory_prompt_archived"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "RestoreMemoryPrompt",
+      "method": "POST",
+      "route": "/api/v1/memory-prompts/{prompt_id}:restore",
+      "events": [
+        "memory_prompt_restored"
+      ],
+      "errors": [
+        "target_revision_unavailable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "DeleteMemoryPrompt",
+      "method": "DELETE",
+      "route": "/api/v1/memory-prompts/{prompt_id}",
+      "events": [
+        "memory_prompt_deleted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateImport",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/imports",
+      "events": [
+        "import_created"
+      ],
+      "errors": [
+        "unsupported_import_format"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResolveImportConflict",
+      "method": "POST",
+      "route": "/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve",
+      "events": [
+        "import_conflict_resolved"
+      ],
+      "errors": [
+        "conflict_action_invalid",
+        "preview_stale"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CommitImport",
+      "method": "POST",
+      "route": "/api/v1/imports/{import_id}:commit",
+      "events": [
+        "import_committed"
+      ],
+      "errors": [
+        "preview_stale",
+        "unresolved_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RevertImport",
+      "method": "POST",
+      "route": "/api/v1/imports/{import_id}:revert",
+      "events": [
+        "import_reverted"
+      ],
+      "errors": [
+        "resource_reused"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RequestExport",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/exports",
+      "events": [
+        "export_requested"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateContentDraft",
+      "method": "POST",
+      "route": "/api/v1/authoring/drafts",
+      "events": [
+        "content_draft_created"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviseContentDraft",
+      "method": "PATCH",
+      "route": "/api/v1/authoring/drafts/{draft_id}",
+      "events": [
+        "content_draft_revised"
+      ],
+      "errors": [],
+      "idempotency": "supported"
+    },
+    {
+      "name": "ValidateContentRevision",
+      "method": "POST",
+      "route": "/api/v1/authoring/drafts/{draft_id}:validate",
+      "events": [
+        "content_validated",
+        "content_validation_failed"
+      ],
+      "errors": [
+        "validator_unavailable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ApproveContentRevision",
+      "method": "POST",
+      "route": "/api/v1/authoring/drafts/{draft_id}:approve",
+      "events": [
+        "content_approved"
+      ],
+      "errors": [
+        "self_approval_forbidden"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "PublishContentRevision",
+      "method": "POST",
+      "route": "/api/v1/authoring/drafts/{draft_id}:publish",
+      "events": [
+        "content_published"
+      ],
+      "errors": [
+        "reference_not_publishable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RetireContentRevision",
+      "method": "POST",
+      "route": "/api/v1/content/{content_id}/revisions/{revision_id}:retire",
+      "events": [
+        "content_retired"
+      ],
+      "errors": [
+        "historical_rights_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateLearningModule",
+      "method": "POST",
+      "route": "/api/v1/authoring/modules",
+      "events": [
+        "learning_module_created"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "PublishLearningModule",
+      "method": "POST",
+      "route": "/api/v1/authoring/modules/{module_id}:publish",
+      "events": [
+        "learning_module_published"
+      ],
+      "errors": [
+        "module_validation_failed"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "EnrollInModule",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/module-enrollments",
+      "events": [
+        "module_enrollment_created"
+      ],
+      "errors": [
+        "prerequisite_missing"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "PauseModuleEnrollment",
+      "method": "POST",
+      "route": "/api/v1/module-enrollments/{id}:pause",
+      "events": [
+        "module_enrollment_paused"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CompleteModuleEnrollment",
+      "method": "POST",
+      "route": "/api/v1/module-enrollments/{id}:complete",
+      "events": [
+        "module_enrollment_completed"
+      ],
+      "errors": [
+        "completion_criteria_missing"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "RequestGenerationJob",
+      "method": "POST",
+      "route": "/api/v1/generation-jobs",
+      "events": [
+        "generation_job_requested"
+      ],
+      "errors": [
+        "budget_exceeded",
+        "provider_unavailable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CancelGenerationJob",
+      "method": "POST",
+      "route": "/api/v1/generation-jobs/{job_id}:cancel",
+      "events": [
+        "generation_job_cancel_requested"
+      ],
+      "errors": [
+        "job_not_cancellable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "InvokeAuthoringTool",
+      "method": "POST",
+      "route": "/api/v1/tools/{tool_name}:invoke",
+      "events": [
+        "authoring_tool_invoked"
+      ],
+      "errors": [
+        "tool_not_allowed",
+        "tool_schema_invalid"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ComposeDailySession",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/daily-plans",
+      "events": [
+        "session_plan_composed"
+      ],
+      "errors": [
+        "no_valid_composition"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ComposeFreePractice",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/free-practice-plans",
+      "events": [
+        "free_practice_plan_composed"
+      ],
+      "errors": [
+        "prerequisite_missing"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "PrepareSessionPlan",
+      "method": "POST",
+      "route": "/api/v1/session-plans/{plan_id}:prepare",
+      "events": [
+        "session_plan_ready",
+        "session_plan_failed"
+      ],
+      "errors": [
+        "content_unavailable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CancelSessionPlan",
+      "method": "POST",
+      "route": "/api/v1/session-plans/{plan_id}:cancel",
+      "events": [
+        "session_plan_cancelled"
+      ],
+      "errors": [
+        "run_already_started"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "StartSprintRun",
+      "method": "POST",
+      "route": "/api/v1/session-plans/{plan_id}/runs",
+      "events": [
+        "sprint_run_started"
+      ],
+      "errors": [
+        "active_run_exists"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "InterruptSprintRun",
+      "method": "POST",
+      "route": "/api/v1/sprint-runs/{run_id}:interrupt",
+      "events": [
+        "sprint_run_interrupted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResumeSprintRun",
+      "method": "POST",
+      "route": "/api/v1/sprint-runs/{run_id}:resume",
+      "events": [
+        "sprint_run_resumed"
+      ],
+      "errors": [
+        "run_expired"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "StopSprintRun",
+      "method": "POST",
+      "route": "/api/v1/sprint-runs/{run_id}:stop",
+      "events": [
+        "sprint_run_stopped"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CompleteSprintRun",
+      "method": "POST",
+      "route": "/api/v1/sprint-runs/{run_id}:complete",
+      "events": [
+        "sprint_run_completed"
+      ],
+      "errors": [
+        "required_block_incomplete"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "OpenExerciseAttempt",
+      "method": "POST",
+      "route": "/api/v1/exercise-instances/{instance_id}/attempts",
+      "events": [
+        "exercise_attempt_opened"
+      ],
+      "errors": [
+        "attempt_already_open"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SaveAttemptDraft",
+      "method": "PATCH",
+      "route": "/api/v1/attempts/{attempt_id}/draft",
+      "events": [
+        "attempt_draft_saved"
+      ],
+      "errors": [
+        "draft_stale"
+      ],
+      "idempotency": "supported"
+    },
+    {
+      "name": "UseExerciseHint",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}/hints",
+      "events": [
+        "exercise_hint_used"
+      ],
+      "errors": [
+        "hint_not_available"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SubmitExerciseAttempt",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}:submit",
+      "events": [
+        "exercise_attempt_submitted"
+      ],
+      "errors": [
+        "answer_shape_invalid"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ContestCorrection",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}/correction-case",
+      "events": [
+        "correction_contested"
+      ],
+      "errors": [
+        "case_already_open"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviewCorrection",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}:mark-correction-read",
+      "events": [
+        "correction_reviewed"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviewCorrectionCase",
+      "method": "POST",
+      "route": "/api/v1/correction-cases/{case_id}:resolve",
+      "events": [
+        "correction_case_resolved"
+      ],
+      "errors": [
+        "review_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SkipExerciseBlock",
+      "method": "POST",
+      "route": "/api/v1/sprint-runs/{run_id}/blocks/{block_id}:skip",
+      "events": [
+        "exercise_block_skipped"
+      ],
+      "errors": [
+        "block_required"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "AbandonExerciseBlock",
+      "method": "POST",
+      "route": "/api/v1/sprint-runs/{run_id}/blocks/{block_id}:abandon",
+      "events": [
+        "exercise_block_abandoned"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "PrepareAssessment",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/assessments",
+      "events": [
+        "assessment_prepared"
+      ],
+      "errors": [
+        "assessment_unavailable"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "StartAssessment",
+      "method": "POST",
+      "route": "/api/v1/assessments/{run_id}:start",
+      "events": [
+        "assessment_started"
+      ],
+      "errors": [
+        "media_not_ready"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SaveAssessmentResponse",
+      "method": "PATCH",
+      "route": "/api/v1/assessments/{run_id}/responses/{item_id}",
+      "events": [
+        "assessment_response_saved"
+      ],
+      "errors": [
+        "response_stale"
+      ],
+      "idempotency": "supported"
+    },
+    {
+      "name": "PauseAssessment",
+      "method": "POST",
+      "route": "/api/v1/assessments/{run_id}:pause",
+      "events": [
+        "assessment_paused"
+      ],
+      "errors": [
+        "pause_not_allowed"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResumeAssessment",
+      "method": "POST",
+      "route": "/api/v1/assessments/{run_id}:resume",
+      "events": [
+        "assessment_resumed"
+      ],
+      "errors": [
+        "assessment_expired"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SubmitAssessment",
+      "method": "POST",
+      "route": "/api/v1/assessments/{run_id}:submit",
+      "events": [
+        "assessment_submitted"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviewAssessmentResult",
+      "method": "POST",
+      "route": "/api/v1/assessments/{run_id}:resolve-review",
+      "events": [
+        "assessment_review_resolved"
+      ],
+      "errors": [
+        "review_conflict",
+        "rubric_stale"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReserveMediaUpload",
+      "method": "POST",
+      "route": "/api/v1/media/uploads",
+      "events": [
+        "media_upload_reserved"
+      ],
+      "errors": [
+        "media_quota_exceeded"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CompleteMediaUpload",
+      "method": "POST",
+      "route": "/api/v1/media/uploads/{upload_id}:complete",
+      "events": [
+        "media_uploaded"
+      ],
+      "errors": [
+        "media_integrity_failed"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "DeleteMedia",
+      "method": "DELETE",
+      "route": "/api/v1/media/{media_id}",
+      "events": [
+        "media_deletion_requested"
+      ],
+      "errors": [
+        "media_still_required"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "CancelJob",
+      "method": "POST",
+      "route": "/api/v1/jobs/{job_id}:cancel",
+      "events": [
+        "job_cancel_requested"
+      ],
+      "errors": [
+        "job_not_cancellable"
+      ],
+      "idempotency": "required"
+    }
+  ]
+}
