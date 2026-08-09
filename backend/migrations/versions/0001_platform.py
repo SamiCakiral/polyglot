@@ -28,6 +28,7 @@ CREATE TABLE platform.command_receipts (
     expected_version integer,
     received_at timestamptz NOT NULL,
     result_ref uuid,
+    result_payload jsonb,
     status varchar(24) NOT NULL,
     expires_at timestamptz NOT NULL,
     CONSTRAINT ck_command_receipt_fingerprint CHECK (length(request_fingerprint) = 64),
@@ -83,9 +84,14 @@ CREATE TABLE platform.outbox_messages (
     published_at timestamptz,
     attempt_count integer NOT NULL DEFAULT 0,
     lease_owner varchar(120),
+    lease_token uuid,
     lease_expires_at timestamptz,
     last_error_code varchar(120),
-    CONSTRAINT ck_outbox_attempt_count CHECK (attempt_count >= 0)
+    CONSTRAINT ck_outbox_attempt_count CHECK (attempt_count >= 0),
+    CONSTRAINT ck_outbox_lease_complete CHECK (
+        (lease_owner IS NULL AND lease_token IS NULL AND lease_expires_at IS NULL)
+        OR (lease_owner IS NOT NULL AND lease_token IS NOT NULL AND lease_expires_at IS NOT NULL)
+    )
 );
 CREATE INDEX ix_outbox_messages_available
     ON platform.outbox_messages (lease_expires_at, created_at)

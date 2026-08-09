@@ -32,6 +32,7 @@ command_receipts = Table(
     Column("expected_version", Integer),
     Column("received_at", DateTime(timezone=True), nullable=False),
     Column("result_ref", UUID(as_uuid=True)),
+    Column("result_payload", JSONB),
     Column("status", String(24), nullable=False),
     Column("expires_at", DateTime(timezone=True), nullable=False),
     CheckConstraint("length(request_fingerprint) = 64", name="ck_command_receipt_fingerprint"),
@@ -108,9 +109,16 @@ outbox_messages = Table(
     Column("published_at", DateTime(timezone=True)),
     Column("attempt_count", Integer, nullable=False, server_default="0"),
     Column("lease_owner", String(120)),
+    Column("lease_token", UUID(as_uuid=True)),
     Column("lease_expires_at", DateTime(timezone=True)),
     Column("last_error_code", String(120)),
     CheckConstraint("attempt_count >= 0", name="ck_outbox_attempt_count"),
+    CheckConstraint(
+        "(lease_owner IS NULL AND lease_token IS NULL AND lease_expires_at IS NULL) "
+        "OR (lease_owner IS NOT NULL AND lease_token IS NOT NULL "
+        "AND lease_expires_at IS NOT NULL)",
+        name="ck_outbox_lease_complete",
+    ),
 )
 Index(
     "ix_outbox_messages_available",

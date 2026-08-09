@@ -17,6 +17,7 @@ class CommandReceipt:
     expected_version: int | None
     received_at: datetime
     result_ref: UUID | None
+    result_payload: dict[str, JsonValue] | None
     status: str
     expires_at: datetime
 
@@ -90,6 +91,7 @@ class OutboxClaim:
     created_at: datetime
     attempt_count: int
     lease_owner: str
+    lease_token: UUID
     lease_expires_at: datetime
 
 

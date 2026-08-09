@@ -132,6 +132,7 @@ async def test_expired_outbox_lease_can_be_recovered(session: AsyncSession) -> N
         .where(outbox_messages.c.event_id == event.event_id)
         .values(
             lease_owner="dead-worker",
+            lease_token=uuid4(),
             lease_expires_at=datetime.now(UTC) - timedelta(seconds=1),
         )
     )
@@ -232,6 +233,7 @@ async def test_job_attempts_are_append_only(session: AsyncSession) -> None:
             started_at=now,
             finished_at=None,
             cancel_requested_at=None,
+            retry_not_before_at=None,
             progress_completed=0,
             progress_total=1,
             result_ref=None,
@@ -244,11 +246,10 @@ async def test_job_attempts_are_append_only(session: AsyncSession) -> None:
             job_attempt_id=attempt_id,
             job_id=job_id,
             attempt_no=1,
-            status="running",
-            lease_owner="worker-1",
-            lease_expires_at=now + timedelta(minutes=5),
+            status="succeeded",
+            worker_id="worker-1",
             started_at=now,
-            finished_at=None,
+            finished_at=now + timedelta(seconds=1),
             retry_not_before_at=None,
             provider_code=None,
             operation_code=None,
@@ -262,7 +263,7 @@ async def test_job_attempts_are_append_only(session: AsyncSession) -> None:
         await session.execute(
             job_attempts.update()
             .where(job_attempts.c.job_attempt_id == attempt_id)
-            .values(status="succeeded")
+            .values(status="failed")
         )
         await session.commit()
     await session.rollback()

@@ -50,19 +50,20 @@ class LocalOutboxDispatcher:
                 )
             except Exception:
                 async with self._session_factory() as session:
+                    failed_at = self._clock.now()
                     await SqlOutboxRepository(session).mark_failed(
-                        outbox_id=claim.outbox_id,
-                        worker_id=self._worker_id,
+                        claim=claim,
+                        failed_at=failed_at,
                         error_code="publisher_error",
                     )
                     await session.commit()
                 continue
             async with self._session_factory() as session:
-                await SqlOutboxRepository(session).mark_published(
-                    outbox_id=claim.outbox_id,
-                    worker_id=self._worker_id,
+                acknowledged = await SqlOutboxRepository(session).mark_published(
+                    claim=claim,
                     published_at=self._clock.now(),
                 )
                 await session.commit()
-            published_count += 1
+            if acknowledged:
+                published_count += 1
         return published_count

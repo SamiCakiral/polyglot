@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
+from polyglot.platform.json_types import JsonValue
 from polyglot.platform.persistence.models import (
     command_receipts,
     domain_events,
@@ -55,7 +56,13 @@ class SqlCommandReceiptStore:
                 )
             )
         ).mappings().one()
-        if existing["request_fingerprint"] != receipt.request_fingerprint:
+        immutable_identity = (
+            "request_fingerprint",
+            "aggregate_type",
+            "aggregate_id",
+            "expected_version",
+        )
+        if any(existing[field] != getattr(receipt, field) for field in immutable_identity):
             raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
         stored = CommandReceipt(
             **{
@@ -64,6 +71,49 @@ class SqlCommandReceiptStore:
             }
         )
         return CommandReservation(receipt=stored, created=False)
+
+    async def complete(
+        self,
+        *,
+        command_id: UUID,
+        status: str,
+        result_ref: UUID | None,
+        result_payload: dict[str, JsonValue] | None,
+    ) -> CommandReceipt:
+        if status not in {"succeeded", "rejected", "failed"}:
+            raise ValueError("command completion requires a terminal status")
+        completed = (
+            await self._session.execute(
+                command_receipts.update()
+                .where(
+                    command_receipts.c.command_id == command_id,
+                    command_receipts.c.status == "started",
+                )
+                .values(
+                    status=status,
+                    result_ref=result_ref,
+                    result_payload=result_payload,
+                )
+                .returning(*command_receipts.c)
+            )
+        ).mappings().one_or_none()
+        if completed is None:
+            completed = (
+                await self._session.execute(
+                    select(command_receipts).where(command_receipts.c.command_id == command_id)
+                )
+            ).mappings().one_or_none()
+        if completed is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        if (
+            completed["status"] != status
+            or completed["result_ref"] != result_ref
+            or completed["result_payload"] != result_payload
+        ):
+            raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
+        return CommandReceipt(
+            **{field: completed[field] for field in CommandReceipt.__dataclass_fields__}
+        )
 
 
 class SqlEventOutboxRepository:
@@ -105,7 +155,18 @@ class SqlInboxRepository:
             .on_conflict_do_nothing(index_elements=("consumer_code", "event_id"))
             .returning(inbox_receipts.c.event_id)
         )
-        return await self._session.scalar(statement) is not None
+        inserted_id = await self._session.scalar(statement)
+        if inserted_id is not None:
+            return True
+        existing_checksum = await self._session.scalar(
+            select(inbox_receipts.c.result_checksum).where(
+                inbox_receipts.c.consumer_code == receipt.consumer_code,
+                inbox_receipts.c.event_id == receipt.event_id,
+            )
+        )
+        if existing_checksum != receipt.result_checksum:
+            raise DomainError(ErrorCode.RESPONSE_CONFLICT)
+        return False
 
 
 class SqlJobStore:
@@ -363,8 +424,13 @@ class SqlRetentionStore:
 
 
 class SqlOutboxRepository:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        id_generator: IdGenerator | None = None,
+    ) -> None:
         self._session = session
+        self._id_generator = id_generator or Uuid7Generator()
 
     async def claim(
         self,
@@ -391,11 +457,17 @@ class SqlOutboxRepository:
         if not identifiers:
             return []
         lease_expires_at = now + lease_for
-        await self._session.execute(
-            outbox_messages.update()
-            .where(outbox_messages.c.outbox_id.in_(identifiers))
-            .values(lease_owner=worker_id, lease_expires_at=lease_expires_at)
-        )
+        lease_tokens = {identifier: self._id_generator.new() for identifier in identifiers}
+        for identifier in identifiers:
+            await self._session.execute(
+                outbox_messages.update()
+                .where(outbox_messages.c.outbox_id == identifier)
+                .values(
+                    lease_owner=worker_id,
+                    lease_token=lease_tokens[identifier],
+                    lease_expires_at=lease_expires_at,
+                )
+            )
         rows = (
             await self._session.execute(
                 select(
@@ -405,6 +477,7 @@ class SqlOutboxRepository:
                     domain_events.c.correlation_id,
                     outbox_messages.c.created_at,
                     outbox_messages.c.attempt_count,
+                    outbox_messages.c.lease_token,
                 )
                 .join(domain_events, domain_events.c.event_id == outbox_messages.c.event_id)
                 .where(outbox_messages.c.outbox_id.in_(identifiers))
@@ -423,46 +496,55 @@ class SqlOutboxRepository:
     async def mark_published(
         self,
         *,
-        outbox_id: UUID,
-        worker_id: str,
+        claim: OutboxClaim,
         published_at: datetime,
-    ) -> None:
-        await self._session.execute(
+    ) -> bool:
+        acknowledged = await self._session.scalar(
             outbox_messages.update()
             .where(
-                outbox_messages.c.outbox_id == outbox_id,
-                outbox_messages.c.lease_owner == worker_id,
+                outbox_messages.c.outbox_id == claim.outbox_id,
+                outbox_messages.c.lease_owner == claim.lease_owner,
+                outbox_messages.c.lease_token == claim.lease_token,
+                outbox_messages.c.lease_expires_at > published_at,
                 outbox_messages.c.published_at.is_(None),
             )
             .values(
                 published_at=published_at,
                 attempt_count=outbox_messages.c.attempt_count + 1,
                 lease_owner=None,
+                lease_token=None,
                 lease_expires_at=None,
                 last_error_code=None,
             )
+            .returning(outbox_messages.c.outbox_id)
         )
+        return acknowledged is not None
 
     async def mark_failed(
         self,
         *,
-        outbox_id: UUID,
-        worker_id: str,
+        claim: OutboxClaim,
+        failed_at: datetime,
         error_code: str,
-    ) -> None:
-        await self._session.execute(
+    ) -> bool:
+        acknowledged = await self._session.scalar(
             outbox_messages.update()
             .where(
                 and_(
-                    outbox_messages.c.outbox_id == outbox_id,
-                    outbox_messages.c.lease_owner == worker_id,
+                    outbox_messages.c.outbox_id == claim.outbox_id,
+                    outbox_messages.c.lease_owner == claim.lease_owner,
+                    outbox_messages.c.lease_token == claim.lease_token,
+                    outbox_messages.c.lease_expires_at > failed_at,
                     outbox_messages.c.published_at.is_(None),
                 )
             )
             .values(
                 attempt_count=outbox_messages.c.attempt_count + 1,
                 lease_owner=None,
+                lease_token=None,
                 lease_expires_at=None,
                 last_error_code=error_code,
             )
+            .returning(outbox_messages.c.outbox_id)
         )
+        return acknowledged is not None
