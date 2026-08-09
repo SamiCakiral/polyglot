@@ -2,6 +2,7 @@ import os
 from collections.abc import AsyncIterator
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 
@@ -18,3 +19,24 @@ async def session(database_url: str) -> AsyncIterator[AsyncSession]:
         yield database_session
         await database_session.rollback()
     await engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+async def clean_platform_tables(database_url: str) -> AsyncIterator[None]:
+    engine = create_async_engine(database_url)
+    async with engine.begin() as connection:
+        schema_exists = await connection.scalar(text("SELECT to_regnamespace('platform')"))
+        if schema_exists is not None:
+            await connection.execute(text("TRUNCATE TABLE platform.domain_events CASCADE"))
+            table_names = (
+                await connection.execute(
+                    text(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema = 'platform' AND table_name != 'domain_events'"
+                    )
+                )
+            ).scalars()
+            for table_name in table_names:
+                await connection.execute(text(f'TRUNCATE TABLE platform."{table_name}" CASCADE'))
+    await engine.dispose()
+    yield
