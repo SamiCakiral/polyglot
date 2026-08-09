@@ -28,7 +28,22 @@ def validate_trivy_pins(workflow: str) -> None:
             raise ValueError("Trivy action must resolve to the reviewed safe release")
         if tuple(map(int, release.removeprefix("v").split("."))) < (0, 35, 0):
             raise ValueError("pre-0.35 Trivy action releases are forbidden")
-    versions = re.findall(r"^\s+version:\s+([^\s#]+)", workflow, re.MULTILINE)
+    lines = workflow.splitlines()
+    versions: list[str] = []
+    for index, line in enumerate(lines):
+        if "uses: aquasecurity/trivy-action@" not in line:
+            continue
+        uses_indent = len(line) - len(line.lstrip())
+        for following in lines[index + 1 :]:
+            stripped = following.strip()
+            indent = len(following) - len(following.lstrip())
+            if (stripped.startswith("- ") and indent < uses_indent) or (
+                stripped.startswith("uses:") and indent <= uses_indent
+            ):
+                break
+            if stripped.startswith("version:"):
+                versions.append(stripped.split(":", 1)[1].strip())
+                break
     if versions != [TRIVY_BINARY_VERSION, TRIVY_BINARY_VERSION]:
         raise ValueError("each Trivy step must pin the reviewed binary version")
 
@@ -81,10 +96,14 @@ def test_ci_contract_rejects_mutable_affected_or_unpinned_trivy(
 ) -> None:
     safe_workflow = "\n".join(
         [
-            f"uses: aquasecurity/trivy-action@{TRIVY_ACTION_SHA} # {TRIVY_ACTION_RELEASE}",
-            f"  version: {TRIVY_BINARY_VERSION}",
-            f"uses: aquasecurity/trivy-action@{TRIVY_ACTION_SHA} # {TRIVY_ACTION_RELEASE}",
-            f"  version: {TRIVY_BINARY_VERSION}",
+            "      - name: First scan",
+            f"        uses: aquasecurity/trivy-action@{TRIVY_ACTION_SHA} # {TRIVY_ACTION_RELEASE}",
+            "        with:",
+            f"          version: {TRIVY_BINARY_VERSION}",
+            "      - name: Second scan",
+            f"        uses: aquasecurity/trivy-action@{TRIVY_ACTION_SHA} # {TRIVY_ACTION_RELEASE}",
+            "        with:",
+            f"          version: {TRIVY_BINARY_VERSION}",
         ]
     )
 
