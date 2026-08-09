@@ -35,6 +35,30 @@ CREATE TABLE platform.command_receipts (
         CHECK (request_fingerprint ~ '^[0-9a-f]{64}$'),
     CONSTRAINT ck_command_receipt_status
         CHECK (status IN ('started', 'succeeded', 'rejected', 'failed')),
+    CONSTRAINT ck_command_receipt_replay_shape CHECK (
+        (status = 'started' AND result_ref IS NULL AND result_payload IS NULL)
+        OR (
+            status = 'succeeded'
+            AND result_ref IS NOT NULL
+            AND octet_length(result_payload::text) <= 512
+            AND result_payload = jsonb_build_object(
+                'resource_id', result_payload->'resource_id',
+                'version', result_payload->'version'
+            )
+            AND result_payload->>'resource_id' = result_ref::text
+            AND jsonb_typeof(result_payload->'version') = 'number'
+        ) OR (
+            status IN ('rejected', 'failed')
+            AND result_ref IS NULL
+            AND octet_length(result_payload::text) <= 512
+            AND result_payload = jsonb_build_object(
+                'code', result_payload->'code',
+                'message_key', result_payload->'message_key'
+            )
+            AND jsonb_typeof(result_payload->'code') = 'string'
+            AND jsonb_typeof(result_payload->'message_key') = 'string'
+        )
+    ),
     CONSTRAINT uq_command_receipt_scope UNIQUE (actor_id, command_type, idempotency_key)
 );
 CREATE INDEX ix_command_receipts_expires_at ON platform.command_receipts (expires_at);

@@ -32,7 +32,7 @@ command_receipts = Table(
     Column("expected_version", Integer),
     Column("received_at", DateTime(timezone=True), nullable=False),
     Column("result_ref", UUID(as_uuid=True)),
-    Column("result_payload", JSONB),
+    Column("result_payload", JSONB(none_as_null=True)),
     Column("status", String(24), nullable=False),
     Column("expires_at", DateTime(timezone=True), nullable=False),
     CheckConstraint(
@@ -42,6 +42,24 @@ command_receipts = Table(
     CheckConstraint(
         "status IN ('started', 'succeeded', 'rejected', 'failed')",
         name="ck_command_receipt_status",
+    ),
+    CheckConstraint(
+        "(status = 'started' AND result_ref IS NULL AND result_payload IS NULL) OR "
+        "(status = 'succeeded' AND result_ref IS NOT NULL "
+        "AND octet_length(result_payload::text) <= 512 "
+        "AND result_payload = jsonb_build_object("
+        "'resource_id', result_payload->'resource_id', "
+        "'version', result_payload->'version') "
+        "AND result_payload->>'resource_id' = result_ref::text "
+        "AND jsonb_typeof(result_payload->'version') = 'number') OR "
+        "(status IN ('rejected', 'failed') AND result_ref IS NULL "
+        "AND octet_length(result_payload::text) <= 512 "
+        "AND result_payload = jsonb_build_object("
+        "'code', result_payload->'code', "
+        "'message_key', result_payload->'message_key') "
+        "AND jsonb_typeof(result_payload->'code') = 'string' "
+        "AND jsonb_typeof(result_payload->'message_key') = 'string')",
+        name="ck_command_receipt_replay_shape",
     ),
     UniqueConstraint(
         "actor_id",

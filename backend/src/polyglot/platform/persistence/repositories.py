@@ -8,6 +8,7 @@ from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.platform.errors import DomainError, ErrorCode
+from polyglot.platform.fingerprint import canonical_json_bytes
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 from polyglot.platform.json_types import JsonValue
 from polyglot.platform.persistence.models import (
@@ -28,6 +29,55 @@ from polyglot.platform.persistence.records import (
     OutboxClaim,
     RetentionPurgeResult,
 )
+
+_MAX_RECEIPT_REPLAY_BYTES = 512
+
+
+def _invalid_receipt_replay() -> DomainError:
+    return DomainError(
+        ErrorCode.VALIDATION_FAILED,
+        field_errors=[{"location": "result_payload", "code": "invalid"}],
+    )
+
+
+def _validate_receipt_replay(
+    *,
+    status: str,
+    result_ref: UUID | None,
+    result_payload: dict[str, JsonValue] | None,
+) -> None:
+    if result_payload is None:
+        raise _invalid_receipt_replay()
+    try:
+        if len(canonical_json_bytes(result_payload)) > _MAX_RECEIPT_REPLAY_BYTES:
+            raise _invalid_receipt_replay()
+    except (TypeError, ValueError):
+        raise _invalid_receipt_replay() from None
+
+    if status == "succeeded":
+        version = result_payload.get("version")
+        valid = (
+            result_ref is not None
+            and set(result_payload) == {"resource_id", "version"}
+            and result_payload.get("resource_id") == str(result_ref)
+            and isinstance(version, int)
+            and not isinstance(version, bool)
+            and version >= 1
+        )
+    else:
+        code = result_payload.get("code")
+        try:
+            error_code = ErrorCode(code) if isinstance(code, str) else None
+        except ValueError:
+            error_code = None
+        valid = (
+            result_ref is None
+            and set(result_payload) == {"code", "message_key"}
+            and error_code is not None
+            and result_payload.get("message_key") == f"errors.{error_code.value}"
+        )
+    if not valid:
+        raise _invalid_receipt_replay()
 
 
 class SqlCommandReceiptStore:
@@ -82,6 +132,11 @@ class SqlCommandReceiptStore:
     ) -> CommandReceipt:
         if status not in {"succeeded", "rejected", "failed"}:
             raise ValueError("command completion requires a terminal status")
+        _validate_receipt_replay(
+            status=status,
+            result_ref=result_ref,
+            result_payload=result_payload,
+        )
         completed = (
             await self._session.execute(
                 command_receipts.update()
