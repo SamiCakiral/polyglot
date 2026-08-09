@@ -6,6 +6,8 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from polyglot.platform.errors import DomainError, ErrorCode
+
 
 def make_event() -> object:
     from polyglot.platform.persistence.records import DomainEvent
@@ -94,6 +96,28 @@ async def test_inbox_deduplicates_consumer_and_event(session: AsyncSession) -> N
     assert await repository.record(receipt) is False
 
 
+async def test_inbox_rejects_a_divergent_duplicate_checksum(session: AsyncSession) -> None:
+    from dataclasses import replace
+
+    from polyglot.platform.persistence.records import InboxReceipt
+    from polyglot.platform.persistence.repositories import SqlInboxRepository
+
+    receipt = InboxReceipt(
+        consumer_code="example_projection",
+        event_id=uuid4(),
+        processed_at=datetime.now(UTC),
+        result_checksum="a" * 64,
+    )
+    repository = SqlInboxRepository(session)
+    assert await repository.record(receipt)
+    await session.commit()
+
+    with pytest.raises(DomainError) as captured:
+        await repository.record(replace(receipt, result_checksum="b" * 64))
+
+    assert captured.value.code is ErrorCode.RESPONSE_CONFLICT
+
+
 async def test_expired_outbox_lease_can_be_recovered(session: AsyncSession) -> None:
     from polyglot.platform.persistence.models import outbox_messages
     from polyglot.platform.persistence.repositories import SqlOutboxRepository
@@ -122,6 +146,50 @@ async def test_expired_outbox_lease_can_be_recovered(session: AsyncSession) -> N
 
     assert [message.event_id for message in claimed] == [event.event_id]
     assert claimed[0].lease_owner == "replacement-worker"
+
+
+async def test_stale_outbox_claim_cannot_ack_after_same_worker_reclaims(
+    session: AsyncSession,
+) -> None:
+    from polyglot.platform.persistence.repositories import (
+        SqlEventOutboxRepository,
+        SqlOutboxRepository,
+    )
+
+    event = make_event()
+    await SqlEventOutboxRepository(session).add(event, destinations=("local",))
+    await session.commit()
+    store = SqlOutboxRepository(session)
+    claimed_at = datetime.now(UTC)
+    first = (
+        await store.claim(
+            worker_id="worker-reused",
+            now=claimed_at,
+            lease_for=timedelta(minutes=5),
+            limit=1,
+        )
+    )[0]
+    await session.commit()
+    replacement = (
+        await store.claim(
+            worker_id="worker-reused",
+            now=claimed_at + timedelta(minutes=6),
+            lease_for=timedelta(minutes=5),
+            limit=1,
+        )
+    )[0]
+    await session.commit()
+
+    assert first.lease_token != replacement.lease_token
+    stale_acknowledged = await store.mark_published(
+        claim=first,
+        published_at=claimed_at + timedelta(minutes=6),
+    )
+    assert not stale_acknowledged
+    assert await store.mark_published(
+        claim=replacement,
+        published_at=claimed_at + timedelta(minutes=7),
+    )
 
 
 async def test_domain_events_are_append_only(session: AsyncSession) -> None:
