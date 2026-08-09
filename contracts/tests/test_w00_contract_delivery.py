@@ -229,7 +229,9 @@ class W00ContractDeliveryTest(unittest.TestCase):
     def test_rejects_untracked_files_in_protected_trees(self) -> None:
         paths = [
             ROOT / "contracts/local-private.json",
+            ROOT / "contracts/tests/__pycache__/private.pyc",
             ROOT / "scripts/generate_pillar_content_v2.py",
+            ROOT / "docs/.venv/secret.txt",
             ROOT / "docs/private-notes.txt",
         ]
         for path in paths:
