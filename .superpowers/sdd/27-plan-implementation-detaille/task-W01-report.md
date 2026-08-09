@@ -35,6 +35,13 @@ prepared but has not been run or claimed green.
 - `ec582a2` docs(w01): preserve round-two review evidence
 - `d58bf29` test(ci): capture Trivy expiry timestamp format
 - `ed6ca4c` fix(ci): use Trivy-compatible VEX expiry
+- `e3401d9` test(platform): capture authorized subject purge red
+- `2e838ae` fix(platform): authorize deletion-request purge
+- `46fa704` test(ci): capture immutable Trivy pins red
+- `a92c118` fix(ci): pin safe Trivy action and binary
+- `d6fbc54` test(platform): capture reservation boundary red
+- `6fe85e3` fix(platform): close command reservation state
+- `d89477c` docs(w01): preserve round-three review evidence
 
 ## RED evidence
 
@@ -66,6 +73,16 @@ prepared but has not been run or claimed green.
 - Round-two CI/VEX RED: 3 tests failed on the moving CI service tag and absent
   VEX/ignore artifacts. The actual Trivy gate then exposed its required RFC 3339
   expiry format; the added format test failed once before the ignore was fixed.
+- Round-three purge authorization RED: 7 tests failed because the retention role,
+  deletion-request validation/transition, tombstone uniqueness and role ACLs did
+  not exist.
+- Round-three Trivy RED: the current workflow failed the immutable-reference
+  contract because both scanner steps used affected mutable `0.33.1` tags. Four
+  adversarial mutations prove rejection of mutable, pre-0.35, `latest` and
+  missing binary references.
+- Round-three reservation RED: 9 tests failed because terminal/malformed
+  reservations passed the domain/store boundaries and SQL accepted null/open
+  terminal shapes.
 
 ## GREEN evidence
 
@@ -78,7 +95,7 @@ prepared but has not been run or claimed green.
 - Compose recreated the digest-pinned PostgreSQL service and reported healthy.
 - Alembic: downgrade to base, upgrade to `0001_platform (head)`, one head,
   current at head, and `No new upgrade operations detected`.
-- Integration/contract: 66 passed in 3.82s. This includes job claim/renewal/
+- Integration/contract: 83 passed in 4.77s. This includes job claim/renewal/
   takeover/success/failure/retry, immutable attempts, controlled purge,
   stable idempotency replay, inbox divergence, outbox fencing, migration
   completeness, RFC 9457, event boundary, FX-OPS, Compose and OpenAPI checks.
@@ -99,9 +116,16 @@ prepared but has not been run or claimed green.
   exactly one head, current at head, no upgrade operations detected, installed
   wheel migration `1 passed`.
 - Final security: repository/history secret scan clean; `pip-audit` found no
-  known vulnerabilities; Trivy 0.69.1 filesystem scan found 0 Critical findings;
+  known vulnerabilities; Trivy 0.69.3 filesystem scan found 0 Critical findings;
   the pinned PostgreSQL image scan found 0 unsuppressed Critical findings and
   reported the reviewed `gosu` finding suppressed by the scoped exception.
+- Round-three focused GREEN: purge/migration `10 passed`; Trivy CI contract `7
+  passed`; reservation boundary `20 passed`; combined focused suite `37 passed`.
+- Official action verification: `git ls-remote` against
+  `https://github.com/aquasecurity/trivy-action.git` resolved
+  `refs/tags/v0.36.0^{}` to full commit
+  `ed142fd0673e97e23eac54620cfb913e5ce36c25`. Both workflow steps use that SHA,
+  annotate `v0.36.0`, and pin Aqua-advisory-safe Trivy binary `v0.69.3`.
 
 ## Architecture disposition
 
@@ -111,14 +135,25 @@ prepared but has not been run or claimed green.
   Expired rows can only be removed through the transaction-authorized,
   `SECURITY DEFINER` purge function, which writes a new audit entry.
 - Account/profile deletion uses a separate transaction authorization scoped to
-  the exact subject and private privacy classes. It removes matching outbox/event
-  rows, leaves other subjects untouched, and appends a retained audit entry.
+  the exact subject and private privacy classes. The security-definer function
+  locks a matching confirmed/purging deletion request, transitions it atomically
+  to completed, removes matching outbox/event rows, leaves other subjects
+  untouched, upserts the deletion tombstone and appends an audit linked to the
+  deletion request.
+- PostgreSQL roles are explicit and distinct: `polyglot_migration` owns the purge
+  functions but has execute revoked, `polyglot_runtime` is denied, and only
+  `polyglot_retention` can execute them. Focused tests exercise actual `SET ROLE`
+  execution and denial in PostgreSQL.
 - Job terminal writes and outbox terminal acknowledgements fence lease ownership
   against PostgreSQL `clock_timestamp()` in the same SQL statement while keeping
   caller timestamps as semantic fact timestamps.
 - Command receipts accept only bounded success or problem descriptors. Their
   canonical payload limit is 512 bytes and the database enforces the closed
   status/result shape.
+- New reservations are domain/store constrained to `started` with null result
+  fields. Stored terminal receipts are hydrated internally and can only be
+  reached through `complete()`; SQL checks fail closed on null payloads,
+  non-integer versions, unknown error codes and message-key mismatches.
 - Object storage remains the explicit local filesystem placeholder. A real
   object-store adapter remains deferred to W15.
 - OpenAPI validation is deliberately a W01 route-membership guard for the two
