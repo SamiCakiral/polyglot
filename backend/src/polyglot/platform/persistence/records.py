@@ -1,8 +1,53 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
+from polyglot.platform.errors import DomainError, ErrorCode
+from polyglot.platform.event_contracts import canonical_event_versions
+from polyglot.platform.fingerprint import canonical_json_bytes
 from polyglot.platform.json_types import JsonValue
+
+_ALLOWED_ACTOR_TYPES = frozenset({"account", "service", "support", "system"})
+_ALLOWED_PRIVACY_CLASSES = frozenset({"public", "internal", "personal", "sensitive"})
+_FORBIDDEN_PAYLOAD_KEYS = frozenset(
+    {
+        "access_token",
+        "authorization",
+        "cookie",
+        "credential",
+        "password",
+        "prompt",
+        "raw_audio",
+        "refresh_token",
+        "secret",
+        "signed_url",
+        "token",
+        "transcript",
+    }
+)
+_MAX_EVENT_PAYLOAD_BYTES = 65_536
+
+
+def _invalid_event(field: str, code: str = "invalid") -> DomainError:
+    return DomainError(
+        ErrorCode.VALIDATION_FAILED,
+        field_errors=[{"location": field, "code": code}],
+    )
+
+
+def _contains_forbidden_key(value: JsonValue) -> bool:
+    if isinstance(value, dict):
+        return any(
+            key.lower() in _FORBIDDEN_PAYLOAD_KEYS or _contains_forbidden_key(child)
+            for key, child in value.items()
+        )
+    if isinstance(value, list):
+        return any(_contains_forbidden_key(child) for child in value)
+    return False
+
+
+def _is_utc(value: datetime) -> bool:
+    return value.tzinfo is not None and value.utcoffset() == timedelta(0)
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,6 +93,47 @@ class DomainEvent:
     policy_versions: dict[str, JsonValue]
     payload: dict[str, JsonValue]
     expires_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        if (self.event_type, self.schema_version) not in canonical_event_versions():
+            raise _invalid_event("event_type")
+        identifiers = {
+            "event_id": self.event_id,
+            "aggregate_id": self.aggregate_id,
+            "actor_id": self.actor_id,
+            "correlation_id": self.correlation_id,
+            "command_id": self.command_id,
+        }
+        if self.profile_id is not None:
+            identifiers["profile_id"] = self.profile_id
+        if self.causation_id is not None:
+            identifiers["causation_id"] = self.causation_id
+        for field, identifier in identifiers.items():
+            if identifier.version != 7:
+                raise _invalid_event(field)
+        if self.actor_type not in _ALLOWED_ACTOR_TYPES:
+            raise _invalid_event("actor_type")
+        if self.privacy_class not in _ALLOWED_PRIVACY_CLASSES:
+            raise _invalid_event("privacy_class")
+        for field, instant in {
+            "occurred_at": self.occurred_at,
+            "recorded_at": self.recorded_at,
+        }.items():
+            if not _is_utc(instant):
+                raise _invalid_event(field)
+        if self.expires_at is not None and not _is_utc(self.expires_at):
+            raise _invalid_event("expires_at")
+        if self.privacy_class in {"personal", "sensitive"}:
+            if self.expires_at is None:
+                raise _invalid_event("expires_at", "required_for_private_event")
+            if self.profile_id is None:
+                raise _invalid_event("profile_id", "required_for_private_event")
+        try:
+            payload_size = len(canonical_json_bytes(self.payload))
+        except (TypeError, ValueError):
+            raise _invalid_event("payload") from None
+        if payload_size > _MAX_EVENT_PAYLOAD_BYTES or _contains_forbidden_key(self.payload):
+            raise _invalid_event("payload")
 
     def to_envelope(self) -> dict[str, JsonValue]:
         envelope: dict[str, JsonValue] = {

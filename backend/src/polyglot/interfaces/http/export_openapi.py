@@ -11,7 +11,7 @@ HTTP_METHODS = frozenset({"get", "post", "put", "patch", "delete"})
 
 def canonical_openapi() -> str:
     return json.dumps(
-        create_app().openapi(),
+        create_app(test_mode=True).openapi(),
         ensure_ascii=False,
         indent=2,
         sort_keys=True,
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check", action="store_true")
     parser.add_argument("path", type=Path)
     arguments = parser.parse_args(argv)
-    document = create_app().openapi()
+    document = create_app(test_mode=True).openapi()
     registry = Path(__file__).resolve().parents[5] / "contracts/registry"
     validate_registry_compatibility(document, registry)
     rendered = json.dumps(document, ensure_ascii=False, indent=2, sort_keys=True) + "\n"

@@ -11,7 +11,7 @@ def test_openapi_exports_only_the_implemented_w01_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
-    document = create_app().openapi()
+    document = create_app(test_mode=True).openapi()
 
     assert set(document["paths"]) == {
         "/api/v1/health/live",

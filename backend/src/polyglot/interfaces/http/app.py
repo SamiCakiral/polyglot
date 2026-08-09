@@ -45,7 +45,10 @@ def create_app(
     id_generator: IdGenerator | None = None,
     readiness_checks: Sequence[ReadinessCheck] = (),
     lifespan: Lifespan[FastAPI] | None = None,
+    test_mode: bool = False,
 ) -> FastAPI:
+    if not readiness_checks and not test_mode:
+        raise ValueError("readiness checks are required outside test mode")
     generator = id_generator or Uuid7Generator()
     app = FastAPI(
         title="Polyglot V2 API",

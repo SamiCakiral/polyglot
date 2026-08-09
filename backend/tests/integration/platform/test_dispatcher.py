@@ -1,9 +1,14 @@
 from datetime import UTC, datetime
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from polyglot.platform.clock import FrozenClock
+from polyglot.platform.ids import Uuid7Generator
+
+
+def new_id() -> UUID:
+    return Uuid7Generator().new()
 
 
 class RecordingPublisher:
@@ -22,20 +27,20 @@ def make_event() -> object:
 
     now = datetime.now(UTC)
     return DomainEvent(
-        event_id=uuid4(),
-        event_type="example_dispatched",
+        event_id=new_id(),
+        event_type="account_registered",
         schema_version=1,
         aggregate_type="example",
-        aggregate_id=uuid4(),
+        aggregate_id=new_id(),
         aggregate_version=1,
         actor_type="system",
-        actor_id=uuid4(),
+        actor_id=new_id(),
         profile_id=None,
         occurred_at=now,
         recorded_at=now,
-        correlation_id=uuid4(),
+        correlation_id=new_id(),
         causation_id=None,
-        command_id=uuid4(),
+        command_id=new_id(),
         privacy_class="internal",
         policy_versions={},
         payload={"schema_version": 1},

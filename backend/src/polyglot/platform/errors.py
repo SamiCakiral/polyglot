@@ -161,6 +161,7 @@ class ProblemDetail:
     detail: str
     instance: str
     code: str
+    message_key: str
     request_id: str
     correlation_id: str
     retryable: bool
@@ -211,6 +212,7 @@ class DomainError(Exception):
             detail=self.detail,
             instance=instance,
             code=self.code.value,
+            message_key=self.message_key,
             request_id=request_id,
             correlation_id=correlation_id,
             retryable=self.retryable,
