@@ -166,3 +166,81 @@ async def test_rejected_command_replays_the_same_bounded_result(session: AsyncSe
         "code": "validation_failed",
         "message_key": "errors.validation_failed",
     }
+
+
+@pytest.mark.parametrize(
+    ("status", "result_ref", "result_payload"),
+    [
+        ("succeeded", uuid4(), {"resource_id": str(uuid4()), "version": 1}),
+        (
+            "succeeded",
+            uuid4(),
+            {"resource_id": str(uuid4()), "version": 1, "response": "private"},
+        ),
+        ("rejected", None, {"code": "validation_failed", "message_key": "x" * 2_000}),
+        (
+            "failed",
+            None,
+            {
+                "code": "internal_error",
+                "message_key": "errors.internal_error",
+                "token": "private",
+            },
+        ),
+        (
+            "rejected",
+            None,
+            {"code": "validation_failed", "message_key": "errors.not_found"},
+        ),
+    ],
+)
+async def test_command_receipt_rejects_unbounded_or_open_replay_payloads(
+    session: AsyncSession,
+    status: str,
+    result_ref: object | None,
+    result_payload: dict[str, object],
+) -> None:
+    from sqlalchemy import select
+
+    from polyglot.platform.persistence.models import command_receipts
+    from polyglot.platform.persistence.records import CommandReceipt
+    from polyglot.platform.persistence.repositories import SqlCommandReceiptStore
+
+    receipt = CommandReceipt(
+        command_id=uuid4(),
+        command_type="ExampleCommand",
+        actor_id=uuid4(),
+        aggregate_type="example",
+        aggregate_id=uuid4(),
+        idempotency_key=f"invalid-replay-{uuid4()}",
+        request_fingerprint="f" * 64,
+        expected_version=None,
+        received_at=datetime.now(UTC),
+        result_ref=None,
+        result_payload=None,
+        status="started",
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+    )
+    store = SqlCommandReceiptStore(session)
+    await store.reserve(receipt)
+    await session.flush()
+
+    with pytest.raises(DomainError) as captured:
+        await store.complete(
+            command_id=receipt.command_id,
+            status=status,
+            result_ref=result_ref,
+            result_payload=result_payload,
+        )
+
+    assert captured.value.code is ErrorCode.VALIDATION_FAILED
+    stored = (
+        await session.execute(
+            select(command_receipts).where(
+                command_receipts.c.command_id == receipt.command_id
+            )
+        )
+    ).mappings().one()
+    assert stored["status"] == "started"
+    assert stored["result_ref"] is None
+    assert stored["result_payload"] is None

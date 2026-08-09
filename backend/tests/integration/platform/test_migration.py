@@ -172,6 +172,7 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
     )
     assert {
         "ck_command_receipt_fingerprint_hex",
+        "ck_command_receipt_replay_shape",
         "ck_domain_event_no_secret",
         "ck_domain_event_private_retention",
         "ck_retention_purge_authorization_scope",
