@@ -280,7 +280,7 @@ class SqlJobStore:
         finished_at: datetime,
         result_ref: UUID,
     ) -> bool:
-        active = await self._consume_claim(claim=claim, finished_at=finished_at)
+        active = await self._consume_claim(claim=claim)
         if active is None:
             return False
         await self._append_attempt(
@@ -312,7 +312,7 @@ class SqlJobStore:
         error_code: str,
         retry_not_before_at: datetime | None,
     ) -> bool:
-        active = await self._consume_claim(claim=claim, finished_at=finished_at)
+        active = await self._consume_claim(claim=claim)
         if active is None:
             return False
         retryable = retry_not_before_at is not None
@@ -341,7 +341,6 @@ class SqlJobStore:
         self,
         *,
         claim: JobClaim,
-        finished_at: datetime,
     ) -> RowMapping | None:
         return (
             await self._session.execute(
@@ -350,7 +349,7 @@ class SqlJobStore:
                     job_claims.c.job_id == claim.job_id,
                     job_claims.c.worker_id == claim.worker_id,
                     job_claims.c.lease_token == claim.lease_token,
-                    job_claims.c.lease_expires_at > finished_at,
+                    job_claims.c.lease_expires_at > func.clock_timestamp(),
                 )
                 .returning(*job_claims.c)
             )
@@ -538,7 +537,7 @@ class SqlOutboxRepository:
                 outbox_messages.c.outbox_id == claim.outbox_id,
                 outbox_messages.c.lease_owner == claim.lease_owner,
                 outbox_messages.c.lease_token == claim.lease_token,
-                outbox_messages.c.lease_expires_at > published_at,
+                outbox_messages.c.lease_expires_at > func.clock_timestamp(),
                 outbox_messages.c.published_at.is_(None),
             )
             .values(
@@ -567,7 +566,7 @@ class SqlOutboxRepository:
                     outbox_messages.c.outbox_id == claim.outbox_id,
                     outbox_messages.c.lease_owner == claim.lease_owner,
                     outbox_messages.c.lease_token == claim.lease_token,
-                    outbox_messages.c.lease_expires_at > failed_at,
+                    outbox_messages.c.lease_expires_at > func.clock_timestamp(),
                     outbox_messages.c.published_at.is_(None),
                 )
             )
