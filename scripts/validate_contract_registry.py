@@ -58,14 +58,20 @@ SDD_TASK_BOOKKEEPING = re.compile(
     r")$"
 )
 SUBPROCESS_TIMEOUT_SECONDS = 10
-LOCAL_CACHE_NAMES = {
+APPROVED_CACHE_ROOTS = {
     ".hypothesis",
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
     ".venv",
-    "__pycache__",
+    "backend/.hypothesis",
+    "backend/.mypy_cache",
+    "backend/.pytest_cache",
+    "backend/.ruff_cache",
+    "backend/.venv",
 }
+APPROVED_PYTHON_ROOTS = ("backend/migrations", "backend/src", "backend/tests", "contracts/tests")
+COMPILED_PYTHON = re.compile(r"^(?P<module>.+)\.cpython-\d+(?:-[A-Za-z0-9_.-]+)?\.pyc$")
 
 
 def load(path: Path) -> object:
@@ -494,8 +500,37 @@ def check_doc_links(root: Path) -> None:
                 raise ValueError(f"broken documentation link: {path.relative_to(root)} -> {target}")
 
 
+def approved_local_cache(root: Path, relative_path: str, tracked: set[str]) -> bool:
+    normalized = relative_path.rstrip("/")
+    if any(
+        normalized == cache_root or normalized.startswith(f"{cache_root}/")
+        for cache_root in APPROVED_CACHE_ROOTS
+    ):
+        return True
+    parts = Path(normalized).parts
+    if "__pycache__" not in parts:
+        return False
+    cache_index = parts.index("__pycache__")
+    cache_relative = Path(*parts[: cache_index + 1])
+    parent = cache_relative.parent.as_posix()
+    if not any(parent == allowed or parent.startswith(f"{allowed}/") for allowed in APPROVED_PYTHON_ROOTS):
+        return False
+    cache_directory = root / cache_relative
+    files = [path for path in cache_directory.iterdir() if path.is_file()]
+    if not files or any(path.is_dir() for path in cache_directory.iterdir()):
+        return False
+    for compiled in files:
+        match = COMPILED_PYTHON.fullmatch(compiled.name)
+        if match is None:
+            return False
+        source = (cache_relative.parent / f"{match.group('module')}.py").as_posix()
+        if source not in tracked:
+            return False
+    return True
+
+
 def check_artifacts(root: Path) -> None:
-    tracked = subprocess.run(
+    tracked_lines = subprocess.run(
         ["git", "ls-files"],
         cwd=root,
         text=True,
@@ -503,8 +538,9 @@ def check_artifacts(root: Path) -> None:
         check=True,
         timeout=SUBPROCESS_TIMEOUT_SECONDS,
     ).stdout.splitlines()
+    tracked = set(tracked_lines)
     forbidden = ("app/", "tests/", "card_sets/", "pillar_content/", ".env", "venv/", ".venv/")
-    for path in tracked:
+    for path in tracked_lines:
         if path in {"config.py", "run.py", "requirements.txt", ".env.example"} or path.startswith(forbidden) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden tracked V1/private artifact: {path}")
     untracked = subprocess.run(
@@ -527,9 +563,13 @@ def check_artifacts(root: Path) -> None:
     for path in candidates:
         if not path:
             continue
-        path_parts = Path(path.rstrip("/")).parts
-        if any(part in LOCAL_CACHE_NAMES for part in path_parts):
+        if approved_local_cache(root, path, tracked):
             continue
+        parts = Path(path.rstrip("/")).parts
+        if path.endswith("/") and ({"__pycache__", ".venv"} & set(parts)):
+            files = sorted(candidate for candidate in (root / path).rglob("*") if candidate.is_file())
+            if files:
+                path = files[0].relative_to(root).as_posix()
         if path in {
             ".superpowers/sdd/.gitignore",
             ".superpowers/sdd/27-plan-implementation-detaille/progress.md",
