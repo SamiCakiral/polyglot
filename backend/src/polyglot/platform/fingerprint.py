@@ -1,17 +1,15 @@
 import hashlib
-import json
+
+import rfc8785
 
 from polyglot.platform.json_types import JsonValue
 
 
 def canonical_json_bytes(payload: JsonValue) -> bytes:
-    return json.dumps(
-        payload,
-        allow_nan=False,
-        ensure_ascii=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    ).encode("utf-8")
+    try:
+        return rfc8785.dumps(payload)
+    except rfc8785.CanonicalizationError as error:
+        raise TypeError("payload is outside the canonical JSON domain") from error
 
 
 def canonical_json_fingerprint(payload: JsonValue) -> str:
