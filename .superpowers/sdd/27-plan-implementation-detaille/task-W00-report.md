@@ -148,6 +148,20 @@ COMPLETE for the requested contract-policy simulation and artifact boundary.
 
 - This is deliberately a pre-handler contract-policy simulator, not production
   tool execution. Runtime handler/effect integration remains deferred.
-- The existing canonical error snapshot still omits the document-30 common
-  codes `scope_forbidden` and `reference_not_found`. They are outside this
-  round's write scope and are not emitted by its six required cases.
+
+## Fix Round 4
+
+### RED evidence
+
+- A dedicated common-tool-error test failed because `scope_forbidden` and
+  `reference_not_found` from document 30 were absent from the canonical error
+  registry and snapshot.
+
+### GREEN evidence
+
+- Both errors are now canonical and protected by the snapshot.
+- `contracts/tests/test_validate_contract_registry.py`: 4 passed.
+- `contracts/tests/test_w00_contract_delivery.py`: 18 passed.
+- Full fixtures, six policy simulations, documentation links, artifact boundary
+  and registry validation passed with bytecode writes disabled.
+- `git diff --check` passed.
