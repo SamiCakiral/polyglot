@@ -3,6 +3,8 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import func, select
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -200,8 +202,6 @@ async def test_command_receipt_rejects_unbounded_or_open_replay_payloads(
     result_ref: object | None,
     result_payload: dict[str, object],
 ) -> None:
-    from sqlalchemy import select
-
     from polyglot.platform.persistence.models import command_receipts
     from polyglot.platform.persistence.records import CommandReceipt
     from polyglot.platform.persistence.repositories import SqlCommandReceiptStore
@@ -244,3 +244,124 @@ async def test_command_receipt_rejects_unbounded_or_open_replay_payloads(
     assert stored["status"] == "started"
     assert stored["result_ref"] is None
     assert stored["result_payload"] is None
+
+
+@pytest.mark.parametrize(
+    ("status", "result_ref", "result_payload"),
+    [
+        ("succeeded", uuid4(), {"resource_id": str(uuid4()), "version": 1}),
+        ("started", uuid4(), None),
+        ("started", None, {"code": "validation_failed"}),
+    ],
+)
+def test_command_receipt_domain_accepts_only_empty_started_reservations(
+    status: str,
+    result_ref: object | None,
+    result_payload: dict[str, object] | None,
+) -> None:
+    from polyglot.platform.persistence.records import CommandReceipt
+
+    with pytest.raises(DomainError) as captured:
+        CommandReceipt(
+            command_id=uuid4(),
+            command_type="ExampleCommand",
+            actor_id=uuid4(),
+            aggregate_type="example",
+            aggregate_id=uuid4(),
+            idempotency_key="invalid-domain-reservation",
+            request_fingerprint="1" * 64,
+            expected_version=None,
+            received_at=datetime.now(UTC),
+            result_ref=result_ref,
+            result_payload=result_payload,
+            status=status,
+            expires_at=datetime.now(UTC) + timedelta(days=1),
+        )
+
+    assert captured.value.code is ErrorCode.VALIDATION_FAILED
+
+
+async def test_command_receipt_store_rejects_a_forged_terminal_reservation(
+    session: AsyncSession,
+) -> None:
+    from polyglot.platform.persistence.models import command_receipts
+    from polyglot.platform.persistence.records import CommandReceipt
+    from polyglot.platform.persistence.repositories import SqlCommandReceiptStore
+
+    receipt = CommandReceipt(
+        command_id=uuid4(),
+        command_type="ExampleCommand",
+        actor_id=uuid4(),
+        aggregate_type="example",
+        aggregate_id=uuid4(),
+        idempotency_key="forged-terminal-reservation",
+        request_fingerprint="2" * 64,
+        expected_version=None,
+        received_at=datetime.now(UTC),
+        result_ref=None,
+        result_payload=None,
+        status="started",
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+    )
+    object.__setattr__(receipt, "status", "failed")
+    object.__setattr__(
+        receipt,
+        "result_payload",
+        {"code": "internal_error", "message_key": "errors.internal_error"},
+    )
+
+    with pytest.raises(DomainError) as captured:
+        await SqlCommandReceiptStore(session).reserve(receipt)
+
+    assert captured.value.code is ErrorCode.VALIDATION_FAILED
+    assert await session.scalar(select(func.count()).select_from(command_receipts)) == 0
+
+
+@pytest.mark.parametrize(
+    "malformation",
+    ["success_null", "rejection_null", "unknown_code", "message_mismatch", "decimal_version"],
+)
+async def test_command_receipt_sql_rejects_open_or_null_terminal_shapes(
+    session: AsyncSession,
+    malformation: str,
+) -> None:
+    from polyglot.platform.persistence.models import command_receipts
+
+    result_ref = uuid4()
+    status = "rejected"
+    payload: dict[str, object] | None = {
+        "code": "validation_failed",
+        "message_key": "errors.validation_failed",
+    }
+    if malformation == "success_null":
+        status, payload = "succeeded", None
+    elif malformation == "rejection_null":
+        payload = None
+    elif malformation == "unknown_code":
+        payload = {"code": "invented_error", "message_key": "errors.invented_error"}
+    elif malformation == "message_mismatch":
+        payload = {"code": "validation_failed", "message_key": "errors.not_found"}
+    else:
+        status = "succeeded"
+        payload = {"resource_id": str(result_ref), "version": 1.5}
+
+    with pytest.raises(DBAPIError):
+        await session.execute(
+            command_receipts.insert().values(
+                command_id=uuid4(),
+                command_type="ExampleCommand",
+                actor_id=uuid4(),
+                aggregate_type="example",
+                aggregate_id=uuid4(),
+                idempotency_key=f"invalid-sql-{malformation}",
+                request_fingerprint="3" * 64,
+                expected_version=None,
+                received_at=datetime.now(UTC),
+                result_ref=result_ref if status == "succeeded" else None,
+                result_payload=payload,
+                status=status,
+                expires_at=datetime.now(UTC) + timedelta(days=1),
+            )
+        )
+        await session.commit()
+    await session.rollback()
