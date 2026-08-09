@@ -174,6 +174,13 @@ class W00ContractDeliveryTest(unittest.TestCase):
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn("missing common tool limits", result.stdout)
 
+    def test_registers_all_common_tool_errors(self) -> None:
+        errors = json.loads((ROOT / "contracts/registry/errors.yaml").read_text())["errors"]
+        self.assertTrue(
+            {"scope_forbidden", "reference_not_found"}.issubset(errors),
+            "document 30 common tool errors must remain canonical",
+        )
+
     def test_docs_links_and_artifact_boundaries_are_repeatable(self) -> None:
         result = self.run_validator("--check-doc-links", "--check-artifacts")
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
