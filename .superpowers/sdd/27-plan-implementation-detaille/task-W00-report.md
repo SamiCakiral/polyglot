@@ -165,3 +165,39 @@ COMPLETE for the requested contract-policy simulation and artifact boundary.
 - Full fixtures, six policy simulations, documentation links, artifact boundary
   and registry validation passed with bytecode writes disabled.
 - `git diff --check` passed.
+
+## Fix Round 5
+
+### Status
+
+COMPLETE for the scoped idempotency simulation defect.
+
+### RED evidence
+
+- Adding `stored_idempotency_key` to the six invocation contexts first failed
+  with `tool policy invocation context fields mismatch: idempotency_conflict`.
+- After admitting the field without changing the predicate, the idempotency
+  counterfactual still failed: changing only the invocation key while preserving
+  the stored/request fingerprint mismatch incorrectly emitted
+  `idempotency_conflict` and left the validator GREEN.
+
+### GREEN evidence
+
+- All six policy fixtures now model both invocation and stored idempotency keys.
+  The conflict fixture explicitly uses the same key and different fingerprints.
+- The simulator emits `idempotency_conflict` only for an effectful tool when the
+  stored and invocation keys match and the stored/request fingerprints differ.
+- The counterfactual changes only the invocation key, asserts that the
+  fingerprint mismatch is unchanged, and proves the policy case no longer
+  rejects. The other five simulations and all other behavior are unchanged.
+- `contracts/tests/test_validate_contract_registry.py`: 4 passed in 0.193 s.
+- `contracts/tests/test_w00_contract_delivery.py`: 19 passed in 1.330 s.
+- The full validator reported 22 tool fixtures, 6 policy cases,
+  `documentation links valid`, `artifact boundary valid`, and
+  `contract registry valid`. Standalone link, artifact, and `git diff --check`
+  gates passed under bounded timeouts with bytecode writes disabled.
+
+### Remaining concerns
+
+- None for this scoped defect. The simulator remains a pre-handler contract
+  policy simulator as documented in Fix Round 3.

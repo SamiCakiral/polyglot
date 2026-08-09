@@ -5,6 +5,7 @@
     "invocation_context": {
       "actor_role": "author",
       "idempotency_key": "idem-exercise-001",
+      "stored_idempotency_key": "idem-exercise-001",
       "request_fingerprint": "sha256:request-new",
       "stored_fingerprint": "sha256:request-old",
       "expected_version": 7,
@@ -30,6 +31,7 @@
     "invocation_context": {
       "actor_role": "learner",
       "idempotency_key": "idem-exercise-002",
+      "stored_idempotency_key": "idem-exercise-002",
       "request_fingerprint": "sha256:request-role",
       "stored_fingerprint": "sha256:request-role",
       "expected_version": 7,
@@ -55,6 +57,7 @@
     "invocation_context": {
       "actor_role": "author",
       "idempotency_key": "idem-validation-001",
+      "stored_idempotency_key": "idem-validation-001",
       "request_fingerprint": "sha256:request-stale",
       "stored_fingerprint": "sha256:request-stale",
       "expected_version": 6,
@@ -80,6 +83,7 @@
     "invocation_context": {
       "actor_role": "author",
       "idempotency_key": "idem-quality-001",
+      "stored_idempotency_key": "idem-quality-001",
       "request_fingerprint": "sha256:request-size",
       "stored_fingerprint": "sha256:request-size",
       "expected_version": 7,
@@ -105,6 +109,7 @@
     "invocation_context": {
       "actor_role": "author",
       "idempotency_key": "idem-validation-002",
+      "stored_idempotency_key": "idem-validation-002",
       "request_fingerprint": "sha256:request-timeout",
       "stored_fingerprint": "sha256:request-timeout",
       "expected_version": 7,
@@ -130,6 +135,7 @@
     "invocation_context": {
       "actor_role": "author",
       "idempotency_key": "idem-exercise-003",
+      "stored_idempotency_key": "idem-exercise-003",
       "request_fingerprint": "sha256:request-effect",
       "stored_fingerprint": "sha256:request-effect",
       "expected_version": 7,

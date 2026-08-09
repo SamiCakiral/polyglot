@@ -92,9 +92,21 @@ class W00ContractDeliveryTest(unittest.TestCase):
             result.stdout,
         )
 
+    def test_idempotency_conflict_fixture_reuses_key_with_changed_fingerprint(self) -> None:
+        cases = json.loads((ROOT / "contracts/tests/fixtures/tools/meta-cases.json").read_text())
+        case = next(item for item in cases if item["case"] == "idempotency_conflict")
+        context = case["invocation_context"]
+        self.assertEqual(context["stored_idempotency_key"], context["idempotency_key"])
+        self.assertNotEqual(context["stored_fingerprint"], context["request_fingerprint"])
+
     def test_each_policy_case_depends_on_its_invocation_context(self) -> None:
-        def remove_idempotency_conflict(context: dict[str, object]) -> None:
-            context["stored_fingerprint"] = context["request_fingerprint"]
+        def use_new_idempotency_key(context: dict[str, object]) -> None:
+            fingerprints = (context["stored_fingerprint"], context["request_fingerprint"])
+            self.assertEqual(context["stored_idempotency_key"], context["idempotency_key"])
+            self.assertNotEqual(*fingerprints)
+            context["idempotency_key"] = "idem-exercise-new"
+            self.assertNotEqual(context["stored_idempotency_key"], context["idempotency_key"])
+            self.assertEqual(fingerprints, (context["stored_fingerprint"], context["request_fingerprint"]))
 
         def allow_role(context: dict[str, object]) -> None:
             context["actor_role"] = "author"
@@ -112,7 +124,7 @@ class W00ContractDeliveryTest(unittest.TestCase):
             context["requested_effect"] = "create_draft"
 
         repairs = {
-            "idempotency_conflict": remove_idempotency_conflict,
+            "idempotency_conflict": use_new_idempotency_key,
             "role_denial": allow_role,
             "stale_reference": refresh_reference,
             "size_limit": fit_input,

@@ -42,6 +42,7 @@ POLICY_CASES = {
 POLICY_CONTEXT_FIELDS = {
     "actor_role",
     "idempotency_key",
+    "stored_idempotency_key",
     "request_fingerprint",
     "stored_fingerprint",
     "expected_version",
@@ -339,7 +340,14 @@ def policy_context(case_name: str, value: object) -> dict[str, object]:
         raise ValueError(f"tool policy invocation context missing: {case_name}")
     if set(value) != POLICY_CONTEXT_FIELDS:
         raise ValueError(f"tool policy invocation context fields mismatch: {case_name}")
-    for field in ("actor_role", "idempotency_key", "request_fingerprint", "stored_fingerprint", "requested_effect"):
+    for field in (
+        "actor_role",
+        "idempotency_key",
+        "stored_idempotency_key",
+        "request_fingerprint",
+        "stored_fingerprint",
+        "requested_effect",
+    ):
         if not isinstance(value[field], str) or not value[field]:
             raise ValueError(f"invalid tool policy context: {case_name}.{field}")
     for field in ("expected_version", "current_version", "input_bytes"):
@@ -361,7 +369,11 @@ def simulate_tool_policy(
     requested_effect = context["requested_effect"]
     if requested_effect in forbidden_effects or requested_effect != policy["side_effect"]:
         return "tool_not_allowed", []
-    if policy["side_effect"] != "none" and context["stored_fingerprint"] != context["request_fingerprint"]:
+    if (
+        policy["side_effect"] != "none"
+        and context["stored_idempotency_key"] == context["idempotency_key"]
+        and context["stored_fingerprint"] != context["request_fingerprint"]
+    ):
         return "idempotency_conflict", []
     if context["expected_version"] != context["current_version"]:
         return "version_conflict", []
