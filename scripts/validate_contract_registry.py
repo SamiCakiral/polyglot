@@ -58,6 +58,14 @@ SDD_TASK_BOOKKEEPING = re.compile(
     r")$"
 )
 SUBPROCESS_TIMEOUT_SECONDS = 10
+LOCAL_CACHE_NAMES = {
+    ".hypothesis",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+}
 
 
 def load(path: Path) -> object:
@@ -467,7 +475,15 @@ def validate_tool_fixtures(tests: Path, tool_schemas: dict[str, tuple[dict[str, 
 
 
 def check_doc_links(root: Path) -> None:
-    for path in [root / "README.md", root / "CONTRIBUTING.md", *sorted((root / "docs").rglob("*.md"))]:
+    tracked_markdown = subprocess.run(
+        ["git", "ls-files", "*.md"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
+    ).stdout.splitlines()
+    for path in (root / relative_path for relative_path in tracked_markdown):
         if not path.exists():
             continue
         for target in MARKDOWN_LINK.findall(path.read_text()):
@@ -491,18 +507,29 @@ def check_artifacts(root: Path) -> None:
     for path in tracked:
         if path in {"config.py", "run.py", "requirements.txt", ".env.example"} or path.startswith(forbidden) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden tracked V1/private artifact: {path}")
-    ignored = subprocess.run(
-        ["git", "status", "--porcelain", "--ignored", "--untracked-files=all"],
+    untracked = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=normal"],
         cwd=root,
         text=True,
         capture_output=True,
         check=True,
         timeout=SUBPROCESS_TIMEOUT_SECONDS,
     ).stdout.splitlines()
-    for line in ignored:
-        if not line.startswith(("??", "!!")):
+    ignored = subprocess.run(
+        ["git", "ls-files", "--others", "--ignored", "--exclude-standard", "--directory"],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        check=True,
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
+    ).stdout.splitlines()
+    candidates = [line[3:] for line in untracked if line.startswith("??")] + ignored
+    for path in candidates:
+        if not path:
             continue
-        path = line[3:]
+        path_parts = Path(path.rstrip("/")).parts
+        if any(part in LOCAL_CACHE_NAMES for part in path_parts):
+            continue
         if path in {
             ".superpowers/sdd/.gitignore",
             ".superpowers/sdd/27-plan-implementation-detaille/progress.md",

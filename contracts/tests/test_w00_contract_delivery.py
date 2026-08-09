@@ -224,12 +224,11 @@ class W00ContractDeliveryTest(unittest.TestCase):
             marker.unlink()
             app.rmdir()
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
-        self.assertIn("forbidden untracked private artifact: app/runtime.py", result.stdout)
+        self.assertIn("forbidden untracked private artifact: app/", result.stdout)
 
     def test_rejects_untracked_files_in_protected_trees(self) -> None:
         paths = [
             ROOT / "contracts/local-private.json",
-            ROOT / "contracts/tests/__pycache__/private.pyc",
             ROOT / "scripts/generate_pillar_content_v2.py",
             ROOT / "docs/private-notes.txt",
         ]
