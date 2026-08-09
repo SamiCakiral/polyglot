@@ -61,6 +61,7 @@ async def test_0001_platform_uses_postgresql_json_and_expiration_indexes(
         "ix_deletion_tombstones_expires_at",
         "ix_feature_flags_expires_at",
         "ix_domain_events_expires_at",
+        "ix_domain_events_subject",
         "ix_job_claims_lease_expires_at",
         "ix_jobs_retry_not_before_at",
         "ix_outbox_messages_available",
@@ -86,6 +87,8 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
             "result_payload",
             "status",
             "expires_at",
+            "subject_type",
+            "subject_id",
         },
         "domain_events": {
             "event_id",
@@ -171,6 +174,7 @@ async def test_0001_platform_has_required_columns_constraints_and_foreign_keys(
         "ck_command_receipt_fingerprint_hex",
         "ck_domain_event_no_secret",
         "ck_domain_event_private_retention",
+        "ck_retention_purge_authorization_scope",
         "ck_inbox_result_checksum_hex",
         "ck_job_request_fingerprint_hex",
         "ck_outbox_lease_complete",
@@ -227,16 +231,20 @@ async def test_0001_platform_installs_append_only_and_controlled_purge_guards(
         ("job_attempts", "job_attempts_append_only"),
         ("security_audit_entries", "security_audit_entries_append_only"),
     } <= triggers
-    purge_function = (
+    purge_functions = (
         await session.execute(
             text(
-                "SELECT procedure.prosecdef, "
+                "SELECT procedure.proname, procedure.prosecdef, "
                 "has_function_privilege('public', procedure.oid, 'EXECUTE') "
                 "FROM pg_proc AS procedure "
                 "JOIN pg_namespace AS namespace ON namespace.oid = procedure.pronamespace "
                 "WHERE namespace.nspname = 'platform' "
-                "AND procedure.proname = 'purge_expired_append_only'"
+                "AND procedure.proname IN "
+                "('purge_expired_append_only', 'purge_subject_private_events')"
             )
         )
-    ).one()
-    assert purge_function == (True, False)
+    ).all()
+    assert set(purge_functions) == {
+        ("purge_expired_append_only", True, False),
+        ("purge_subject_private_events", True, False),
+    }

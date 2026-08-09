@@ -97,7 +97,54 @@ def test_domain_event_rejects_noncanonical_or_private_boundaries(
     assert captured.value.field_errors == [{"location": field, "code": "invalid"}]
 
 
-def test_private_domain_event_requires_profile_and_expiration() -> None:
+def test_account_private_event_accepts_subject_scope_without_profile() -> None:
+    from polyglot.platform.persistence.records import DomainEvent
+
+    now = datetime.now(UTC)
+    subject_id = new_id()
+    event = DomainEvent(
+        event_id=new_id(),
+        event_type="account_registered",
+        schema_version=1,
+        aggregate_type="account",
+        aggregate_id=subject_id,
+        aggregate_version=1,
+        actor_type="system",
+        actor_id=new_id(),
+        profile_id=None,
+        occurred_at=now,
+        recorded_at=now,
+        correlation_id=new_id(),
+        causation_id=None,
+        command_id=new_id(),
+        privacy_class="personal",
+        policy_versions={"retention": "v1"},
+        payload={"account_id": str(subject_id)},
+        expires_at=now,
+        subject_type="account",
+        subject_id=subject_id,
+    )
+
+    assert event.profile_id is None
+    assert "subject_type" not in event.to_envelope()
+    assert "subject_id" not in event.to_envelope()
+
+
+@pytest.mark.parametrize(
+    ("subject_type", "subject_id", "expires_at", "field"),
+    [
+        ("account", new_id(), None, "expires_at"),
+        (None, None, datetime.now(UTC), "subject_type"),
+        ("account", None, datetime.now(UTC), "subject_id"),
+        ("tenant", new_id(), datetime.now(UTC), "subject_type"),
+    ],
+)
+def test_private_domain_event_requires_expiration_and_subject_scope(
+    subject_type: str | None,
+    subject_id: object | None,
+    expires_at: datetime | None,
+    field: str,
+) -> None:
     from polyglot.platform.persistence.records import DomainEvent
 
     now = datetime.now(UTC)
@@ -120,9 +167,11 @@ def test_private_domain_event_requires_profile_and_expiration() -> None:
             privacy_class="personal",
             policy_versions={"retention": "v1"},
             payload={"account_id": str(new_id())},
-            expires_at=None,
+            expires_at=expires_at,
+            subject_type=subject_type,
+            subject_id=subject_id,
         )
 
     assert captured.value.field_errors == [
-        {"location": "expires_at", "code": "required_for_private_event"}
+        {"location": field, "code": "required_for_private_event"}
     ]
