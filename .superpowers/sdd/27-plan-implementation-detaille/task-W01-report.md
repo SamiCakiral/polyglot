@@ -2,7 +2,7 @@
 
 ## Status
 
-DONE_WITH_CONCERNS - round-four operational database identity fix implemented
+DONE_WITH_CONCERNS - round-five reserved-character database URL fix implemented
 and locally verified. Hosted CI is prepared but has not been run or claimed green.
 
 ## Review-fix commits
@@ -44,6 +44,8 @@ and locally verified. Hosted CI is prepared but has not been run or claimed gree
 - `d89477c` docs(w01): preserve round-three review evidence
 - `bdee1e6` test(platform): require workload database logins
 - `5c7ccc2` fix(platform): isolate database workload identities
+- `e83cbf8` test(platform): capture reserved database URL red
+- `c86625b` fix(platform): construct workload database URLs
 
 ## RED evidence
 
@@ -92,6 +94,11 @@ and locally verified. Hosted CI is prepared but has not been run or claimed gree
   `3` identity/configuration cases. Purge tests were changed before production
   code to require independent runtime and retention connections without
   `SET ROLE`.
+- Round-five reserved-character RED: a read-only Compose render with passwords
+  containing `:`, `@`, `/`, `%` and `#` parsed each URL with a truncated
+  password, a false host and a corrupted database path. The committed focused
+  run failed `3` of `5`: both Compose contracts rejected the raw URL extension,
+  and the unit contract required the absent shared workload URL builder.
 
 ## GREEN evidence
 
@@ -152,6 +159,24 @@ and locally verified. Hosted CI is prepared but has not been run or claimed gree
   Trivy `0.69.3` reported `0` Critical repository findings and `0` unsuppressed
   Critical findings for the pinned PostgreSQL digest. The reviewed `gosu`
   exception remained the only suppressed image finding.
+- Round-five focused GREEN: structured Compose rendering and explicit CI URL
+  separation passed `5` tests. A separate empty Compose volume then used three
+  passwords that each contained `:`, `@`, `/`, `%` and `#`; SQLAlchemy URL
+  construction preserved every password, Alembic upgraded through the
+  migration login, and identity, privilege and runtime readiness checks passed
+  `4` tests through the distinct migration/runtime/retention connections.
+- Round-five final W00/W01: registry validation passed; W00 unittest discovery
+  passed `23`; `uv lock --check` resolved `39` packages; Ruff was clean; strict
+  Mypy was clean across `27` source files; unit/property passed `17`; adversarial
+  migration downgrade/re-upgrade reported one `0001_platform (head)`, current
+  at head and no metadata drift; the installed wheel migration passed `1`;
+  integration/contract passed `89`; and deterministic OpenAPI validation passed.
+- Round-five final security: repository/full-history secret scan was clean;
+  `pip-audit 2.9.0` found no known vulnerabilities in the frozen hashed export;
+  Trivy `0.69.3` reported `0` Critical repository findings and `0` unsuppressed
+  Critical findings for the pinned PostgreSQL digest. The reviewed `gosu`
+  exception remained the only suppressed image finding. The separate
+  adversarial Compose container, network and volume were removed after testing.
 
 ## Architecture disposition
 
@@ -178,6 +203,10 @@ and locally verified. Hosted CI is prepared but has not been run or claimed gree
   Downgrade removes the application schema while preserving the identities, so
   the dedicated migration login can recreate the schema without `CREATEROLE`;
   deleting the Compose volume performs complete local identity cleanup.
+- Compose exposes local database workload credentials as structured components,
+  never as raw-interpolated URLs. The shared SQLAlchemy `URL.create` builder
+  percent-encodes those components for migration, runtime and retention while
+  retaining separately supplied complete URL support for CI.
 - Job terminal writes and outbox terminal acknowledgements fence lease ownership
   against PostgreSQL `clock_timestamp()` in the same SQL statement while keeping
   caller timestamps as semantic fact timestamps.
