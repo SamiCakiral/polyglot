@@ -16,6 +16,7 @@ def test_ci_gates_migration_round_trip_drift_and_installed_wheel() -> None:
 def test_ci_prepares_dependency_image_and_repository_security_gates() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 
-    assert "pip-audit" in workflow
+    assert "uv export --frozen --no-dev" in workflow
+    assert "pip-audit -r" in workflow
     assert "aquasecurity/trivy-action" in workflow
     assert "polyglot.platform.security_checks" in workflow
