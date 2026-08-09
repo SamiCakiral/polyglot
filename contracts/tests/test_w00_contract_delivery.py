@@ -87,6 +87,18 @@ class W00ContractDeliveryTest(unittest.TestCase):
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn("forbidden untracked private artifact", result.stdout)
 
+    def test_rejects_untracked_legacy_generator_and_private_nested_file(self) -> None:
+        paths = [ROOT / "scripts/generate_pillar_content_v2.py", ROOT / "docs/private/secret.txt"]
+        paths[1].parent.mkdir(exist_ok=True)
+        for path in paths:
+            path.write_text("local\n")
+            try:
+                result = self.run_validator("--check-artifacts")
+            finally:
+                path.unlink()
+            self.assertEqual(1, result.returncode, result.stdout + result.stderr)
+        paths[1].parent.rmdir()
+
     def run_validator(self, *flags: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(VALIDATOR), "contracts/registry", "contracts/tests", *flags],

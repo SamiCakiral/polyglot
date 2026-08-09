@@ -326,8 +326,18 @@ def check_artifacts(root: Path) -> None:
             raise ValueError(f"forbidden tracked V1/private artifact: {path}")
     ignored = subprocess.run(["git", "status", "--porcelain", "--ignored", "--untracked-files=all"], cwd=root, text=True, capture_output=True, check=True).stdout.splitlines()
     for line in ignored:
+        if not line.startswith(("??", "!!")):
+            continue
         path = line[3:]
-        if path.startswith((".superpowers/sdd/", "contracts/", "scripts/", "docs/", "README.md", "CONTRIBUTING.md", ".gitignore", "contracts/tests/__pycache__/")):
+        if path.startswith("contracts/tests/__pycache__/") or path in {
+            ".superpowers/sdd/.gitignore",
+            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-brief.md",
+            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-report.md",
+            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-rereview-1.md",
+            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-rereview-2.md",
+            ".superpowers/sdd/27-plan-implementation-detaille/task-W00-review.md",
+            ".superpowers/sdd/27-plan-implementation-detaille/progress.md",
+        }:
             continue
         if path.startswith(("app/", "tests/", ".env", "venv/", ".venv/", "card_sets/", "pillar_content/")) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden untracked private artifact: {path}")
