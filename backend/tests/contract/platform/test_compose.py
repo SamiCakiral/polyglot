@@ -24,7 +24,9 @@ def test_compose_uses_postgres_17_and_no_fake_object_storage_service() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     configuration = json.loads(result.stdout)
     assert set(configuration["services"]) == {"postgres"}
-    assert configuration["services"]["postgres"]["image"] == "postgres:17-alpine"
+    image = configuration["services"]["postgres"]["image"]
+    assert image.startswith("postgres:17-alpine@sha256:")
+    assert len(image.rsplit("@sha256:", 1)[1]) == 64
 
 
 def test_compose_declares_the_w01_filesystem_placeholder() -> None:
