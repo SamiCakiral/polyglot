@@ -21,3 +21,27 @@ def test_fingerprint_rejects_non_json_values() -> None:
     else:
         raise AssertionError("non-JSON value was accepted")
 
+
+def test_canonical_json_matches_independent_rfc8785_number_vector() -> None:
+    fingerprint_module = import_module("polyglot.platform.fingerprint")
+    payload = {
+        "numbers": [
+            333333333.33333329,
+            1e30,
+            4.50,
+            2e-3,
+            0.000000000000000000000000001,
+        ]
+    }
+
+    assert fingerprint_module.canonical_json_bytes(payload) == (
+        b'{"numbers":[333333333.3333333,1e+30,4.5,0.002,1e-27]}'
+    )
+
+
+def test_json_integer_and_equivalent_float_have_one_cross_runtime_fingerprint() -> None:
+    fingerprint_module = import_module("polyglot.platform.fingerprint")
+
+    assert fingerprint_module.canonical_json_fingerprint({"value": 1}) == (
+        fingerprint_module.canonical_json_fingerprint({"value": 1.0})
+    )
