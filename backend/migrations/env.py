@@ -1,15 +1,14 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from polyglot.bootstrap.database import migration_database_url_from_environment
 from polyglot.platform.persistence.models import metadata
-
 
 config = context.config
 if config.config_file_name is not None:
@@ -19,7 +18,7 @@ target_metadata = metadata
 
 
 def database_url() -> str:
-    return os.environ["POLYGLOT_MIGRATION_DATABASE_URL"]
+    return migration_database_url_from_environment()
 
 
 def run_migrations_offline() -> None:

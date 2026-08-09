@@ -1,24 +1,29 @@
-import os
 from collections.abc import AsyncIterator
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from polyglot.bootstrap.database import (
+    database_url_from_environment,
+    migration_database_url_from_environment,
+    retention_database_url_from_environment,
+)
+
 
 @pytest.fixture
 def database_url() -> str:
-    return os.environ["POLYGLOT_DATABASE_URL"]
+    return database_url_from_environment()
 
 
 @pytest.fixture
 def migration_database_url() -> str:
-    return os.environ["POLYGLOT_MIGRATION_DATABASE_URL"]
+    return migration_database_url_from_environment()
 
 
 @pytest.fixture
 def retention_database_url() -> str:
-    return os.environ["POLYGLOT_RETENTION_DATABASE_URL"]
+    return retention_database_url_from_environment()
 
 
 @pytest.fixture
