@@ -1,12 +1,31 @@
 from collections.abc import AsyncIterator
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from polyglot.bootstrap.database import (
     database_url_from_environment,
     migration_database_url_from_environment,
 )
+
+
+@pytest.fixture(autouse=True)
+async def clean_lexicon_database() -> AsyncIterator[None]:
+    engine = create_async_engine(migration_database_url_from_environment())
+    async with engine.begin() as connection:
+        if await connection.scalar(text("SELECT to_regnamespace('lexicon')")) is not None:
+            await connection.execute(text("TRUNCATE TABLE lexicon.lexical_encounters CASCADE"))
+            await connection.execute(text("TRUNCATE TABLE lexicon.private_lexical_units CASCADE"))
+            await connection.execute(text("TRUNCATE TABLE lexicon.lexical_preferences CASCADE"))
+            await connection.execute(text("TRUNCATE TABLE lexicon.lexical_annotations CASCADE"))
+            await connection.execute(text("TRUNCATE TABLE lexicon.lexicon_command_receipts CASCADE"))
+        await connection.execute(
+            text("TRUNCATE TABLE language_profiles.learner_language_profiles CASCADE")
+        )
+        await connection.execute(text("TRUNCATE TABLE identity.accounts CASCADE"))
+    await engine.dispose()
+    yield
 
 
 @pytest.fixture
