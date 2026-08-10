@@ -360,6 +360,51 @@ async def test_0003_rejects_a_well_formed_item_with_a_forged_content_checksum(
         )
 
 
+async def test_0003_rejects_checksum_from_a_distinct_list_with_separator_collision(
+    migration_session: AsyncSession,
+) -> None:
+    await seed_catalogue(
+        migration_session,
+        include_foundations=True,
+        include_foundation_gate=False,
+    )
+
+    item_revision_id = UUID("019fe900-5000-7000-8075-000000000095")
+    checksum_for_two_values = foundation_content_checksum(
+        "foundation_item_v1",
+        item_revision_id,
+        IDS["foundation_block_f1"],
+        IDS["pack_revision"],
+        "ITF-F1-03",
+        3,
+        ("IT-PHON-001",),
+        "raw",
+        "exact_choice",
+        ("alpha", "beta"),
+        ("reading",),
+        "published",
+    )
+    with pytest.raises(DBAPIError, match="foundation checksum does not match content"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_item_revisions "
+                "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
+                "ordinal, target_refs, response_kind, checker_kind, checker_values, "
+                "modalities, status, checksum) VALUES "
+                "(:item, :block, :pack, 'ITF-F1-03', 3, ARRAY['IT-PHON-001'], "
+                "'raw', 'exact_choice', :checker_values, ARRAY['reading'], "
+                "'published', :checksum)"
+            ),
+            {
+                "item": item_revision_id,
+                "block": IDS["foundation_block_f1"],
+                "pack": IDS["pack_revision"],
+                "checker_values": ["alpha\x1ebeta"],
+                "checksum": checksum_for_two_values,
+            },
+        )
+
+
 async def test_0003_rejects_a_structurally_valid_late_item_insert(
     migration_session: AsyncSession,
 ) -> None:

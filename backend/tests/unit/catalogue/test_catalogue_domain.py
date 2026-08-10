@@ -613,3 +613,12 @@ def test_foundation_revision_checksums_bind_their_content(select_mutation: objec
         select_mutation(catalogue)
 
     assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_foundation_checksum_distinguishes_embedded_separator_from_two_list_items() -> None:
+    checksum = catalogue_domain.foundation_content_checksum
+
+    embedded_separator = checksum("foundation_item_v1", ("alpha\x1ebeta",))
+    two_items = checksum("foundation_item_v1", ("alpha", "beta"))
+
+    assert embedded_separator != two_items
