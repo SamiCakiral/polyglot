@@ -118,3 +118,28 @@ def test_provider_failure_is_visible_and_does_not_return_a_transition() -> None:
     assert error.value.code is ErrorCode.DEPENDENCY_UNAVAILABLE
     assert before.state is MemoryState.NEW
     assert before.reps == 0
+
+
+def test_provider_retrievability_outside_probability_bounds_fails_closed() -> None:
+    class InvalidRetrievabilityScheduler:
+        def get_card_retrievability(self, card: object, current_datetime: datetime) -> float:
+            return 1.5
+
+    scheduler = FsrsV6Scheduler(scheduler_factory=lambda _: InvalidRetrievabilityScheduler())
+    policy = SchedulerPolicy.default()
+    valid_scheduler = FsrsV6Scheduler()
+    state = valid_scheduler.initial_state(policy, NOW)
+    state = valid_scheduler.review(state, MemoryRating.GOOD, NOW, policy).after
+    state = valid_scheduler.review(
+        state,
+        MemoryRating.GOOD,
+        NOW + timedelta(minutes=10),
+        policy,
+    ).after
+    before = state
+
+    with pytest.raises(DomainError) as error:
+        scheduler.retrievability(state, NOW + timedelta(days=1), policy)
+
+    assert error.value.code is ErrorCode.DEPENDENCY_UNAVAILABLE
+    assert state == before
