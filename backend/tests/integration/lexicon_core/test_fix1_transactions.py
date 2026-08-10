@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import text
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from polyglot.bootstrap.database import migration_database_url_from_environment
 from polyglot.interfaces.http.routes.word_bank import SqlWordBankService
 from polyglot.platform.errors import DomainError, ErrorCode
+from polyglot.platform.fingerprint import canonical_json_fingerprint
 
 from .test_ingestion_postgres import NOW, seed_profiles, set_actor, uid
 
@@ -193,6 +194,53 @@ async def test_concurrent_same_key_different_hash_conflicts_without_second_effec
             ),
             {"one": uid(1200), "two": uid(1210)},
         ) == 1
+
+
+async def test_replay_rejects_non_integer_stored_version(service_factory) -> None:
+    service, factory = service_factory
+    payload = encounter_payload(encounter=1250, mention=1251)
+    fingerprint = canonical_json_fingerprint(
+        {
+            "command": "RecordLexicalEncounter",
+            "resource_id": str(uid(11)),
+            "payload": payload,
+            "expected_version": None,
+            "profile_id": None,
+        }
+    )
+    async with factory() as session:
+        await session.execute(
+            text(
+                "INSERT INTO platform.command_receipts "
+                "(command_id,command_type,actor_id,aggregate_type,aggregate_id,idempotency_key,"
+                "request_fingerprint,expected_version,received_at,result_ref,result_payload,status,"
+                "expires_at) VALUES (:command,'RecordLexicalEncounter',:account,'language_profile',"
+                ":profile,'invalid-stored-version',:fingerprint,NULL,:now,:result,"
+                "jsonb_build_object('resource_id',CAST(:result AS text),'version','1'),"
+                "'succeeded',:expires)"
+            ),
+            {
+                "command": uid(1252),
+                "account": uid(1),
+                "profile": uid(11),
+                "fingerprint": fingerprint,
+                "now": NOW,
+                "result": uid(1250),
+                "expires": NOW + timedelta(days=1),
+            },
+        )
+        await session.commit()
+
+    with pytest.raises(DomainError) as error:
+        await service.execute(
+            command_name="RecordLexicalEncounter",
+            account_id=uid(1),
+            resource_id=uid(11),
+            payload=payload,
+            idempotency_key="invalid-stored-version",
+            expected_version=None,
+        )
+    assert error.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
 
 
 async def test_neighborhood_is_explicitly_scoped_to_one_owned_profile(service_factory) -> None:
