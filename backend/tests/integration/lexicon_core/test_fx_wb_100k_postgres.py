@@ -1,3 +1,4 @@
+import json
 import statistics
 import time
 from pathlib import Path
@@ -82,6 +83,22 @@ async def test_fx_wb_loads_real_100k_and_meets_bounded_sql_p95(migration_session
         service_times.append((time.perf_counter() - started) * 1000)
         assert len(result.nodes) <= 500
     service_p95 = statistics.quantiles(service_times, n=20)[18]
+
+    print(
+        json.dumps(
+            {
+                "rows": {"reference_entries": counts[0], "relations": counts[1]},
+                "samples": 25,
+                "p95_ms": {
+                    "search_sql": search_p95,
+                    "neighborhood_sql": graph_p95,
+                    "neighborhood_service": service_p95,
+                },
+                "plans": {"search": search_plan, "neighborhood": graph_plan},
+            },
+            sort_keys=True,
+        )
+    )
 
     assert search_p95 < 100, search_plan
     assert graph_p95 < 200, graph_plan
