@@ -22,12 +22,18 @@ _SPLIT_TASK_REPORT_SOURCE = re.compile(
     r"(?P<fragment>sk-W\d{2}(?:-[A-Za-z0-9]+)+-report)"
     r'''(?:\.md)?["']'''
 )
+_SYNTHETIC_REPORT_PROOF = re.compile(
+    r"a real value shaped like `"
+    r"(?P<fragment>sk-W\d{2}(?:-[A-Za-z0-9]+)+-report)"
+    r"` outside\s+the\s+exact\s+split\s+source\s+context"
+)
 
 
 def _is_split_task_report_source(content: str, match: re.Match[str]) -> bool:
     return any(
         candidate.span("fragment") == match.span()
-        for candidate in _SPLIT_TASK_REPORT_SOURCE.finditer(content)
+        for context_pattern in (_SPLIT_TASK_REPORT_SOURCE, _SYNTHETIC_REPORT_PROOF)
+        for candidate in context_pattern.finditer(content)
     )
 
 
