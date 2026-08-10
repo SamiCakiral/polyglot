@@ -61,8 +61,9 @@ Migration `0002_identity` creates:
 
 UUIDv7 checks, provider-shape checks, Argon2id checks, active identity/role
 uniqueness, session deadlines and relevant indexes are database-enforced.
-Consent facts are append-only. Personal tables enable and force RLS using the
-transaction-local `app.user_id`. Narrow `SECURITY DEFINER` lookup functions are
+Consent facts are append-only. Personal tables enable RLS using the transaction-local
+`app.user_id`; RLS is intentionally not forced, and the non-owner runtime identity is
+subject to the policies. Narrow `SECURITY DEFINER` lookup functions are
 granted only to the runtime identity and public execution is revoked. The
 migration, runtime and retention PostgreSQL logins remain separate.
 
@@ -72,7 +73,9 @@ migration, runtime and retention PostgreSQL logins remain separate.
   and crossed owner allow/deny oracles.
 - `FX-AUTH`: expired session, mismatched CSRF fingerprints, fake OIDC assertion
   and stale-role session rotation oracle.
-- Both manifests include schema version, deterministic integer seed, fixed aware
+- Both closed W00 manifests contain only `id`, `kind` and `expected_status` and
+  validate against `contracts/fixtures/manifest.schema.json`. Separate fixture
+  metadata contains the schema version, deterministic integer seed, fixed aware
   clock, SHA-256 payload fingerprint and named oracles.
 - Fixture contract tests reject plaintext credential, provider-token, recovery,
   session-token and CSRF-token fields.
@@ -106,6 +109,29 @@ The implementation was committed as coherent RED/GREEN increments:
 10. `289f9cb` `fix(w02): close OIDC credential boundary`
     - GREEN: exact provider shapes enforced and installed-wheel proof extended to
       `0002_identity`.
+11. `2fe8b29` `test(w02): capture session rotation review failures`
+    - RED: original absolute expiry, mutation continuation, one-successor concurrency
+      and rotation fact tests failed.
+12. `decee04` `fix(w02): preserve linear session rotation chains`
+    - GREEN: original authentication boundary, serialized successor creation and
+      transactional session events/audits passed.
+13. `d59b135` `test(w02): capture identity hardening failures`
+    - RED: timing equalization, throttle, secret redaction, anonymous idempotency,
+      terminal replay, CAS, kill-switch and global-revoke cases failed.
+14. `1b4273f` `fix(w02): harden identity mutation semantics`
+    - GREEN: all identity hardening and concurrency cases passed.
+15. `3d66874` `test(w02): capture contract rollback failures`
+    - RED: real W00 fixture schema, OpenAPI security/details and destructive downgrade
+      guard tests failed.
+16. `f518f20` `fix(w02): publish closed identity contracts`
+    - GREEN: closed manifests, typed OpenAPI, stronger compatibility validation and
+      explicit disposable downgrade passed.
+17. `fe38691` `test(w02): reject timing padding as credential`
+    - RED: an incomplete internal command could authenticate if its account password
+      equaled the fixed timing-padding value.
+18. `9a860a9` `fix(w02): close timing padding credential path`
+    - GREEN: original credential shape is required for success while every local miss
+      still performs one valid Argon2id verification.
 
 ## Adversarial Coverage
 
@@ -122,36 +148,37 @@ Local environment: macOS ARM64, CPython 3.13.11, uv locked environment and real
 PostgreSQL 17 container with independent migration/runtime/retention logins.
 
 - W00 registry validator: `contract registry valid`.
-- W00 unittest discovery: `23 passed`.
-- Locked environment: `uv sync --locked`, 43 packages resolved and 42 audited.
-- Ruff: all checks passed for `src` and `tests`.
-- Strict Mypy: no issues in 35 source files.
-- Final committed-HEAD unit/property rerun: `39 passed in 5.98s`.
-- Exact W02 target matrix: `47 passed`.
+- W00 unittest discovery: 23 tests, `OK`.
+- Locked environment: `uv sync --locked`, 48 packages resolved and 47 audited.
+- Ruff: `All checks passed` for `src` and `tests`.
+- Strict Mypy: `Success: no issues found in 35 source files`.
+- Final committed-HEAD combined unit/property/integration/contract rerun, excluding
+  the separately executed wheel test: `175 passed in 12.71s`.
+- Exact focused W02 identity target matrix before the final combined rerun: `67 passed
+  in 7.28s`; the terminal timing-padding regression and dummy-hash test then passed
+  together (`2 passed in 0.49s`).
 - Empty migration: base -> `0001_platform` -> `0002_identity` passed.
-- Full rollback/re-upgrade: `0002_identity` -> base -> head passed.
+- Full guarded rollback/re-upgrade: `0002_identity` -> base -> head passed.
 - Prior-revision migration: `0002_identity` -> `0001_platform` -> head passed.
-- Alembic: exactly one head, current at `0002_identity`, no metadata drift.
-- Installed wheel: contains both migrations and its own round trip passed (`1
+- Destructive downgrade without
+  `POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE=true` failed closed with the explicit
+  disposable-environment/permanent-data-loss error and left `0002_identity` current.
+- Alembic: exactly one head, current at `0002_identity`, `No new upgrade operations
+  detected`.
+- Installed wheel: contains both migrations and its own guarded round trip passed (`1
   passed in 0.75s` on the final committed-HEAD rerun).
-- Integration/contract matrix excluding the separately executed wheel test: `117
-  passed in 8.88s` on the final clean serial rerun.
 - Deterministic OpenAPI check: passed.
 - Repository plus full Git history secret scan: clean.
-- `pip-audit 2.9.0` over the frozen hashed production export: no known
-  vulnerabilities.
-- Trivy 0.69.3 filesystem scan: zero Critical findings.
-- Trivy 0.69.3 pinned PostgreSQL image scan: zero unsuppressed Critical findings.
-  The existing digest-scoped `gosu` CVE-2025-68121 exception is the only
-  suppressed finding.
+- `pip-audit 2.9.0` over the frozen hashed production export: `No known
+  vulnerabilities found`.
+- Pinned Trivy 0.69.3 final-code filesystem scan: zero Critical vulnerabilities,
+  misconfigurations or secrets.
+- Pinned Trivy 0.69.3 PostgreSQL digest scan: zero unsuppressed Critical findings. The
+  existing digest-scoped `gosu` CVE-2025-68121 exception remains the only suppression.
 - `git diff --check`: passed before this report update.
 
-One attempted final rerun overlapped a still-finishing all-suite invocation and
-produced six PostgreSQL deadlocks between test cleanup `TRUNCATE` locks and test
-writes. No assertion or product behavior failed. Process inspection confirmed no
-remaining test process, and the same integration/contract command then passed
-all 117 tests serially in 8.88s. The green serial result above is the acceptance
-evidence.
+All review-round database suites were executed serially. No final-head deadlock,
+unexpected exception or failed assertion was observed.
 
 ## Write-Set Notes
 
@@ -159,7 +186,8 @@ The domain, migration, tests and fixtures remain inside the W02 write set. The
 following adjacent W01-owned files were changed only where integration required
 it:
 
-- `backend/pyproject.toml` and `backend/uv.lock` pin Argon2 support.
+- `backend/pyproject.toml` and `backend/uv.lock` pin Argon2 support and the test-only
+  Draft 2020-12 `jsonschema` validator.
 - `backend/migrations/env.py` registers W02 metadata for drift detection.
 - `backend/src/polyglot/interfaces/http/app.py` wires the identity service with
   fail-closed runtime session/origin settings.
@@ -172,11 +200,14 @@ rewritten.
 
 ## Rollback
 
-Disable registration/OIDC at the application configuration boundary, globally
-revoke sessions when required, revert the W02 application commits and downgrade
-`0002_identity` to `0001_platform`. The migration round trips prove this path.
-Append-only platform event/audit facts remain immutable until their existing
-retention policy applies.
+Set `POLYGLOT_REGISTRATION_ENABLED=false` and/or `POLYGLOT_OIDC_ENABLED=false` at the
+application configuration boundary, invoke the explicit account-wide session revoke
+procedure when required, and revert the W02 application code while leaving
+`0002_identity` in place. This production rollback preserves account, consent and
+preference history. Downgrade is limited to disposable environments, requires
+`POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE=true`, and permanently deletes the
+identity schema. Guarded migration round trips prove only that disposable test path.
+Append-only platform event/audit facts remain immutable until retention applies.
 
 ## Concerns and Acceptance Boundary
 
@@ -191,3 +222,40 @@ retention policy applies.
   the W01 recheck/expiry process; W02 introduced no new suppression.
 - Product and security approver sign-off remains a separate gate and is not
   inferred from green automated evidence.
+
+## W02 Review Fix Round 1 - Exact Final Evidence
+
+Final implementation head before this report commit: `9a860a9`.
+
+- Review findings 1-3: original `authenticated_at` and seven-day absolute deadline
+  survive every rotation; mutation-triggered successors are returned via secure cookie
+  and CSRF response state; PostgreSQL advisory transaction locking plus revoke CAS
+  creates one successor and writes creation/revocation event, outbox and audit facts in
+  the same transaction.
+- Review findings 4-8: fixed valid dummy Argon2id verification, bounded source and
+  normalized-identifier throttling, secret-safe representations/logging, stable
+  anonymous registration receipts, exact terminal replay, mandatory password
+  `If-Match`, account/credential CAS and serialized consent versions are covered by
+  focused real-PostgreSQL adversarial tests.
+- Review findings 9-10: OpenAPI exposes the cookie security scheme, Origin, CSRF and
+  If-Match headers, discriminated local/OIDC union and RFC 9457 responses; compatibility
+  validation rejects missing W02 operations/security/details. FX-USERS and FX-AUTH are
+  validated by `Draft202012Validator` against the real W00 manifest schema and use only
+  registered errors.
+- Review finding 11: runtime registration/OIDC switches and explicit global session
+  revoke are exercised; application rollback retains `0002_identity`; destructive
+  downgrade is opt-in and labelled permanent data loss.
+- W00 evidence: registry validator `contract registry valid`; canonical unittest
+  discovery 23 tests, `OK`.
+- Final code matrix: `175 passed in 12.71s`; installed artifact and packaged migration
+  round trip `1 passed in 0.75s`.
+- Migration evidence: empty base-to-head, full guarded base rollback/re-upgrade and
+  `0001_platform` downgrade/re-upgrade passed; exactly one head; current
+  `0002_identity (head)`; `No new upgrade operations detected`.
+- Quality/contracts: Ruff `All checks passed`; strict Mypy `Success: no issues found in
+  35 source files`; deterministic OpenAPI check passed; `git diff --check` passed before
+  this report edit.
+- Security: repository plus Git-history secret scan clean; `pip-audit 2.9.0` reported
+  `No known vulnerabilities found`; pinned Trivy `0.69.3` final-code filesystem scan
+  found zero Critical vulnerabilities/misconfigurations/secrets; the pinned PostgreSQL
+  digest scan found zero unsuppressed Critical vulnerabilities.
