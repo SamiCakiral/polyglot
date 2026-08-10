@@ -7,6 +7,33 @@ import type { ProblemResponse } from "../generated/model";
 import { server } from "../../tests/support/server";
 import { renderShell, renderWithErrorBoundary } from "./test-utils";
 
+function problemResponse(
+  status: number,
+  code: string,
+  retryable: boolean,
+): ProblemResponse {
+  return {
+    type: "about:blank",
+    title: code,
+    status,
+    detail: `Synthetic ${code} response.`,
+    instance: "/api/v1/session",
+    code,
+    message_key: `errors.${code}`,
+    request_id: "019fe900-6000-7000-8000-000000000003",
+    correlation_id: "019fe900-6000-7000-8000-000000000004",
+    retryable,
+  };
+}
+
+function useSessionProblem(status: number, code: string, retryable: boolean): void {
+  server.use(
+    http.get("*/api/v1/session", () =>
+      HttpResponse.json(problemResponse(status, code, retryable), { status }),
+    ),
+  );
+}
+
 it("reserves a stable shell loading state while the generated session query is pending", () => {
   server.use(
     http.get("*/api/v1/session", async () => {
@@ -20,26 +47,71 @@ it("reserves a stable shell loading state while the generated session query is p
   expect(screen.getByRole("status", { name: "Chargement de Polyglot" })).toBeVisible();
 });
 
-it("renders a recoverable shell error when the generated session endpoint fails", async () => {
-  const problem: ProblemResponse = {
-    type: "about:blank",
-    title: "Dependency unavailable",
-    status: 503,
-    detail: "The session service is unavailable.",
-    instance: "/api/v1/session",
-    code: "dependency_unavailable",
-    message_key: "errors.dependency_unavailable",
-    request_id: "019fe900-6000-7000-8000-000000000003",
-    correlation_id: "019fe900-6000-7000-8000-000000000004",
-    retryable: true,
-  };
-  server.use(http.get("*/api/v1/session", () => HttpResponse.json(problem, { status: 503 })));
+it("sends an unauthenticated session to the reconnection path without retry", async () => {
+  useSessionProblem(401, "unauthenticated", false);
+
+  renderShell();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Votre session a expiré");
+  expect(screen.getByRole("link", { name: "Se reconnecter" })).toHaveAttribute(
+    "href",
+    "/login",
+  );
+  expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
+});
+
+it("sends a forbidden session to a safe destination without retry", async () => {
+  useSessionProblem(403, "forbidden", false);
 
   renderShell();
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Impossible de charger votre session",
+    "Vous n'avez pas accès à cette page",
   );
+  expect(screen.getByRole("link", { name: "Revenir à la connexion" })).toHaveAttribute(
+    "href",
+    "/login",
+  );
+  expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
+});
+
+it("does not offer retry when the API marks a session failure as non-retryable", async () => {
+  useSessionProblem(423, "account_locked", false);
+
+  renderShell();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Votre session ne peut pas être ouverte",
+  );
+  expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
+});
+
+it("offers a manual retry for a retryable rate limit", async () => {
+  useSessionProblem(429, "rate_limited", true);
+
+  renderShell();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Trop de demandes");
+  expect(screen.getByRole("button", { name: "Réessayer" })).toBeEnabled();
+});
+
+it("offers a manual retry for a retryable dependency failure", async () => {
+  useSessionProblem(503, "dependency_unavailable", true);
+
+  renderShell();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Service temporairement indisponible",
+  );
+  expect(screen.getByRole("button", { name: "Réessayer" })).toBeEnabled();
+});
+
+it("offers a manual retry after a transport failure", async () => {
+  server.use(http.get("*/api/v1/session", () => HttpResponse.error()));
+
+  renderShell();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Connexion interrompue");
   expect(screen.getByRole("button", { name: "Réessayer" })).toBeEnabled();
 });
 
