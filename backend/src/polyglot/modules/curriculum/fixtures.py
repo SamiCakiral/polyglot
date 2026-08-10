@@ -2,15 +2,31 @@ from __future__ import annotations
 
 import hashlib
 import json
+from dataclasses import dataclass, replace
 from collections.abc import Iterable
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID
 
 from polyglot.modules.exercises.core.domain import CORE_PRIMITIVE_IDS
 
-from .bindings import CurriculumError
+from .bindings import BindingRole, CurriculumError, SkillTargetBinding
+from .domain import ArcType, LearningModuleRevision, ModuleDay, ModuleStatus
+from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
+from .revisioning import (
+    ModuleRevisionMapping,
+    RevisionMappingEntry,
+    build_successor_revision,
+    validate_revision_mapping,
+)
+from .validation import (
+    HumanGateStatus,
+    HumanReviewGate,
+    MorphologyOracle,
+    PronunciationOracle,
+    ValidationInput,
+    validate_curriculum,
+)
 
 PAYLOAD_NAMES = (
     "module.json",
@@ -215,7 +231,9 @@ def _validate_days(
     return days, tuple(recalls)
 
 
-def _validate_bindings(payload: dict[str, Any]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+def _validate_bindings(
+    payload: dict[str, Any],
+) -> tuple[tuple[str, ...], tuple[str, ...], frozenset[str]]:
     _expect_keys(
         payload,
         (
@@ -286,7 +304,7 @@ def _validate_bindings(payload: dict[str, Any]) -> tuple[tuple[str, ...], tuple[
     credit = set(cast(list[str], payload["credit_eligible_refs"]))
     if support & credit or set(not_evaluable) & credit:
         raise _error("module_support_lexicon_miscredited")
-    return tuple(sorted(surfaces)), tuple(sorted(not_evaluable))
+    return tuple(sorted(surfaces)), tuple(sorted(not_evaluable)), frozenset(sense_refs)
 
 
 def _validate_exercises(
@@ -326,38 +344,288 @@ def _validate_exercises(
     return tuple(sorted(gym)), len(exercises), len(ids), ids
 
 
-def _invalid_result(case: dict[str, Any]) -> str:
+def _fixture_uuid(group: int, value: int) -> UUID:
+    return UUID(f"019fe113-0000-7000-{group:04d}-{value:012d}")
+
+
+def _production_validation_input(
+    module_payload: dict[str, Any],
+    days_payload: list[dict[str, Any]],
+    bindings: dict[str, Any],
+) -> ValidationInput:
+    module_days: list[ModuleDay] = []
+    for item in days_payload:
+        ordinal = int(item["ordinal"])
+        module_days.append(
+            ModuleDay(
+                module_day_id=_fixture_uuid(8100, ordinal),
+                ordinal=ordinal,
+                arc_type=ArcType(str(item["arc"])),
+                objective_codes=(str(item["code"]),),
+                modality_objectives=(("written_production", str(item["objective"])),),
+                primary_target_refs=tuple(cast(list[str], item["targets"])),
+                encountered_target_refs=tuple(cast(list[str], item["encounters"])),
+                output_target_refs=tuple(cast(list[str], item["outputs"])),
+                minimum_useful_minutes=int(item["minimum_minutes"]),
+                novelty_budget=float(item["novelty_budget"]),
+                required_block_roles=("explanation", "practice", "production"),
+                new_grammar_family_codes=tuple(
+                    cast(list[str], item["new_grammar_families"])
+                ),
+                explained_grammar_family_codes=tuple(
+                    cast(list[str], item["explanations"])
+                ),
+                gym_grammar_family_codes=tuple(
+                    str(gym["family"])
+                    for gym in cast(list[dict[str, Any]], item["gym"])
+                ),
+                context_revision_ids=(_fixture_uuid(8200, ordinal),),
+                fallback_revision_ids=(_fixture_uuid(8300, ordinal),),
+                final_output_spec=str(item["objective"]),
+                validator_revision_ids=(_fixture_uuid(8400, ordinal),),
+                prerequisite_day_ordinals=(ordinal - 1,) if ordinal > 1 else (),
+            )
+        )
+    module = LearningModuleRevision(
+        module_revision_id=UUID(str(module_payload["module_revision_id"])),
+        module_id=UUID(str(module_payload["module_id"])),
+        revision_no=int(module_payload["revision_no"]),
+        status=ModuleStatus.DRAFT,
+        pack_revision_id=_fixture_uuid(8500, 1),
+        target_variety_id=_fixture_uuid(8500, 2),
+        support_variety_ids=(_fixture_uuid(8500, 3),),
+        primary_intention=str(module_payload["primary_intention"]),
+        final_mission_revision_id=UUID(
+            str(cast(dict[str, Any], module_payload["mission"])["mission_revision_id"])
+        ),
+        entry_profile_codes=tuple(cast(list[str], module_payload["profiles"])),
+        nominal_days=int(module_payload["nominal_days"]),
+        max_days=int(module_payload["max_days"]),
+        prerequisite_skill_revision_ids=(_fixture_uuid(8600, 1),),
+        target_skill_revision_ids=tuple(_fixture_uuid(8600, value) for value in (2, 3, 4)),
+        exit_policy_revision_id=_fixture_uuid(8700, 1),
+        recall_policy_revision_id=_fixture_uuid(8700, 2),
+        provenance_id=str(module_payload["provenance"]),
+        rights_refs=tuple(cast(list[str], module_payload["rights"])),
+        validator_set_revision_id=_fixture_uuid(8700, 3),
+        schema_version=1,
+        compatibility_range=">=1,<2",
+        days=tuple(module_days),
+    )
+    resolved = tuple(
+        ResolvedReference(
+            reference=reference,
+            kind=reference.partition(":")[0],
+            status=ReferenceStatus.PUBLISHED,
+            pack_revision_id=str(module.pack_revision_id),
+            variety_id=str(module.target_variety_id),
+            checksum=f"sha256:{hashlib.sha256(reference.encode()).hexdigest()}",
+            provenance_id=module.provenance_id,
+            rights_refs=module.rights_refs,
+        )
+        for reference in module.all_reference_keys()
+    )
+    expectations = tuple(
+        ReferenceExpectation(
+            item.reference,
+            item.kind,
+            item.pack_revision_id,
+            item.variety_id,
+            item.checksum,
+        )
+        for item in resolved
+    )
+    return ValidationInput(
+        module=module,
+        resolved_references=resolved,
+        reference_expectations=expectations,
+        grammar_explanations=tuple(
+            (int(item["ordinal"]), family)
+            for item in days_payload
+            for family in cast(list[str], item["explanations"])
+        ),
+        grammar_practices=tuple(
+            (int(item["ordinal"]), str(gym["family"]), str(gym["operation"]))
+            for item in days_payload
+            for gym in cast(list[dict[str, Any]], item["gym"])
+        ),
+        morphology_oracles=tuple(
+            MorphologyOracle(
+                str(item["ref"]),
+                tuple(sorted(cast(dict[str, str], item["features"]).items())),
+                str(item["accepted"]),
+                True,
+            )
+            for item in cast(list[dict[str, Any]], bindings["morphology"])
+        ),
+        pronunciation_oracles=tuple(
+            PronunciationOracle(
+                str(item["ref"]),
+                str(item["transcript"]),
+                str(item["transcript_checksum"]),
+                str(item["media_transcript_checksum"]),
+                str(item["evaluability"]),
+            )
+            for item in cast(list[dict[str, Any]], bindings["pronunciation"])
+        ),
+        profile_novelty_limits=(("P-ABS", 6.0), ("P-FAUX", 8.0), ("P-INT", 10.0)),
+        day_novelty_points=tuple(
+            (int(item["ordinal"]), float(item["novelty_points"])) for item in days_payload
+        ),
+        human_gates=(
+            HumanReviewGate("P-LING", HumanGateStatus.PENDING_HUMAN),
+            HumanReviewGate("P-PED", HumanGateStatus.PENDING_HUMAN),
+        ),
+    )
+
+
+def _run_production_validation(data: ValidationInput) -> None:
+    report = validate_curriculum(data)
+    allowed = {
+        "module_human_review_required",
+        "module_pronunciation_not_evaluable",
+    }
+    unexpected = {
+        finding.message_code for finding in report.findings if finding.message_code not in allowed
+    }
+    if unexpected:
+        raise _error(f"fixture_production_validation_failed:{sorted(unexpected)[0]}")
+
+
+def _invalid_result(case: dict[str, Any], data: ValidationInput) -> str:
     kind = case.get("kind")
-    if kind == "duration" and not 3 <= int(case.get("nominal_days", 0)) <= 30:
-        return "module_duration_out_of_range"
+    if kind == "duration":
+        try:
+            replace(
+                data.module,
+                nominal_days=int(case.get("nominal_days", 0)),
+                max_days=int(case.get("nominal_days", 0)),
+                days=data.module.days[: int(case.get("nominal_days", 0))],
+            )
+        except CurriculumError as error:
+            return str(error)
     if kind == "cycle":
-        edges = {tuple(item) for item in cast(list[list[str]], case.get("edges", []))}
-        if any((right, left) in edges for left, right in edges):
-            return "module_prerequisite_cycle"
-    if kind == "unresolved_ref" and case.get("resolved") is False:
-        return "module_target_unresolved"
-    if kind == "load" and float(case.get("novelty_points", 0)) > float(case.get("limit", 0)):
-        return "module_load_budget_exceeded"
-    if kind == "false_credit" and case.get("role") == "support" and case.get("credit") is True:
-        return "module_support_lexicon_miscredited"
-    if kind == "human_review" and case.get("status") != "approved":
-        return "module_human_review_required"
-    if kind == "past_mutation" and case.get("past_days_equal") is False:
-        return "module_past_day_mutated"
+        try:
+            replace(data.module.days[1], prerequisite_day_ordinals=(2,))
+        except CurriculumError as error:
+            return str(error)
+    if kind == "unresolved_ref":
+        hostile = replace(data.resolved_references[0], status=ReferenceStatus.MISSING)
+        report = validate_curriculum(
+            replace(data, resolved_references=(hostile, *data.resolved_references[1:]))
+        )
+        if any(item.message_code == "module_target_unresolved" for item in report.findings):
+            return "module_target_unresolved"
+    if kind == "load":
+        report = validate_curriculum(
+            replace(
+                data,
+                day_novelty_points=(
+                    (1, float(case.get("novelty_points", 0))),
+                    *data.day_novelty_points[1:],
+                ),
+            )
+        )
+        if any(item.message_code == "module_load_budget_exceeded" for item in report.findings):
+            return "module_load_budget_exceeded"
+    if kind == "false_credit":
+        try:
+            SkillTargetBinding(
+                _fixture_uuid(8800, 1),
+                BindingRole.SUPPORT,
+                ("written_production",),
+                ("produce",),
+                (_fixture_uuid(8800, 2),),
+            )
+        except CurriculumError as error:
+            return str(error)
+    if kind == "human_review":
+        report = validate_curriculum(data)
+        if any(
+            item.message_code == "module_human_review_required" for item in report.findings
+        ):
+            return "module_human_review_required"
+    if kind == "past_mutation":
+        try:
+            build_successor_revision(
+                data.module,
+                successor_revision_id=_fixture_uuid(8900, 1),
+                candidate_days=(
+                    replace(data.module.days[0], objective_codes=("mutated",)),
+                    *data.module.days[1:],
+                ),
+                executed_through_ordinal=1,
+                expected_revision_no=data.module.revision_no,
+            )
+        except CurriculumError as error:
+            return str(error)
     raise _error("fixture_invalid_case_not_rejected")
 
 
-def _validate_invalid_cases(root: Path) -> tuple[str, ...]:
+def _validate_invalid_cases(root: Path, data: ValidationInput) -> tuple[str, ...]:
     results: list[str] = []
     for path in sorted((root / "invalid").glob("*/case.json")):
         case = _load_json(path)
-        result = _invalid_result(case)
+        result = _invalid_result(case, data)
         if result != case.get("expected"):
             raise _error("fixture_invalid_case_wrong_finding")
         results.append(result)
     if len(results) != 7:
         raise _error("fixture_invalid_case_set_incomplete")
     return tuple(sorted(results))
+
+
+def _validate_revision_cases(payload: dict[str, Any], data: ValidationInput) -> None:
+    _expect_keys(payload, ("schema_version", "cases"), "revision-cases")
+    source = data.module
+    for index, case in enumerate(cast(list[dict[str, Any]], payload["cases"]), start=1):
+        _expect_keys(
+            case,
+            ("id", "executed_through", "past_days_equal", "mapping_complete", "expected"),
+            "revision-case",
+        )
+        expected = str(case["expected"])
+        try:
+            candidate_days = source.days
+            if not case["past_days_equal"]:
+                candidate_days = (
+                    replace(source.days[0], objective_codes=("mutated",)),
+                    *source.days[1:],
+                )
+            successor = build_successor_revision(
+                source,
+                successor_revision_id=_fixture_uuid(9000, index),
+                candidate_days=candidate_days,
+                executed_through_ordinal=int(case["executed_through"]),
+                expected_revision_no=source.revision_no,
+            )
+            entries = tuple(
+                RevisionMappingEntry(day.ordinal, day.ordinal, target, target)
+                for day in source.days
+                for target in day.primary_target_refs
+            )
+            if not case["mapping_complete"]:
+                entries = entries[:1]
+            mapping = ModuleRevisionMapping(
+                _fixture_uuid(9100, index),
+                source.module_revision_id,
+                successor.module_revision_id,
+                entries,
+                True,
+            )
+            findings = validate_revision_mapping(source, successor, mapping)
+            actual = (
+                "module_revision_mapping_incomplete"
+                if any(
+                    item.message_code == "module_revision_mapping_incomplete"
+                    for item in findings
+                )
+                else "accepted"
+            )
+        except CurriculumError as error:
+            actual = str(error)
+        if actual != expected:
+            raise _error(f"fixture_revision_case_mismatch:{case['id']}")
 
 
 def _execute_oracles(
@@ -367,35 +635,91 @@ def _execute_oracles(
     bindings: dict[str, Any],
     recalls: tuple[tuple[int, int], ...],
     metadata: dict[str, Any],
+    module: dict[str, Any],
+    dialogues: dict[str, Any],
 ) -> tuple[tuple[str, ...], tuple[str, ...]]:
     _expect_keys(oracle_payload, ("schema_version", "oracles"), "oracles")
     declared: list[str] = []
     executed: list[str] = []
-    grammar = {str(item["family"]) for item in cast(list[dict[str, Any]], bindings["grammar"])}
+    grammar_items = cast(list[dict[str, Any]], bindings["grammar"])
+    grammar = {str(item["family"]) for item in grammar_items}
+    grammar_by_ref = {str(item["ref"]): str(item["family"]) for item in grammar_items}
+    morphology_by_ref = {
+        str(item["ref"]): str(item["accepted"])
+        for item in cast(list[dict[str, Any]], bindings["morphology"])
+    }
+    pronunciation_by_ref = {
+        str(item["ref"]): str(item["evaluability"])
+        for item in cast(list[dict[str, Any]], bindings["pronunciation"])
+    }
+    dialogue_by_ref = {
+        str(item["id"]): _checksum(
+            json.dumps(
+                {
+                    "lines": item["lines"],
+                    "grammar_refs": item["grammar_refs"],
+                    "lexicon_refs": item["lexicon_refs"],
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        )
+        for item in cast(list[dict[str, Any]], dialogues["dialogues"])
+    }
+    budgets = cast(list[dict[str, Any]], module["budget_plans"])
+    budget_shape = {
+        (int(item["day"]), int(item["budget_minutes"])) for item in budgets
+    }
     for oracle in cast(list[dict[str, str]], oracle_payload["oracles"]):
-        _expect_keys(oracle, ("id", "kind", "expected"), "oracle")
-        oracle_id = oracle["id"]
+        if not {"id", "kind", "expected"}.issubset(oracle) or not set(oracle).issubset(
+            {"id", "kind", "expected", "target_ref"}
+        ):
+            raise _error("fixture_schema_invalid:oracle")
+        oracle_id = str(oracle["id"])
         declared.append(oracle_id)
-        kind = oracle["kind"]
-        valid = {
-            "day_arc": len(days) == 3 and days[-1]["arc"] == "transfer",
-            "target_coverage": all(set(item["targets"]).issubset(item["outputs"]) for item in days),
-            "grammar_order": grammar == {"identity", "polite-request", "existence"},
-            "morphology": len(bindings["morphology"]) == 10,
-            "pronunciation": any(
-                item["evaluability"] == "not_evaluable" for item in bindings["pronunciation"]
-            ),
-            "recall": recalls == ((1, 2), (2, 3)),
-            "profiles": all(
-                value in {"P-ABS", "P-FAUX", "P-INT"} for value in ("P-ABS", "P-FAUX", "P-INT")
-            ),
-            "credit_scope": not set(bindings["support_refs"])
-            & set(bindings["credit_eligible_refs"]),
-            "human_gates": metadata["linguistic_review"]
+        kind = str(oracle["kind"])
+        target_ref = str(oracle.get("target_ref", ""))
+        actual = {
+            "day_arc": "valid"
+            if len(days) == 3 and days[-1]["arc"] == "transfer"
+            else "invalid",
+            "target_coverage": "covered"
+            if all(set(item["targets"]).issubset(item["outputs"]) for item in days)
+            else "uncovered",
+            "grammar_order": "ordered"
+            if grammar == {"identity", "polite-request", "existence"}
+            else "unordered",
+            "morphology": "all_distinct"
+            if len(morphology_by_ref) == len(bindings["morphology"]) == 10
+            else "invalid",
+            "pronunciation": "bounded_credit"
+            if "not_evaluable" in pronunciation_by_ref.values()
+            else "invalid",
+            "recall": "1>2>3" if recalls == ((1, 2), (2, 3)) else "invalid",
+            "profiles": "15/30/60"
+            if module["profiles"] == ["P-ABS", "P-FAUX", "P-INT"]
+            and budget_shape
+            == {(day, minutes) for day in (1, 2, 3) for minutes in (15, 30, 60)}
+            else "invalid",
+            "credit_scope": "support_zero"
+            if not set(bindings["support_refs"]) & set(bindings["credit_eligible_refs"])
+            else "invalid",
+            "human_gates": "pending_human"
+            if module["linguistic_review"]
+            == module["pedagogical_review"]
+            == metadata["linguistic_review"]
             == metadata["pedagogical_review"]
-            == "pending_human",
-        }.get(kind, False)
-        if not valid:
+            == "pending_human"
+            else "invalid",
+            "grammar_target": grammar_by_ref.get(target_ref, "missing"),
+            "morphology_form": morphology_by_ref.get(target_ref, "missing"),
+            "pronunciation_target": pronunciation_by_ref.get(target_ref, "missing"),
+            "dialogue": dialogue_by_ref.get(target_ref, "missing"),
+        }.get(kind, "unknown")
+        if actual != oracle["expected"]:
+            raise _error(f"fixture_oracle_expected_mismatch:{oracle_id}")
+        if actual in {"invalid", "missing", "unknown", "uncovered", "unordered"}:
             raise _error(f"fixture_oracle_failed:{oracle_id}")
         executed.append(oracle_id)
     if len(declared) != len(set(declared)):
@@ -432,9 +756,20 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
         ),
         "module",
     )
+    if not module["rights"]:
+        raise _error("module_rights_missing")
+    if not module["provenance"]:
+        raise _error("module_provenance_missing")
+    if (
+        module["rights"] != metadata["rights"]
+        or [module["provenance"]] != metadata["provenance"]
+        or module["linguistic_review"] != metadata["linguistic_review"]
+        or module["pedagogical_review"] != metadata["pedagogical_review"]
+    ):
+        raise _error("module_human_review_required")
     days, recalls = _validate_days(payloads["days.json"])
     bindings = payloads["bindings.json"]
-    surfaces, not_evaluable = _validate_bindings(bindings)
+    surfaces, not_evaluable, sense_refs = _validate_bindings(bindings)
     gym_operations, exercise_count, pinned_count, exercise_ids = _validate_exercises(
         payloads["exercises.json"]
     )
@@ -444,21 +779,36 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
         item["id"] for item in cast(list[dict[str, Any]], dialogues["dialogues"])
     }:
         raise _error("module_target_uncovered")
-    revision_cases = payloads["revision-cases.json"]
-    _expect_keys(revision_cases, ("schema_version", "cases"), "revision-cases")
-    expected_revision_results = {
-        "accepted",
-        "module_past_day_mutated",
-        "module_revision_mapping_incomplete",
+    grammar_refs = {
+        str(item["ref"]) for item in cast(list[dict[str, Any]], bindings["grammar"])
     }
-    if {item["expected"] for item in revision_cases["cases"]} != expected_revision_results:
-        raise _error("module_revision_mapping_incomplete")
+    allowed_lexicon_refs = sense_refs | frozenset(
+        cast(list[str], bindings["support_refs"])
+    )
+    for dialogue in cast(list[dict[str, Any]], dialogues["dialogues"]):
+        _expect_keys(
+            dialogue,
+            ("id", "day", "lines", "grammar_refs", "lexicon_refs"),
+            "dialogue",
+        )
+        if (
+            not dialogue["lines"]
+            or not set(dialogue["grammar_refs"]).issubset(grammar_refs)
+            or not set(dialogue["lexicon_refs"]).issubset(allowed_lexicon_refs)
+        ):
+            raise _error("module_target_unresolved")
+    production_data = _production_validation_input(module, days, bindings)
+    _run_production_validation(production_data)
+    revision_cases = payloads["revision-cases.json"]
+    _validate_revision_cases(revision_cases, production_data)
     declared, executed = _execute_oracles(
         payloads["oracles.json"],
         days=days,
         bindings=bindings,
         recalls=recalls,
         metadata=metadata,
+        module=module,
+        dialogues=dialogues,
     )
     if module["profiles"] != ["P-ABS", "P-FAUX", "P-INT"]:
         raise _error("module_load_budget_exceeded")
@@ -498,7 +848,7 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
         recalls,
         declared,
         executed,
-        _validate_invalid_cases(safe),
+        _validate_invalid_cases(safe, production_data),
         frozenset(cast(list[str], bindings["credit_eligible_refs"])),
         frozenset(cast(list[str], bindings["support_refs"])),
         not_evaluable,

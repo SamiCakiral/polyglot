@@ -9,7 +9,7 @@
     "bindings.json": "sha256:28d7caf528baec554990c37c9cd0e7544cea49f5bf7a4c955946f10879ed466c",
     "dialogues.json": "sha256:570ea5bcf46d36f3317e16a64821a93319073ab83c620281fa92e0b3f921ccd6",
     "exercises.json": "sha256:d4150267e266853a0578a50c4401cb990362929bfbbb0edeae224ee1055c4fd9",
-    "oracles.json": "sha256:1099cc9e18b7661c83a44093d3b18cd7cde407ac4dae9b80961329f7b1942de3",
+    "oracles.json": "sha256:00506113d68530d4fac2e64b8254dbe39bd10a5615050926066fe5f07b18afaa",
     "revision-cases.json": "sha256:0f9f9c48469169354353873323559d176729b10e68353a2a24ce396393572b7e"
   },
   "network_dependencies": [],
