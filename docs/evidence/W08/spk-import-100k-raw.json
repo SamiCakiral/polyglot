@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "measured_at": "2026-08-10T17:30:00+02:00",
+  "environment": {
+    "platform": "macOS arm64",
+    "python": "3.13.11",
+    "network_dependencies": []
+  },
+  "fixture": {
+    "id": "FX-IMPORTS",
+    "seed": 8008,
+    "rows": 100000,
+    "payload_bytes": 9977850
+  },
+  "runs_seconds": [
+    0.736923,
+    0.770255,
+    0.792978,
+    0.810301,
+    0.840150,
+    0.813042,
+    0.789511,
+    0.803104,
+    0.794789
+  ],
+  "p50_seconds": 0.794789,
+  "p95_seconds": 0.829307,
+  "p99_seconds": 0.837981,
+  "pytest_wall_seconds": 1.83,
+  "pytest_max_rss_bytes": 206979072,
+  "scope": "parser_only"
+}

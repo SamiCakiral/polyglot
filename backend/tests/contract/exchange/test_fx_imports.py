@@ -60,7 +60,7 @@ def test_fx_imports_positive_payloads_execute_with_bounded_parser() -> None:
         "piano",
     )
     assert len(parsed_csv.rows) == 2
-    assert cases["synthetic_volume"]["max_rows"] == 10_000
+    assert cases["synthetic_volume"]["max_rows"] == 100_000
 
 
 def test_fx_imports_executes_the_declared_synthetic_volume() -> None:
@@ -70,7 +70,7 @@ def test_fx_imports_executes_the_declared_synthetic_volume() -> None:
             "variety_id": "019bfcc0-7cf1-7000-8000-000000000001",
             "form": f"parola-{index}",
         }
-        for index in range(10_000)
+        for index in range(100_000)
     ]
     payload = json.dumps(
         {
@@ -84,8 +84,8 @@ def test_fx_imports_executes_the_declared_synthetic_volume() -> None:
         payload,
         "polyglot.lexicon.bundle/v1",
         "utf-8",
-        ParseLimits(max_rows=10_000),
+        ParseLimits(max_rows=100_000),
     )
 
-    assert len(parsed.rows) == 10_000
-    assert parsed.rows[-1].source_key == "fx-9999"
+    assert len(parsed.rows) == 100_000
+    assert parsed.rows[-1].source_key == "fx-99999"

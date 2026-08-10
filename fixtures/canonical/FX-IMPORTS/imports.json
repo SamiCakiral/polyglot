@@ -63,7 +63,7 @@
   },
   "synthetic_volume": {
     "seed": 8008,
-    "max_rows": 10000,
+    "max_rows": 100000,
     "generation": "source_key=fx-{index}; form=parola-{index}"
   }
 }
