@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-MEDIA",
+  "audio": {
+    "asset_id": "019fe015-0000-7000-8000-000000000001",
+    "revision_id": "019fe015-0000-7000-8000-000000000002",
+    "rights_id": "019fe015-0000-7000-8000-000000000003",
+    "declared_mime": "audio/mpeg",
+    "detected_mime": "audio/mpeg",
+    "audio_base64": "RlgtTUVESUEgZGV0ZXJtaW5pc3RpYyBhdWRpbyBieXRlcwo=",
+    "checksum_sha256": "b42889b8ad8c42faf5fcf7eaf1753381801a92cee18fa7e4297030e5fab93eb2",
+    "transcript": "Ciao, come stai?",
+    "segments": [
+      {"start_ms": 0, "end_ms": 400, "text": "Ciao,"},
+      {"start_ms": 400, "end_ms": 1200, "text": "come stai?"}
+    ],
+    "rights": {
+      "license_ref": "rights:fixture:media",
+      "provenance_ref": "FX-MEDIA/audio",
+      "expires_at": "2027-08-10T12:00:00+00:00"
+    }
+  },
+  "voice_removed": {
+    "voice_id": "alice-it",
+    "locale": "it-IT",
+    "availability": "retired"
+  },
+  "media_absent": {
+    "transcript": "Ciao, come stai?",
+    "expected_shadowing_state": "alternative_available"
+  },
+  "mime_deceptive": {
+    "declared_mime": "audio/mpeg",
+    "detected_mime": "application/x-msdownload"
+  },
+  "hostile_archive": {
+    "declared_mime": "application/zip",
+    "detected_mime": "application/zip",
+    "archive_safe": false
+  },
+  "rights_expired": {
+    "license_ref": "rights:fixture:expired",
+    "provenance_ref": "FX-MEDIA/expired",
+    "expires_at": "2026-08-09T12:00:00+00:00"
+  },
+  "checksum_false": {
+    "expected_checksum_sha256": "b42889b8ad8c42faf5fcf7eaf1753381801a92cee18fa7e4297030e5fab93eb2",
+    "actual_checksum_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}

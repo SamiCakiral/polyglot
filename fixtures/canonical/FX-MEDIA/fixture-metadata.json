@@ -1,0 +1,7 @@
+{
+  "fixture_id": "FX-MEDIA",
+  "synthetic": true,
+  "provider_required": false,
+  "network": "disabled",
+  "review_status": "phase_a_domain_ports"
+}
