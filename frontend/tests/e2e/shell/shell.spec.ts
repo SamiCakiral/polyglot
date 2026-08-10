@@ -53,8 +53,8 @@ test("keeps the shell inside the viewport without truncated mobile labels", asyn
         return {
           clientHeight: element.clientHeight,
           clientWidth: element.clientWidth,
-          labelBox: labelBox.toJSON(),
-          linkBox: linkBox?.toJSON(),
+          labelBox: { left: labelBox.left, right: labelBox.right },
+          linkBox: linkBox ? { left: linkBox.left, right: linkBox.right } : null,
           scrollHeight: element.scrollHeight,
           scrollWidth: element.scrollWidth,
         };
@@ -63,7 +63,7 @@ test("keeps the shell inside the viewport without truncated mobile labels", asyn
       expect(geometry.clientHeight).toBeGreaterThan(1);
       expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
       expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
-      expect(geometry.linkBox).toBeDefined();
+      expect(geometry.linkBox).not.toBeNull();
       expect(geometry.labelBox.left).toBeGreaterThanOrEqual(geometry.linkBox?.left ?? 0);
       expect(geometry.labelBox.right).toBeLessThanOrEqual(geometry.linkBox?.right ?? 0);
     }

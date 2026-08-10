@@ -153,6 +153,54 @@ a {
   gap: 8px;
 }
 
+.tooltip-anchor {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.control-tooltip {
+  position: absolute;
+  z-index: 60;
+  width: max-content;
+  max-width: 220px;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: #ffffff;
+  background: #181b20;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  white-space: normal;
+}
+
+.tooltip-anchor:hover > .control-tooltip,
+.tooltip-anchor:focus-within > .control-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.control-tooltip--below {
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.control-tooltip--rail {
+  top: 50%;
+  left: calc(100% + 10px);
+  display: none;
+  transform: translateY(-50%);
+}
+
+.control-tooltip--menu {
+  top: calc(100% + 6px);
+  right: 0;
+}
+
 .account-nav a {
   display: grid;
   width: 44px;
@@ -191,6 +239,10 @@ a {
 .primary-nav {
   display: grid;
   gap: 6px;
+}
+
+.primary-nav > .tooltip-anchor {
+  display: block;
 }
 
 .primary-nav__link {
@@ -368,6 +420,7 @@ a {
   }
 
   .primary-nav__link {
+    width: 100%;
     justify-content: center;
     padding-inline: 0;
   }
@@ -380,6 +433,10 @@ a {
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
+  }
+
+  .control-tooltip--rail {
+    display: block;
   }
 }
 
@@ -417,6 +474,10 @@ a {
 
   .language-switcher {
     padding-inline: 8px;
+  }
+
+  .mobile-menu-anchor {
+    display: inline-flex;
   }
 
   .mobile-menu-button {
@@ -545,15 +606,20 @@ a {
     white-space: nowrap;
   }
 
+  .mobile-navigation a {
+    gap: 2px;
+    padding: 3px 1px 2px;
+    font-size: 10px;
+  }
+
   .mobile-navigation__label {
-    position: absolute;
-    overflow: hidden;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
+    overflow: visible;
+    width: 100%;
+    height: auto;
+    padding-inline: 1px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
     text-overflow: clip;
-    white-space: nowrap;
+    white-space: normal;
   }
 }

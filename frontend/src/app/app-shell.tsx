@@ -12,7 +12,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { getShellRouteTitle } from "./navigation";
@@ -34,12 +34,57 @@ const primaryNavigation: readonly PrimaryNavigationItem[] = [
 
 const mobileNavigation = primaryNavigation.slice(0, 5);
 
+interface TooltipNavLinkProps {
+  accessibleLabel?: string;
+  children: ReactNode;
+  className?: string;
+  label: string;
+  to: string;
+  tooltipClassName?: string;
+}
+
+function TooltipNavLink({
+  accessibleLabel,
+  children,
+  className,
+  label,
+  to,
+  tooltipClassName = "",
+}: TooltipNavLinkProps) {
+  const tooltipId = useId();
+
+  return (
+    <span className="tooltip-anchor">
+      <NavLink
+        {...(accessibleLabel ? { "aria-label": accessibleLabel } : {})}
+        {...(className ? { className } : {})}
+        aria-describedby={tooltipId}
+        to={to}
+      >
+        {children}
+      </NavLink>
+      <span
+        className={`control-tooltip ${tooltipClassName}`.trim()}
+        id={tooltipId}
+        role="tooltip"
+      >
+        {label}
+      </span>
+    </span>
+  );
+}
+
 function PrimaryLink({ icon: Icon, label, to }: PrimaryNavigationItem) {
   return (
-    <NavLink className="primary-nav__link" to={to}>
+    <TooltipNavLink
+      className="primary-nav__link"
+      label={label}
+      to={to}
+      tooltipClassName="control-tooltip--rail"
+    >
       <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
       <span className="primary-nav__label">{label}</span>
-    </NavLink>
+    </TooltipNavLink>
   );
 }
 
@@ -47,6 +92,7 @@ export function AppShell() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const menuTooltipId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
   const routeTitle = getShellRouteTitle(location.pathname);
 
@@ -85,37 +131,59 @@ export function AppShell() {
         <div className="topbar__brand">Polyglot</div>
         <div className="topbar__context">
           <span className="topbar__route">{routeTitle}</span>
-          <NavLink
-            aria-label="Langue active : Italien"
+          <TooltipNavLink
+            accessibleLabel="Langue active : Italien"
             className="language-switcher"
+            label="Langue active : Italien"
             to="/language-profile"
+            tooltipClassName="control-tooltip--below"
           >
             <Languages aria-hidden="true" size={18} />
             <span>Italien</span>
             <ChevronDown aria-hidden="true" size={16} />
-          </NavLink>
+          </TooltipNavLink>
         </div>
         <nav aria-label="Actions du compte" className="account-nav">
-          <NavLink aria-label="Profil de langue" to="/language-profile">
+          <TooltipNavLink
+            accessibleLabel="Profil de langue"
+            label="Profil de langue"
+            to="/language-profile"
+            tooltipClassName="control-tooltip--below"
+          >
             <UserRound aria-hidden="true" size={20} />
-          </NavLink>
-          <NavLink aria-label="Préférences" to="/settings">
+          </TooltipNavLink>
+          <TooltipNavLink
+            accessibleLabel="Préférences"
+            label="Préférences"
+            to="/settings"
+            tooltipClassName="control-tooltip--below"
+          >
             <Settings aria-hidden="true" size={20} />
-          </NavLink>
+          </TooltipNavLink>
         </nav>
-        <button
-          ref={menuButtonRef}
-          aria-controls="mobile-menu"
-          aria-expanded={menuOpen}
-          aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
-          className="mobile-menu-button"
-          type="button"
-          onClick={() => {
-            setMenuOpen((open) => !open);
-          }}
-        >
-          {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
-        </button>
+        <span className="tooltip-anchor mobile-menu-anchor">
+          <button
+            ref={menuButtonRef}
+            aria-controls="mobile-menu"
+            aria-describedby={menuTooltipId}
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            className="mobile-menu-button"
+            type="button"
+            onClick={() => {
+              setMenuOpen((open) => !open);
+            }}
+          >
+            {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          </button>
+          <span
+            className="control-tooltip control-tooltip--menu"
+            id={menuTooltipId}
+            role="tooltip"
+          >
+            {menuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          </span>
+        </span>
       </header>
 
       <aside className="sidebar">
