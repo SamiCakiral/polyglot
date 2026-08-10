@@ -10,7 +10,6 @@ import pytest
 from polyglot.modules.curriculum import CurriculumError
 from polyglot.modules.curriculum.fixtures import load_italian_curriculum_fixture
 
-
 FIXTURE = Path(__file__).parents[4] / "fixtures" / "canonical" / "FX-MODULE-IT"
 
 
@@ -64,6 +63,6 @@ def test_module_rights_provenance_and_review_gates_cannot_be_overridden(tmp_path
 
     with pytest.raises(
         CurriculumError,
-        match="module_rights_missing|module_provenance_missing|module_human_review_required",
+        match=r"module_rights_missing|module_provenance_missing|module_human_review_required",
     ):
         load_italian_curriculum_fixture(target)

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass, replace
 from collections.abc import Iterable
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID
@@ -1036,7 +1036,10 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
         str(metadata["linguistic_review"]),
         str(metadata["pedagogical_review"]),
         fixture_fingerprint_from_file_order(safe, PAYLOAD_NAMES),
-        tuple((str(item["set_code"]), len(cast(list[object], item["senses"]))) for item in lexicon_sets),
+        tuple(
+            (str(item["set_code"]), len(cast(list[object], item["senses"])))
+            for item in lexicon_sets
+        ),
         sum(len(cast(list[object], item["senses"])) for item in lexicon_sets),
         exercise_count,
         pinned_count,

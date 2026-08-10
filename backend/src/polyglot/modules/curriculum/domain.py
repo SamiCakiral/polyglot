@@ -286,28 +286,41 @@ class LearningModuleRevision:
             values.update(f"context:{value}" for value in day.context_revision_ids)
             values.update(f"fallback:{value}" for value in day.fallback_revision_ids)
             values.update(f"validator:{value}" for value in day.validator_revision_ids)
-            for binding in day.skill_bindings:
-                values.add(f"skill:{binding.skill_revision_id}")
+            for skill_binding in day.skill_bindings:
+                values.add(f"skill:{skill_binding.skill_revision_id}")
                 values.update(
-                    f"evidence:{value}" for value in binding.evidence_protocol_ids
+                    f"evidence:{value}"
+                    for value in skill_binding.evidence_protocol_ids
                 )
-            for binding in day.lexicon_bindings:
-                values.add(f"sense:{binding.sense_revision_id}")
-                values.update(f"form:{value}" for value in binding.required_form_revision_ids)
-                values.update(f"usage:{value}" for value in binding.usage_frame_revision_ids)
-            for binding in day.grammar_bindings:
-                values.add(f"grammar:{binding.structure_revision_id}")
-                values.add(f"skill:{binding.function_skill_id}")
-                values.update(f"pattern:{value}" for value in binding.pattern_ids)
-            for binding in day.morphology_bindings:
-                values.add(f"analysis:{binding.form_analysis_id}")
-            for binding in day.pronunciation_bindings:
-                values.add(f"pronunciation:{binding.target_revision_id}")
-                values.add(f"transcript:{binding.transcript_revision_id}")
-                values.add(f"media:{binding.media_revision_id}")
-            for binding in day.exercise_bindings:
-                values.add(f"exercise:{binding.definition_revision_id}")
-                values.add(f"policy:{binding.correction_policy_revision_id}")
+            for lexicon_binding in day.lexicon_bindings:
+                values.add(f"sense:{lexicon_binding.sense_revision_id}")
+                values.update(
+                    f"form:{value}"
+                    for value in lexicon_binding.required_form_revision_ids
+                )
+                values.update(
+                    f"usage:{value}"
+                    for value in lexicon_binding.usage_frame_revision_ids
+                )
+            for grammar_binding in day.grammar_bindings:
+                values.add(f"grammar:{grammar_binding.structure_revision_id}")
+                values.add(f"skill:{grammar_binding.function_skill_id}")
+                values.update(
+                    f"pattern:{value}" for value in grammar_binding.pattern_ids
+                )
+            for morphology_binding in day.morphology_bindings:
+                values.add(f"analysis:{morphology_binding.form_analysis_id}")
+            for pronunciation_binding in day.pronunciation_bindings:
+                values.add(
+                    f"pronunciation:{pronunciation_binding.target_revision_id}"
+                )
+                values.add(f"transcript:{pronunciation_binding.transcript_revision_id}")
+                values.add(f"media:{pronunciation_binding.media_revision_id}")
+            for exercise_binding in day.exercise_bindings:
+                values.add(f"exercise:{exercise_binding.definition_revision_id}")
+                values.add(
+                    f"policy:{exercise_binding.correction_policy_revision_id}"
+                )
             for recall in day.recall_specs:
                 values.add(f"exercise:{recall.source_exercise_binding_id}")
         return tuple(sorted(values))
