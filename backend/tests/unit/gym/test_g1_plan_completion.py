@@ -82,6 +82,20 @@ def test_duplicate_step_under_another_key_is_not_counted_or_journaled_twice() ->
     assert _record(duplicate, "step-concurrent", "g1:transformation:2") == duplicate
 
 
+def test_concurrent_duplicate_of_final_step_remains_idempotent_after_g2_transition() -> None:
+    cycle = _record(_record(_cycle(), "g0"), "guided", "g1:guided_production:1")
+    cycle = _record(cycle, "step-1", "g1:transformation:2")
+    cycle = _record(cycle, "step-2", "g1:transformation:3")
+    completed = _record(cycle, "step-final", "g1:transformation:4")
+
+    duplicate = _record(completed, "step-final-concurrent", "g1:transformation:4")
+
+    assert duplicate.stage.value == "g2"
+    assert len(duplicate.records) == len(completed.records)
+    assert len(duplicate.receipts) == len(completed.receipts) + 1
+    assert duplicate.completed_g1_requirement_ids == completed.completed_g1_requirement_ids
+
+
 def test_unknown_g1_step_and_revisionless_requirement_are_rejected() -> None:
     cycle = _record(_cycle(), "g0")
     with pytest.raises(DomainError) as unknown:
@@ -98,4 +112,3 @@ def test_same_key_with_different_g1_step_remains_an_idempotency_conflict() -> No
         _record(completed, "same-key", "g1:transformation:2")
 
     assert conflict.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
-

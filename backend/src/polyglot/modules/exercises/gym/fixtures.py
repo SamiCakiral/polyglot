@@ -11,7 +11,12 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from polyglot.modules.exercises.core.domain import CorrectionVerdict, HintLevel
 from polyglot.modules.exercises.gym.correction import TargetRole, correct_transformation
-from polyglot.modules.exercises.gym.cycle import GymCycle, GymStage
+from polyglot.modules.exercises.gym.cycle import (
+    G1Requirement,
+    G1RequirementKind,
+    GymCycle,
+    GymStage,
+)
 from polyglot.modules.exercises.gym.domain import (
     GYM_OPERATION_IDS,
     OperationSemantics,
@@ -69,6 +74,13 @@ class _CycleOracle(_StrictModel):
     scene_id: str
     structure_cued: bool
     expected_credit: float
+    g1_requirement_id: str | None = None
+
+
+class _G1Requirement(_StrictModel):
+    requirement_id: str
+    kind: G1RequirementKind
+    revision_id: UUID
 
 
 class _Payload(_StrictModel):
@@ -77,6 +89,7 @@ class _Payload(_StrictModel):
     seed: int
     clock: datetime
     operations: tuple[_Operation, ...]
+    g1_requirements: tuple[_G1Requirement, ...]
     cycle: tuple[_CycleOracle, ...]
     scenarios: frozenset[str]
 
@@ -91,6 +104,7 @@ class GymFixtureReport:
     executed_semantic_constraints: tuple[str, ...]
     cycle_stages: tuple[str, ...]
     cycle_credits: tuple[float, ...]
+    completed_g1_requirement_ids: tuple[str, ...]
     network_dependencies: tuple[str, ...]
     scenarios: frozenset[str]
 
@@ -256,13 +270,15 @@ def _validate_operation(item: _Operation) -> None:
         hint_level=HintLevel.H4,
         target_roles=roles,
     )
-    if positive.verdict is not CorrectionVerdict.CORRECT or positive.credit_for(
-        item.grammar_target_id
-    ) != 0.65:
+    if (
+        positive.verdict is not CorrectionVerdict.CORRECT
+        or positive.credit_for(item.grammar_target_id) != 0.65
+    ):
         raise _failed(f"{item.operation_id} positive correction oracle failed")
-    if negative.verdict is not CorrectionVerdict.INCORRECT or negative.credit_for(
-        item.grammar_target_id
-    ) != -0.65:
+    if (
+        negative.verdict is not CorrectionVerdict.INCORRECT
+        or negative.credit_for(item.grammar_target_id) != -0.65
+    ):
         raise _failed(f"{item.operation_id} negative correction oracle failed")
     if ambiguous.total_credit or unavailable.total_credit or revealed.total_credit:
         raise _failed(f"{item.operation_id} zero-credit policy failed")
@@ -270,14 +286,20 @@ def _validate_operation(item: _Operation) -> None:
         raise _failed(f"{item.operation_id} lexical support received credit")
 
 
-def _validate_cycle(payload: _Payload) -> tuple[tuple[str, ...], tuple[float, ...]]:
+def _validate_cycle(
+    payload: _Payload,
+) -> tuple[tuple[str, ...], tuple[float, ...], tuple[str, ...]]:
     cycle = GymCycle.start(
         cycle_id=UUID("019fe010-3000-7000-8000-000000000001"),
         plan_revision_id=UUID("019fe010-3000-7000-8000-000000000002"),
         grammar_target_revision_id=UUID("019fe010-3000-7000-8000-000000000003"),
         started_at=payload.clock,
+        g1_requirements=tuple(
+            G1Requirement(item.requirement_id, item.kind, item.revision_id)
+            for item in payload.g1_requirements
+        ),
     )
-    for oracle in payload.cycle:
+    for index, oracle in enumerate(payload.cycle):
         if cycle.stage is not oracle.stage:
             raise _failed("FX-GYM-IT cycle stage order is invalid")
         cycle = cycle.record(
@@ -287,15 +309,17 @@ def _validate_cycle(payload: _Payload) -> tuple[tuple[str, ...], tuple[float, ..
             scene_id=oracle.scene_id,
             structure_cued=oracle.structure_cued,
             recorded_at=payload.clock + timedelta(days=oracle.offset_days),
-            idempotency_key=f"fixture:{oracle.stage.value}",
+            idempotency_key=f"fixture:{oracle.stage.value}:{index}",
+            g1_requirement_id=oracle.g1_requirement_id,
         )
         if cycle.records[-1].credit != oracle.expected_credit:
             raise _failed(f"FX-GYM-IT {oracle.stage.value} credit oracle failed")
     if not cycle.completed:
         raise _failed("FX-GYM-IT cycle did not reach transfer completion")
     return (
-        tuple(record.stage.value for record in cycle.records),
+        tuple(dict.fromkeys(record.stage.value for record in cycle.records)),
         tuple(record.credit for record in cycle.records),
+        cycle.completed_g1_requirement_ids,
     )
 
 
@@ -306,7 +330,7 @@ def validate_gym_fixture(root: Path) -> GymFixtureReport:
         raise _failed("FX-GYM-IT must cover GYM-01 through GYM-15 exactly once")
     for item in payload.operations:
         _validate_operation(item)
-    stages, credits = _validate_cycle(payload)
+    stages, credits, completed_g1 = _validate_cycle(payload)
     observed_scenarios = frozenset(
         scenario for item in payload.operations for scenario in item.scenarios
     )
@@ -321,6 +345,7 @@ def validate_gym_fixture(root: Path) -> GymFixtureReport:
         executed_semantic_constraints=operation_ids,
         cycle_stages=stages,
         cycle_credits=credits,
+        completed_g1_requirement_ids=completed_g1,
         network_dependencies=metadata.network_dependencies,
         scenarios=payload.scenarios,
     )

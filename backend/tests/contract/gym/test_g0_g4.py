@@ -154,7 +154,13 @@ def test_fx_gym_it_executes_all_operations_and_cycle_oracles_offline(
     assert report.executed_semantic_negative == report.operation_ids
     assert report.executed_semantic_constraints == report.operation_ids
     assert report.cycle_stages == ("g0", "g1", "g2", "g3", "g4")
-    assert report.cycle_credits == (0.0, 0.65, 0.55, 0.65, 1.0)
+    assert report.cycle_credits == (0.0, 0.65, 0.65, 0.65, 0.65, 0.55, 0.65, 1.0)
+    assert report.completed_g1_requirement_ids == (
+        "g1:guided",
+        "g1:transform:substitution",
+        "g1:transform:person",
+        "g1:transform:negation",
+    )
     assert report.network_dependencies == ()
     assert {
         "sono_ecco",

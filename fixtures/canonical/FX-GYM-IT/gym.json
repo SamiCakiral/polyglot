@@ -155,9 +155,18 @@
       "semantic_parameters": {"step_operation_ids": "GYM-08,GYM-12"}
     }
   ],
+  "g1_requirements": [
+    {"requirement_id": "g1:guided", "kind": "guided_production", "revision_id": "019fe010-3000-7000-8000-000000000004"},
+    {"requirement_id": "g1:transform:substitution", "kind": "transformation", "revision_id": "019fe010-3000-7000-8000-000000000005"},
+    {"requirement_id": "g1:transform:person", "kind": "transformation", "revision_id": "019fe010-3000-7000-8000-000000000006"},
+    {"requirement_id": "g1:transform:negation", "kind": "transformation", "revision_id": "019fe010-3000-7000-8000-000000000007"}
+  ],
   "cycle": [
     {"stage": "g0", "offset_days": 0, "context_id": "lesson:contrast", "scene_id": "lesson", "structure_cued": true, "expected_credit": 0.0},
-    {"stage": "g1", "offset_days": 0, "context_id": "station:guided", "scene_id": "station:desk", "structure_cued": true, "expected_credit": 0.65},
+    {"stage": "g1", "offset_days": 0, "context_id": "station:guided", "scene_id": "station:desk", "structure_cued": true, "expected_credit": 0.65, "g1_requirement_id": "g1:guided"},
+    {"stage": "g1", "offset_days": 0, "context_id": "station:substitution", "scene_id": "station:desk", "structure_cued": true, "expected_credit": 0.65, "g1_requirement_id": "g1:transform:substitution"},
+    {"stage": "g1", "offset_days": 0, "context_id": "station:person", "scene_id": "station:desk", "structure_cued": true, "expected_credit": 0.65, "g1_requirement_id": "g1:transform:person"},
+    {"stage": "g1", "offset_days": 0, "context_id": "station:negation", "scene_id": "station:desk", "structure_cued": true, "expected_credit": 0.65, "g1_requirement_id": "g1:transform:negation"},
     {"stage": "g2", "offset_days": 1, "context_id": "station:near", "scene_id": "station:platform", "structure_cued": false, "expected_credit": 0.55},
     {"stage": "g3", "offset_days": 3, "context_id": "hotel:varied", "scene_id": "hotel:desk", "structure_cued": false, "expected_credit": 0.65},
     {"stage": "g4", "offset_days": 7, "context_id": "clinic:transfer", "scene_id": "clinic:reception", "structure_cued": false, "expected_credit": 1.0}

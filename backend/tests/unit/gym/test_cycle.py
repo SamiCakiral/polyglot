@@ -10,13 +10,25 @@ START = datetime(2026, 8, 10, 9, 0, tzinfo=UTC)
 
 
 def _cycle():
-    from polyglot.modules.exercises.gym.cycle import GymCycle
+    from polyglot.modules.exercises.gym.cycle import G1Requirement, G1RequirementKind, GymCycle
 
     return GymCycle.start(
         cycle_id=UUID("019fe010-1000-7000-8000-000000000001"),
         plan_revision_id=UUID("019fe010-1000-7000-8000-000000000002"),
         grammar_target_revision_id=UUID("019fe010-1000-7000-8000-000000000003"),
         started_at=START,
+        g1_requirements=(
+            G1Requirement(
+                "g1:guided",
+                G1RequirementKind.GUIDED_PRODUCTION,
+                UUID("019fe010-1000-7000-8000-000000000004"),
+            ),
+            G1Requirement(
+                "g1:transform",
+                G1RequirementKind.TRANSFORMATION,
+                UUID("019fe010-1000-7000-8000-000000000005"),
+            ),
+        ),
     )
 
 
@@ -35,7 +47,15 @@ def _complete(cycle, *, now, key, verdict=CorrectionVerdict.CORRECT, **values):
 
 def _through_g1():
     cycle = _complete(_cycle(), now=START, key="g0")
-    return _complete(cycle, now=START + timedelta(minutes=5), key="g1")
+    cycle = _complete(
+        cycle, now=START + timedelta(minutes=5), key="g1-guided", g1_requirement_id="g1:guided"
+    )
+    return _complete(
+        cycle,
+        now=START + timedelta(minutes=6),
+        key="g1-transform",
+        g1_requirement_id="g1:transform",
+    )
 
 
 def test_g0_is_activity_only_then_g1_creates_guided_evidence() -> None:
@@ -43,12 +63,21 @@ def test_g0_is_activity_only_then_g1_creates_guided_evidence() -> None:
 
     initial = _cycle()
     after_g0 = _complete(initial, now=START, key="g0", hint_level=HintLevel.H4)
-    after_g1 = _complete(after_g0, now=START + timedelta(minutes=5), key="g1")
+    after_guided = _complete(
+        after_g0, now=START + timedelta(minutes=5), key="g1-guided", g1_requirement_id="g1:guided"
+    )
+    after_g1 = _complete(
+        after_guided,
+        now=START + timedelta(minutes=6),
+        key="g1-transform",
+        g1_requirement_id="g1:transform",
+    )
 
     assert initial.stage is GymStage.G0
     assert after_g0.stage is GymStage.G1
     assert after_g0.records[-1].credit == 0.0
     assert after_g0.records[-1].is_evidence is False
+    assert after_guided.stage is GymStage.G1
     assert after_g1.stage is GymStage.G2
     assert after_g1.records[-1].credit == 0.65
     assert after_g1.records[-1].is_evidence is True
@@ -103,7 +132,14 @@ def test_immediate_j_plus_one_spaced_and_transfer_cycle_is_monotonic() -> None:
     assert g3.stage is GymStage.G4
     assert g4.stage is GymStage.G4
     assert g4.completed is True
-    assert tuple(record.stage for record in g4.records) == tuple(GymStage)
+    assert tuple(record.stage for record in g4.records) == (
+        GymStage.G0,
+        GymStage.G1,
+        GymStage.G1,
+        GymStage.G2,
+        GymStage.G3,
+        GymStage.G4,
+    )
     assert g4.records[-1].credit == 1.0
 
 
