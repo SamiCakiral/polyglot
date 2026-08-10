@@ -34,6 +34,11 @@ from polyglot.modules.lexicon.core.queries import (
     bounded_neighborhood,
     paginate_word_bank,
 )
+from polyglot.modules.lexicon.core.projection import (
+    Evidence,
+    RebuiltLexicalProjection,
+    rebuild_word_bank_projection,
+)
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
@@ -68,6 +73,53 @@ class MutationResponse(ClosedModel):
     event_type: str
 
 
+class ModalityEvidenceResponse(ClosedModel):
+    observation_count: int
+    success_count: int
+
+
+class LexicalPlanResponse(ClosedModel):
+    role: str
+    reason: str
+
+
+class LexicalDebtResponse(ClosedModel):
+    due_on: str
+    resolved: bool
+
+
+class GymCreditResponse(ClosedModel):
+    structure: bool
+    support_lexicon: bool
+
+
+class AssessmentScopeResponse(ClosedModel):
+    modalities: tuple[str, ...]
+    facets: tuple[str, ...]
+
+
+class RecommendationResponse(ClosedModel):
+    target_id: UUID
+    reason: str
+    missing_evidence: str
+    due_on: str
+    proposed_activity: str
+
+
+class LexicalProjectionResponse(ClosedModel):
+    algorithm_version: str
+    modalities: dict[str, ModalityEvidenceResponse]
+    gap_reasons: tuple[str, ...]
+    plan: LexicalPlanResponse
+    sprint_snapshot_frozen: bool
+    debt: LexicalDebtResponse | None
+    gym: GymCreditResponse
+    learning_targets: tuple[UUID, ...]
+    diagnostic_estimate: tuple[float, float] | None
+    assessment: AssessmentScopeResponse
+    recommendation: RecommendationResponse | None
+
+
 class WordBankItemResponse(ClosedModel):
     sense_id: UUID
     label: str
@@ -78,6 +130,7 @@ class WordBankItemResponse(ClosedModel):
     familiarity_declaration: str | None
     learning_preference: str
     reasons: tuple[str, ...]
+    projection: LexicalProjectionResponse | None = None
 
 
 class UnresolvedMentionResponse(ClosedModel):
@@ -97,6 +150,7 @@ class WordBankOverviewResponse(ClosedModel):
     reference_coverage_count: int | None
     reference_total_count: int | None
     unresolved_mentions: tuple[UnresolvedMentionResponse, ...] = ()
+    projection_contracts: tuple[str, ...] = ()
 
 
 class LexicalAnnotationResponse(ClosedModel):
@@ -1125,6 +1179,106 @@ class SqlWordBankService:
         await session.execute(text("INSERT INTO lexicon.lexical_annotation_revisions (annotation_revision_id,profile_id,annotation_id,version,body,created_at,idempotency_key,request_fingerprint) VALUES (:revision,:profile,:annotation,:version,:body,:now,:key,:fp)"), {"revision": self._ids.new(), "profile": profile_id, "annotation": annotation_id, "version": version, "body": str(payload.get("body", "")), "now": now, "key": idempotency_key, "fp": fingerprint})
         return annotation_id, version
 
+    async def _projection_evidence(
+        self, session: AsyncSession, profile_id: UUID
+    ) -> tuple[Evidence, ...]:
+        rows = (
+            await session.execute(
+                text(
+                    "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
+                    "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
+                    "ORDER BY mention_id,created_at DESC,resolution_id DESC) "
+                    "SELECT latest.sense_id,e.lexical_role,e.modality,e.operation,e.help_state,"
+                    "e.result_state,e.source_ref,e.correction_ref,e.correction_confidence "
+                    "FROM latest JOIN lexicon.lexical_mentions m ON m.profile_id=:profile "
+                    "AND m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e "
+                    "ON e.profile_id=:profile AND e.encounter_id=m.encounter_id "
+                    "ORDER BY e.occurred_at,e.encounter_id,latest.sense_id"
+                ),
+                {"profile": profile_id},
+            )
+        ).mappings().all()
+        states_by_sense: dict[UUID, set[str]] = {}
+        for row in rows:
+            states_by_sense.setdefault(UUID(str(row["sense_id"])), set()).add(
+                str(row["result_state"])
+            )
+        return tuple(
+            Evidence(
+                sense_id=UUID(str(row["sense_id"])),
+                role=str(row["lexical_role"]),
+                modality=str(row["modality"]),
+                operation=str(row["operation"]),
+                help_state=str(row["help_state"]),
+                result_state=str(row["result_state"]),
+                context_ref=str(row["source_ref"]),
+                correction_ref=str(row["correction_ref"]),
+                correction_confidence=float(row["correction_confidence"]),
+                form_correct=str(row["result_state"]) == "success",
+                context_correct=(
+                    str(row["result_state"]) == "success"
+                    and float(row["correction_confidence"]) >= 0.5
+                ),
+                retention_correct=(
+                    str(row["result_state"]) == "success"
+                    and str(row["help_state"]) == "none"
+                    and str(row["operation"])
+                    in {"recall", "retrieval", "inversion"}
+                ),
+                contradiction=len(states_by_sense[UUID(str(row["sense_id"]))]) > 1,
+            )
+            for row in rows
+        )
+
+    @staticmethod
+    def _projection_response(
+        rebuilt: RebuiltLexicalProjection,
+    ) -> LexicalProjectionResponse:
+        recommendation = rebuilt.recommendation
+        return LexicalProjectionResponse(
+            algorithm_version=rebuilt.projection.algorithm_version,
+            modalities={
+                modality: ModalityEvidenceResponse(
+                    observation_count=value.observation_count,
+                    success_count=value.success_count,
+                )
+                for modality, value in rebuilt.projection.modalities.items()
+            },
+            gap_reasons=rebuilt.projection.gap_reasons,
+            plan=LexicalPlanResponse(
+                role=rebuilt.plan.role, reason=rebuilt.plan.reason
+            ),
+            sprint_snapshot_frozen=rebuilt.sprint_snapshot.frozen,
+            debt=(
+                LexicalDebtResponse(
+                    due_on=rebuilt.debt.due_on, resolved=rebuilt.debt.resolved
+                )
+                if rebuilt.debt is not None
+                else None
+            ),
+            gym=GymCreditResponse(
+                structure=rebuilt.gym.structure,
+                support_lexicon=rebuilt.gym.support_lexicon,
+            ),
+            learning_targets=rebuilt.learning_targets,
+            diagnostic_estimate=rebuilt.diagnostic_estimate,
+            assessment=AssessmentScopeResponse(
+                modalities=rebuilt.assessment.modalities,
+                facets=rebuilt.assessment.facets,
+            ),
+            recommendation=(
+                RecommendationResponse(
+                    target_id=recommendation.target_id,
+                    reason=recommendation.reason,
+                    missing_evidence=recommendation.missing_evidence,
+                    due_on=recommendation.due_on,
+                    proposed_activity=recommendation.proposed_activity,
+                )
+                if recommendation is not None
+                else None
+            ),
+        )
+
     async def get_word_bank(self, *, account_id: UUID, profile_id: UUID, limit: int, cursor: str | None, reference_set_code: str | None) -> WordBankOverviewResponse:
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
@@ -1182,6 +1336,13 @@ class SqlWordBankService:
                     reference_revision=str(reference.revision),
                 )
                 by_id = {UUID(str(row["sense_id"])): row for row in rows}
+                evidence = await self._projection_evidence(session, profile_id)
+                rebuilt_by_id = {
+                    item.projection.sense_id: item
+                    for item in rebuild_word_bank_projection(
+                        tuple(by_id), evidence, as_of=datetime.now(UTC).date()
+                    )
+                }
                 items = tuple(
                     WordBankItemResponse(
                         sense_id=item.sense_id,
@@ -1211,6 +1372,9 @@ class SqlWordBankService:
                             if by_id[item.sense_id]["encounters"] is not None
                             else ("absence_of_evidence",)
                         ),
+                        projection=self._projection_response(
+                            rebuilt_by_id[item.sense_id]
+                        ),
                     )
                     for item in page.items
                 )
@@ -1226,6 +1390,9 @@ class SqlWordBankService:
                     reference_coverage_count=coverage,
                     reference_total_count=len(rows),
                     unresolved_mentions=unresolved_mentions,
+                    projection_contracts=tuple(
+                        f"WB-{number:02d}" for number in range(1, 13)
+                    ),
                 )
             rows = (
                 await session.execute(text("WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id FROM lexicon.mention_resolutions WHERE profile_id=:profile ORDER BY mention_id,created_at DESC,resolution_id DESC) SELECT latest.sense_id,min(e.exact_surface) AS label,count(*) AS encounters,min(e.occurred_at) AS first_at,max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m ON m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e ON e.encounter_id=m.encounter_id GROUP BY latest.sense_id ORDER BY min(e.exact_surface),latest.sense_id"), {"profile": profile_id})
