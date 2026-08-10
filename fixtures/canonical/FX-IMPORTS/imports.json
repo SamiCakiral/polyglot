@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "valid_json": {
+    "format_id": "polyglot.lexicon.bundle/v1",
+    "payload": {
+      "format": "polyglot.lexicon.bundle/v1",
+      "schema_version": 1,
+      "entries": [
+        {
+          "source_key": "andare-via",
+          "variety_id": "019bfcc0-7cf1-7000-8000-000000000001",
+          "unit_type": "multiword_expression",
+          "form": "Andare via",
+          "semantic_key": "motion.leave",
+          "visibility": "private"
+        },
+        {
+          "source_key": "piano-music",
+          "variety_id": "019bfcc0-7cf1-7000-8000-000000000001",
+          "unit_type": "word",
+          "form": "piano",
+          "semantic_key": "music.instrument.piano",
+          "visibility": "private"
+        }
+      ]
+    }
+  },
+  "valid_csv": {
+    "format_id": "polyglot.generic.qa/v1",
+    "payload": "question,answer,variety_id\nDov'è la stazione?,Où est la gare ?,019bfcc0-7cf1-7000-8000-000000000001\nA che ora parte?,À quelle heure part-il ?,019bfcc0-7cf1-7000-8000-000000000001\n"
+  },
+  "partial_selection": {
+    "accepted_source_keys": ["andare-via"],
+    "rejected_source_keys": ["piano-music"]
+  },
+  "interactive_conflict": {
+    "conflict_class": "same_sense",
+    "required_action": "reuse_exact"
+  },
+  "stale_preview": {
+    "preview_catalogue_version": "catalogue:17",
+    "commit_catalogue_version": "catalogue:18",
+    "expected_error": "preview_stale"
+  },
+  "hostile_zip": {
+    "cases": [
+      {"entry": "../private.txt", "expected_error": "validation_failed"},
+      {"entry": "/absolute.txt", "expected_error": "validation_failed"},
+      {"compression_ratio": 101, "expected_error": "size_limit_exceeded"}
+    ]
+  },
+  "homonym_distinct": {
+    "form": "piano",
+    "semantic_keys": ["music.instrument.piano", "manner.slowly"]
+  },
+  "mwe_preserved": {
+    "form": "andare via",
+    "unit_type": "multiword_expression"
+  },
+  "revert_reused_blocked": {
+    "downstream_reference": "vocabulary_list",
+    "expected_error": "resource_reused"
+  },
+  "synthetic_volume": {
+    "seed": 8008,
+    "max_rows": 10000,
+    "generation": "source_key=fx-{index}; form=parola-{index}"
+  }
+}

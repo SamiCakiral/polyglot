@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 8008,
+  "clock": "2026-08-10T14:00:00+00:00",
+  "payloads": {
+    "imports.json": "sha256:4ed3b8409c376da5584f27c240c188294f265d78ee3fbb93a62f3be18072cd41"
+  },
+  "oracles": [
+    "valid_json",
+    "valid_csv",
+    "partial_selection",
+    "interactive_conflict",
+    "stale_preview",
+    "hostile_zip",
+    "homonym_distinct",
+    "mwe_preserved",
+    "revert_reused_blocked",
+    "synthetic_volume"
+  ],
+  "network_dependencies": []
+}

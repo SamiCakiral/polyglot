@@ -360,6 +360,40 @@ BEGIN
 END
 $function$;
 
+CREATE FUNCTION exchange.revert_import_lexical(
+  owner_profile_id uuid,
+  owner_import_id uuid,
+  unit_ids uuid[],
+  sense_ids uuid[]
+) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = pg_catalog,exchange,lexicon AS $function$
+DECLARE created_refs jsonb;
+DECLARE current_id uuid;
+BEGIN
+  SELECT manifest.created_refs INTO created_refs
+  FROM exchange.import_manifests manifest
+  WHERE manifest.profile_id=owner_profile_id AND manifest.import_id=owner_import_id;
+  IF created_refs IS NULL THEN
+    RAISE EXCEPTION 'import manifest missing' USING ERRCODE='P0002';
+  END IF;
+  FOREACH current_id IN ARRAY unit_ids LOOP
+    IF NOT created_refs ? ('lexical_unit:' || current_id::text) THEN
+      RAISE EXCEPTION 'unit not owned by import' USING ERRCODE='42501';
+    END IF;
+  END LOOP;
+  FOREACH current_id IN ARRAY sense_ids LOOP
+    IF NOT created_refs ? ('lexical_sense:' || current_id::text) THEN
+      RAISE EXCEPTION 'sense not owned by import' USING ERRCODE='42501';
+    END IF;
+  END LOOP;
+  DELETE FROM lexicon.private_lexical_senses
+  WHERE profile_id=owner_profile_id AND sense_id=ANY(sense_ids);
+  DELETE FROM lexicon.private_lexical_units
+  WHERE profile_id=owner_profile_id AND lexical_unit_id=ANY(unit_ids);
+END
+$function$;
+
 CREATE TRIGGER vocabulary_list_revisions_append_only BEFORE UPDATE OR DELETE ON lexicon.vocabulary_list_revisions
 FOR EACH ROW EXECUTE FUNCTION lexicon.guard_append_only();
 CREATE TRIGGER list_memberships_append_only BEFORE UPDATE OR DELETE ON lexicon.list_memberships
@@ -398,6 +432,8 @@ BEGIN
   END LOOP;
 END
 $rls$;
+CREATE POLICY shared_list_public_read ON exchange.shared_list_publications
+FOR SELECT USING (status='published');
 
 GRANT SELECT,INSERT ON lexicon.vocabulary_lists,lexicon.vocabulary_list_revisions,
   lexicon.list_memberships,lexicon.list_snapshots,lexicon.list_snapshot_members,
@@ -416,6 +452,9 @@ ALTER FUNCTION exchange.is_uuid7(uuid) OWNER TO polyglot_migration;
 ALTER FUNCTION exchange.current_user_id() OWNER TO polyglot_migration;
 ALTER FUNCTION exchange.owns_profile(uuid) OWNER TO polyglot_migration;
 ALTER FUNCTION exchange.guard_append_only() OWNER TO polyglot_migration;
+ALTER FUNCTION exchange.revert_import_lexical(uuid,uuid,uuid[],uuid[]) OWNER TO polyglot_migration;
+REVOKE ALL ON FUNCTION exchange.revert_import_lexical(uuid,uuid,uuid[],uuid[]) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION exchange.revert_import_lexical(uuid,uuid,uuid[],uuid[]) TO polyglot_runtime;
 """
 
 DROP_DDL = r"""

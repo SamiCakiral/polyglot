@@ -20,9 +20,13 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   FoundationResponse,
+  GetExport200,
+  GetSharedVocabularyList200,
+  ImportRunResponse,
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
   LexiconSearchPageResponse,
+  ListSnapshotResponse,
   LiveStatus,
   MemoryPromptResponse,
   MutationResponse,
@@ -30,9 +34,12 @@ import type {
   ProfileResponse,
   ProfilesResponse,
   ReadyStatus,
+  ResourceMutationResponse,
+  ResourcePageResponse,
   SenseNeighborhoodResponse,
   SessionResponse,
   ValidationReportResponse,
+  VocabularyListResponse,
   WordBankOverviewResponse,
 } from "../model";
 
@@ -930,6 +937,19 @@ export const getCompleteDiagnosticResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetExportResponseMock = (): GetExport200 => ({
+  [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+});
+
 export const getGetFoundationRunResponseMock = (
   overrideResponse: Partial<Extract<FoundationResponse, object>> = {},
 ): FoundationResponse => ({
@@ -992,6 +1012,84 @@ export const getHealthReadyResponseMock = (
     ] as const),
   },
   status: faker.helpers.arrayElement(["ready", "unavailable"] as const),
+  ...overrideResponse,
+});
+
+export const getGetImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResolveImportConflictResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCommitImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getRevertImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
   ...overrideResponse,
 });
 
@@ -1205,6 +1303,15 @@ export const getRecordLexicalEncounterResponseMock = (
   ...overrideResponse,
 });
 
+export const getRequestExportResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getStartFoundationRunResponseMock = (
   overrideResponse: Partial<Extract<FoundationResponse, object>> = {},
 ): FoundationResponse => ({
@@ -1260,6 +1367,29 @@ export const getUpdateLearningGoalsResponseMock = (
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   target_variety_id: faker.string.uuid(),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCreateImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -1354,6 +1484,50 @@ export const getMergeLexicalUnitsResponseMock = (
 ): MutationResponse => ({
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCreateVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
+): VocabularyListResponse => ({
+  color: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  list_id: faker.string.uuid(),
+  list_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ordered: faker.datatype.boolean(),
+  profile_id: faker.string.uuid(),
+  purpose: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  query_definition: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  revision_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  variety_id: faker.string.uuid(),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -2067,6 +2241,54 @@ export const getAuthenticateSessionResponseMock = (
   ...overrideResponse,
 });
 
+export const getListSharedVocabularyListsResponseMock = (
+  overrideResponse: Partial<Extract<ResourcePageResponse, object>> = {},
+): ResourcePageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  ...overrideResponse,
+});
+
+export const getGetSharedVocabularyListResponseMock =
+  (): GetSharedVocabularyList200 => ({
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  });
+
+export const getRetireSharedVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getGetValidationReportResponseMock = (
   overrideResponse: Partial<Extract<ValidationReportResponse, object>> = {},
 ): ValidationReportResponse => ({
@@ -2092,6 +2314,170 @@ export const getGetValidationReportResponseMock = (
   subject_revision_id: faker.string.uuid(),
   summary_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
   validator_set_revision_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getListVocabularyListsResponseMock = (
+  overrideResponse: Partial<Extract<ResourcePageResponse, object>> = {},
+): ResourcePageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  ...overrideResponse,
+});
+
+export const getGetVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
+): VocabularyListResponse => ({
+  color: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  list_id: faker.string.uuid(),
+  list_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ordered: faker.datatype.boolean(),
+  profile_id: faker.string.uuid(),
+  purpose: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  query_definition: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  revision_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getReviseVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getChangeListMembersResponseMock = (
+  overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
+): VocabularyListResponse => ({
+  color: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  list_id: faker.string.uuid(),
+  list_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ordered: faker.datatype.boolean(),
+  profile_id: faker.string.uuid(),
+  purpose: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  query_definition: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  revision_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPublishVocabularyListSnapshotResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCloneVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getFreezeVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ListSnapshotResponse, object>> = {},
+): ListSnapshotResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  list_id: faker.string.uuid(),
+  member_sense_revision_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  source_revision_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getMergeVocabularyListsResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
   ...overrideResponse,
 });
 
@@ -2563,6 +2949,32 @@ export const getCompleteDiagnosticMockHandler = (
   );
 };
 
+export const getGetExportMockHandler = (
+  overrideResponse?:
+    | GetExport200
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<GetExport200> | GetExport200),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/exports/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetExportResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getGetFoundationRunMockHandler = (
   overrideResponse?:
     | FoundationResponse
@@ -2660,6 +3072,110 @@ export const getHealthReadyMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getHealthReadyResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetImportMockHandler = (
+  overrideResponse?:
+    | ImportRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ImportRunResponse> | ImportRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/imports/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetImportResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getResolveImportConflictMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/imports/:importId/conflicts/:conflictId\\:resolve",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getResolveImportConflictResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCommitImportMockHandler = (
+  overrideResponse?:
+    | ImportRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ImportRunResponse> | ImportRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/imports/:importId\\:commit",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCommitImportResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getRevertImportMockHandler = (
+  overrideResponse?:
+    | ImportRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ImportRunResponse> | ImportRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/imports/:importId\\:revert",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRevertImportResponseMock(),
         { status: 200 },
       );
     },
@@ -2849,6 +3365,32 @@ export const getRecordLexicalEncounterMockHandler = (
   );
 };
 
+export const getRequestExportMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/exports",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRequestExportResponseMock(),
+        { status: 202 },
+      );
+    },
+    options,
+  );
+};
+
 export const getStartFoundationRunMockHandler = (
   overrideResponse?:
     | FoundationResponse
@@ -2896,6 +3438,34 @@ export const getUpdateLearningGoalsMockHandler = (
           : getUpdateLearningGoalsResponseMock(),
         { status: 200 },
       );
+    },
+    options,
+  );
+};
+
+export const getCreateImportMockHandler = (
+  overrideResponse?:
+    | void
+    | ImportRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<void | ImportRunResponse> | void | ImportRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/imports",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      const resolvedBody =
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCreateImportResponseMock();
+      return resolvedBody === undefined
+        ? new HttpResponse(null, { status: 200 })
+        : HttpResponse.json(resolvedBody, { status: 200 });
     },
     options,
   );
@@ -3079,6 +3649,35 @@ export const getMergeLexicalUnitsMockHandler = (
           : getMergeLexicalUnitsResponseMock(),
         { status: 200 },
       );
+    },
+    options,
+  );
+};
+
+export const getCreateVocabularyListMockHandler = (
+  overrideResponse?:
+    | void
+    | VocabularyListResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) =>
+        Promise<void | VocabularyListResponse> | void | VocabularyListResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/vocabulary-lists",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      const resolvedBody =
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCreateVocabularyListResponseMock();
+      return resolvedBody === undefined
+        ? new HttpResponse(null, { status: 200 })
+        : HttpResponse.json(resolvedBody, { status: 200 });
     },
     options,
   );
@@ -3704,6 +4303,84 @@ export const getAuthenticateSessionMockHandler = (
   );
 };
 
+export const getListSharedVocabularyListsMockHandler = (
+  overrideResponse?:
+    | ResourcePageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ResourcePageResponse> | ResourcePageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/shared-vocabulary-lists",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListSharedVocabularyListsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetSharedVocabularyListMockHandler = (
+  overrideResponse?:
+    | GetSharedVocabularyList200
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<GetSharedVocabularyList200> | GetSharedVocabularyList200),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/shared-vocabulary-lists/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetSharedVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getRetireSharedVocabularyListMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/shared-vocabulary-lists/:publicationId\\:retire",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRetireSharedVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getGetValidationReportMockHandler = (
   overrideResponse?:
     | ValidationReportResponse
@@ -3729,6 +4406,214 @@ export const getGetValidationReportMockHandler = (
     options,
   );
 };
+
+export const getListVocabularyListsMockHandler = (
+  overrideResponse?:
+    | ResourcePageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ResourcePageResponse> | ResourcePageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/vocabulary-lists",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListVocabularyListsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetVocabularyListMockHandler = (
+  overrideResponse?:
+    | VocabularyListResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<VocabularyListResponse> | VocabularyListResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/vocabulary-lists/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getReviseVocabularyListMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.patch(
+    "*/api/v1/vocabulary-lists/:listId",
+    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getReviseVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getChangeListMembersMockHandler = (
+  overrideResponse?:
+    | VocabularyListResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<VocabularyListResponse> | VocabularyListResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/vocabulary-lists/:listId/members\\:batch",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getChangeListMembersResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getPublishVocabularyListSnapshotMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/vocabulary-lists/:listId/snapshots/:snapshotId\\:publish",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getPublishVocabularyListSnapshotResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCloneVocabularyListMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/vocabulary-lists/:listId\\:clone",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCloneVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getFreezeVocabularyListMockHandler = (
+  overrideResponse?:
+    | ListSnapshotResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ListSnapshotResponse> | ListSnapshotResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/vocabulary-lists/:listId\\:snapshot",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getFreezeVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getMergeVocabularyListsMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/vocabulary-lists\\:merge",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getMergeVocabularyListsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
 export const getPolyglotV2APIMock = () => [
   getChangePasswordMockHandler(),
   getUpdateUserPreferencesMockHandler(),
@@ -3748,10 +4633,15 @@ export const getPolyglotV2APIMock = () => [
   getGetDiagnosticSummaryMockHandler(),
   getSubmitDiagnosticResponseMockHandler(),
   getCompleteDiagnosticMockHandler(),
+  getGetExportMockHandler(),
   getGetFoundationRunMockHandler(),
   getCompleteFoundationGateMockHandler(),
   getHealthLiveMockHandler(),
   getHealthReadyMockHandler(),
+  getGetImportMockHandler(),
+  getResolveImportConflictMockHandler(),
+  getCommitImportMockHandler(),
+  getRevertImportMockHandler(),
   getListLanguagePacksMockHandler(),
   getListLanguageProfilesMockHandler(),
   getCreateLanguageProfileMockHandler(),
@@ -3759,8 +4649,10 @@ export const getPolyglotV2APIMock = () => [
   getDeleteLanguageProfileMockHandler(),
   getStartDiagnosticMockHandler(),
   getRecordLexicalEncounterMockHandler(),
+  getRequestExportMockHandler(),
   getStartFoundationRunMockHandler(),
   getUpdateLearningGoalsMockHandler(),
+  getCreateImportMockHandler(),
   getListLexicalAnnotationsMockHandler(),
   getUpsertLexicalAnnotationMockHandler(),
   getDeclareLexicalFamiliarityMockHandler(),
@@ -3768,6 +4660,7 @@ export const getPolyglotV2APIMock = () => [
   getCreateMemoryPromptMockHandler(),
   getAddPrivateLexicalUnitMockHandler(),
   getMergeLexicalUnitsMockHandler(),
+  getCreateVocabularyListMockHandler(),
   getGetWordBankOverviewMockHandler(),
   getArchiveLanguageProfileMockHandler(),
   getPauseLanguageProfileMockHandler(),
@@ -3792,5 +4685,16 @@ export const getPolyglotV2APIMock = () => [
   getRevokeSessionMockHandler(),
   getGetCurrentSessionMockHandler(),
   getAuthenticateSessionMockHandler(),
+  getListSharedVocabularyListsMockHandler(),
+  getGetSharedVocabularyListMockHandler(),
+  getRetireSharedVocabularyListMockHandler(),
   getGetValidationReportMockHandler(),
+  getListVocabularyListsMockHandler(),
+  getGetVocabularyListMockHandler(),
+  getReviseVocabularyListMockHandler(),
+  getChangeListMembersMockHandler(),
+  getPublishVocabularyListSnapshotMockHandler(),
+  getCloneVocabularyListMockHandler(),
+  getFreezeVocabularyListMockHandler(),
+  getMergeVocabularyListsMockHandler(),
 ];

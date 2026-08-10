@@ -878,15 +878,15 @@
     },
     {
       "method": "GET",
-      "route": "/lexical-senses/{id}"
+      "route": "/lexical-senses/{sense_id}"
     },
     {
       "method": "GET",
-      "route": "/language-profiles/{id}/word-bank"
+      "route": "/language-profiles/{profile_id}/word-bank"
     },
     {
       "method": "GET",
-      "route": "/language-profiles/{id}/lexical-annotations"
+      "route": "/language-profiles/{profile_id}/lexical-annotations"
     },
     {
       "method": "GET",

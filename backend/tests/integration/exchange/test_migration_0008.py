@@ -60,7 +60,9 @@ async def test_personal_exchange_tables_force_owner_rls(
         )
     ).all()
     assert {name for name, *_ in rows} == LEXICON_TABLES | EXCHANGE_TABLES
-    assert all((rls, forced, policies) == (True, True, 1) for _, rls, forced, policies in rows)
+    for name, rls, forced, policies in rows:
+        expected_policies = 2 if name == "shared_list_publications" else 1
+        assert (rls, forced, policies) == (True, True, expected_policies)
 
 
 async def test_immutable_list_and_import_artifacts_have_guards(

@@ -76,3 +76,14 @@ def inspect_zip(payload: bytes, limits: ImportLimits) -> ArchiveInspection:
             )
         )
     return ArchiveInspection(tuple(inspected), len(payload), total_uncompressed)
+
+
+def read_single_safe_zip_entry(payload: bytes, limits: ImportLimits) -> bytes:
+    inspection = inspect_zip(payload, limits)
+    if len(inspection.entries) != 1:
+        raise DomainError(ErrorCode.VALIDATION_FAILED, detail="one import file is required")
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        result = archive.read(inspection.entries[0].path)
+    if len(result) != inspection.entries[0].uncompressed_size:
+        raise DomainError(ErrorCode.VALIDATION_FAILED, detail="zip entry size changed")
+    return result

@@ -17,9 +17,13 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   FoundationResponse,
+  GetExport200,
+  GetSharedVocabularyList200,
+  ImportRunResponse,
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
   LexiconSearchPageResponse,
+  ListSnapshotResponse,
   LiveStatus,
   MemoryPromptResponse,
   MutationResponse,
@@ -27,9 +31,12 @@ import type {
   ProfileResponse,
   ProfilesResponse,
   ReadyStatus,
+  ResourceMutationResponse,
+  ResourcePageResponse,
   SenseNeighborhoodResponse,
   SessionResponse,
   ValidationReportResponse,
+  VocabularyListResponse,
   WordBankOverviewResponse,
 } from "../model";
 
@@ -927,6 +934,19 @@ export const getCompleteDiagnosticResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetExportResponseMock = (): GetExport200 => ({
+  [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+});
+
 export const getGetFoundationRunResponseMock = (
   overrideResponse: Partial<Extract<FoundationResponse, object>> = {},
 ): FoundationResponse => ({
@@ -989,6 +1009,84 @@ export const getHealthReadyResponseMock = (
     ] as const),
   },
   status: faker.helpers.arrayElement(["ready", "unavailable"] as const),
+  ...overrideResponse,
+});
+
+export const getGetImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResolveImportConflictResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCommitImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getRevertImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
   ...overrideResponse,
 });
 
@@ -1202,6 +1300,15 @@ export const getRecordLexicalEncounterResponseMock = (
   ...overrideResponse,
 });
 
+export const getRequestExportResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getStartFoundationRunResponseMock = (
   overrideResponse: Partial<Extract<FoundationResponse, object>> = {},
 ): FoundationResponse => ({
@@ -1257,6 +1364,29 @@ export const getUpdateLearningGoalsResponseMock = (
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   target_variety_id: faker.string.uuid(),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCreateImportResponseMock = (
+  overrideResponse: Partial<Extract<ImportRunResponse, object>> = {},
+): ImportRunResponse => ({
+  catalogue_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  format_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  import_id: faker.string.uuid(),
+  preview_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  reused_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  unresolved_conflicts: faker.number.int(),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -1351,6 +1481,50 @@ export const getMergeLexicalUnitsResponseMock = (
 ): MutationResponse => ({
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCreateVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
+): VocabularyListResponse => ({
+  color: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  list_id: faker.string.uuid(),
+  list_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ordered: faker.datatype.boolean(),
+  profile_id: faker.string.uuid(),
+  purpose: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  query_definition: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  revision_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  variety_id: faker.string.uuid(),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -2064,6 +2238,54 @@ export const getAuthenticateSessionResponseMock = (
   ...overrideResponse,
 });
 
+export const getListSharedVocabularyListsResponseMock = (
+  overrideResponse: Partial<Extract<ResourcePageResponse, object>> = {},
+): ResourcePageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  ...overrideResponse,
+});
+
+export const getGetSharedVocabularyListResponseMock =
+  (): GetSharedVocabularyList200 => ({
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  });
+
+export const getRetireSharedVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getGetValidationReportResponseMock = (
   overrideResponse: Partial<Extract<ValidationReportResponse, object>> = {},
 ): ValidationReportResponse => ({
@@ -2089,5 +2311,169 @@ export const getGetValidationReportResponseMock = (
   subject_revision_id: faker.string.uuid(),
   summary_checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
   validator_set_revision_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getListVocabularyListsResponseMock = (
+  overrideResponse: Partial<Extract<ResourcePageResponse, object>> = {},
+): ResourcePageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  ...overrideResponse,
+});
+
+export const getGetVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
+): VocabularyListResponse => ({
+  color: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  list_id: faker.string.uuid(),
+  list_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ordered: faker.datatype.boolean(),
+  profile_id: faker.string.uuid(),
+  purpose: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  query_definition: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  revision_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getReviseVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getChangeListMembersResponseMock = (
+  overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
+): VocabularyListResponse => ({
+  color: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  list_id: faker.string.uuid(),
+  list_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ordered: faker.datatype.boolean(),
+  profile_id: faker.string.uuid(),
+  purpose: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  query_definition: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  revision_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tags: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPublishVocabularyListSnapshotResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCloneVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getFreezeVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ListSnapshotResponse, object>> = {},
+): ListSnapshotResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  list_id: faker.string.uuid(),
+  member_sense_revision_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  source_revision_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getMergeVocabularyListsResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
   ...overrideResponse,
 });

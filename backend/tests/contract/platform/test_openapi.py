@@ -35,7 +35,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w07_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -69,9 +69,12 @@ def test_openapi_exports_the_implemented_w01_through_w07_surface() -> None:
         "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation",
         "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration",
             "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
-            "/api/v1/language-profiles/{profile_id}/memory-prompts",
+        "/api/v1/language-profiles/{profile_id}/memory-prompts",
+        "/api/v1/language-profiles/{profile_id}/imports",
         "/api/v1/language-profiles/{profile_id}/private-lexicon",
         "/api/v1/language-profiles/{profile_id}/private-lexicon:merge",
+        "/api/v1/language-profiles/{profile_id}/exports",
+        "/api/v1/language-profiles/{profile_id}/vocabulary-lists",
         "/api/v1/language-profiles/{profile_id}/word-bank",
         "/api/v1/language-profiles/{profile_id}:archive",
         "/api/v1/language-profiles/{profile_id}:pause",
@@ -96,10 +99,26 @@ def test_openapi_exports_the_implemented_w01_through_w07_surface() -> None:
             "/api/v1/memory-prompts/{prompt_id}:reset",
             "/api/v1/memory-prompts/{prompt_id}:restore",
             "/api/v1/memory-prompts/{prompt_id}:resume",
-            "/api/v1/memory-prompts/{prompt_id}:suspend",
+        "/api/v1/memory-prompts/{prompt_id}:suspend",
+        "/api/v1/imports/{id}",
+        "/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve",
+        "/api/v1/imports/{import_id}:commit",
+        "/api/v1/imports/{import_id}:revert",
         "/api/v1/personal-lexical-relations/{relation_id}:retract",
         "/api/v1/session",
+        "/api/v1/exports/{id}",
+        "/api/v1/shared-vocabulary-lists",
+        "/api/v1/shared-vocabulary-lists/{id}",
+        "/api/v1/shared-vocabulary-lists/{publication_id}:retire",
         "/api/v1/validation-reports/{id}",
+        "/api/v1/vocabulary-lists",
+        "/api/v1/vocabulary-lists/{id}",
+        "/api/v1/vocabulary-lists/{list_id}",
+        "/api/v1/vocabulary-lists/{list_id}/members:batch",
+        "/api/v1/vocabulary-lists/{list_id}/snapshots/{snapshot_id}:publish",
+        "/api/v1/vocabulary-lists/{list_id}:clone",
+        "/api/v1/vocabulary-lists/{list_id}:snapshot",
+        "/api/v1/vocabulary-lists:merge",
     }
     validate_registry_compatibility(document, ROOT / "contracts/registry")
 
