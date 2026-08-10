@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 7004,
+  "clock": "2026-01-05T09:00:00+00:00",
+  "payloads": {
+    "memory.json": "sha256:6f7ec07ce2805e82f288577ee7b5231e5f4cde5056c782f7b71230a34ac4294d"
+  },
+  "oracles": [
+    "fsrs_6_3_1_projection_matches_frozen_history",
+    "same_history_replays_x100_identically",
+    "directions_are_independent",
+    "append_only_facts_rebuild_projection",
+    "duplicate_payload_divergence_conflicts",
+    "uncertified_and_revealed_answers_create_no_review",
+    "reset_and_merge_preserve_history"
+  ],
+  "network_dependencies": [],
+  "pedagogical_review": "pending_human"
+}

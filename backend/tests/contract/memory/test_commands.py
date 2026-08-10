@@ -50,3 +50,12 @@ def test_due_query_is_authenticated_stable_and_bounded() -> None:
     assert names["limit"]["schema"]["maximum"] == 100
     assert names["cutoff"]["required"] is True
     assert {"401", "403", "422", "503"} <= operation["responses"].keys()
+
+
+def test_restore_request_cannot_self_assert_target_availability() -> None:
+    document = create_app(test_mode=True).openapi()
+    operation = document["paths"]["/api/v1/memory-prompts/{prompt_id}:restore"]["post"]
+    reference = operation["requestBody"]["content"]["application/json"]["schema"]["$ref"]
+    schema = document["components"]["schemas"][reference.rsplit("/", 1)[-1]]
+    assert schema["additionalProperties"] is False
+    assert "target_revision_available" not in schema["properties"]

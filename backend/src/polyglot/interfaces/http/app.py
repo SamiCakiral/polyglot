@@ -23,6 +23,7 @@ from polyglot.interfaces.http.routes.catalogue import catalogue_router
 from polyglot.interfaces.http.routes.content import content_router
 from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
+from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
 from polyglot.interfaces.http.routes.word_bank import (
     SqlWordBankService,
     WordBankService,
@@ -73,6 +74,7 @@ def create_app(
     catalogue_service: CatalogueReader | None = None,
     content_service: ContentApplicationService | None = None,
     word_bank_service: WordBankService | None = None,
+    memory_service: MemoryService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -106,6 +108,13 @@ def create_app(
     app.include_router(
         word_bank_router(
             word_bank_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
+    app.include_router(
+        memory_router(
+            memory_service,
             identity_service,
             allowed_origin=allowed_origin,
         )
@@ -172,6 +181,10 @@ def create_runtime_app() -> FastAPI:
         session_factory, catalogue_reader=catalogue_service
     )
     word_bank_service = SqlWordBankService(session_factory)
+    from polyglot.modules.lexicon.memory.persistence import SqlMemoryService
+    from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
+
+    memory_service = SqlMemoryService(session_factory, FsrsV6Scheduler())
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -190,5 +203,6 @@ def create_runtime_app() -> FastAPI:
         content_service=content_service,
         language_profile_service=language_profile_service,
         word_bank_service=word_bank_service,
+        memory_service=memory_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

@@ -34,7 +34,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w06_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w07_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -67,7 +67,8 @@ def test_openapi_exports_the_implemented_w01_through_w06_surface() -> None:
         "/api/v1/language-profiles/{profile_id}/lexical-annotations",
         "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation",
         "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration",
-        "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
+            "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
+            "/api/v1/language-profiles/{profile_id}/memory-prompts",
         "/api/v1/language-profiles/{profile_id}/private-lexicon",
         "/api/v1/language-profiles/{profile_id}/private-lexicon:merge",
         "/api/v1/language-profiles/{profile_id}/word-bank",
@@ -85,7 +86,16 @@ def test_openapi_exports_the_implemented_w01_through_w06_surface() -> None:
         "/api/v1/lexical-senses/{sense_id}",
         "/api/v1/lexical-senses/{sense_id}/personal-relations",
         "/api/v1/lexical-senses/{sense_id}:split-private",
-        "/api/v1/lexicon/search",
+            "/api/v1/lexicon/search",
+            "/api/v1/memory-prompts/due",
+            "/api/v1/memory-prompts:merge",
+            "/api/v1/memory-prompts/{prompt_id}",
+            "/api/v1/memory-prompts/{prompt_id}/reviews",
+            "/api/v1/memory-prompts/{prompt_id}:archive",
+            "/api/v1/memory-prompts/{prompt_id}:reset",
+            "/api/v1/memory-prompts/{prompt_id}:restore",
+            "/api/v1/memory-prompts/{prompt_id}:resume",
+            "/api/v1/memory-prompts/{prompt_id}:suspend",
         "/api/v1/personal-lexical-relations/{relation_id}:retract",
         "/api/v1/session",
         "/api/v1/validation-reports/{id}",

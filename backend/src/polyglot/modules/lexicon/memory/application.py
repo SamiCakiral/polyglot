@@ -87,6 +87,11 @@ class SubmitMemoryReview:
 
 
 @dataclass(frozen=True, slots=True)
+class SuspendMemoryPrompt:
+    suspended_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class ResetMemoryPrompt:
     reset_id: UUID
     reason: str

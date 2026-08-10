@@ -1,21 +1,30 @@
 from __future__ import annotations
 
 import json
+from base64 import urlsafe_b64decode, urlsafe_b64encode
+from binascii import Error as Base64Error
 from collections.abc import Awaitable, Callable, Mapping
-from dataclasses import asdict, is_dataclass, replace
+from dataclasses import asdict, dataclass, is_dataclass, replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.modules.lexicon.memory.application import (
+    ArchiveMemoryPrompt,
     CreateMemoryPrompt,
+    DeleteMemoryPrompt,
     MemoryLifecycle,
+    MergeMemoryPrompts,
+    ResetMemoryPrompt,
+    RestoreMemoryPrompt,
+    ResumeMemoryPrompt,
     SubmitMemoryReview,
+    SuspendMemoryPrompt,
 )
 from polyglot.modules.lexicon.memory.domain import (
     MemoryAggregate,
@@ -36,12 +45,21 @@ from polyglot.modules.lexicon.memory.ports import (
     ScheduledState,
 )
 from polyglot.modules.lexicon.memory.rebuild import MemoryReplayResolver, rebuild_schedule
+from polyglot.platform.clock import Clock, SystemClock
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 from polyglot.platform.json_types import JsonValue
 
 TransactionHook = Callable[[str], Awaitable[None]]
+TargetRevisionChecker = Callable[[AsyncSession, UUID], Awaitable[bool]]
+
+
+@dataclass(frozen=True, slots=True)
+class DueMemoryPrompt:
+    aggregate: MemoryAggregate
+    overdue_seconds: int
+    reason: str
 
 
 def _encode(value: Any) -> JsonValue:
@@ -312,7 +330,10 @@ class SqlMemoryRepository:
             await self._session.execute(
                 text(
                     f"SELECT payload FROM memory.{table} "
-                    f"WHERE profile_id=:profile AND prompt_id=:prompt ORDER BY {order_by}"
+                    "WHERE profile_id=:profile AND (prompt_id=:prompt OR prompt_id IN ("
+                    "SELECT source_prompt_id FROM memory.memory_prompt_lineages "
+                    "WHERE profile_id=:profile AND canonical_prompt_id=:prompt)) "
+                    f"ORDER BY {order_by}"
                 ),
                 {"profile": profile_id, "prompt": prompt_id},
             )
@@ -603,11 +624,17 @@ class SqlMemoryService:
         scheduler: MemorySchedulerPort,
         *,
         id_generator: IdGenerator | None = None,
+        clock: Clock | None = None,
+        target_revision_checker: TargetRevisionChecker | None = None,
         transaction_hook: TransactionHook | None = None,
     ) -> None:
         self._sessions = session_factory
         self._scheduler = scheduler
         self._ids = id_generator or Uuid7Generator()
+        self._clock = clock or SystemClock()
+        self._target_revision_checker = (
+            target_revision_checker or self._catalogue_target_revision_available
+        )
         self._transaction_hook = transaction_hook
 
     async def create(
@@ -623,6 +650,9 @@ class SqlMemoryService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
+            await self._lock_idempotency(
+                session, actor_id, "CreateMemoryPrompt", idempotency_key
+            )
             existing = await self._receipt(
                 session, actor_id, "CreateMemoryPrompt", idempotency_key
             )
@@ -631,6 +661,16 @@ class SqlMemoryService:
                 if stored_fingerprint != fingerprint:
                     raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
                 return _aggregate_from_payload(payload)
+            owns_profile = await session.scalar(
+                text(
+                    "SELECT EXISTS (SELECT 1 FROM "
+                    "language_profiles.learner_language_profiles "
+                    "WHERE profile_id=:profile)"
+                ),
+                {"profile": command.profile_id},
+            )
+            if not owns_profile:
+                raise DomainError(ErrorCode.NOT_FOUND)
             aggregate = MemoryLifecycle(self._scheduler).create(command, policy)
             async with session.begin_nested():
                 repository = SqlMemoryRepository(session)
@@ -674,6 +714,9 @@ class SqlMemoryService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
+            await self._lock_idempotency(
+                session, actor_id, "SubmitMemoryReview", idempotency_key
+            )
             existing = await self._receipt(
                 session, actor_id, "SubmitMemoryReview", idempotency_key
             )
@@ -725,6 +768,343 @@ class SqlMemoryService:
             )
             await session.commit()
             return after
+
+    async def transition(
+        self,
+        actor_id: UUID,
+        prompt_id: UUID,
+        command: object,
+        policy: SchedulerPolicy,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+        session_id: UUID | None = None,
+    ) -> MemoryAggregate:
+        command_name, event_type, occurred_at = self._transition_identity(command)
+        fingerprint = canonical_json_fingerprint(
+            _encode(
+                {
+                    "prompt_id": prompt_id,
+                    "command": command,
+                    "policy": policy,
+                    "expected_version": expected_version,
+                }
+            )
+        )
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            await self._lock_idempotency(
+                session, actor_id, command_name, idempotency_key
+            )
+            existing = await self._receipt(
+                session, actor_id, command_name, idempotency_key
+            )
+            if existing is not None:
+                stored_fingerprint, payload = existing
+                if stored_fingerprint != fingerprint:
+                    raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
+                return _aggregate_from_payload(payload)
+            repository = SqlMemoryRepository(session)
+            before = await self._owned_prompt(session, repository, prompt_id)
+            if before.prompt.version != expected_version:
+                raise DomainError(ErrorCode.VERSION_CONFLICT)
+            lifecycle = MemoryLifecycle(self._scheduler)
+            if isinstance(command, SuspendMemoryPrompt):
+                after = lifecycle.suspend(before, command.suspended_at)
+            elif isinstance(command, ResumeMemoryPrompt):
+                after = lifecycle.resume(before, command, policy)
+            elif isinstance(command, ResetMemoryPrompt):
+                after = lifecycle.reset(before, command, policy)
+            elif isinstance(command, ArchiveMemoryPrompt):
+                after = lifecycle.archive(before, command)
+            elif isinstance(command, RestoreMemoryPrompt):
+                target_available = await self._target_revision_checker(
+                    session, before.prompt.target_revision_id
+                )
+                after = lifecycle.restore(
+                    before,
+                    replace(command, target_revision_available=target_available),
+                    policy,
+                )
+            elif isinstance(command, DeleteMemoryPrompt):
+                reauthenticated = await self._recently_reauthenticated(
+                    session, actor_id, session_id
+                )
+                after = lifecycle.delete(
+                    before,
+                    replace(command, reauthenticated=reauthenticated),
+                )
+            else:
+                raise DomainError(ErrorCode.VALIDATION_FAILED)
+            await repository.save(
+                after,
+                expected_prompt_version=before.prompt.version,
+                expected_projection_version=before.schedule.projection_version,
+            )
+            await self._record_effect(
+                session,
+                actor_id=actor_id,
+                aggregate=after,
+                command_type=command_name,
+                event_type=event_type,
+                idempotency_key=idempotency_key,
+                fingerprint=fingerprint,
+                occurred_at=occurred_at,
+            )
+            await session.commit()
+            return after
+
+    async def merge(
+        self,
+        actor_id: UUID,
+        source_prompt_ids: tuple[UUID, ...],
+        expected_versions: dict[UUID, int],
+        canonical_prompt_id: UUID,
+        merged_at: datetime,
+        policy: SchedulerPolicy,
+        *,
+        idempotency_key: str,
+    ) -> MemoryAggregate:
+        fingerprint = canonical_json_fingerprint(
+            _encode(
+                {
+                    "source_prompt_ids": source_prompt_ids,
+                    "expected_versions": expected_versions,
+                    "canonical_prompt_id": canonical_prompt_id,
+                    "merged_at": merged_at,
+                    "policy": policy,
+                }
+            )
+        )
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            await self._lock_idempotency(
+                session, actor_id, "MergeMemoryPrompts", idempotency_key
+            )
+            existing = await self._receipt(
+                session, actor_id, "MergeMemoryPrompts", idempotency_key
+            )
+            if existing is not None:
+                stored_fingerprint, payload = existing
+                if stored_fingerprint != fingerprint:
+                    raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
+                return _aggregate_from_payload(payload)
+            if (
+                len(source_prompt_ids) < 2
+                or len(set(source_prompt_ids)) != len(source_prompt_ids)
+                or set(source_prompt_ids) != set(expected_versions)
+            ):
+                raise DomainError(ErrorCode.VALIDATION_FAILED)
+            repository = SqlMemoryRepository(session)
+            sources = tuple(
+                [
+                    await self._owned_prompt(session, repository, prompt_id)
+                    for prompt_id in source_prompt_ids
+                ]
+            )
+            if any(
+                source.prompt.version != expected_versions[source.prompt.prompt_id]
+                for source in sources
+            ):
+                raise DomainError(ErrorCode.VERSION_CONFLICT)
+            result = MemoryLifecycle(self._scheduler).merge(
+                MergeMemoryPrompts(canonical_prompt_id, sources, merged_at),
+                policy,
+            )
+            await repository.add(result.canonical)
+            for before, after in zip(sources, result.sources, strict=True):
+                await repository.save(
+                    after,
+                    expected_prompt_version=before.prompt.version,
+                    expected_projection_version=before.schedule.projection_version,
+                )
+            await self._record_effect(
+                session,
+                actor_id=actor_id,
+                aggregate=result.canonical,
+                command_type="MergeMemoryPrompts",
+                event_type="memory_prompts_merged",
+                idempotency_key=idempotency_key,
+                fingerprint=fingerprint,
+                occurred_at=merged_at,
+            )
+            await session.commit()
+            return result.canonical
+
+    async def list_due(
+        self,
+        actor_id: UUID,
+        profile_id: UUID,
+        cutoff: datetime,
+        *,
+        limit: int,
+        cursor: str | None,
+    ) -> tuple[tuple[DueMemoryPrompt, ...], str | None]:
+        if cutoff.tzinfo is None or not 1 <= limit <= 100:
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+        cursor_due, cursor_prompt = self._decode_due_cursor(cursor)
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            rows = (
+                await session.execute(
+                    text(
+                        "SELECT schedule.prompt_id,schedule.due_at "
+                        "FROM memory.memory_schedule_states schedule "
+                        "JOIN memory.memory_prompts prompt USING (prompt_id,profile_id) "
+                        "WHERE schedule.profile_id=:profile AND prompt.status='active' "
+                        "AND schedule.due_at <= :cutoff AND ("
+                        "CAST(:cursor_due AS timestamptz) IS NULL OR "
+                        "(schedule.due_at,schedule.prompt_id) > "
+                        "(CAST(:cursor_due AS timestamptz),CAST(:cursor_prompt AS uuid))) "
+                        "ORDER BY schedule.due_at,schedule.prompt_id LIMIT :page_size"
+                    ),
+                    {
+                        "profile": profile_id,
+                        "cutoff": cutoff,
+                        "cursor_due": cursor_due,
+                        "cursor_prompt": cursor_prompt,
+                        "page_size": limit + 1,
+                    },
+                )
+            ).all()
+            page_rows = rows[:limit]
+            repository = SqlMemoryRepository(session)
+            items: list[DueMemoryPrompt] = []
+            for row in page_rows:
+                aggregate = await repository.get(profile_id, row.prompt_id)
+                if aggregate is None:
+                    raise DomainError(ErrorCode.NOT_FOUND)
+                items.append(
+                    DueMemoryPrompt(
+                        aggregate=aggregate,
+                        overdue_seconds=max(
+                            0, int((cutoff - aggregate.schedule.due_at).total_seconds())
+                        ),
+                        reason="new" if aggregate.schedule.reps == 0 else "due",
+                    )
+                )
+            next_cursor = None
+            if len(rows) > limit and page_rows:
+                last = page_rows[-1]
+                next_cursor = self._encode_due_cursor(last.due_at, last.prompt_id)
+            return tuple(items), next_cursor
+
+    async def _owned_prompt(
+        self,
+        session: AsyncSession,
+        repository: SqlMemoryRepository,
+        prompt_id: UUID,
+    ) -> MemoryAggregate:
+        profile_id = await session.scalar(
+            text("SELECT profile_id FROM memory.memory_prompts WHERE prompt_id=:prompt"),
+            {"prompt": prompt_id},
+        )
+        if profile_id is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        aggregate = await repository.get(profile_id, prompt_id)
+        if aggregate is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        return aggregate
+
+    async def _lock_idempotency(
+        self,
+        session: AsyncSession,
+        actor_id: UUID,
+        command_type: str,
+        idempotency_key: str,
+    ) -> None:
+        await session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:scope, 0))"),
+            {"scope": f"{actor_id}:{command_type}:{idempotency_key}"},
+        )
+
+    async def _recently_reauthenticated(
+        self,
+        session: AsyncSession,
+        actor_id: UUID,
+        session_id: UUID | None,
+    ) -> bool:
+        if session_id is None:
+            return False
+        authenticated_at = await session.scalar(
+            text(
+                "SELECT authenticated_at FROM identity.auth_sessions "
+                "WHERE session_id=:session AND account_id=:actor AND revoked_at IS NULL "
+                "AND idle_expires_at > :now AND absolute_expires_at > :now"
+            ),
+            {"session": session_id, "actor": actor_id, "now": self._clock.now()},
+        )
+        if authenticated_at is None:
+            return False
+        age = self._clock.now() - cast(datetime, authenticated_at)
+        return timedelta(0) <= age <= timedelta(minutes=5)
+
+    async def _catalogue_target_revision_available(
+        self,
+        session: AsyncSession,
+        revision_id: UUID,
+    ) -> bool:
+        return bool(
+            await session.scalar(
+                text(
+                    "SELECT EXISTS ("
+                    "SELECT 1 FROM catalogue.skill_revisions "
+                    "WHERE skill_revision_id=:revision AND status='published' UNION ALL "
+                    "SELECT 1 FROM catalogue.grammar_structure_revisions "
+                    "WHERE structure_revision_id=:revision AND status='published' UNION ALL "
+                    "SELECT 1 FROM catalogue.lexical_unit_revisions "
+                    "WHERE unit_revision_id=:revision AND status='published' UNION ALL "
+                    "SELECT 1 FROM catalogue.lexical_sense_revisions "
+                    "WHERE sense_revision_id=:revision AND status='published')"
+                ),
+                {"revision": revision_id},
+            )
+        )
+
+    @staticmethod
+    def _transition_identity(command: object) -> tuple[str, str, datetime]:
+        if isinstance(command, SuspendMemoryPrompt):
+            return "SuspendMemoryPrompt", "memory_prompt_suspended", command.suspended_at
+        if isinstance(command, ResumeMemoryPrompt):
+            return "ResumeMemoryPrompt", "memory_prompt_resumed", command.resumed_at
+        if isinstance(command, ResetMemoryPrompt):
+            return "ResetMemoryPrompt", "memory_schedule_reset", command.reset_at
+        if isinstance(command, ArchiveMemoryPrompt):
+            return "ArchiveMemoryPrompt", "memory_prompt_archived", command.archived_at
+        if isinstance(command, RestoreMemoryPrompt):
+            return "RestoreMemoryPrompt", "memory_prompt_restored", command.restored_at
+        if isinstance(command, DeleteMemoryPrompt):
+            return "DeleteMemoryPrompt", "memory_prompt_deleted", command.deleted_at
+        raise DomainError(ErrorCode.VALIDATION_FAILED)
+
+    @staticmethod
+    def _encode_due_cursor(due_at: datetime, prompt_id: UUID) -> str:
+        payload = json.dumps(
+            [due_at.astimezone(UTC).isoformat(), str(prompt_id)],
+            separators=(",", ":"),
+        ).encode()
+        return urlsafe_b64encode(payload).decode().rstrip("=")
+
+    @staticmethod
+    def _decode_due_cursor(cursor: str | None) -> tuple[datetime | None, UUID | None]:
+        if cursor is None:
+            return None, None
+        try:
+            padded = cursor + "=" * (-len(cursor) % 4)
+            payload = json.loads(urlsafe_b64decode(padded).decode())
+            if not isinstance(payload, list) or len(payload) != 2:
+                raise ValueError
+            due_at = _dt(payload[0])
+            prompt_id = _uuid(payload[1])
+        except (
+            Base64Error,
+            UnicodeDecodeError,
+            ValueError,
+            TypeError,
+            json.JSONDecodeError,
+        ) as error:
+            raise DomainError(ErrorCode.CURSOR_INVALID) from error
+        return due_at, prompt_id
 
     async def _set_actor(self, session: AsyncSession, actor_id: UUID) -> None:
         await session.execute(

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "scheduler": {
+    "kind": "fsrs",
+    "version": "6.3.1",
+    "parameter_set_id": "fsrs-6.3.1-9110f991944aaf589c9f72b1",
+    "policy_revision": 1,
+    "desired_retention": "0.90"
+  },
+  "profile_id": "018f0000-0000-7000-8000-000000000002",
+  "target_ref": "018f0000-0000-7000-8000-000000000003",
+  "target_revision_id": "018f0000-0000-7000-8000-000000000004",
+  "directions": [
+    {
+      "prompt_id": "018f0000-0000-7000-8000-000000000384",
+      "direction": "target_to_support"
+    },
+    {
+      "prompt_id": "018f0000-0000-7000-8000-000000000385",
+      "direction": "support_to_target"
+    }
+  ],
+  "history": [
+    {"rating": "again", "reviewed_at": "2026-01-05T09:00:00+00:00"},
+    {"rating": "good", "reviewed_at": "2026-01-06T09:00:00+00:00"},
+    {"rating": "good", "reviewed_at": "2026-01-07T09:00:00+00:00"},
+    {"rating": "easy", "reviewed_at": "2026-01-08T09:00:00+00:00"}
+  ],
+  "expected_projection": {
+    "state": "review",
+    "difficulty": "5.170190465277389",
+    "stability": "9.217662818911155",
+    "due_at": "2026-01-19T09:00:00+00:00",
+    "reps": 4,
+    "lapses": 0,
+    "last_rating": "easy",
+    "projection_version": 5
+  },
+  "cases": [
+    "new",
+    "learning",
+    "review",
+    "relearning",
+    "early_review",
+    "late_review",
+    "duplicate_review",
+    "suspended",
+    "reset_preserves_history",
+    "compatible_merge",
+    "incompatible_merge",
+    "imported_sm2_provenance_only",
+    "timezone_change_no_retroactive_shift",
+    "answer_revealed_no_review",
+    "uncertified_operation_no_review"
+  ]
+}
