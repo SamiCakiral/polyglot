@@ -124,8 +124,17 @@ def test_split_task_report_source_is_not_a_secret_but_real_assignments_are() -> 
     proof_statement = (
         f"a real value shaped like `{report_fragment}` outside the exact split source context"
     )
+    sensitive_proof_assignment = f'{sensitive_name} = "{proof_statement}"'
+    split_source_value = f'\'"ta" + "{report_fragment}.md"\''
+    sensitive_split_assignment = f"{sensitive_name} = {split_source_value}"
 
     assert _find_secrets(source_reference, "fixture") == []
     assert _find_secrets(proof_statement, "fixture") == []
     assert _find_secrets(real_assignment, "fixture") == ["fixture:openai_api_key"]
     assert _find_secrets(report_shaped_assignment, "fixture") == ["fixture:openai_api_key"]
+    assert _find_secrets(sensitive_proof_assignment, "fixture") == [
+        "fixture:openai_api_key"
+    ]
+    assert _find_secrets(sensitive_split_assignment, "fixture") == [
+        "fixture:openai_api_key"
+    ]
