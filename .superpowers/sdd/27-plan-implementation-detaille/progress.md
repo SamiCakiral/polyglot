@@ -16,5 +16,5 @@ Task pytest-collection: complete - commits f3c9adb..2cb2e35 - review PASS with 4
 Task global-matrix: complete - commits 6c0860c..cae8d69 - acceptance review PASS after scanner round 3
 Task W06: complete - commits ae6f6dd..c4394c4 - final review PASS after fix round 2 - P-LING pending_human
 Task W10-phaseA: complete - commits 4ccd483..ade0492 - technical rereview PASS - P-LING pending_human
-Task W11-phaseA: implementation complete - commits 27b434e..03ee509 - independent review in progress - P-LING and P-PED pending_human
-Task W07: implementation in progress after W06 acceptance - implementer 019feb7f-33f6-74e1-a0e0-724d8d3fced2
+Task W11-phaseA: complete - commits 27b434e..dc17dfb - local final review PASS after two adversarial fix rounds - P-LING and P-PED pending_human
+Task W07: T01 and T02 complete; T03 implementation in progress after independent PASS - implementer 019feb7f-33f6-74e1-a0e0-724d8d3fced2
