@@ -69,6 +69,11 @@ class SubmitMemoryReview:
     scheduled_at: datetime
     reviewed_at: datetime
     idempotency_key: str
+    certification_ref: str
+    certified_operation: str
+    certified_protocol_id: str
+    certified_protocol_revision: int
+    certified_target_revision_id: UUID
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -159,6 +164,12 @@ class MemoryLifecycle:
 
     def create(self, command: CreateMemoryPrompt, policy: SchedulerPolicy) -> MemoryAggregate:
         created_at = _utc(command.created_at)
+        identity = self._scheduler.identity
+        if identity.parameter_set_id != policy.parameter_set_id:
+            raise DomainError(
+                ErrorCode.DEPENDENCY_UNAVAILABLE,
+                detail="scheduler does not provide the requested parameter set",
+            )
         prompt = MemoryPrompt(
             prompt_id=command.prompt_id,
             profile_id=command.profile_id,
@@ -171,6 +182,10 @@ class MemoryLifecycle:
             protocol_revision=command.protocol_revision,
             rating_semantics_id=command.rating_semantics_id,
             scheduler_policy_id=command.scheduler_policy_id,
+            scheduler_kind=identity.kind,
+            scheduler_version=identity.version,
+            parameter_set_id=policy.parameter_set_id,
+            policy_revision=policy.revision,
             status=PromptStatus.ACTIVE,
             version=1,
             created_at=created_at,
@@ -197,7 +212,8 @@ class MemoryLifecycle:
         policy: SchedulerPolicy,
     ) -> ReviewDecision:
         self._require_status(aggregate, {PromptStatus.ACTIVE})
-        if not command.certified_recall:
+        self._require_binding(aggregate, policy)
+        if not self._certification_matches(aggregate.prompt, command):
             return ReviewDecision(aggregate, False, "operation_not_certified")
         if command.answer_revealed:
             return ReviewDecision(aggregate, False, "answer_revealed")
@@ -216,6 +232,11 @@ class MemoryLifecycle:
             for review in aggregate.reviews
         ):
             return ReviewDecision(aggregate, False, "duplicate")
+        if _utc(command.reviewed_at) < aggregate.schedule.computed_at:
+            raise DomainError(
+                ErrorCode.REVIEW_CONFLICT,
+                detail="review predates the current causal checkpoint",
+            )
 
         transition = self._scheduler.review(
             aggregate.schedule.scheduled_state(),
@@ -244,6 +265,11 @@ class MemoryLifecycle:
             policy_revision=policy.revision,
             idempotency_key=command.idempotency_key,
             low_confidence=command.self_reported,
+            certification_ref=command.certification_ref,
+            certified_operation=command.certified_operation,
+            certified_protocol_id=command.certified_protocol_id,
+            certified_protocol_revision=command.certified_protocol_revision,
+            certified_target_revision_id=command.certified_target_revision_id,
         )
         schedule = _projection(
             prompt_id=aggregate.prompt.prompt_id,
@@ -488,3 +514,42 @@ class MemoryLifecycle:
     ) -> None:
         if aggregate.prompt.status not in allowed:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
+
+    def _require_binding(
+        self,
+        aggregate: MemoryAggregate,
+        policy: SchedulerPolicy,
+    ) -> None:
+        identity = self._scheduler.identity
+        prompt = aggregate.prompt
+        schedule = aggregate.schedule
+        if (
+            identity.kind != prompt.scheduler_kind
+            or identity.version != prompt.scheduler_version
+            or identity.parameter_set_id != prompt.parameter_set_id
+            or policy.parameter_set_id != prompt.parameter_set_id
+            or policy.revision != prompt.policy_revision
+            or schedule.scheduler_kind != prompt.scheduler_kind
+            or schedule.scheduler_version != prompt.scheduler_version
+            or schedule.parameter_set_id != prompt.parameter_set_id
+            or schedule.policy_revision != prompt.policy_revision
+        ):
+            raise DomainError(
+                ErrorCode.DEPENDENCY_UNAVAILABLE,
+                detail="pinned scheduler policy is unavailable",
+            )
+
+    @staticmethod
+    def _certification_matches(
+        prompt: MemoryPrompt,
+        command: SubmitMemoryReview,
+    ) -> bool:
+        return (
+            command.certified_recall
+            and bool(command.certification_ref.strip())
+            and prompt.operation == "recall"
+            and command.certified_operation == prompt.operation
+            and command.certified_protocol_id == prompt.protocol_id
+            and command.certified_protocol_revision == prompt.protocol_revision
+            and command.certified_target_revision_id == prompt.target_revision_id
+        )
