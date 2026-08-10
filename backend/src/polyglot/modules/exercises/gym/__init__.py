@@ -1,0 +1,2 @@
+"""Pure grammatical Gym domain."""
+
