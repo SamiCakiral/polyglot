@@ -1,7 +1,7 @@
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 from uuid import UUID
 
 from sqlalchemy import select
@@ -91,9 +91,17 @@ class ApproveContentRevision:
     actor: EditorialActor
     revision_id: UUID
     expected_version: int
+    decision: Literal["approved", "rejected"]
     reason_code: str
     idempotency_key: str
     context: RequestContext
+
+    def __post_init__(self) -> None:
+        if self.decision not in {"approved", "rejected"}:
+            raise DomainError(
+                ErrorCode.VALIDATION_FAILED,
+                field_errors=[{"location": "decision", "code": "invalid_literal"}],
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -661,6 +669,7 @@ class ContentApplicationService:
         fingerprint = canonical_json_fingerprint(
             {
                 "revision_id": str(command.revision_id),
+                "decision": command.decision,
                 "reason_code": command.reason_code,
             }
         )
@@ -675,19 +684,24 @@ class ContentApplicationService:
                 raise DomainError(ErrorCode.SELF_APPROVAL_FORBIDDEN)
             if revision.status != "validated":
                 raise DomainError(ErrorCode.INVALID_TRANSITION)
-            updated = await repository.approve(
+            updated = await repository.decide_review(
                 content_revision_id=command.revision_id,
                 decision_id=self._id_generator.new(),
                 command_id=receipt.command_id,
                 author_id=revision.created_by_actor_id,
                 reviewer_id=command.actor.actor_id,
+                decision=command.decision,
                 reason_code=command.reason_code,
                 now=now,
             )
             version = await repository.bump_version(item.content_id, command.expected_version)
             await self._event(
                 repository._session,
-                event_type="content_approved",
+                event_type=(
+                    "content_approved"
+                    if command.decision == "approved"
+                    else "content_rejected"
+                ),
                 content_id=item.content_id,
                 revision_id=command.revision_id,
                 version=version,
@@ -695,6 +709,7 @@ class ContentApplicationService:
                 command_id=receipt.command_id,
                 context=command.context,
                 now=now,
+                extra={"decision": command.decision},
             )
             return ContentMutationResult(updated, version)
 

@@ -122,7 +122,7 @@ async def test_http_authoring_flow_exposes_paginated_reads_and_history(http_serv
         approved = await client.post(
             f"/api/v1/authoring/drafts/{draft_id}:approve",
             headers=_headers(key="http-approve", version=2),
-            json={"reason_code": "reviewed.complete"},
+            json={"decision": "approved", "reason_code": "reviewed.complete"},
         )
         published = await client.post(
             f"/api/v1/authoring/drafts/{draft_id}:publish",

@@ -137,12 +137,16 @@ def test_draft_can_be_abandoned_and_validated_revision_can_be_rejected() -> None
     from polyglot.modules.content.domain import ContentRevisionStatus, ValidationOutcome
 
     abandoned = draft().abandon(now=NOW)
-    rejected = (
+    validated = (
         draft()
         .start_validation()
         .complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
-        .reject(now=NOW)
     )
+    rejected = validated.reject(actor_id=REVIEWER_ID, now=NOW)
+
+    with pytest.raises(DomainError) as self_rejection:
+        validated.reject(actor_id=AUTHOR_ID, now=NOW)
 
     assert abandoned.status is ContentRevisionStatus.ABANDONED
     assert rejected.status is ContentRevisionStatus.REJECTED
+    assert self_rejection.value.code is ErrorCode.SELF_APPROVAL_FORBIDDEN

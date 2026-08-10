@@ -242,6 +242,9 @@ content_approval_decisions = Table(
         "AND content.is_uuid7(reviewer_id)",
         name="ck_content_approval_uuid7",
     ),
+    UniqueConstraint(
+        "content_revision_id", name="uq_content_approval_decision_revision"
+    ),
     schema="content",
 )
 
@@ -402,6 +405,7 @@ class StoredContentRevision:
     rights_ref: str
     pinned_revision_refs: tuple[dict[str, JsonValue], ...]
     created_by_actor_id: UUID
+    supersedes_revision_id: UUID | None
     approved_by_actor_id: UUID | None
     created_at: datetime
     validated_at: datetime | None
@@ -490,6 +494,7 @@ def _stored_revision(row: RowMapping) -> StoredContentRevision:
         rights_ref=row["rights_ref"],
         pinned_revision_refs=tuple(dict(item) for item in row["pinned_revision_refs"]),
         created_by_actor_id=row["created_by_actor_id"],
+        supersedes_revision_id=row["supersedes_revision_id"],
         approved_by_actor_id=row["approved_by_actor_id"],
         created_at=row["created_at"],
         validated_at=row["validated_at"],
@@ -908,7 +913,7 @@ class SqlContentRepository:
         )
         return await self.get_revision(content_revision_id)
 
-    async def approve(
+    async def decide_review(
         self,
         *,
         content_revision_id: UUID,
@@ -916,6 +921,7 @@ class SqlContentRepository:
         command_id: UUID,
         author_id: UUID,
         reviewer_id: UUID,
+        decision: str,
         reason_code: str,
         now: datetime,
     ) -> StoredContentRevision:
@@ -926,22 +932,26 @@ class SqlContentRepository:
                 author_id=author_id,
                 reviewer_id=reviewer_id,
                 command_id=command_id,
-                decision="approved",
+                decision=decision,
                 reason_code=reason_code,
                 decided_at=now,
             )
         )
+        revision_values: dict[str, object] = {"status": decision}
+        if decision == "approved":
+            revision_values.update(
+                approved_by_actor_id=reviewer_id,
+                approved_at=now,
+            )
+        else:
+            revision_values["retired_at"] = now
         await self._session.execute(
             content_revisions.update()
             .where(
                 content_revisions.c.content_revision_id == content_revision_id,
                 content_revisions.c.status == "validated",
             )
-            .values(
-                status="approved",
-                approved_by_actor_id=reviewer_id,
-                approved_at=now,
-            )
+            .values(**revision_values)
         )
         return await self.get_revision(content_revision_id)
 

@@ -74,6 +74,15 @@ class ValidationOracle(_StrictModel):
     resulting_revision_status: Literal["validated", "draft"]
 
 
+class ReviewDecisionFixture(_StrictModel):
+    decision_id: UUID
+    content_revision_id: UUID
+    author_id: UUID
+    reviewer_id: UUID
+    decision: Literal["approved", "rejected"]
+    reason_code: str
+
+
 class NegativeOracle(_StrictModel):
     case: str
     expected_error: str
@@ -115,6 +124,7 @@ class _ContentPayload(_StrictModel):
     provenance: tuple[ProvenanceFixture, ...]
     revisions: tuple[RevisionFixture, ...]
     validation_oracles: tuple[ValidationOracle, ...]
+    review_decisions: tuple[ReviewDecisionFixture, ...]
     negative_oracles: tuple[NegativeOracle, ...]
     linguistic_oracles: tuple[LinguisticOracle, ...]
     historical_references: tuple[HistoricalReferenceFixture, ...]
@@ -146,6 +156,7 @@ class ContentFixture:
     provenance: tuple[ProvenanceFixture, ...]
     revisions: tuple[RevisionFixture, ...]
     validation_oracles: tuple[ValidationOracle, ...]
+    review_decisions: tuple[ReviewDecisionFixture, ...]
     negative_oracles: tuple[NegativeOracle, ...]
     linguistic_oracles: tuple[LinguisticOracle, ...]
     historical_references: tuple[HistoricalReferenceFixture, ...]
@@ -256,6 +267,23 @@ def _validate_payload(payload: _ContentPayload) -> ContentFixture:
     }:
         raise _validation_failed()
     revision_ids = {revision.content_revision_id for revision in payload.revisions}
+    revision_by_id = {
+        revision.content_revision_id: revision for revision in payload.revisions
+    }
+    decided_revision_ids: set[UUID] = set()
+    for decision in payload.review_decisions:
+        decision_revision = revision_by_id.get(decision.content_revision_id)
+        if (
+            decision_revision is None
+            or decision.content_revision_id in decided_revision_ids
+            or decision.author_id not in actor_ids
+            or decision.reviewer_id not in actor_ids
+            or decision.author_id == decision.reviewer_id
+            or decision_revision.author_id != decision.author_id
+            or decision_revision.status != decision.decision
+        ):
+            raise _validation_failed()
+        decided_revision_ids.add(decision.content_revision_id)
     if any(
         reference.content_revision_id not in revision_ids
         or len(reference.context_checksum) != 64
@@ -269,6 +297,7 @@ def _validate_payload(payload: _ContentPayload) -> ContentFixture:
         provenance=payload.provenance,
         revisions=payload.revisions,
         validation_oracles=payload.validation_oracles,
+        review_decisions=payload.review_decisions,
         negative_oracles=payload.negative_oracles,
         linguistic_oracles=payload.linguistic_oracles,
         historical_references=payload.historical_references,

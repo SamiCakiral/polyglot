@@ -24,6 +24,14 @@
       "ApproveContentRevisionRequest": {
         "additionalProperties": false,
         "properties": {
+          "decision": {
+            "enum": [
+              "approved",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
           "reason_code": {
             "maxLength": 120,
             "minLength": 1,
@@ -32,6 +40,7 @@
           }
         },
         "required": [
+          "decision",
           "reason_code"
         ],
         "title": "ApproveContentRevisionRequest",
@@ -416,6 +425,18 @@
             "title": "Status",
             "type": "string"
           },
+          "supersedes_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Revision Id"
+          },
           "validated_at": {
             "anyOf": [
               {
@@ -451,6 +472,7 @@
           "rights_ref",
           "pinned_revision_refs",
           "created_by_actor_id",
+          "supersedes_revision_id",
           "approved_by_actor_id",
           "created_at",
           "validated_at",

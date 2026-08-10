@@ -88,6 +88,7 @@ CREATE TABLE content.content_approval_decisions (
     approval_decision_id uuid PRIMARY KEY, content_revision_id uuid NOT NULL REFERENCES content.content_revisions(content_revision_id) ON DELETE RESTRICT,
     author_id uuid NOT NULL, reviewer_id uuid NOT NULL, command_id uuid, decision varchar(16) NOT NULL, reason_code varchar(120), decided_at timestamptz NOT NULL,
     CONSTRAINT ck_content_approval_distinct CHECK (decision IN ('approved','rejected') AND author_id <> reviewer_id),
+    CONSTRAINT uq_content_approval_decision_revision UNIQUE (content_revision_id),
     CONSTRAINT ck_content_approval_uuid7 CHECK (
         content.is_uuid7(approval_decision_id) AND content.is_uuid7(content_revision_id)
         AND content.is_uuid7(author_id) AND content.is_uuid7(reviewer_id)
@@ -194,7 +195,6 @@ BEGIN
     expected_event := CASE NEW.command_type
         WHEN 'CreateContentDraft' THEN 'content_draft_created'
         WHEN 'ReviseContentDraft' THEN 'content_draft_revised'
-        WHEN 'ApproveContentRevision' THEN 'content_approved'
         WHEN 'PublishContentRevision' THEN 'content_published'
         WHEN 'RetireContentRevision' THEN 'content_retired'
         ELSE NULL
@@ -205,6 +205,9 @@ BEGIN
       AND (event_type = expected_event OR (
           NEW.command_type = 'ValidateContentRevision'
           AND event_type IN ('content_validated','content_validation_failed')
+      ) OR (
+          NEW.command_type = 'ApproveContentRevision'
+          AND event_type IN ('content_approved','content_rejected')
       ));
     SELECT count(*) INTO outbox_count
     FROM platform.outbox_messages AS outbox
@@ -318,6 +321,15 @@ BEGIN
               AND reviewer_id = NEW.approved_by_actor_id
         )
     ) THEN RAISE EXCEPTION 'self approval forbidden or decision missing' USING ERRCODE = '23514'; END IF;
+    IF OLD.status = 'validated' AND NEW.status = 'rejected' AND (
+        NEW.approved_by_actor_id IS NOT NULL OR NEW.approved_at IS NOT NULL
+        OR NEW.retired_at IS NULL OR NOT EXISTS (
+            SELECT 1 FROM content.content_approval_decisions
+            WHERE content_revision_id = NEW.content_revision_id AND decision = 'rejected'
+              AND author_id = NEW.created_by_actor_id
+              AND reviewer_id <> NEW.created_by_actor_id
+        )
+    ) THEN RAISE EXCEPTION 'rejected revision requires decision' USING ERRCODE = '23514'; END IF;
     IF OLD.status = 'approved' AND NEW.status = 'published' AND NOT EXISTS (
         SELECT 1 FROM content.publication_manifests
         WHERE content_revision_id = NEW.content_revision_id AND content_id = NEW.content_id

@@ -122,6 +122,24 @@
     {"validation_status": "failed", "resulting_revision_status": "draft"},
     {"validation_status": "human_required", "resulting_revision_status": "draft"}
   ],
+  "review_decisions": [
+    {
+      "decision_id": "019fe005-0000-7000-800c-000000000001",
+      "content_revision_id": "019fe005-0000-7000-8002-000000000002",
+      "author_id": "019fe005-0000-7000-8000-000000000001",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003",
+      "decision": "rejected",
+      "reason_code": "reviewed.correction_required"
+    },
+    {
+      "decision_id": "019fe005-0000-7000-800c-000000000002",
+      "content_revision_id": "019fe005-0000-7000-8002-000000000004",
+      "author_id": "019fe005-0000-7000-8000-000000000001",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003",
+      "decision": "approved",
+      "reason_code": "reviewed.complete"
+    }
+  ],
   "negative_oracles": [
     {"case": "same_actor_approval", "expected_error": "self_approval_forbidden"},
     {"case": "stale_expected_version", "expected_error": "version_conflict"},

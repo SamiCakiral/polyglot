@@ -125,6 +125,7 @@ async def _approve(service, result, *, key: str, actor_id: UUID | None = None):
             actor=_actor(actor_id or IDS["reviewer"], "reviewer"),
             revision_id=result.revision.content_revision_id,
             expected_version=result.version,
+            decision="approved",
             reason_code="reviewed.complete",
             idempotency_key=key,
             context=_context(),
@@ -676,11 +677,37 @@ async def test_empty_database_acceptance_flow_preserves_first_published_revision
             context=_context(),
         )
     )
+    rejected = await _decide(
+        service,
+        await _validate(service, corrected, key="accept-validate-green"),
+        key="accept-reject",
+        decision="rejected",
+    )
+    approved_correction = await service.revise_draft(
+        ReviseContentDraft(
+            actor=_actor(IDS["author"], "author"),
+            revision_id=rejected.revision.content_revision_id,
+            payload={
+                "schema_version": 1,
+                "text": "Versione approvata dopo revisione.",
+            },
+            provenance_id=IDS["provenance"],
+            rights_ref="rights:fixture:content",
+            pinned_revision_refs=(_reference(),),
+            expected_version=rejected.version,
+            idempotency_key="accept-revise-after-rejection",
+            context=_context(),
+        )
+    )
     first = await _publish(
         service,
         await _approve(
             service,
-            await _validate(service, corrected, key="accept-validate-green"),
+            await _validate(
+                service,
+                approved_correction,
+                key="accept-validate-after-rejection",
+            ),
             key="accept-approve-first",
         ),
         key="accept-publish-first",
@@ -742,9 +769,10 @@ async def test_empty_database_acceptance_flow_preserves_first_published_revision
 
     assert retired.revision.status == "retired"
     assert historical.status == "superseded"
-    assert historical.payload["text"] == "Versione corretta."
+    assert historical.payload["text"] == "Versione approvata dopo revisione."
     assert {revision.status for revision in history.items} >= {
         "draft",
+        "rejected",
         "superseded",
         "retired",
     }

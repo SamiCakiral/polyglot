@@ -224,7 +224,9 @@ class ContentRevision:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         return self._with(status=ContentRevisionStatus.ABANDONED, retired_at=now)
 
-    def reject(self, *, now: datetime) -> ContentRevision:
+    def reject(self, *, actor_id: UUID, now: datetime) -> ContentRevision:
+        if actor_id == self.created_by_actor_id:
+            raise DomainError(ErrorCode.SELF_APPROVAL_FORBIDDEN)
         if self.status is not ContentRevisionStatus.VALIDATED:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         return self._with(status=ContentRevisionStatus.REJECTED, retired_at=now)

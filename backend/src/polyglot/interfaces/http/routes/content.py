@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Header, Query, Request, Security, status
@@ -77,6 +77,7 @@ class ValidateContentRevisionRequest(ClosedModel):
 
 
 class ApproveContentRevisionRequest(ClosedModel):
+    decision: Literal["approved", "rejected"]
     reason_code: str = Field(min_length=1, max_length=120)
 
 
@@ -97,6 +98,7 @@ class ContentRevisionResponse(ClosedModel):
     rights_ref: str
     pinned_revision_refs: tuple[dict[str, JsonValue], ...]
     created_by_actor_id: UUID
+    supersedes_revision_id: UUID | None
     approved_by_actor_id: UUID | None
     created_at: datetime
     validated_at: datetime | None
@@ -336,6 +338,7 @@ def content_router(
                 actor=actor,
                 revision_id=draft_id,
                 expected_version=_expected_version(if_match),
+                decision=payload.decision,
                 reason_code=payload.reason_code,
                 idempotency_key=idempotency_key,
                 context=_context(request),
