@@ -13,7 +13,6 @@ from polyglot.modules.language_profiles.diagnostic import (
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 
-
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 PROFILE_ID = UUID("019fe903-0000-7000-8000-000000000001")
 RUN_ID = UUID("019fe903-0000-7000-8000-000000000002")
@@ -33,7 +32,10 @@ def response(
         confidence=confidence,
         evaluable=evaluable,
         difficulty=difficulty,
-        item_revision_id=UUID(f"019fe903-0000-7000-8000-0000000000{difficulty:02d}"),
+        item_revision_id=UUID(
+            "019fe903-0000-7000-8000-"
+            f"{((tuple(DiagnosticTarget).index(target) + 1) * 10 + difficulty):012d}"
+        ),
     )
 
 
