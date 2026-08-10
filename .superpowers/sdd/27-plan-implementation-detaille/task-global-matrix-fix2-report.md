@@ -32,6 +32,8 @@ the key pattern, but the raw source scanner saw a quoted fragment starting at
   value at runtime, and requires that assignment to remain detected.
 - GREEN `c012c87` implements the precise classification and clarifies the old
   contract fixture data.
+- RED `4f14828` and GREEN `d377c98` cover the proof report itself after the
+  final audit found a wrapped synthetic example in commit `338471e`.
 
 ## Fix
 
@@ -50,8 +52,7 @@ detecting:
 - standalone and quoted key values;
 - values assigned to a sensitive variable name;
 - values following an underscore;
-- a real value shaped like `sk-W05-rejection-report` outside the exact split
-  source context;
+- a report-shaped synthetic value outside the exact split source context;
 - AWS, GitHub, Google, OpenAI and private-key families in historical content.
 
 The current contract test now assembles its documentary path from safe segments
@@ -59,8 +60,10 @@ and no longer stores the detectable fragment in a tracked source file.
 
 ## Clean-checkout proof
 
-Checkout: `/tmp/polyglot-global-matrix-fix2-green`, HEAD `c012c87`, clean Git
-status, locked Python environment installed under `/tmp`.
+The first clean checkout used `/tmp/polyglot-global-matrix-fix2-green` at
+`c012c87`. A second isolated checkout containing the committed proof report was
+then scanned with the final scanner through `d377c98`; worktree and complete
+history were clean.
 
 ```text
 python -m polyglot.platform.security_checks --repository-root ..
