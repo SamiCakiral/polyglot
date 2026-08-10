@@ -398,6 +398,100 @@ async def test_expired_diagnostic_is_persisted_and_does_not_block_a_new_run(
     assert old_status == "expired"
 
 
+async def test_returning_learner_before_twenty_four_hours_resumes_the_same_run(
+    foundation_services: tuple[IdentityApplicationService, Any, MutableClock],
+) -> None:
+    async with await _client(foundation_services) as client:
+        csrf = await _login(client)
+        created = await client.post(
+            "/api/v1/language-profiles",
+            headers=_headers(csrf, "create-early-return-profile"),
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        profile_id = created.json()["profile_id"]
+        payload = {
+            "policy_revision_id": POLICY,
+            "pack_revision_id": str(CATALOGUE.definition.pack_revision_id),
+            "seed": "P-RETOUR",
+        }
+        first = await client.post(
+            f"/api/v1/language-profiles/{profile_id}/diagnostics",
+            headers=_headers(csrf, "start-early-return-1", 1),
+            json=payload,
+        )
+        second = await client.post(
+            f"/api/v1/language-profiles/{profile_id}/diagnostics",
+            headers=_headers(csrf, "start-early-return-2", 1),
+            json=payload,
+        )
+
+    assert first.status_code == 201
+    assert second.status_code == 201, second.text
+    assert second.json() == first.json()
+    assert second.headers["etag"] == first.headers["etag"] == '"1"'
+    engine = create_async_engine(migration_database_url_from_environment())
+    async with engine.connect() as connection:
+        run_count = await connection.scalar(
+            text(
+                "SELECT count(*) FROM language_profiles.diagnostic_runs "
+                "WHERE profile_id = :profile_id"
+            ),
+            {"profile_id": UUID(profile_id)},
+        )
+    await engine.dispose()
+    assert run_count == 1
+
+
+async def test_late_diagnostic_submission_persists_expired_before_returning_error(
+    foundation_services: tuple[IdentityApplicationService, Any, MutableClock],
+) -> None:
+    _, _, clock = foundation_services
+    async with await _client(foundation_services) as client:
+        csrf = await _login(client)
+        created = await client.post(
+            "/api/v1/language-profiles",
+            headers=_headers(csrf, "create-late-response-profile"),
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        started = await client.post(
+            f"/api/v1/language-profiles/{created.json()['profile_id']}/diagnostics",
+            headers=_headers(csrf, "start-late-response", 1),
+            json={
+                "policy_revision_id": POLICY,
+                "pack_revision_id": str(CATALOGUE.definition.pack_revision_id),
+                "seed": "P-RETOUR",
+            },
+        )
+        clock.advance(timedelta(hours=24))
+        item = CATALOGUE.definition.blocks[0].items[0]
+        late = await client.post(
+            f"/api/v1/diagnostics/{started.json()['diagnostic_run_id']}/responses",
+            headers=_headers(csrf, "late-diagnostic-response", 1),
+            json={
+                "item_revision_id": str(item.item_revision_id),
+                "ordinal": 1,
+                "answer": {"value": item.checker_values[0]},
+            },
+        )
+
+    assert late.status_code == 409
+    assert late.json()["code"] == "run_expired"
+    engine = create_async_engine(migration_database_url_from_environment())
+    async with engine.connect() as connection:
+        status_and_version = (
+            await connection.execute(
+                text(
+                    "SELECT status, version FROM language_profiles.diagnostic_runs "
+                    "WHERE diagnostic_run_id = :run_id"
+                ),
+                {"run_id": UUID(started.json()["diagnostic_run_id"])},
+            )
+        ).one()
+    await engine.dispose()
+    assert status_and_version.status == "expired"
+    assert status_and_version.version == 2
+
+
 async def test_diagnostic_start_rejects_pack_without_published_foundations(
     foundation_services: tuple[IdentityApplicationService, Any, MutableClock],
 ) -> None:
