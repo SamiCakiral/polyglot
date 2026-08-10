@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from uuid import UUID
 
-
 _PLAN_ROLES = frozenset(
     {"new", "due", "debt", "target", "support", "distractor", "rescue"}
 )
