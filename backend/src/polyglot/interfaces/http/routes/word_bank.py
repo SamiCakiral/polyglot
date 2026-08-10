@@ -1003,11 +1003,98 @@ class SqlWordBankService:
         return annotation_id, version
 
     async def get_word_bank(self, *, account_id: UUID, profile_id: UUID, limit: int, cursor: str | None, reference_set_code: str | None) -> WordBankOverviewResponse:
-        if reference_set_code is not None:
-            raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
             await self._assert_owner(session, account_id, profile_id)
+            if reference_set_code is not None:
+                reference = (
+                    await session.execute(
+                        text(
+                            "SELECT reference_set_id,revision FROM lexicon.lexical_reference_sets "
+                            "WHERE code=:code ORDER BY created_at DESC,reference_set_id DESC LIMIT 1"
+                        ),
+                        {"code": reference_set_code},
+                    )
+                ).one_or_none()
+                if reference is None:
+                    raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+                rows = (
+                    await session.execute(
+                        text(
+                            "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
+                            "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
+                            "ORDER BY mention_id,created_at DESC,resolution_id DESC), observed AS ("
+                            "SELECT latest.sense_id,count(*) AS encounters,min(e.occurred_at) AS first_at,"
+                            "max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m "
+                            "ON m.profile_id=:profile AND m.mention_id=latest.mention_id "
+                            "JOIN lexicon.lexical_encounters e ON e.profile_id=:profile "
+                            "AND e.encounter_id=m.encounter_id GROUP BY latest.sense_id) "
+                            "SELECT entry.sense_id,entry.label,entry.ordinal,observed.encounters,"
+                            "observed.first_at,observed.last_at FROM lexicon.lexical_reference_entries entry "
+                            "LEFT JOIN observed ON observed.sense_id=entry.sense_id "
+                            "WHERE entry.reference_set_id=:reference ORDER BY entry.ordinal,entry.sense_id"
+                        ),
+                        {"profile": profile_id, "reference": reference.reference_set_id},
+                    )
+                ).mappings().all()
+                source = tuple(
+                    WordBankItem(
+                        UUID(str(row["sense_id"])),
+                        str(row["label"]),
+                        int(row["ordinal"]),
+                        (f"reference:{reference_set_code}:{reference.revision}",),
+                    )
+                    for row in rows
+                )
+                page = paginate_word_bank(
+                    source,
+                    limit=limit,
+                    cursor=cursor,
+                    reference_revision=str(reference.revision),
+                )
+                by_id = {UUID(str(row["sense_id"])): row for row in rows}
+                items = tuple(
+                    WordBankItemResponse(
+                        sense_id=item.sense_id,
+                        label=item.label,
+                        encounter_count=int(by_id[item.sense_id]["encounters"] or 0),
+                        first_encountered_at=(
+                            by_id[item.sense_id]["first_at"].isoformat()
+                            if by_id[item.sense_id]["first_at"] is not None
+                            else None
+                        ),
+                        last_encountered_at=(
+                            by_id[item.sense_id]["last_at"].isoformat()
+                            if by_id[item.sense_id]["last_at"] is not None
+                            else None
+                        ),
+                        analysis_state=(
+                            "resolved"
+                            if by_id[item.sense_id]["encounters"] is not None
+                            else "unobserved"
+                        ),
+                        familiarity_declaration=None,
+                        learning_preference="normal",
+                        reasons=(
+                            ("encountered",)
+                            if by_id[item.sense_id]["encounters"] is not None
+                            else ("absence_of_evidence",)
+                        ),
+                    )
+                    for item in page.items
+                )
+                coverage = sum(row["encounters"] is not None for row in rows)
+                unresolved = int(await session.scalar(text("SELECT count(*) FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r WHERE r.profile_id=:profile AND r.mention_id=m.mention_id)"), {"profile": profile_id}) or 0)
+                return WordBankOverviewResponse(
+                    items=items,
+                    next_cursor=page.next_cursor,
+                    encountered_sense_count=coverage,
+                    unresolved_mention_count=unresolved,
+                    reference_set_code=reference_set_code,
+                    reference_revision=str(reference.revision),
+                    reference_coverage_count=coverage,
+                    reference_total_count=len(rows),
+                )
             rows = (
                 await session.execute(text("WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id FROM lexicon.mention_resolutions WHERE profile_id=:profile ORDER BY mention_id,created_at DESC,resolution_id DESC) SELECT latest.sense_id,min(e.exact_surface) AS label,count(*) AS encounters,min(e.occurred_at) AS first_at,max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m ON m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e ON e.encounter_id=m.encounter_id GROUP BY latest.sense_id ORDER BY min(e.exact_surface),latest.sense_id"), {"profile": profile_id})
             ).mappings().all()

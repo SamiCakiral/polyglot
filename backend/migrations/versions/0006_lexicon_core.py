@@ -40,6 +40,32 @@ AS $function$
     )
 $function$;
 
+CREATE TABLE lexicon.lexical_reference_sets (
+    reference_set_id uuid PRIMARY KEY,
+    code varchar(120) NOT NULL,
+    revision varchar(120) NOT NULL,
+    label text NOT NULL,
+    created_at timestamptz NOT NULL,
+    CONSTRAINT ck_reference_set_uuid7 CHECK (lexicon.is_uuid7(reference_set_id)),
+    CONSTRAINT uq_reference_set_revision UNIQUE (code, revision)
+);
+
+CREATE TABLE lexicon.lexical_reference_entries (
+    reference_set_id uuid NOT NULL REFERENCES lexicon.lexical_reference_sets(reference_set_id) ON DELETE RESTRICT,
+    sense_id uuid NOT NULL,
+    ordinal integer NOT NULL,
+    label text NOT NULL,
+    definition text NOT NULL,
+    PRIMARY KEY (reference_set_id, sense_id),
+    CONSTRAINT uq_reference_entry_ordinal UNIQUE (reference_set_id, ordinal),
+    CONSTRAINT ck_reference_entry_shape CHECK (
+      lexicon.is_uuid7(reference_set_id) AND lexicon.is_uuid7(sense_id)
+      AND ordinal >= 1 AND length(label) BETWEEN 1 AND 500
+    )
+);
+CREATE INDEX ix_lexicon_reference_search
+  ON lexicon.lexical_reference_entries(reference_set_id, label, sense_id);
+
 CREATE TABLE lexicon.private_lexical_units (
     lexical_unit_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
