@@ -1,7 +1,9 @@
 from typing import Protocol
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from polyglot.modules.catalogue.core.domain import PublishedFoundationCatalogue
 from polyglot.modules.catalogue.core.persistence import (
     CatalogueTarget,
     LanguagePackSummary,
@@ -12,6 +14,12 @@ from polyglot.modules.catalogue.core.persistence import (
 
 
 class CatalogueReader(Protocol):
+    async def read_foundations(
+        self,
+        *,
+        pack_revision_id: UUID,
+    ) -> PublishedFoundationCatalogue | None: ...
+
     async def list_language_packs(
         self,
         *,
@@ -40,6 +48,16 @@ class CatalogueReader(Protocol):
 class CatalogueApplicationService:
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
+
+    async def read_foundations(
+        self,
+        *,
+        pack_revision_id: UUID,
+    ) -> PublishedFoundationCatalogue | None:
+        async with self._session_factory() as session:
+            return await SqlCatalogueRepository(session).read_foundations(
+                pack_revision_id=pack_revision_id,
+            )
 
     async def list_language_packs(
         self,

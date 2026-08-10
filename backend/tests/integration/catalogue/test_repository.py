@@ -58,13 +58,10 @@ async def test_lexicon_search_preserves_diacritics_analyses_senses_and_multiword
     )
 
     assert [item.surface for item in unaccented.items] == ["puo"]
-    assert unaccented.items[0].analysis.morphological_features == {
-        "accepted_reference": False
-    }
+    assert unaccented.items[0].analysis.morphological_features == {"accepted_reference": False}
     assert [item.surface for item in accented.items] == ["può"]
     assert (
-        accented.items[0].analysis.form_analysis_id
-        != unaccented.items[0].analysis.form_analysis_id
+        accented.items[0].analysis.form_analysis_id != unaccented.items[0].analysis.form_analysis_id
     )
     assert [sense.sense_code for sense in polysemous.items[0].senses] == ["floor", "slowly"]
     assert multiword.items[0].analysis.unit_type == "multiword_expression"
@@ -164,11 +161,15 @@ async def test_repository_reads_only_the_complete_published_foundation_aggregate
 
     await seed_catalogue(migration_session, include_foundations=True)
     published = await reader(pack_revision_id=IDS["pack_revision"])
-    missing = await reader(
-        pack_revision_id=UUID("019fe900-5000-7000-8fff-000000000001")
-    )
+    missing = await reader(pack_revision_id=UUID("019fe900-5000-7000-8fff-000000000001"))
 
     assert published is not None
-    assert [block.block_code for block in published.definition.blocks] == ["F1", "F2", "F3", "F4", "F5"]
+    assert [block.block_code for block in published.definition.blocks] == [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+    ]
     assert published.definition.gate.gate_code == "FOUNDATIONS_IT_V0"
     assert missing is None

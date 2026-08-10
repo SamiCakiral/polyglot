@@ -216,9 +216,7 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
                 if block_number == 2 and item_number == 2
                 else checker_kind.EXACT_CHOICE
             ),
-            checker_values=(
-                () if block_number == 2 and item_number == 2 else ("accepted",)
-            ),
+            checker_values=(() if block_number == 2 and item_number == 2 else ("accepted",)),
             modalities=("reading",),
             status=ContentRevisionStatus.PUBLISHED,
             checksum="a" * 64,
@@ -231,9 +229,7 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
             pack_revision_id=PACK_REVISION_ID,
             block_code=f"F{block_number}",
             ordinal=block_number,
-            component_type=(
-                "script_perception" if block_number == 1 else "interaction"
-            ),
+            component_type=("script_perception" if block_number == 1 else "interaction"),
             prerequisite_refs=(),
             items=(item(block_number, 1), item(block_number, 2)),
             modalities=("reading",),
@@ -293,8 +289,20 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
     assert aggregate.definition.gate.minimum_distinct_sessions == 2
     assert aggregate.definition.gate.delayed_control_hours == 24
 
+    definition_values = {
+        "foundation_id": definition.foundation_id,
+        "foundation_revision_id": definition.foundation_revision_id,
+        "pack_revision_id": definition.pack_revision_id,
+        "foundation_code": definition.foundation_code,
+        "revision_no": definition.revision_no,
+        "blocks": blocks,
+        "gate": gate,
+        "status": definition.status,
+        "checksum": definition.checksum,
+    }
+
     with pytest.raises(DomainError) as incomplete:
-        definition_type(**{**definition.as_dict(), "blocks": blocks[:-1]})
+        definition_type(**{**definition_values, "blocks": blocks[:-1]})
     assert incomplete.value.code is ErrorCode.VALIDATION_FAILED
 
     with pytest.raises(DomainError) as missing_checker:
@@ -309,7 +317,7 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
     with pytest.raises(DomainError) as absent_target:
         definition_type(
             **{
-                **definition.as_dict(),
+                **definition_values,
                 "gate": gate_type(
                     **{
                         **gate.as_dict(),
@@ -321,10 +329,29 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
     assert absent_target.value.code is ErrorCode.REFERENCE_NOT_FOUND
 
     with pytest.raises(DomainError) as duplicate_ordinal:
+        duplicate = blocks[1]
         definition_type(
             **{
-                **definition.as_dict(),
-                "blocks": (blocks[0], block_type(**{**blocks[1].as_dict(), "ordinal": 1}), *blocks[2:]),
+                **definition_values,
+                "blocks": (
+                    blocks[0],
+                    block_type(
+                        block_revision_id=duplicate.block_revision_id,
+                        foundation_revision_id=duplicate.foundation_revision_id,
+                        pack_revision_id=duplicate.pack_revision_id,
+                        block_code=duplicate.block_code,
+                        ordinal=1,
+                        component_type=duplicate.component_type,
+                        prerequisite_refs=duplicate.prerequisite_refs,
+                        items=duplicate.items,
+                        modalities=duplicate.modalities,
+                        backend_criteria=duplicate.backend_criteria,
+                        waiver_policy_ref=duplicate.waiver_policy_ref,
+                        status=duplicate.status,
+                        checksum=duplicate.checksum,
+                    ),
+                    *blocks[2:],
+                ),
             }
         )
     assert duplicate_ordinal.value.code is ErrorCode.VALIDATION_FAILED

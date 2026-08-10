@@ -368,6 +368,128 @@
       "provenance_id": "019b0000-0000-7000-8000-000000000001"
     }
   ],
+  "foundations": {
+    "foundation_id": "019b0000-0000-7000-8000-000000000900",
+    "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+    "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+    "foundation_code": "FOUNDATIONS_IT_V0",
+    "revision_no": 1,
+    "status": "published",
+    "checksum": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "blocks": [
+      {
+        "block_revision_id": "019b0000-0000-7000-8000-000000000911",
+        "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+        "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+        "block_code": "F1",
+        "ordinal": 1,
+        "component_type": "script_perception",
+        "prerequisite_refs": [],
+        "modalities": ["listening", "reading"],
+        "backend_criteria": ["deterministic"],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
+        "status": "published",
+        "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "items": [
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000921", "block_revision_id": "019b0000-0000-7000-8000-000000000911", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F1-01", "ordinal": 1, "target_refs": ["IT-PHON-001", "IT-PHON-003"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["c_g_contrast"], "modalities": ["listening"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000922", "block_revision_id": "019b0000-0000-7000-8000-000000000911", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F1-02", "ordinal": 2, "target_refs": ["IT-PHON-001", "IT-PHON-003"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["chi_gli"], "modalities": ["reading"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}
+        ]
+      },
+      {
+        "block_revision_id": "019b0000-0000-7000-8000-000000000912",
+        "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+        "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+        "block_code": "F2",
+        "ordinal": 2,
+        "component_type": "perception_production",
+        "prerequisite_refs": ["IT-PHON-001"],
+        "modalities": ["listening", "speaking"],
+        "backend_criteria": ["deterministic"],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
+        "status": "published",
+        "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "items": [
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000923", "block_revision_id": "019b0000-0000-7000-8000-000000000912", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F2-01", "ordinal": 1, "target_refs": ["IT-PHON-002"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["stress_marked"], "modalities": ["listening"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000924", "block_revision_id": "019b0000-0000-7000-8000-000000000912", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F2-02", "ordinal": 2, "target_refs": ["IT-PHON-002", "IT-PHON-004"], "response_kind": "raw", "checker_kind": "not_evaluable", "checker_values": [], "modalities": ["speaking"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}
+        ]
+      },
+      {
+        "block_revision_id": "019b0000-0000-7000-8000-000000000913",
+        "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+        "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+        "block_code": "F3",
+        "ordinal": 3,
+        "component_type": "interaction",
+        "prerequisite_refs": [],
+        "modalities": ["reading", "speaking"],
+        "backend_criteria": ["deterministic"],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
+        "status": "published",
+        "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "items": [
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000925", "block_revision_id": "019b0000-0000-7000-8000-000000000913", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F3-01", "ordinal": 1, "target_refs": ["IT-PRAG-001", "IT-PRAG-002"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["formal_greeting"], "modalities": ["reading"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000926", "block_revision_id": "019b0000-0000-7000-8000-000000000913", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F3-02", "ordinal": 2, "target_refs": ["IT-PRAG-001", "IT-ID-001"], "response_kind": "raw", "checker_kind": "normalized_alternatives", "checker_values": ["buongiorno_sono_luca"], "modalities": ["writing"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}
+        ]
+      },
+      {
+        "block_revision_id": "019b0000-0000-7000-8000-000000000914",
+        "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+        "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+        "block_code": "F4",
+        "ordinal": 4,
+        "component_type": "production",
+        "prerequisite_refs": ["IT-ID-001"],
+        "modalities": ["reading", "writing"],
+        "backend_criteria": ["deterministic"],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
+        "status": "published",
+        "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "items": [
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000927", "block_revision_id": "019b0000-0000-7000-8000-000000000914", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F4-01", "ordinal": 1, "target_refs": ["IT-GRAM-002", "IT-GRAM-003", "IT-GRAM-007", "IT-GRAM-027"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["ci_sono"], "modalities": ["reading"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000928", "block_revision_id": "019b0000-0000-7000-8000-000000000914", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F4-02", "ordinal": 2, "target_refs": ["IT-ID-001", "IT-GRAM-027"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["sono"], "modalities": ["writing"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}
+        ]
+      },
+      {
+        "block_revision_id": "019b0000-0000-7000-8000-000000000915",
+        "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+        "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+        "block_code": "F5",
+        "ordinal": 5,
+        "component_type": "repair",
+        "prerequisite_refs": ["IT-POLITE-002"],
+        "modalities": ["reading", "writing"],
+        "backend_criteria": ["deterministic"],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
+        "status": "published",
+        "checksum": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "items": [
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000929", "block_revision_id": "019b0000-0000-7000-8000-000000000915", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F5-01", "ordinal": 1, "target_refs": ["IT-POLITE-002"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["puo_ripetere"], "modalities": ["writing"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000930", "block_revision_id": "019b0000-0000-7000-8000-000000000915", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F5-02", "ordinal": 2, "target_refs": ["IT-REPAIR-001"], "response_kind": "raw", "checker_kind": "normalized_alternatives", "checker_values": ["non_capisco_puo_ripetere"], "modalities": ["writing"], "status": "published", "checksum": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}
+        ]
+      }
+    ],
+    "gate": {
+      "gate_revision_id": "019b0000-0000-7000-8000-000000000940",
+      "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+      "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+      "gate_code": "FOUNDATIONS_IT_V0",
+      "blocking_target_refs": ["IT-PHON-001", "IT-PHON-003", "IT-PHON-002", "IT-PRAG-001", "IT-PRAG-002", "IT-ID-001", "IT-GRAM-002", "IT-GRAM-003", "IT-GRAM-007", "IT-GRAM-027", "IT-POLITE-002", "IT-REPAIR-001"],
+      "blocking_facet_refs": ["grapheme_sound", "controlled_reading", "survival_exchange"],
+      "coverage_threshold": 0.8,
+      "confidence_threshold": 0.6,
+      "minimum_distinct_sessions": 2,
+      "delayed_control_hours": 24,
+      "grapheme_sound_minimum": 8,
+      "grapheme_sound_total": 10,
+      "targeted_reading_minimum": 8,
+      "targeted_reading_total": 10,
+      "survival_exchange_minimum": 4,
+      "survival_exchange_total": 5,
+      "oral_policy": "not_evaluable_non_blocking",
+      "status": "published",
+      "checksum": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
   "lexical_units": [
     {
       "unit_revision_id": "019b0000-0000-7000-8000-000000000501",

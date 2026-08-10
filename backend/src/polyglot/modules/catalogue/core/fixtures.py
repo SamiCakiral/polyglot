@@ -12,6 +12,7 @@ from polyglot.modules.catalogue.core.domain import (
     CommunicativeFunctionRevision,
     ContentRevisionStatus,
     FormAnalysis,
+    FoundationCheckerKind,
     GrammarPattern,
     GrammarStructureRevision,
     LanguagePack,
@@ -21,6 +22,11 @@ from polyglot.modules.catalogue.core.domain import (
     LexicalUnitRevision,
     LexicalUnitType,
     PrerequisiteEdgeType,
+    PublishedFoundationBlock,
+    PublishedFoundationCatalogue,
+    PublishedFoundationDefinition,
+    PublishedFoundationGate,
+    PublishedFoundationItem,
     SkillPrerequisiteEdge,
     SkillRevision,
 )
@@ -179,6 +185,71 @@ class _LexicalUnitData(_StrictModel):
     provenance_id: UUID
 
 
+class _FoundationItemData(_StrictModel):
+    item_revision_id: UUID
+    block_revision_id: UUID
+    pack_revision_id: UUID
+    item_code: str
+    ordinal: int
+    target_refs: tuple[str, ...]
+    response_kind: Literal["raw"]
+    checker_kind: FoundationCheckerKind
+    checker_values: tuple[str, ...]
+    modalities: tuple[str, ...]
+    status: ContentRevisionStatus
+    checksum: str
+
+
+class _FoundationBlockData(_StrictModel):
+    block_revision_id: UUID
+    foundation_revision_id: UUID
+    pack_revision_id: UUID
+    block_code: str
+    ordinal: int
+    component_type: str
+    prerequisite_refs: tuple[str, ...]
+    items: tuple[_FoundationItemData, ...]
+    modalities: tuple[str, ...]
+    backend_criteria: tuple[str, ...]
+    waiver_policy_ref: str
+    status: ContentRevisionStatus
+    checksum: str
+
+
+class _FoundationGateData(_StrictModel):
+    gate_revision_id: UUID
+    foundation_revision_id: UUID
+    pack_revision_id: UUID
+    gate_code: str
+    blocking_target_refs: tuple[str, ...]
+    blocking_facet_refs: tuple[str, ...]
+    coverage_threshold: float
+    confidence_threshold: float
+    minimum_distinct_sessions: int
+    delayed_control_hours: int
+    grapheme_sound_minimum: int
+    grapheme_sound_total: int
+    targeted_reading_minimum: int
+    targeted_reading_total: int
+    survival_exchange_minimum: int
+    survival_exchange_total: int
+    oral_policy: Literal["not_evaluable_non_blocking"]
+    status: ContentRevisionStatus
+    checksum: str
+
+
+class _FoundationData(_StrictModel):
+    foundation_id: UUID
+    foundation_revision_id: UUID
+    pack_revision_id: UUID
+    foundation_code: str
+    revision_no: int
+    blocks: tuple[_FoundationBlockData, ...]
+    gate: _FoundationGateData
+    status: ContentRevisionStatus
+    checksum: str
+
+
 class _CataloguePayload(_StrictModel):
     schema_version: Literal[1]
     fixture_id: str
@@ -190,6 +261,7 @@ class _CataloguePayload(_StrictModel):
     skills: tuple[_SkillData, ...]
     prerequisites: tuple[_EdgeData, ...]
     lexical_units: tuple[_LexicalUnitData, ...]
+    foundations: _FoundationData
 
 
 class _NegativeGraphPayload(_StrictModel):
@@ -230,6 +302,7 @@ class CatalogueFixture:
     lexical_units: tuple[LexicalUnitRevision, ...]
     skills: tuple[SkillRevision, ...]
     skill_graph: SkillGraph
+    foundations: PublishedFoundationCatalogue
 
     @property
     def pack_code(self) -> str:
@@ -294,9 +367,7 @@ def verify_fixture_manifest(root: Path) -> FixtureManifestVerification:
     if manifest.kind != "positive" or manifest.expected_status != "accepted":
         raise _validation_error("offline verification requires a positive fixture")
     try:
-        metadata = _MetadataData.model_validate_json(
-            (root / "fixture-metadata.json").read_text()
-        )
+        metadata = _MetadataData.model_validate_json((root / "fixture-metadata.json").read_text())
     except (OSError, ValidationError) as error:
         raise _validation_error("invalid fixture metadata") from error
     if metadata.network_dependencies:
@@ -444,6 +515,77 @@ def _lexical_unit(data: _LexicalUnitData) -> LexicalUnitRevision:
     )
 
 
+def _foundations(data: _FoundationData) -> PublishedFoundationCatalogue:
+    blocks = tuple(
+        PublishedFoundationBlock(
+            block_revision_id=block.block_revision_id,
+            foundation_revision_id=block.foundation_revision_id,
+            pack_revision_id=block.pack_revision_id,
+            block_code=block.block_code,
+            ordinal=block.ordinal,
+            component_type=block.component_type,
+            prerequisite_refs=block.prerequisite_refs,
+            items=tuple(
+                PublishedFoundationItem(
+                    item_revision_id=item.item_revision_id,
+                    block_revision_id=item.block_revision_id,
+                    pack_revision_id=item.pack_revision_id,
+                    item_code=item.item_code,
+                    ordinal=item.ordinal,
+                    target_refs=item.target_refs,
+                    response_kind=item.response_kind,
+                    checker_kind=item.checker_kind,
+                    checker_values=item.checker_values,
+                    modalities=item.modalities,
+                    status=item.status,
+                    checksum=item.checksum,
+                )
+                for item in block.items
+            ),
+            modalities=block.modalities,
+            backend_criteria=block.backend_criteria,
+            waiver_policy_ref=block.waiver_policy_ref,
+            status=block.status,
+            checksum=block.checksum,
+        )
+        for block in data.blocks
+    )
+    gate = data.gate
+    return PublishedFoundationCatalogue(
+        definition=PublishedFoundationDefinition(
+            foundation_id=data.foundation_id,
+            foundation_revision_id=data.foundation_revision_id,
+            pack_revision_id=data.pack_revision_id,
+            foundation_code=data.foundation_code,
+            revision_no=data.revision_no,
+            blocks=blocks,
+            gate=PublishedFoundationGate(
+                gate_revision_id=gate.gate_revision_id,
+                foundation_revision_id=gate.foundation_revision_id,
+                pack_revision_id=gate.pack_revision_id,
+                gate_code=gate.gate_code,
+                blocking_target_refs=gate.blocking_target_refs,
+                blocking_facet_refs=gate.blocking_facet_refs,
+                coverage_threshold=gate.coverage_threshold,
+                confidence_threshold=gate.confidence_threshold,
+                minimum_distinct_sessions=gate.minimum_distinct_sessions,
+                delayed_control_hours=gate.delayed_control_hours,
+                grapheme_sound_minimum=gate.grapheme_sound_minimum,
+                grapheme_sound_total=gate.grapheme_sound_total,
+                targeted_reading_minimum=gate.targeted_reading_minimum,
+                targeted_reading_total=gate.targeted_reading_total,
+                survival_exchange_minimum=gate.survival_exchange_minimum,
+                survival_exchange_total=gate.survival_exchange_total,
+                oral_policy=gate.oral_policy,
+                status=gate.status,
+                checksum=gate.checksum,
+            ),
+            status=data.status,
+            checksum=data.checksum,
+        )
+    )
+
+
 def _validate_references(
     functions: tuple[CommunicativeFunctionRevision, ...],
     structures: tuple[GrammarStructureRevision, ...],
@@ -524,9 +666,7 @@ def _validate_references(
     ):
         raise _validation_error("canonical fixture nested senses must be published")
     if any(
-        component.lemma not in lemmas
-        for item in payload_units
-        for component in item.components
+        component.lemma not in lemmas for item in payload_units for component in item.components
     ):
         raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
     unpublished = (
@@ -621,6 +761,7 @@ def load_catalogue_fixture(root: Path) -> CatalogueFixture:
             skills,
             positive_payload.lexical_units,
         )
+        foundations = _foundations(positive_payload.foundations)
         return CatalogueFixture(
             fixture_id=positive_payload.fixture_id,
             pack=pack,
@@ -635,6 +776,7 @@ def load_catalogue_fixture(root: Path) -> CatalogueFixture:
             lexical_units=lexical_units,
             skills=skills,
             skill_graph=graph,
+            foundations=foundations,
         )
     except DomainError:
         raise

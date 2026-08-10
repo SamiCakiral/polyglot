@@ -19,12 +19,8 @@ from polyglot.platform.errors import DomainError, ErrorCode
 
 ROOT = Path(__file__).resolve().parents[4]
 FIXTURE = ROOT / "fixtures/canonical/FX-CATALOGUE-IT"
-MANIFEST_SCHEMA = json.loads(
-    (ROOT / "contracts/fixtures/manifest.schema.json").read_text()
-)
-REGISTERED_ERRORS = set(
-    json.loads((ROOT / "contracts/registry/errors.yaml").read_text())["errors"]
-)
+MANIFEST_SCHEMA = json.loads((ROOT / "contracts/fixtures/manifest.schema.json").read_text())
+REGISTERED_ERRORS = set(json.loads((ROOT / "contracts/registry/errors.yaml").read_text())["errors"])
 
 
 def test_manifests_use_the_real_w00_schema_and_verify_without_network(
@@ -169,9 +165,7 @@ def _fixture_with_payload(tmp_path: Path, mutate: object) -> Path:
         lambda payload: payload["lexical_units"][-1]["components"][0].update(
             {"unit_revision_id": "019b0000-0000-7000-8000-000000009999"}
         ),
-        lambda payload: payload["skills"][0].update(
-            {"skill_id": payload["skills"][1]["skill_id"]}
-        ),
+        lambda payload: payload["skills"][0].update({"skill_id": payload["skills"][1]["skill_id"]}),
     ),
 )
 def test_fixture_rejects_unresolved_refs_unpublished_nested_content_and_duplicate_ids(
@@ -187,7 +181,9 @@ def test_fixture_rejects_unresolved_refs_unpublished_nested_content_and_duplicat
 @pytest.mark.parametrize(
     "mutate",
     (
-        lambda payload: payload["foundations"].update({"blocks": payload["foundations"]["blocks"][:-1]}),
+        lambda payload: payload["foundations"].update(
+            {"blocks": payload["foundations"]["blocks"][:-1]}
+        ),
         lambda payload: payload["foundations"]["blocks"][0]["items"][0].update(
             {"checker_values": []}
         ),

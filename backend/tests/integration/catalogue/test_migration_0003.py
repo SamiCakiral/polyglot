@@ -201,6 +201,18 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
             "'catalogue.language_pack_revisions', 'INSERT')"
         )
     )
+    assert await migration_session.scalar(
+        text(
+            "SELECT has_table_privilege('polyglot_runtime', "
+            "'catalogue.foundation_definition_revisions', 'SELECT')"
+        )
+    )
+    assert not await migration_session.scalar(
+        text(
+            "SELECT has_table_privilege('polyglot_runtime', "
+            "'catalogue.foundation_definition_revisions', 'INSERT')"
+        )
+    )
 
 
 async def test_0003_restricts_incoherent_foundations_and_published_child_reparenting(
@@ -236,12 +248,26 @@ async def test_0003_restricts_incoherent_foundations_and_published_child_reparen
         )
     await migration_session.rollback()
 
+    with pytest.raises(DBAPIError, match="published revision is immutable"):
+        await migration_session.execute(
+            text(
+                "UPDATE catalogue.foundation_item_revisions "
+                "SET block_revision_id = :block WHERE item_revision_id = :item"
+            ),
+            {
+                "block": IDS["foundation_block_f2"],
+                "item": IDS["foundation_item_f1_01"],
+            },
+        )
+    await migration_session.rollback()
+
     with pytest.raises(DBAPIError):
         await migration_session.execute(
             text(
                 "INSERT INTO catalogue.foundation_item_revisions "
-                "(item_revision_id, block_revision_id, pack_revision_id, item_code, ordinal, "
-                "target_refs, response_kind, checker_kind, checker_values, modalities, status, checksum) "
+                "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
+                "ordinal, target_refs, response_kind, checker_kind, checker_values, "
+                "modalities, status, checksum) "
                 "VALUES ('019fe900-5000-7000-8075-000000000099', :block, :pack, "
                 "'ITF-F1-99', 3, ARRAY['IT-TARGET-F1-99'], 'raw', 'exact_choice', "
                 "ARRAY[]::varchar[], ARRAY['reading'], 'published', repeat('a', 64))"
@@ -531,8 +557,7 @@ async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_
 
     await migration_session.execute(
         text(
-            "UPDATE catalogue.lexical_units SET variety_id = :support "
-            "WHERE lexical_unit_id = :unit"
+            "UPDATE catalogue.lexical_units SET variety_id = :support WHERE lexical_unit_id = :unit"
         ),
         {"support": IDS["support_variety"], "unit": IDS["unit_piano"]},
     )

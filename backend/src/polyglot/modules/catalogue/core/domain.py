@@ -35,6 +35,13 @@ class LexicalUnitType(StrEnum):
     LEXICALIZED_CONSTRUCTION = "lexicalized_construction"
 
 
+class FoundationCheckerKind(StrEnum):
+    EXACT_CHOICE = "exact_choice"
+    EXACT_RECONSTRUCTION = "exact_reconstruction"
+    NORMALIZED_ALTERNATIVES = "normalized_alternatives"
+    NOT_EVALUABLE = "not_evaluable"
+
+
 _MODALITIES = frozenset({"reading", "listening", "writing", "speaking"})
 _OPERATIONS = frozenset(
     {
@@ -396,3 +403,219 @@ class LexicalUnitRevision:
         form_keys = {(form.surface, form.features) for form in self.forms}
         if len(form_keys) != len(self.forms):
             raise _invalid("form analyses must be unique per unit")
+
+
+def _require_published(status: ContentRevisionStatus, field: str) -> None:
+    if status is not ContentRevisionStatus.PUBLISHED:
+        raise _invalid(f"{field} must be published")
+
+
+def _require_checksum(value: str, field: str) -> None:
+    if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+        raise _invalid(f"{field} must be a lowercase SHA-256 checksum")
+
+
+def _require_threshold(value: int, total: int, field: str) -> None:
+    if total < 1 or value < 1 or value > total:
+        raise _invalid(f"{field} must be between one and its total")
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedFoundationItem:
+    item_revision_id: UUID
+    block_revision_id: UUID
+    pack_revision_id: UUID
+    item_code: str
+    ordinal: int
+    target_refs: tuple[str, ...]
+    response_kind: str
+    checker_kind: FoundationCheckerKind
+    checker_values: tuple[str, ...]
+    modalities: tuple[str, ...]
+    status: ContentRevisionStatus
+    checksum: str
+
+    def __post_init__(self) -> None:
+        for field in ("item_revision_id", "block_revision_id", "pack_revision_id"):
+            require_uuid7(getattr(self, field), field)
+        require_stable_code(self.item_code, "item_code")
+        if self.ordinal < 1:
+            raise _invalid("foundation item ordinal must be positive")
+        if not self.target_refs:
+            raise _invalid("foundation item requires targets")
+        for target_ref in self.target_refs:
+            require_stable_code(target_ref, "foundation item target_ref")
+        if self.response_kind != "raw":
+            raise _invalid("foundation items accept raw answers only")
+        if not self.modalities or any(item not in _MODALITIES for item in self.modalities):
+            raise _invalid("foundation item modalities are not canonical")
+        if self.checker_kind is FoundationCheckerKind.NOT_EVALUABLE:
+            if self.checker_values:
+                raise _invalid("not evaluable foundation items cannot declare checker values")
+        elif not self.checker_values:
+            raise _invalid("evaluable foundation items require a deterministic checker")
+        _require_published(self.status, "foundation item")
+        _require_checksum(self.checksum, "foundation item checksum")
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedFoundationBlock:
+    block_revision_id: UUID
+    foundation_revision_id: UUID
+    pack_revision_id: UUID
+    block_code: str
+    ordinal: int
+    component_type: str
+    prerequisite_refs: tuple[str, ...]
+    items: tuple[PublishedFoundationItem, ...]
+    modalities: tuple[str, ...]
+    backend_criteria: tuple[str, ...]
+    waiver_policy_ref: str
+    status: ContentRevisionStatus
+    checksum: str
+
+    def __post_init__(self) -> None:
+        for field in ("block_revision_id", "foundation_revision_id", "pack_revision_id"):
+            require_uuid7(getattr(self, field), field)
+        if fullmatch(r"F[1-5]", self.block_code) is None:
+            raise _invalid("foundation block code must be F1 through F5")
+        require_stable_code(self.component_type, "component_type")
+        require_stable_code(self.waiver_policy_ref, "waiver_policy_ref")
+        if self.ordinal < 1 or not self.items or not self.modalities or not self.backend_criteria:
+            raise _invalid("foundation block is incomplete")
+        if any(item not in _MODALITIES for item in self.modalities):
+            raise _invalid("foundation block modalities are not canonical")
+        if any(
+            item.block_revision_id != self.block_revision_id
+            or item.pack_revision_id != self.pack_revision_id
+            for item in self.items
+        ):
+            raise _invalid("foundation items must belong to their published block")
+        item_codes = {item.item_code for item in self.items}
+        ordinals = {item.ordinal for item in self.items}
+        if len(item_codes) != len(self.items) or len(ordinals) != len(self.items):
+            raise _invalid("foundation item codes and ordinals must be unique per block")
+        _require_published(self.status, "foundation block")
+        _require_checksum(self.checksum, "foundation block checksum")
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedFoundationGate:
+    gate_revision_id: UUID
+    foundation_revision_id: UUID
+    pack_revision_id: UUID
+    gate_code: str
+    blocking_target_refs: tuple[str, ...]
+    blocking_facet_refs: tuple[str, ...]
+    coverage_threshold: float
+    confidence_threshold: float
+    minimum_distinct_sessions: int
+    delayed_control_hours: int
+    grapheme_sound_minimum: int
+    grapheme_sound_total: int
+    targeted_reading_minimum: int
+    targeted_reading_total: int
+    survival_exchange_minimum: int
+    survival_exchange_total: int
+    oral_policy: str
+    status: ContentRevisionStatus
+    checksum: str
+
+    def __post_init__(self) -> None:
+        for field in ("gate_revision_id", "foundation_revision_id", "pack_revision_id"):
+            require_uuid7(getattr(self, field), field)
+        require_stable_code(self.gate_code, "gate_code")
+        if not self.blocking_target_refs or not self.blocking_facet_refs:
+            raise _invalid("foundation gate requires blocking targets and facets")
+        for target_ref in self.blocking_target_refs:
+            require_stable_code(target_ref, "foundation gate target_ref")
+        if not 0 < self.coverage_threshold <= 1 or not 0 < self.confidence_threshold <= 1:
+            raise _invalid("foundation gate thresholds must be in (0, 1]")
+        if self.minimum_distinct_sessions < 2 or self.delayed_control_hours < 24:
+            raise _invalid("foundation gate requires two sessions and a 24 hour control")
+        _require_threshold(
+            self.grapheme_sound_minimum,
+            self.grapheme_sound_total,
+            "grapheme sound threshold",
+        )
+        _require_threshold(
+            self.targeted_reading_minimum,
+            self.targeted_reading_total,
+            "targeted reading threshold",
+        )
+        _require_threshold(
+            self.survival_exchange_minimum,
+            self.survival_exchange_total,
+            "survival exchange threshold",
+        )
+        if self.oral_policy != "not_evaluable_non_blocking":
+            raise _invalid("foundation oral policy is not canonical")
+        _require_published(self.status, "foundation gate")
+        _require_checksum(self.checksum, "foundation gate checksum")
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedFoundationDefinition:
+    foundation_id: UUID
+    foundation_revision_id: UUID
+    pack_revision_id: UUID
+    foundation_code: str
+    revision_no: int
+    blocks: tuple[PublishedFoundationBlock, ...]
+    gate: PublishedFoundationGate
+    status: ContentRevisionStatus
+    checksum: str
+
+    def __post_init__(self) -> None:
+        for field in ("foundation_id", "foundation_revision_id", "pack_revision_id"):
+            require_uuid7(getattr(self, field), field)
+        require_stable_code(self.foundation_code, "foundation_code")
+        require_revision_number(self.revision_no)
+        _require_published(self.status, "foundation definition")
+        _require_checksum(self.checksum, "foundation definition checksum")
+        if tuple((item.block_code, item.ordinal) for item in self.blocks) != (
+            ("F1", 1),
+            ("F2", 2),
+            ("F3", 3),
+            ("F4", 4),
+            ("F5", 5),
+        ):
+            raise _invalid("Italian foundations require complete ordered blocks F1 through F5")
+        if any(
+            item.foundation_revision_id != self.foundation_revision_id
+            or item.pack_revision_id != self.pack_revision_id
+            for item in self.blocks
+        ):
+            raise _invalid("foundation blocks must belong to their published definition")
+        if (
+            self.gate.foundation_revision_id != self.foundation_revision_id
+            or self.gate.pack_revision_id != self.pack_revision_id
+            or self.gate.gate_code != self.foundation_code
+        ):
+            raise _invalid("foundation gate must belong to its published definition")
+        targets = {
+            target_ref
+            for block in self.blocks
+            for item in block.items
+            if item.checker_kind is not FoundationCheckerKind.NOT_EVALUABLE
+            for target_ref in item.target_refs
+        }
+        if not set(self.gate.blocking_target_refs) <= targets:
+            raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+
+    def as_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedFoundationCatalogue:
+    definition: PublishedFoundationDefinition
