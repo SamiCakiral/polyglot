@@ -19,7 +19,9 @@ from polyglot.bootstrap.database import (
 from polyglot.bootstrap.object_storage import FilesystemObjectStorageProbe
 from polyglot.interfaces.http.dependencies import ReadinessCheck, valid_correlation_id
 from polyglot.interfaces.http.errors import register_error_handlers
+from polyglot.interfaces.http.routes.catalogue import catalogue_router
 from polyglot.interfaces.http.routes.identity import identity_router
+from polyglot.modules.catalogue.core.service import CatalogueApplicationService, CatalogueReader
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
@@ -58,6 +60,7 @@ def create_app(
     lifespan: Lifespan[FastAPI] | None = None,
     test_mode: bool = False,
     identity_service: IdentityApplicationService | None = None,
+    catalogue_service: CatalogueReader | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -70,6 +73,7 @@ def create_app(
         lifespan=lifespan,
     )
     register_error_handlers(app)
+    app.include_router(catalogue_router(catalogue_service))
     app.include_router(
         identity_router(identity_service, allowed_origin=allowed_origin),
     )
@@ -129,6 +133,7 @@ def create_runtime_app() -> FastAPI:
         registration_enabled=_enabled_from_environment("POLYGLOT_REGISTRATION_ENABLED"),
         oidc_enabled=_enabled_from_environment("POLYGLOT_OIDC_ENABLED"),
     )
+    catalogue_service = CatalogueApplicationService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -143,5 +148,6 @@ def create_runtime_app() -> FastAPI:
         readiness_checks=(DatabaseReadinessProbe(engine), object_storage),
         lifespan=lifespan,
         identity_service=identity_service,
+        catalogue_service=catalogue_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

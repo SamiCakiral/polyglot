@@ -51,6 +51,14 @@ AUTHENTICATED_W02_OPERATIONS = frozenset(
     }
 )
 MANDATORY_W02_HEADERS = frozenset({"Origin", "X-CSRF-Token", "If-Match"})
+REQUIRED_W04_QUERIES = {
+    "/api/v1/language-packs": ("list_language_packs", frozenset()),
+    "/api/v1/catalogue/targets": ("list_catalogue_targets", frozenset({"pack_code"})),
+    "/api/v1/lexicon/search": (
+        "search_lexicon",
+        frozenset({"q", "language_tag"}),
+    ),
+}
 
 
 def _operation_id(command_name: str) -> str:
@@ -140,6 +148,25 @@ def validate_registry_compatibility(
     session_query = document.get("paths", {}).get("/api/v1/session", {}).get("get")
     if session_query is None or session_query.get("operationId") != "get_current_session":
         raise ValueError("required W02 session query is missing or noncanonical")
+
+    for route, (operation_id, required_parameters) in REQUIRED_W04_QUERIES.items():
+        operation = document.get("paths", {}).get(route, {}).get("get")
+        if operation is None:
+            raise ValueError(f"required W04 query missing: get {route}")
+        if operation.get("operationId") != operation_id:
+            raise ValueError(f"noncanonical W04 operationId: get {route}")
+        parameters = _parameters_by_name(operation)
+        if not required_parameters <= parameters.keys():
+            raise ValueError(f"required W04 query parameters missing: get {route}")
+        if any(parameters[name].get("required") is not True for name in required_parameters):
+            raise ValueError(f"mandatory W04 query parameter is optional: get {route}")
+        if "security" in operation:
+            raise ValueError(f"public W04 query unexpectedly requires security: get {route}")
+        for status in ("409", "422", "503"):
+            content = operation.get("responses", {}).get(status, {}).get("content", {})
+            problem = content.get("application/problem+json", {}).get("schema", {})
+            if problem.get("$ref") != "#/components/schemas/ProblemResponse":
+                raise ValueError(f"required W04 problem response is missing: get {route}")
 
     schemes = document.get("components", {}).get("securitySchemes", {})
     if schemes.get("SessionCookie") != {

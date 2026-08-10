@@ -21,6 +21,89 @@
         "title": "AccountResponse",
         "type": "object"
       },
+      "CatalogueTargetPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CatalogueTargetResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "CatalogueTargetPageResponse",
+        "type": "object"
+      },
+      "CatalogueTargetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "modality": {
+            "title": "Modality",
+            "type": "string"
+          },
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "required_prerequisite_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Required Prerequisite Codes",
+            "type": "array"
+          },
+          "skill_code": {
+            "title": "Skill Code",
+            "type": "string"
+          },
+          "skill_id": {
+            "format": "uuid",
+            "title": "Skill Id",
+            "type": "string"
+          },
+          "skill_revision_id": {
+            "format": "uuid",
+            "title": "Skill Revision Id",
+            "type": "string"
+          },
+          "skill_type": {
+            "title": "Skill Type",
+            "type": "string"
+          },
+          "target_ref": {
+            "title": "Target Ref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "skill_id",
+          "skill_revision_id",
+          "skill_code",
+          "skill_type",
+          "modality",
+          "operation",
+          "target_ref",
+          "required_prerequisite_codes"
+        ],
+        "title": "CatalogueTargetResponse",
+        "type": "object"
+      },
       "ChangePasswordRequest": {
         "additionalProperties": false,
         "properties": {
@@ -247,6 +330,219 @@
             "type": "object"
           }
         ]
+      },
+      "LanguagePackPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LanguagePackResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "LanguagePackPageResponse",
+        "type": "object"
+      },
+      "LanguagePackResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "compatibility_range": {
+            "title": "Compatibility Range",
+            "type": "string"
+          },
+          "pack_code": {
+            "title": "Pack Code",
+            "type": "string"
+          },
+          "pack_id": {
+            "format": "uuid",
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "pack_revision_id": {
+            "format": "uuid",
+            "title": "Pack Revision Id",
+            "type": "string"
+          },
+          "revision_no": {
+            "title": "Revision No",
+            "type": "integer"
+          },
+          "support_language_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Support Language Tags",
+            "type": "array"
+          },
+          "target_language_tag": {
+            "title": "Target Language Tag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_id",
+          "pack_revision_id",
+          "pack_code",
+          "revision_no",
+          "target_language_tag",
+          "support_language_tags",
+          "channel",
+          "compatibility_range"
+        ],
+        "title": "LanguagePackResponse",
+        "type": "object"
+      },
+      "LexicalAnalysisResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "form_analysis_id": {
+            "format": "uuid",
+            "title": "Form Analysis Id",
+            "type": "string"
+          },
+          "lemma": {
+            "title": "Lemma",
+            "type": "string"
+          },
+          "morphological_features": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue-Output"
+            },
+            "title": "Morphological Features",
+            "type": "object"
+          },
+          "part_of_speech": {
+            "title": "Part Of Speech",
+            "type": "string"
+          },
+          "unit_revision_id": {
+            "format": "uuid",
+            "title": "Unit Revision Id",
+            "type": "string"
+          },
+          "unit_type": {
+            "title": "Unit Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "form_analysis_id",
+          "unit_revision_id",
+          "lemma",
+          "unit_type",
+          "part_of_speech",
+          "morphological_features"
+        ],
+        "title": "LexicalAnalysisResponse",
+        "type": "object"
+      },
+      "LexicalSenseResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "definition": {
+            "title": "Definition",
+            "type": "string"
+          },
+          "sense_code": {
+            "title": "Sense Code",
+            "type": "string"
+          },
+          "sense_id": {
+            "format": "uuid",
+            "title": "Sense Id",
+            "type": "string"
+          },
+          "sense_revision_id": {
+            "format": "uuid",
+            "title": "Sense Revision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sense_id",
+          "sense_revision_id",
+          "sense_code",
+          "definition"
+        ],
+        "title": "LexicalSenseResponse",
+        "type": "object"
+      },
+      "LexiconSearchItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "analysis": {
+            "$ref": "#/components/schemas/LexicalAnalysisResponse"
+          },
+          "senses": {
+            "items": {
+              "$ref": "#/components/schemas/LexicalSenseResponse"
+            },
+            "title": "Senses",
+            "type": "array"
+          },
+          "surface": {
+            "title": "Surface",
+            "type": "string"
+          }
+        },
+        "required": [
+          "surface",
+          "analysis",
+          "senses"
+        ],
+        "title": "LexiconSearchItemResponse",
+        "type": "object"
+      },
+      "LexiconSearchPageResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LexiconSearchItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "LexiconSearchPageResponse",
+        "type": "object"
       },
       "LiveStatus": {
         "properties": {
@@ -1156,6 +1452,112 @@
         "summary": "Register Account"
       }
     },
+    "/api/v1/catalogue/targets": {
+      "get": {
+        "operationId": "list_catalogue_targets",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pack_code",
+            "required": true,
+            "schema": {
+              "maxLength": 120,
+              "minLength": 3,
+              "title": "Pack Code",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 1024,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogueTargetPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "List Catalogue Targets"
+      }
+    },
     "/api/v1/consents/{purpose}": {
       "put": {
         "operationId": "update_consent",
@@ -1387,6 +1789,218 @@
           }
         },
         "summary": "Health Ready"
+      }
+    },
+    "/api/v1/language-packs": {
+      "get": {
+        "operationId": "list_language_packs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 1024,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LanguagePackPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "List Language Packs"
+      }
+    },
+    "/api/v1/lexicon/search": {
+      "get": {
+        "operationId": "search_lexicon",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 500,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "language_tag",
+            "required": true,
+            "schema": {
+              "maxLength": 35,
+              "minLength": 4,
+              "title": "Language Tag",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 1024,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LexiconSearchPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Search Lexicon"
       }
     },
     "/api/v1/session": {
