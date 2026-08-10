@@ -122,11 +122,36 @@ async def test_profile_commands_are_authenticated_idempotent_and_owner_scoped(
         listed = await client.get("/api/v1/language-profiles")
 
     assert created.status_code == 201
+    assert created.headers["etag"] == '"1"'
     assert created.json()["account_id"] == account_id
     assert replay.status_code == 201 and replay.json() == created.json()
     assert updated.status_code == 200 and updated.json()["version"] == 2
+    assert updated.headers["etag"] == '"2"'
     assert listed.status_code == 200
     assert listed.json()["items"][0]["goals"] == ["travel", "conversation"]
+
+
+async def test_mutating_existing_resource_without_if_match_returns_428(
+    services: tuple[IdentityApplicationService, object],
+) -> None:
+    async with await _client(services) as client:
+        _, csrf = await _login(client, "w03-precondition@example.test")
+        profile = await client.post(
+            "/api/v1/language-profiles",
+            headers={"Origin": ORIGIN, "X-CSRF-Token": csrf, "Idempotency-Key": "create-pre"},
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        response = await client.patch(
+            f"/api/v1/language-profiles/{profile.json()['profile_id']}/goals",
+            headers={
+                "Origin": ORIGIN,
+                "X-CSRF-Token": csrf,
+                "Idempotency-Key": "goals-without-precondition",
+            },
+            json={"goals": ["travel"]},
+        )
+
+    assert response.status_code == 428
 
 
 async def test_diagnostic_is_resumable_for_exactly_twenty_four_hours_without_credit(

@@ -70,6 +70,7 @@ async def test_0004_creates_profile_tables_constraints_and_rls(
         "diagnostic_responses",
         "foundation_runs",
         "foundation_run_blocks",
+        "foundation_measurements",
         "foundation_gate_results",
     }
     assert await migration_session.scalar(
@@ -78,6 +79,41 @@ async def test_0004_creates_profile_tables_constraints_and_rls(
             "WHERE oid = 'language_profiles.learner_language_profiles'::regclass"
         )
     )
+
+
+async def test_foundation_measurements_and_gate_results_are_private_append_only(
+    migration_session: AsyncSession,
+) -> None:
+    for table_name in ("foundation_measurements", "foundation_gate_results"):
+        assert await migration_session.scalar(
+            text(
+                "SELECT relrowsecurity FROM pg_class "
+                "WHERE oid = CAST(:table_name AS regclass)"
+            ),
+            {"table_name": f"language_profiles.{table_name}"},
+        )
+        trigger_count = await migration_session.scalar(
+            text(
+                "SELECT count(*) FROM pg_trigger "
+                "WHERE tgrelid = CAST(:table_name AS regclass) "
+                "AND NOT tgisinternal AND tgenabled = 'O'"
+            ),
+            {"table_name": f"language_profiles.{table_name}"},
+        )
+        assert trigger_count == 1
+
+    columns = set(
+        (
+            await migration_session.execute(
+                text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = 'language_profiles' "
+                    "AND table_name = 'foundation_runs'"
+                )
+            )
+        ).scalars()
+    )
+    assert "expires_at" in columns
     assert await migration_session.scalar(
         text(
             "SELECT has_table_privilege('polyglot_runtime', "
