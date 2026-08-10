@@ -463,6 +463,7 @@ async def test_late_diagnostic_submission_persists_expired_before_returning_erro
             },
         )
         clock.advance(timedelta(hours=24))
+        csrf = await _authenticate(client, "session-late-response-day-2")
         item = CATALOGUE.definition.blocks[0].items[0]
         late = await client.post(
             f"/api/v1/diagnostics/{started.json()['diagnostic_run_id']}/responses",

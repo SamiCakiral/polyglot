@@ -55,6 +55,10 @@ def register_error_handlers(app: FastAPI) -> None:
         request: Request,
         error: RequestValidationError,
     ) -> JSONResponse:
+        missing_if_match = any(
+            item["type"] == "missing" and item["loc"] == ("header", "If-Match")
+            for item in error.errors()
+        )
         field_errors = [
             {
                 "location": ".".join(str(part) for part in item["loc"]),
@@ -65,6 +69,7 @@ def register_error_handlers(app: FastAPI) -> None:
         return problem_response(
             request,
             DomainError(ErrorCode.VALIDATION_FAILED, field_errors=field_errors),
+            status_override=428 if missing_if_match else None,
         )
 
     @app.exception_handler(StarletteHTTPException)

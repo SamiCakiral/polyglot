@@ -29,7 +29,7 @@ from polyglot.platform.errors import DomainError, ErrorCode
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 OriginHeader = Annotated[str, Header(alias="Origin")]
 CsrfHeader = Annotated[str, Header(alias="X-CSRF-Token")]
-IfMatchHeader = Annotated[str | None, Header(alias="If-Match")]
+IfMatchHeader = Annotated[str, Header(alias="If-Match")]
 _session_cookie_security = APIKeyCookie(
     name=SESSION_COOKIE, scheme_name="SessionCookie", auto_error=False
 )
@@ -42,8 +42,19 @@ _ETAG_OPENAPI = {
         }
     }
 }
-RESOURCE_RESPONSES = {**IDENTITY_PROBLEM_RESPONSES, 200: _ETAG_OPENAPI}
-CREATED_RESOURCE_RESPONSES = {**IDENTITY_PROBLEM_RESPONSES, 201: _ETAG_OPENAPI}
+PRECONDITION_RESPONSES: dict[int | str, dict[str, Any]] = {
+    428: IDENTITY_PROBLEM_RESPONSES[422]
+}
+RESOURCE_RESPONSES: dict[int | str, dict[str, Any]] = {
+    **IDENTITY_PROBLEM_RESPONSES,
+    **PRECONDITION_RESPONSES,
+    200: _ETAG_OPENAPI,
+}
+CREATED_RESOURCE_RESPONSES: dict[int | str, dict[str, Any]] = {
+    **IDENTITY_PROBLEM_RESPONSES,
+    **PRECONDITION_RESPONSES,
+    201: _ETAG_OPENAPI,
+}
 
 
 class ClosedModel(BaseModel):
@@ -276,7 +287,7 @@ def language_profiles_router(
         idempotency_key: IdempotencyKey,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
-        if_match: IfMatchHeader = None,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
     ) -> ProfileResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -306,7 +317,7 @@ def language_profiles_router(
         idempotency_key: IdempotencyKey,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
-        if_match: IfMatchHeader = None,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -350,7 +361,7 @@ def language_profiles_router(
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader = None,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -379,7 +390,7 @@ def language_profiles_router(
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader = None,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -407,7 +418,7 @@ def language_profiles_router(
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader = None,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
     ) -> FoundationResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -437,7 +448,7 @@ def language_profiles_router(
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader = None,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
     ) -> FoundationResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -461,10 +472,11 @@ def language_profiles_router(
         async def route(
             profile_id: UUID,
             request: Request,
+            response: Response,
             idempotency_key: IdempotencyKey,
             origin: OriginHeader,
             csrf_token: CsrfHeader,
-            if_match: IfMatchHeader = None,
+            if_match: IfMatchHeader,
             session_token: SessionCookieToken = None,
         ) -> ProfileResponse:
             account_id = await account_for(request, session_token, csrf_token, origin)
@@ -478,6 +490,7 @@ def language_profiles_router(
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )
+            _etag(response, result.profile.version)
             return _profile_response(result.profile)
 
         return route
