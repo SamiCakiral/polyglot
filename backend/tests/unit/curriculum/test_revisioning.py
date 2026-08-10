@@ -68,3 +68,34 @@ def test_mapping_requires_every_day_and_target_and_explicit_enrollment_consent()
         "module_revision_mapping_incomplete",
         "module_enrollment_migration_not_consented",
     }
+
+
+def test_mapping_rejects_missing_destinations_duplicates_and_conflicts() -> None:
+    source = source_module()
+    successor = build_successor_revision(
+        source,
+        successor_revision_id=uid(80),
+        candidate_days=source.days,
+        executed_through_ordinal=1,
+        expected_revision_no=1,
+    )
+    entries = tuple(
+        RevisionMappingEntry(day.ordinal, 999, target, "skill:does-not-exist")
+        for day in source.days
+        for target in day.primary_target_refs
+    )
+    hostile = ModuleRevisionMapping(
+        uid(81),
+        source.module_revision_id,
+        successor.module_revision_id,
+        (*entries, entries[0], replace(entries[0], target_day_ordinal=1)),
+        True,
+    )
+
+    findings = validate_revision_mapping(source, successor, hostile)
+
+    assert {
+        "module_revision_mapping_target_missing",
+        "module_revision_mapping_duplicate",
+        "module_revision_mapping_conflict",
+    }.issubset({item.message_code for item in findings})
