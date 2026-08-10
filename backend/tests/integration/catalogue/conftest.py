@@ -29,6 +29,9 @@ IDS = {
         ("skill_revision_c", 0x8011, 3),
         ("edge_a", 0x8012, 1),
         ("edge_b", 0x8012, 2),
+        ("structure", 0x8013, 1),
+        ("structure_revision", 0x8014, 1),
+        ("pattern", 0x8015, 1),
         ("unit_potere", 0x8020, 1),
         ("unit_piano", 0x8020, 2),
         ("unit_per_favore", 0x8020, 3),
@@ -215,6 +218,39 @@ async def seed_catalogue(session: AsyncSession, *, publish_skills: bool = True) 
                 "provenance": IDS["provenance"],
             },
         )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.grammar_structures "
+            "(structure_id, structure_code, function_skill_id) "
+            "VALUES (:id, 'IT-GRAM-002', :skill)"
+        ),
+        {"id": IDS["structure"], "skill": IDS["skill_a"]},
+    )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.grammar_structure_revisions "
+            "(structure_revision_id, structure_id, pack_revision_id, revision_no, "
+            "constraints, contrasts, typical_errors, variants, status, provenance_id) "
+            "VALUES (:id, :structure, :pack_revision, 1, '{}'::jsonb, '[]'::jsonb, "
+            "'[]'::jsonb, '[]'::jsonb, 'approved', :provenance)"
+        ),
+        {
+            "id": IDS["structure_revision"],
+            "structure": IDS["structure"],
+            "pack_revision": IDS["pack_revision"],
+            "provenance": IDS["provenance"],
+        },
+    )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.grammar_patterns "
+            "(pattern_id, structure_revision_id, pattern_code, template, slots, "
+            "instantiation_rules, examples, counterexamples) "
+            "VALUES (:id, :revision, 'IT-GRAM-002-P1', 'vorrei + infinito', "
+            "'[]'::jsonb, '{}'::jsonb, ARRAY['Vorrei partire'], ARRAY[]::text[])"
+        ),
+        {"id": IDS["pattern"], "revision": IDS["structure_revision"]},
+    )
     lexical_records = (
         ("potere", "word", "potere", "verb"),
         ("piano", "word", "piano", "adverb"),
@@ -329,8 +365,22 @@ async def seed_catalogue(session: AsyncSession, *, publish_skills: bool = True) 
                 "sense_revision": IDS[f"sense_revision_{sense_key}"],
             },
         )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.expression_components "
+            "(expression_unit_revision_id, component_unit_revision_id, position) "
+            "VALUES (:expression, :component, 1)"
+        ),
+        {
+            "expression": IDS["unit_revision_per_favore"],
+            "component": IDS["unit_revision_potere"],
+        },
+    )
     if publish_skills:
         await session.execute(text("UPDATE catalogue.skill_revisions SET status = 'published'"))
+    await session.execute(
+        text("UPDATE catalogue.grammar_structure_revisions SET status = 'published'")
+    )
     await session.execute(text("UPDATE catalogue.lexical_unit_revisions SET status = 'published'"))
     await session.execute(text("UPDATE catalogue.lexical_sense_revisions SET status = 'published'"))
     await session.execute(

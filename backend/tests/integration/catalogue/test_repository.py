@@ -1,3 +1,4 @@
+import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.catalogue.core.persistence import SqlCatalogueRepository
@@ -64,6 +65,41 @@ async def test_lexicon_search_preserves_diacritics_analyses_senses_and_multiword
     )
     assert [sense.sense_code for sense in polysemous.items[0].senses] == ["floor", "slowly"]
     assert multiword.items[0].analysis.unit_type == "multiword_expression"
+
+
+async def test_lexicon_search_applies_cursor_and_limit_in_sql(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await seed_catalogue(migration_session)
+    repository = SqlCatalogueRepository(session)
+    executed: list[tuple[str, object]] = []
+    original_execute = session.execute
+
+    async def observe(statement: object, parameters: object = None, **kwargs: object) -> object:
+        executed.append((str(statement), parameters))
+        return await original_execute(statement, parameters, **kwargs)
+
+    monkeypatch.setattr(session, "execute", observe)
+    first = await repository.search_lexicon(
+        query="piano", language_tag="it-IT", limit=1, cursor=None
+    )
+    assert first.next_cursor is not None
+    await repository.search_lexicon(
+        query="piano", language_tag="it-IT", limit=1, cursor=first.next_cursor
+    )
+
+    statement, parameters = executed[-1]
+    assert "LIMIT :query_limit" in statement
+    assert "(form.surface, form.form_analysis_id)" in statement
+    assert parameters == {
+        "language_tag": "it-IT",
+        "query": "piano",
+        "after_surface": "piano",
+        "after_id": str(IDS["form_piano"]),
+        "query_limit": 2,
+    }
 
 
 async def test_repository_rejects_tampered_cursor(

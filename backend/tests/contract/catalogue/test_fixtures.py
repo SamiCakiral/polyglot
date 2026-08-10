@@ -1,6 +1,8 @@
 import json
 import socket
+from hashlib import sha256
 from pathlib import Path
+from shutil import copytree
 
 import pytest
 from jsonschema import Draft202012Validator
@@ -132,3 +134,41 @@ def test_positive_graph_is_bounded_and_negative_cycle_uses_canonical_error() -> 
     with pytest.raises(DomainError) as rejected:
         load_catalogue_fixture(negative)
     assert rejected.value.code is ErrorCode.PREREQUISITE_CYCLE
+
+
+def _fixture_with_payload(tmp_path: Path, mutate: object) -> Path:
+    root = tmp_path / "fixture"
+    copytree(FIXTURE, root)
+    payload_path = root / "catalogue.json"
+    payload = json.loads(payload_path.read_text())
+    mutate(payload)
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    payload_path.write_text(serialized)
+    metadata_path = root / "fixture-metadata.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["payloads"]["catalogue.json"] = f"sha256:{sha256(serialized.encode()).hexdigest()}"
+    metadata_path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n")
+    return root
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    (
+        lambda payload: payload["skills"][0].update({"target_ref": "IT-MISSING-999"}),
+        lambda payload: payload["lexical_units"][0]["senses"][0].update({"status": "draft"}),
+        lambda payload: payload["lexical_units"][-1]["components"][0].update(
+            {"unit_revision_id": "019b0000-0000-7000-8000-000000009999"}
+        ),
+        lambda payload: payload["skills"][0].update(
+            {"skill_id": payload["skills"][1]["skill_id"]}
+        ),
+    ),
+)
+def test_fixture_rejects_unresolved_refs_unpublished_nested_content_and_duplicate_ids(
+    tmp_path: Path,
+    mutate: object,
+) -> None:
+    fixture = _fixture_with_payload(tmp_path, mutate)
+    with pytest.raises(DomainError) as rejected:
+        load_catalogue_fixture(fixture)
+    assert rejected.value.code in {ErrorCode.REFERENCE_NOT_FOUND, ErrorCode.VALIDATION_FAILED}

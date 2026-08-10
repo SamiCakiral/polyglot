@@ -1,9 +1,10 @@
+import asyncio
 from uuid import UUID
 
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError, IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from .conftest import IDS, NOW, seed_catalogue
 
@@ -152,3 +153,172 @@ async def test_runtime_catalogue_access_is_read_only(
                 "VALUES ('019fe900-5000-7000-8002-000000000002', 'forbidden')"
             )
         )
+
+
+@pytest.mark.parametrize(
+    ("table", "where", "update"),
+    (
+        (
+            "language_pack_support_varieties",
+            "pack_revision_id = :pack_revision",
+            "variety_id = variety_id",
+        ),
+        ("grammar_patterns", "pattern_id = :pattern", "template = template"),
+        ("form_analyses", "form_analysis_id = :form", "surface = surface"),
+        (
+            "form_realizations",
+            "realization_id = :realization",
+            "sense_revision_id = sense_revision_id",
+        ),
+        (
+            "expression_components",
+            "expression_unit_revision_id = :expression",
+            "position = position",
+        ),
+    ),
+)
+async def test_database_rejects_update_and_delete_of_every_child_owned_by_published_revision(
+    migration_session: AsyncSession,
+    table: str,
+    where: str,
+    update: str,
+) -> None:
+    await seed_catalogue(migration_session)
+    parameters = {
+        "pack_revision": IDS["pack_revision"],
+        "pattern": IDS["pattern"],
+        "form": IDS["form_puo"],
+        "realization": IDS["realization_puo"],
+        "expression": IDS["unit_revision_per_favore"],
+    }
+
+    with pytest.raises(DBAPIError, match="published revision is immutable"):
+        await migration_session.execute(text(f"UPDATE catalogue.{table} SET {update} WHERE {where}"), parameters)
+    await migration_session.rollback()
+
+    with pytest.raises(DBAPIError, match="published revision is immutable"):
+        await migration_session.execute(text(f"DELETE FROM catalogue.{table} WHERE {where}"), parameters)
+    await migration_session.rollback()
+
+
+async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_links(
+    migration_session: AsyncSession,
+) -> None:
+    await seed_catalogue(migration_session)
+
+    with pytest.raises(DBAPIError, match="form realization must match its form analysis unit"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.form_realizations "
+                "(realization_id, form_analysis_id, unit_revision_id, sense_revision_id) "
+                "VALUES ('019fe900-5000-7000-8025-000000000100', :form, :unit, :sense)"
+            ),
+            {
+                "form": IDS["form_puo"],
+                "unit": IDS["unit_revision_piano"],
+                "sense": IDS["sense_revision_piano_slow"],
+            },
+        )
+    await migration_session.rollback()
+
+    with pytest.raises(DBAPIError, match="form realization sense must belong to its unit"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.form_realizations "
+                "(realization_id, form_analysis_id, unit_revision_id, sense_revision_id) "
+                "VALUES ('019fe900-5000-7000-8025-000000000101', :form, :unit, :sense)"
+            ),
+            {
+                "form": IDS["form_puo"],
+                "unit": IDS["unit_revision_potere"],
+                "sense": IDS["sense_revision_piano_slow"],
+            },
+        )
+    await migration_session.rollback()
+
+    with pytest.raises(DBAPIError, match="expression components require a multiword expression root"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.expression_components "
+                "(expression_unit_revision_id, component_unit_revision_id, position) "
+                "VALUES (:expression, :component, 2)"
+            ),
+            {
+                "expression": IDS["unit_revision_potere"],
+                "component": IDS["unit_revision_piano"],
+            },
+        )
+    await migration_session.rollback()
+
+    await migration_session.execute(
+        text("UPDATE catalogue.lexical_units SET variety_id = :support WHERE lexical_unit_id = :unit"),
+        {"support": IDS["support_variety"], "unit": IDS["unit_piano"]},
+    )
+    with pytest.raises(DBAPIError, match="expression components must share pack and variety"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.expression_components "
+                "(expression_unit_revision_id, component_unit_revision_id, position) "
+                "VALUES (:expression, :component, 2)"
+            ),
+            {
+                "expression": IDS["unit_revision_per_favore"],
+                "component": IDS["unit_revision_piano"],
+            },
+        )
+
+
+async def test_required_dag_mutations_are_serialized_across_transactions(
+    migration_database_url: str,
+    migration_session: AsyncSession,
+) -> None:
+    await seed_catalogue(migration_session, publish_skills=False)
+    await migration_session.execute(text("DELETE FROM catalogue.skill_prerequisite_edges"))
+    await migration_session.commit()
+    engine = create_async_engine(migration_database_url)
+    first = await engine.connect()
+    second = await engine.connect()
+    first_transaction = await first.begin()
+    second_transaction = await second.begin()
+    try:
+        await first.execute(
+            text(
+                "INSERT INTO catalogue.skill_prerequisite_edges "
+                "(edge_id, from_skill_revision_id, to_skill_revision_id, edge_type, provenance_id) "
+                "VALUES ('019fe900-5000-7000-8012-000000000100', :source, :target, "
+                "'required', :provenance)"
+            ),
+            {
+                "source": IDS["skill_revision_a"],
+                "target": IDS["skill_revision_b"],
+                "provenance": IDS["provenance"],
+            },
+        )
+        competing = asyncio.create_task(
+            second.execute(
+                text(
+                    "INSERT INTO catalogue.skill_prerequisite_edges "
+                    "(edge_id, from_skill_revision_id, to_skill_revision_id, edge_type, provenance_id) "
+                    "VALUES ('019fe900-5000-7000-8012-000000000101', :source, :target, "
+                    "'required', :provenance)"
+                ),
+                {
+                    "source": IDS["skill_revision_b"],
+                    "target": IDS["skill_revision_a"],
+                    "provenance": IDS["provenance"],
+                },
+            )
+        )
+        await asyncio.sleep(0.1)
+        assert not competing.done()
+        await first_transaction.commit()
+        with pytest.raises(DBAPIError, match="prerequisite_cycle"):
+            await asyncio.wait_for(competing, timeout=2)
+    finally:
+        if first_transaction.is_active:
+            await first_transaction.rollback()
+        if second_transaction.is_active:
+            await second_transaction.rollback()
+        await first.close()
+        await second.close()
+        await engine.dispose()

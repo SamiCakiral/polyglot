@@ -587,7 +587,16 @@
           "normalization_key": "per favore"
         }
       ],
-      "components": ["per", "favore"],
+      "components": [
+        {
+          "unit_revision_id": "019b0000-0000-7000-8000-000000000401",
+          "lemma": "per"
+        },
+        {
+          "unit_revision_id": "019b0000-0000-7000-8000-000000000501",
+          "lemma": "favore"
+        }
+      ],
       "status": "published",
       "provenance_id": "019b0000-0000-7000-8000-000000000001"
     }
