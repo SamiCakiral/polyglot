@@ -30,13 +30,22 @@ stage par cette correction.
    identifiant duplique.
 6. La validation des stable codes est identique dans le domaine, la migration
    et les metadonnees SQLAlchemy.
+7. La garde d'immuabilite des enfants controle desormais, lors d'un `UPDATE`,
+   les proprietaires `OLD` avant le reparentage puis les proprietaires `NEW`.
+   Un enfant d'une revision publiee ne peut donc plus etre deplace vers une
+   revision brouillon. `DELETE` continue de verifier `OLD` et `INSERT` verifie
+   `NEW`. Les cinq familles enfant sont couvertes.
 
 ## Preuves locales
 
 - RED : commit `eb94b2c` avec les regressions W04, echec attendu avant les
   corrections.
+- RED relecture : commit `02db7e5`; les cinq tests de reparentage publie vers
+  brouillon echouaient avec `DID NOT RAISE DBAPIError` avant la correction.
+- Test cible de reparentage : `5 passed in 0.60s`.
 - `uv run pytest tests/unit/catalogue tests/property/catalogue
-  tests/integration/catalogue tests/contract/catalogue -q` : `35 passed`.
+  tests/integration/catalogue tests/contract/catalogue -q` : `40 passed`,
+  `1 warning` connu, en `2.67s`.
 - `uv run ruff check src tests` : passe.
 - `uv run mypy src` : passe, 43 fichiers source.
 - Round-trip reel : `0003_catalogue -> 0002_identity -> 0003_catalogue`.

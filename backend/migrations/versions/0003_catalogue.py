@@ -481,40 +481,67 @@ $function$;
 CREATE FUNCTION catalogue.guard_published_child() RETURNS trigger
 LANGUAGE plpgsql AS $function$
 DECLARE
-    owner_id uuid;
-    form_owner_id uuid;
-    related_revisions uuid[];
+    old_form_owner_id uuid;
+    new_form_owner_id uuid;
+    old_revisions uuid[];
+    new_revisions uuid[];
 BEGIN
     IF TG_TABLE_NAME = 'language_pack_support_varieties' THEN
-        related_revisions := ARRAY[
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.pack_revision_id ELSE NEW.pack_revision_id END
-        ];
+        IF TG_OP <> 'INSERT' THEN
+            old_revisions := ARRAY[OLD.pack_revision_id];
+        END IF;
+        IF TG_OP <> 'DELETE' THEN
+            new_revisions := ARRAY[NEW.pack_revision_id];
+        END IF;
     ELSIF TG_TABLE_NAME = 'grammar_patterns' THEN
-        related_revisions := ARRAY[
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.structure_revision_id ELSE NEW.structure_revision_id END
-        ];
+        IF TG_OP <> 'INSERT' THEN
+            old_revisions := ARRAY[OLD.structure_revision_id];
+        END IF;
+        IF TG_OP <> 'DELETE' THEN
+            new_revisions := ARRAY[NEW.structure_revision_id];
+        END IF;
     ELSIF TG_TABLE_NAME = 'form_analyses' THEN
-        related_revisions := ARRAY[
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.unit_revision_id ELSE NEW.unit_revision_id END
-        ];
+        IF TG_OP <> 'INSERT' THEN
+            old_revisions := ARRAY[OLD.unit_revision_id];
+        END IF;
+        IF TG_OP <> 'DELETE' THEN
+            new_revisions := ARRAY[NEW.unit_revision_id];
+        END IF;
     ELSIF TG_TABLE_NAME = 'form_realizations' THEN
-        owner_id := CASE WHEN TG_OP = 'DELETE' THEN OLD.form_analysis_id ELSE NEW.form_analysis_id END;
-        SELECT unit_revision_id INTO form_owner_id
-        FROM catalogue.form_analyses WHERE form_analysis_id = owner_id;
-        related_revisions := ARRAY[
-            form_owner_id,
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.unit_revision_id ELSE NEW.unit_revision_id END,
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.sense_revision_id ELSE NEW.sense_revision_id END
-        ];
+        IF TG_OP <> 'INSERT' THEN
+            SELECT unit_revision_id INTO old_form_owner_id
+            FROM catalogue.form_analyses WHERE form_analysis_id = OLD.form_analysis_id;
+            old_revisions := ARRAY[
+                old_form_owner_id, OLD.unit_revision_id, OLD.sense_revision_id
+            ];
+        END IF;
+        IF TG_OP <> 'DELETE' THEN
+            SELECT unit_revision_id INTO new_form_owner_id
+            FROM catalogue.form_analyses WHERE form_analysis_id = NEW.form_analysis_id;
+            new_revisions := ARRAY[
+                new_form_owner_id, NEW.unit_revision_id, NEW.sense_revision_id
+            ];
+        END IF;
     ELSIF TG_TABLE_NAME = 'expression_components' THEN
-        related_revisions := ARRAY[
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.expression_unit_revision_id ELSE NEW.expression_unit_revision_id END,
-            CASE WHEN TG_OP = 'DELETE' THEN OLD.component_unit_revision_id ELSE NEW.component_unit_revision_id END
-        ];
+        IF TG_OP <> 'INSERT' THEN
+            old_revisions := ARRAY[
+                OLD.expression_unit_revision_id, OLD.component_unit_revision_id
+            ];
+        END IF;
+        IF TG_OP <> 'DELETE' THEN
+            new_revisions := ARRAY[
+                NEW.expression_unit_revision_id, NEW.component_unit_revision_id
+            ];
+        END IF;
     ELSE
         RAISE EXCEPTION 'unknown catalogue child table %', TG_TABLE_NAME USING ERRCODE = 'XX000';
     END IF;
-    PERFORM catalogue.assert_published_revisions_immutable(related_revisions);
+    IF TG_OP <> 'INSERT' THEN
+        PERFORM catalogue.assert_published_revisions_immutable(old_revisions);
+    END IF;
+    IF TG_OP <> 'DELETE' THEN
+        PERFORM catalogue.assert_published_revisions_immutable(new_revisions);
+    END IF;
     RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
 END;
 $function$;
