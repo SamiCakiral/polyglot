@@ -6,7 +6,18 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 from uuid import UUID
 
-from .bindings import CurriculumError, _require_unique, _require_uuid7
+from .bindings import (
+    CurriculumError,
+    ExerciseBinding,
+    GrammarTargetBinding,
+    LexiconTargetBinding,
+    MorphologyTargetBinding,
+    PronunciationTargetBinding,
+    RecallSpec,
+    SkillTargetBinding,
+    _require_unique,
+    _require_uuid7,
+)
 
 
 class ModuleStatus(StrEnum):
@@ -43,10 +54,23 @@ class ModuleDay:
     content_revision_ids: tuple[UUID, ...] = ()
     exercise_definition_revision_ids: tuple[UUID, ...] = ()
     recall_source_day_ordinals: tuple[int, ...] = ()
+    secondary_target_refs: tuple[str, ...] = ()
+    context_revision_ids: tuple[UUID, ...] = ()
+    skill_bindings: tuple[SkillTargetBinding, ...] = ()
+    lexicon_bindings: tuple[LexiconTargetBinding, ...] = ()
+    grammar_bindings: tuple[GrammarTargetBinding, ...] = ()
+    morphology_bindings: tuple[MorphologyTargetBinding, ...] = ()
+    pronunciation_bindings: tuple[PronunciationTargetBinding, ...] = ()
+    exercise_bindings: tuple[ExerciseBinding, ...] = ()
+    recall_specs: tuple[RecallSpec, ...] = ()
+    fallback_revision_ids: tuple[UUID, ...] = ()
+    final_output_spec: str = ""
+    validator_revision_ids: tuple[UUID, ...] = ()
+    prerequisite_day_ordinals: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         _require_uuid7(self.module_day_id, "module_day_id")
-        for field in (
+        canonical_string_fields = (
             "objective_codes",
             "primary_target_refs",
             "encountered_target_refs",
@@ -55,18 +79,47 @@ class ModuleDay:
             "new_grammar_family_codes",
             "explained_grammar_family_codes",
             "gym_grammar_family_codes",
-        ):
-            object.__setattr__(self, field, tuple(sorted(set(getattr(self, field)))))
+            "secondary_target_refs",
+        )
+        for field in canonical_string_fields:
+            values = tuple(getattr(self, field))
+            _require_unique(values, field)
+            object.__setattr__(self, field, tuple(sorted(values)))
         object.__setattr__(self, "modality_objectives", tuple(sorted(self.modality_objectives)))
-        object.__setattr__(self, "content_revision_ids", tuple(self.content_revision_ids))
-        object.__setattr__(
-            self,
+        uuid_fields = (
+            "content_revision_ids",
             "exercise_definition_revision_ids",
-            tuple(self.exercise_definition_revision_ids),
+            "context_revision_ids",
+            "fallback_revision_ids",
+            "validator_revision_ids",
         )
-        object.__setattr__(
-            self, "recall_source_day_ordinals", tuple(self.recall_source_day_ordinals)
+        for field in uuid_fields:
+            values = tuple(getattr(self, field))
+            _require_unique(values, field)
+            for value in values:
+                _require_uuid7(value, field)
+            object.__setattr__(self, field, values)
+        binding_fields = (
+            "skill_bindings",
+            "lexicon_bindings",
+            "grammar_bindings",
+            "morphology_bindings",
+            "pronunciation_bindings",
+            "exercise_bindings",
+            "recall_specs",
         )
+        for field in binding_fields:
+            values = tuple(getattr(self, field))
+            _require_unique(values, field)
+            object.__setattr__(self, field, values)
+        recall_ordinals = tuple(self.recall_source_day_ordinals)
+        _require_unique(recall_ordinals, "recall_source_day_ordinals")
+        object.__setattr__(self, "recall_source_day_ordinals", recall_ordinals)
+        prerequisites = tuple(self.prerequisite_day_ordinals)
+        _require_unique(prerequisites, "prerequisite_day_ordinals")
+        if any(value < 1 or value >= self.ordinal for value in prerequisites):
+            raise CurriculumError("module_prerequisite_cycle")
+        object.__setattr__(self, "prerequisite_day_ordinals", prerequisites)
         if self.ordinal < 1 or not self.objective_codes or not self.modality_objectives:
             raise CurriculumError("module_exit_unmeasurable")
         if not self.primary_target_refs:
@@ -225,6 +278,34 @@ class LearningModuleRevision:
         }
         for day in self.days:
             values.update(day.primary_target_refs)
+            values.update(day.secondary_target_refs)
             values.update(f"content:{value}" for value in day.content_revision_ids)
             values.update(f"exercise:{value}" for value in day.exercise_definition_revision_ids)
+            values.update(f"context:{value}" for value in day.context_revision_ids)
+            values.update(f"fallback:{value}" for value in day.fallback_revision_ids)
+            values.update(f"validator:{value}" for value in day.validator_revision_ids)
+            for binding in day.skill_bindings:
+                values.add(f"skill:{binding.skill_revision_id}")
+                values.update(
+                    f"evidence:{value}" for value in binding.evidence_protocol_ids
+                )
+            for binding in day.lexicon_bindings:
+                values.add(f"sense:{binding.sense_revision_id}")
+                values.update(f"form:{value}" for value in binding.required_form_revision_ids)
+                values.update(f"usage:{value}" for value in binding.usage_frame_revision_ids)
+            for binding in day.grammar_bindings:
+                values.add(f"grammar:{binding.structure_revision_id}")
+                values.add(f"skill:{binding.function_skill_id}")
+                values.update(f"pattern:{value}" for value in binding.pattern_ids)
+            for binding in day.morphology_bindings:
+                values.add(f"analysis:{binding.form_analysis_id}")
+            for binding in day.pronunciation_bindings:
+                values.add(f"pronunciation:{binding.target_revision_id}")
+                values.add(f"transcript:{binding.transcript_revision_id}")
+                values.add(f"media:{binding.media_revision_id}")
+            for binding in day.exercise_bindings:
+                values.add(f"exercise:{binding.definition_revision_id}")
+                values.add(f"policy:{binding.correction_policy_revision_id}")
+            for recall in day.recall_specs:
+                values.add(f"exercise:{recall.source_exercise_binding_id}")
         return tuple(sorted(values))
