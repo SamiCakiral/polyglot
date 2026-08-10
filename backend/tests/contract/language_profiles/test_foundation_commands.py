@@ -327,3 +327,52 @@ async def test_foundation_commands_require_if_match_and_reject_missing_pack(
     assert missing_precondition.status_code == 428
     assert missing_pack.status_code == 409
     assert missing_pack.json()["code"] == "foundation_pack_missing"
+
+
+async def test_expired_diagnostic_is_persisted_and_does_not_block_a_new_run(
+    foundation_services: tuple[IdentityApplicationService, Any, MutableClock],
+) -> None:
+    _, _, clock = foundation_services
+    async with await _client(foundation_services) as client:
+        csrf = await _login(client)
+        created = await client.post(
+            "/api/v1/language-profiles",
+            headers=_headers(csrf, "create-return-profile"),
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        profile_id = created.json()["profile_id"]
+        first = await client.post(
+            f"/api/v1/language-profiles/{profile_id}/diagnostics",
+            headers=_headers(csrf, "start-return-diagnostic-1", 1),
+            json={
+                "policy_revision_id": POLICY,
+                "pack_revision_id": str(CATALOGUE.definition.pack_revision_id),
+                "seed": "P-RETOUR-1",
+            },
+        )
+        assert first.status_code == 201
+        clock.advance(timedelta(hours=24))
+        csrf = await _authenticate(client, "session-return-day-2")
+        second = await client.post(
+            f"/api/v1/language-profiles/{profile_id}/diagnostics",
+            headers=_headers(csrf, "start-return-diagnostic-2", 1),
+            json={
+                "policy_revision_id": POLICY,
+                "pack_revision_id": str(CATALOGUE.definition.pack_revision_id),
+                "seed": "P-RETOUR-2",
+            },
+        )
+
+    assert second.status_code == 201, second.text
+    assert second.json()["diagnostic_run_id"] != first.json()["diagnostic_run_id"]
+    engine = create_async_engine(migration_database_url_from_environment())
+    async with engine.connect() as connection:
+        old_status = await connection.scalar(
+            text(
+                "SELECT status FROM language_profiles.diagnostic_runs "
+                "WHERE diagnostic_run_id = :run_id"
+            ),
+            {"run_id": UUID(first.json()["diagnostic_run_id"])},
+        )
+    await engine.dispose()
+    assert old_status == "expired"
