@@ -1,7 +1,11 @@
 from uuid import UUID
 
 import pytest
-from test_contracts import (
+
+from polyglot.platform.clock import FrozenClock
+from polyglot.platform.errors import DomainError, ErrorCode
+
+from .test_contracts import (
     ATTEMPT_ID,
     CASE_ID,
     CORRECTION_ID,
@@ -10,9 +14,6 @@ from test_contracts import (
     FixedIds,
     instance,
 )
-
-from polyglot.platform.clock import FrozenClock
-from polyglot.platform.errors import DomainError, ErrorCode
 
 
 def test_closed_correction_strategies_do_not_promote_ambiguous_or_unavailable_answers() -> None:

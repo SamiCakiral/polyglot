@@ -1,5 +1,5 @@
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 
 def test_pytest_uses_path_isolated_imports_for_duplicate_module_names() -> None:

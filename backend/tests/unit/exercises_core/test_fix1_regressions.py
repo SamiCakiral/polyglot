@@ -2,7 +2,11 @@ from dataclasses import replace
 from uuid import UUID
 
 import pytest
-from test_contracts import (
+
+from polyglot.platform.clock import FrozenClock
+from polyglot.platform.errors import DomainError, ErrorCode
+
+from .test_contracts import (
     ATTEMPT_ID,
     CORRECTION_ID,
     NOW,
@@ -10,9 +14,6 @@ from test_contracts import (
     FixedIds,
     instance,
 )
-
-from polyglot.platform.clock import FrozenClock
-from polyglot.platform.errors import DomainError, ErrorCode
 
 
 def choice_answer(value: str = "choice-a"):
