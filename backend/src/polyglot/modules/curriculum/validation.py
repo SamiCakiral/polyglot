@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import cast
 
 from .domain import ArcType, LearningModuleRevision
 from .ports import ReferenceStatus, ResolvedReference
@@ -16,6 +17,31 @@ class FindingSeverity(StrEnum):
 class HumanGateStatus(StrEnum):
     PENDING_HUMAN = "pending_human"
     APPROVED = "approved"
+
+
+@dataclass(frozen=True, slots=True)
+class HumanApprovalEvidence:
+    review_id: str
+    reviewer_id: str
+    subject_checksum: str
+    signed_at: str
+    source: str
+
+    def valid_for(self, checksum: str) -> bool:
+        return (
+            bool(self.review_id)
+            and bool(self.reviewer_id)
+            and bool(self.signed_at)
+            and self.source == "human"
+            and self.subject_checksum == checksum
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class HumanReviewGate:
+    gate_code: str
+    status: HumanGateStatus
+    approval_evidence: HumanApprovalEvidence | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,7 +84,7 @@ class ValidationInput:
     pronunciation_oracles: tuple[PronunciationOracle, ...]
     profile_novelty_limits: tuple[tuple[str, float], ...]
     day_novelty_points: tuple[tuple[int, float], ...]
-    human_gates: tuple[tuple[str, HumanGateStatus], ...]
+    human_gates: tuple[HumanReviewGate | tuple[str, HumanGateStatus], ...]
 
     def __post_init__(self) -> None:
         for field in (
@@ -69,9 +95,13 @@ class ValidationInput:
             "pronunciation_oracles",
             "profile_novelty_limits",
             "day_novelty_points",
-            "human_gates",
         ):
             object.__setattr__(self, field, tuple(getattr(self, field)))
+        gates = tuple(
+            item if isinstance(item, HumanReviewGate) else HumanReviewGate(*item)
+            for item in self.human_gates
+        )
+        object.__setattr__(self, "human_gates", gates)
 
 
 @dataclass(frozen=True, slots=True)
@@ -197,9 +227,47 @@ def validate_curriculum(data: ValidationInput) -> ValidationReport:
             )
         else:
             credit_eligible.append(pronunciation.target_ref)
-    for gate, status in data.human_gates:
-        if status is not HumanGateStatus.APPROVED:
-            findings.append(_finding("module_human_review_required", f"human_gates.{gate}", gate))
+    gates = tuple(cast(HumanReviewGate, item) for item in data.human_gates)
+    required_gate_codes = {"P-LING", "P-PED"}
+    gate_codes = [item.gate_code for item in gates]
+    for missing in sorted(required_gate_codes - set(gate_codes)):
+        findings.append(
+            _finding("module_human_gate_missing", f"human_gates.{missing}", missing)
+        )
+    for unknown in sorted(set(gate_codes) - required_gate_codes):
+        findings.append(
+            _finding("module_human_gate_unknown", f"human_gates.{unknown}", unknown)
+        )
+    for duplicate in sorted({code for code in gate_codes if gate_codes.count(code) > 1}):
+        findings.append(
+            _finding(
+                "module_human_gate_duplicate",
+                f"human_gates.{duplicate}",
+                duplicate,
+            )
+        )
+    for gate in gates:
+        if gate.gate_code not in required_gate_codes:
+            continue
+        evidence = gate.approval_evidence
+        if gate.status is HumanGateStatus.APPROVED and (
+            evidence is None or not evidence.valid_for(data.module.payload_checksum)
+        ):
+            findings.append(
+                _finding(
+                    "module_human_approval_evidence_invalid",
+                    f"human_gates.{gate.gate_code}",
+                    gate.gate_code,
+                )
+            )
+        if gate.status is not HumanGateStatus.APPROVED or evidence is None:
+            findings.append(
+                _finding(
+                    "module_human_review_required",
+                    f"human_gates.{gate.gate_code}",
+                    gate.gate_code,
+                )
+            )
     return ValidationReport(
         tuple(sorted(set(findings), key=lambda item: item.sort_key)),
         data.module.payload_checksum,
