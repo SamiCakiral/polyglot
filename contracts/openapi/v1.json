@@ -759,10 +759,17 @@
             "default": false,
             "title": "Revealed",
             "type": "boolean"
+          },
+          "trial_ordinal": {
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Trial Ordinal",
+            "type": "integer"
           }
         },
         "required": [
           "item_revision_id",
+          "trial_ordinal",
           "answer"
         ],
         "title": "FoundationAnswerRequest",
@@ -4435,6 +4442,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -4520,17 +4542,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -4638,6 +4653,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -4723,17 +4753,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -4830,6 +4853,21 @@
               }
             },
             "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
           },
           "429": {
             "content": {
@@ -4979,6 +5017,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -5064,17 +5117,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -5181,6 +5227,21 @@
               }
             },
             "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
           },
           "429": {
             "content": {
@@ -5626,6 +5687,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -5774,6 +5850,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -5859,17 +5950,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -5967,6 +6051,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -6052,17 +6151,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -6170,6 +6262,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -6255,17 +6362,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -6373,6 +6473,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -6458,17 +6573,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -6576,6 +6684,21 @@
             },
             "description": "Locked"
           },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
           "429": {
             "content": {
               "application/json": {
@@ -6661,17 +6784,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -6768,6 +6884,21 @@
               }
             },
             "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
           },
           "429": {
             "content": {
@@ -6854,17 +6985,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -6961,6 +7085,21 @@
               }
             },
             "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
           },
           "429": {
             "content": {
@@ -7047,17 +7186,10 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": false,
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "If-Match"
+              "title": "If-Match",
+              "type": "string"
             }
           }
         ],
@@ -7154,6 +7286,21 @@
               }
             },
             "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
           },
           "429": {
             "content": {
