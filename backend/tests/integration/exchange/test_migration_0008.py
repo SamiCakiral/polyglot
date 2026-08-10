@@ -112,3 +112,26 @@ async def test_runtime_cannot_delete_import_audit_or_update_snapshots(
             "'exchange.import_conflicts','UPDATE')"
         )
     ) is True
+
+
+async def test_list_association_targets_match_revision_contract(
+    migration_session: AsyncSession,
+) -> None:
+    definition = await migration_session.scalar(
+        text(
+            "SELECT pg_get_constraintdef(oid) FROM pg_constraint "
+            "WHERE conname='ck_list_association_shape'"
+        )
+    )
+
+    assert definition is not None
+    for target_type in (
+        "module_revision",
+        "module_day_revision",
+        "session_plan",
+        "exercise_definition_revision",
+    ):
+        assert target_type in definition
+    assert "'module'::" not in definition
+    assert "'module_day'::" not in definition
+    assert "'exercise'::" not in definition

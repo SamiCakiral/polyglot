@@ -9,6 +9,7 @@ import pytest
 from sqlalchemy import text
 
 from polyglot.modules.lexicon.exchange.application import (
+    AssociateVocabularyList,
     ChangeListMembers,
     CreateImport,
     CreateVocabularyList,
@@ -26,6 +27,21 @@ class SequenceIdGenerator:
 
     def new(self) -> UUID:
         return next(self._values)
+
+
+class TargetVerifier:
+    def __init__(self, *, exists: bool = True) -> None:
+        self.exists = exists
+        self.calls: list[tuple[str, UUID, UUID]] = []
+
+    async def verify(
+        self,
+        target_type: str,
+        target_id: UUID,
+        profile_id: UUID,
+    ) -> bool:
+        self.calls.append((target_type, target_id, profile_id))
+        return self.exists
 
 
 async def test_list_revisions_and_snapshots_are_immutable_and_idempotent(
@@ -642,3 +658,61 @@ async def test_export_requires_recent_session_and_replays_one_request(
 
     assert requested.status == "requested"
     assert replay.resource_id == requested.resource_id
+
+
+async def test_list_association_verifies_target_and_versions_list(
+    runtime_factory,
+    migration_session,
+) -> None:
+    verifier = TargetVerifier()
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(900, 960)),
+        association_targets=verifier,
+    )
+    vocabulary_list = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="manual",
+            name="Module ferroviaire",
+            purpose="Contexte lexical explicite",
+            ordered=True,
+            color=None,
+            tags=(),
+            query_definition=None,
+            member_sense_ids=(),
+            created_at=NOW,
+        ),
+        idempotency_key="association-list",
+    )
+    target_id = uid(980)
+
+    association = await service.associate_list(
+        ACCOUNT_A,
+        vocabulary_list.list_id,
+        AssociateVocabularyList(
+            target_type="module_revision",
+            target_id=target_id,
+            role="target",
+            valid_from=NOW + timedelta(minutes=1),
+            valid_until=None,
+        ),
+        expected_version=1,
+        idempotency_key="association-create",
+    )
+    await set_actor(migration_session, ACCOUNT_A)
+    stored = (
+        await migration_session.execute(
+            text(
+                "SELECT target_type,target_id,role FROM lexicon.list_associations "
+                "WHERE association_id=:association"
+            ),
+            {"association": association.resource_id},
+        )
+    ).one()
+
+    assert association.version == 2
+    assert verifier.calls == [("module_revision", target_id, PROFILE_A)]
+    assert tuple(stored) == ("module_revision", target_id, "target")

@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.modules.lexicon.exchange.application import (
+    AssociateVocabularyList,
     ChangeListMembers,
     CreateImport,
     CreateVocabularyList,
@@ -24,7 +25,9 @@ from polyglot.modules.lexicon.exchange.domain import (
     PreviewDecision,
     create_preview,
 )
+from polyglot.modules.lexicon.exchange.lists import ListAssociation
 from polyglot.modules.lexicon.exchange.parsing import ParseLimits, parse_import
+from polyglot.modules.lexicon.exchange.ports import AssociationTargetPort
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
@@ -37,10 +40,12 @@ class SqlExchangeService:
         *,
         ids: IdGenerator | None = None,
         parse_limits: ParseLimits | None = None,
+        association_targets: AssociationTargetPort | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
         self._parse_limits = parse_limits or ParseLimits()
+        self._association_targets = association_targets
 
     async def _set_actor(self, session: AsyncSession, actor_id: UUID) -> None:
         await session.execute(
@@ -240,6 +245,110 @@ class SqlExchangeService:
         async with self._session_factory() as session:
             await self._set_actor(session, actor_id)
             return await self._load_list(session, list_id)
+
+    async def associate_list(
+        self,
+        actor_id: UUID,
+        list_id: UUID,
+        command: AssociateVocabularyList,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+    ) -> MutationView:
+        ListAssociation.create(
+            target_type=command.target_type,
+            target_id=command.target_id,
+            role=command.role,
+        )
+        if command.valid_until is not None and command.valid_until <= command.valid_from:
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+        fingerprint = canonical_json_fingerprint(
+            {
+                "list_id": str(list_id),
+                "target_type": command.target_type,
+                "target_id": str(command.target_id),
+                "role": command.role,
+                "valid_from": command.valid_from.isoformat(),
+                "valid_until": (
+                    None
+                    if command.valid_until is None
+                    else command.valid_until.isoformat()
+                ),
+                "expected_version": expected_version,
+            }
+        )
+        async with self._session_factory() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            await self._lock_command(
+                session, actor_id, "AssociateVocabularyList", idempotency_key
+            )
+            replay = await self._replay(
+                session,
+                actor_id,
+                "AssociateVocabularyList",
+                idempotency_key,
+                fingerprint,
+            )
+            if replay is not None:
+                return MutationView(replay[0], replay[1], "active")
+            current = await self._load_list(session, list_id, for_update=True)
+            if current.version != expected_version:
+                raise DomainError(ErrorCode.VERSION_CONFLICT)
+            if current.status != "active":
+                raise DomainError(ErrorCode.INVALID_TRANSITION)
+            if self._association_targets is None:
+                raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+            exists = await self._association_targets.verify(
+                command.target_type,
+                command.target_id,
+                current.profile_id,
+            )
+            if not exists:
+                raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+            association_id = self._ids.new()
+            version = current.version + 1
+            await session.execute(
+                text(
+                    "INSERT INTO lexicon.list_associations "
+                    "(association_id,list_id,profile_id,target_type,target_id,role,"
+                    "valid_from,valid_until,version) VALUES "
+                    "(:association,:list,:profile,:target_type,:target,:role,"
+                    ":valid_from,:valid_until,1)"
+                ),
+                {
+                    "association": association_id,
+                    "list": list_id,
+                    "profile": current.profile_id,
+                    "target_type": command.target_type,
+                    "target": command.target_id,
+                    "role": command.role,
+                    "valid_from": command.valid_from,
+                    "valid_until": command.valid_until,
+                },
+            )
+            await session.execute(
+                text(
+                    "UPDATE lexicon.vocabulary_lists SET version=:version,updated_at=:at "
+                    "WHERE list_id=:list"
+                ),
+                {"version": version, "at": command.valid_from, "list": list_id},
+            )
+            await self._receipt(
+                session,
+                command_id=self._ids.new(),
+                command_type="AssociateVocabularyList",
+                actor_id=actor_id,
+                aggregate_type="list_association",
+                aggregate_id=association_id,
+                idempotency_key=idempotency_key,
+                fingerprint=fingerprint,
+                expected_version=expected_version,
+                version=version,
+                at=command.valid_from,
+                profile_id=current.profile_id,
+                event_type="vocabulary_list_revised",
+            )
+            return MutationView(association_id, version, "active")
 
     async def list_resources(
         self,

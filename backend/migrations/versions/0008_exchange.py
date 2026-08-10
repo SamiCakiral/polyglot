@@ -139,13 +139,16 @@ CREATE TABLE lexicon.list_associations (
   version integer NOT NULL,
   CONSTRAINT fk_list_association_list FOREIGN KEY (profile_id,list_id)
     REFERENCES lexicon.vocabulary_lists(profile_id,list_id) ON DELETE RESTRICT,
+  CONSTRAINT uq_list_association_target UNIQUE (list_id,target_type,target_id,role,valid_from),
   CONSTRAINT ck_list_association_uuid7 CHECK (
     lexicon.is_uuid7(association_id) AND lexicon.is_uuid7(list_id)
     AND lexicon.is_uuid7(profile_id) AND lexicon.is_uuid7(target_id)
   ),
   CONSTRAINT ck_list_association_shape CHECK (
-    target_type IN ('module','module_day','session_plan','exercise')
-    AND version >= 1 AND (valid_until IS NULL OR valid_until > valid_from)
+    target_type IN ('module_revision','module_day_revision','session_plan',
+      'exercise_definition_revision')
+    AND length(role) BETWEEN 1 AND 40 AND version >= 1
+    AND (valid_until IS NULL OR valid_until > valid_from)
   )
 );
 CREATE INDEX ix_vocabulary_lists_profile ON lexicon.vocabulary_lists(profile_id,status,list_id);

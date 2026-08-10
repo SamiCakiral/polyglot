@@ -29,6 +29,15 @@ class ChangeListMembers:
 
 
 @dataclass(frozen=True, slots=True)
+class AssociateVocabularyList:
+    target_type: str
+    target_id: UUID
+    role: str
+    valid_from: datetime
+    valid_until: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
 class CreateImport:
     format_id: str
     encoding: str
