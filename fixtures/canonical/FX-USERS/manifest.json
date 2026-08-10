@@ -1,0 +1,15 @@
+{
+  "fixture_code": "FX-USERS",
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 2002,
+  "clock": "2026-01-15T12:00:00+00:00",
+  "payloads": {
+    "users.json": "sha256:644392c658c1f6121a2e1cf86da8ee8ed8bf5432a97f4a16e53ab004b4b4e6f3"
+  },
+  "oracles": [
+    "all_six_roles_present",
+    "owner_can_read_own_account",
+    "owner_cannot_read_foreign_account"
+  ]
+}

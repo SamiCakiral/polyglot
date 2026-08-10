@@ -1,0 +1,86 @@
+{
+  "accounts": [
+    {
+      "account_id": "019bc186-de00-7101-8101-010101010101",
+      "status": "active"
+    },
+    {
+      "account_id": "019bc186-de00-7202-8202-020202020202",
+      "status": "active"
+    },
+    {
+      "account_id": "019bc186-de00-7303-8303-030303030303",
+      "status": "active"
+    },
+    {
+      "account_id": "019bc186-de00-7404-8404-040404040404",
+      "status": "active"
+    },
+    {
+      "account_id": "019bc186-de00-7505-8505-050505050505",
+      "status": "active"
+    },
+    {
+      "account_id": "019bc186-de00-7606-8606-060606060606",
+      "status": "active"
+    }
+  ],
+  "role_grants": [
+    {
+      "account_id": "019bc186-de00-7101-8101-010101010101",
+      "role": "learner"
+    },
+    {
+      "account_id": "019bc186-de00-7202-8202-020202020202",
+      "role": "author"
+    },
+    {
+      "account_id": "019bc186-de00-7202-8202-020202020202",
+      "role": "learner"
+    },
+    {
+      "account_id": "019bc186-de00-7303-8303-030303030303",
+      "role": "reviewer"
+    },
+    {
+      "account_id": "019bc186-de00-7404-8404-040404040404",
+      "role": "support"
+    },
+    {
+      "account_id": "019bc186-de00-7505-8505-050505050505",
+      "role": "admin"
+    },
+    {
+      "account_id": "019bc186-de00-7606-8606-060606060606",
+      "role": "worker"
+    }
+  ],
+  "local_identity": {
+    "identity_id": "019bc186-de00-7707-8707-070707070707",
+    "account_id": "019bc186-de00-7101-8101-010101010101",
+    "normalized_identifier": "learner.one@example.test",
+    "password_hash": "$argon2id$v=19$m=65536,t=3,p=4$cG9seWdsb3QtdzAyc2FsdA$7gTSeHgiP1jqHsjUppSWDYsTfvQ+l6Kz3rJIkZs23V4"
+  },
+  "authorization_oracles": [
+    {
+      "actor_account_id": "019bc186-de00-7101-8101-010101010101",
+      "resource_account_id": "019bc186-de00-7101-8101-010101010101",
+      "expected": "allowed"
+    },
+    {
+      "actor_account_id": "019bc186-de00-7101-8101-010101010101",
+      "resource_account_id": "019bc186-de00-7202-8202-020202020202",
+      "expected": "forbidden"
+    },
+    {
+      "actor_account_id": "019bc186-de00-7202-8202-020202020202",
+      "resource_account_id": "019bc186-de00-7202-8202-020202020202",
+      "expected": "allowed"
+    },
+    {
+      "actor_account_id": "019bc186-de00-7202-8202-020202020202",
+      "resource_account_id": "019bc186-de00-7101-8101-010101010101",
+      "expected": "forbidden"
+    }
+  ]
+}
