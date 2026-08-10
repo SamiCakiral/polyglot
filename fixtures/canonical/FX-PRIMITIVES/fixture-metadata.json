@@ -3,7 +3,9 @@
   "synthetic": true,
   "seed": 9009,
   "clock": "2026-08-10T12:00:00+00:00",
-  "payloads": {},
+  "payloads": {
+    "primitives.json": "sha256:ff75a6e753868dfef67491019dd22e5ed17e606f7c33651cd61ca1526d9c80ae"
+  },
   "oracles": [
     "all_core_primitives_closed_contract",
     "positive_negative_ambiguous_not_evaluable_per_primitive",

@@ -1,3 +1,4 @@
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -7,7 +8,6 @@ import pytest
 
 from polyglot.platform.clock import FrozenClock
 from polyglot.platform.errors import DomainError, ErrorCode
-
 
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 DEFINITION_ID = UUID("019fe009-0000-7000-8000-000000000001")
@@ -20,6 +20,7 @@ ATTEMPT_ID = UUID("019fe009-0000-7000-8000-000000000007")
 CORRECTION_ID = UUID("019fe009-0000-7000-8000-000000000008")
 CASE_ID = UUID("019fe009-0000-7000-8000-000000000009")
 FIXTURE = Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-PRIMITIVES/primitives.json"
+FIXTURE_METADATA = FIXTURE.with_name("fixture-metadata.json")
 
 
 class FixedIds:
@@ -69,12 +70,23 @@ def test_core_registry_is_closed_and_fixture_covers_every_core_primitive() -> No
     assert {item["primitive_id"] for item in fixture["primitives"]} == set(CORE_PRIMITIVE_IDS)
     assert len(CORE_PRIMITIVE_IDS) == 22
     for primitive_id in CORE_PRIMITIVE_IDS:
-        item = next(entry for entry in fixture["primitives"] if entry["primitive_id"] == primitive_id)
+        item = next(
+            entry for entry in fixture["primitives"] if entry["primitive_id"] == primitive_id
+        )
         spec = primitive_spec(primitive_id)
         assert item["answer_kinds"] == [kind.value for kind in spec.answer_kinds]
         assert item["a11y"]["keyboard"] is True
         assert item["a11y"]["screen_reader"] is True
         assert item["paths"] == ["positive", "negative", "ambiguous", "not_evaluable"]
+
+
+def test_fixture_payload_is_hash_locked_for_offline_replay() -> None:
+    metadata = json.loads(FIXTURE_METADATA.read_text())
+
+    assert metadata["network_dependencies"] == []
+    assert metadata["payloads"]["primitives.json"] == (
+        "sha256:" + hashlib.sha256(FIXTURE.read_bytes()).hexdigest()
+    )
 
 
 def test_definition_rejects_response_kind_outside_primitive_adapter_contract() -> None:
@@ -134,7 +146,9 @@ def test_answer_union_rejects_a_free_payload_and_preserves_raw_answer_immutably(
 def test_attempt_cycle_is_immutable_and_idempotent_for_the_same_submission() -> None:
     from polyglot.modules.exercises.core.domain import Answer, AnswerKind, AttemptStatus
 
-    attempt = __import__("polyglot.modules.exercises.core.domain", fromlist=["Attempt"]).Attempt.start(
+    attempt = __import__(
+        "polyglot.modules.exercises.core.domain", fromlist=["Attempt"]
+    ).Attempt.start(
         instance=instance(),
         profile_id=PROFILE_ID,
         attempt_no=1,

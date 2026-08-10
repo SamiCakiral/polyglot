@@ -6,12 +6,13 @@ from hypothesis import strategies as st
 
 from polyglot.platform.clock import FrozenClock
 
-
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 
 
 @given(st.text(min_size=0, max_size=80))
-def test_exact_normalized_is_deterministic_and_never_turns_ambiguous_input_into_success(value: str) -> None:
+def test_exact_normalized_is_deterministic_and_never_turns_ambiguous_input_into_success(
+    value: str,
+) -> None:
     from polyglot.modules.exercises.core.domain import CorrectionStrategy, CorrectionVerdict
 
     strategy = CorrectionStrategy.exact_normalized("Ciao")
@@ -21,20 +22,30 @@ def test_exact_normalized_is_deterministic_and_never_turns_ambiguous_input_into_
 
 
 @given(st.sampled_from(("h0", "h1", "h2", "h3", "h4")), st.floats(min_value=0.0, max_value=1.0))
-def test_credit_is_deterministic_and_h4_never_yields_positive_credit(hint_level: str, coverage: float) -> None:
+def test_credit_is_deterministic_and_h4_never_yields_positive_credit(
+    hint_level: str, coverage: float
+) -> None:
     from polyglot.modules.exercises.core.domain import CorrectionResult
 
     result = CorrectionResult.correct(confidence=1.0, target_coverage=coverage)
     credit = result.credit_value(operation_cap=0.75, target_weight=1.0, hint_level=hint_level)
 
-    assert credit == result.credit_value(operation_cap=0.75, target_weight=1.0, hint_level=hint_level)
+    assert credit == result.credit_value(
+        operation_cap=0.75, target_weight=1.0, hint_level=hint_level
+    )
     if hint_level == "h4":
         assert credit == 0.0
 
 
 @given(st.lists(st.text(min_size=0, max_size=20), min_size=1, max_size=8))
 def test_same_submission_key_is_idempotent_for_every_answer_value(values: list[str]) -> None:
-    from polyglot.modules.exercises.core.domain import Answer, AnswerKind, Attempt, ExerciseDefinition, ExerciseInstance
+    from polyglot.modules.exercises.core.domain import (
+        Answer,
+        AnswerKind,
+        Attempt,
+        ExerciseDefinition,
+        ExerciseInstance,
+    )
 
     definition = ExerciseDefinition.published(
         definition_id=UUID("019fe009-1000-7000-8000-000000000001"),

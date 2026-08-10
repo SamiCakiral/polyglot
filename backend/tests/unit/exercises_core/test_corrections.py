@@ -1,11 +1,6 @@
-from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
-
-from polyglot.platform.clock import FrozenClock
-from polyglot.platform.errors import DomainError, ErrorCode
-
 from test_contracts import (
     ATTEMPT_ID,
     CASE_ID,
@@ -15,6 +10,9 @@ from test_contracts import (
     FixedIds,
     instance,
 )
+
+from polyglot.platform.clock import FrozenClock
+from polyglot.platform.errors import DomainError, ErrorCode
 
 
 def test_closed_correction_strategies_do_not_promote_ambiguous_or_unavailable_answers() -> None:
@@ -71,21 +69,33 @@ def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_cred
         attempt_no=1,
         clock=FrozenClock(NOW),
         ids=FixedIds(ATTEMPT_ID),
-    ).reveal(reason="user_requested")
-    corrected = attempt.submit(answer=answer, idempotency_key="submit-1").start_correction().complete_correction(
-        correction_id=CORRECTION_ID,
-        result=CorrectionResult.correct(confidence=1.0),
-        clock=FrozenClock(NOW),
+    ).reveal(reason="user_requested", clock=FrozenClock(NOW))
+    corrected = (
+        attempt.submit(answer=answer, idempotency_key="submit-1")
+        .start_correction()
+        .complete_correction(
+            correction_id=CORRECTION_ID,
+            result=CorrectionResult.correct(confidence=1.0),
+            clock=FrozenClock(NOW),
+        )
     )
-    ambiguous = attempt.submit(answer=answer, idempotency_key="submit-2").start_correction().complete_correction(
-        correction_id=CORRECTION_ID,
-        result=CorrectionResult.ambiguous("multiple readings"),
-        clock=FrozenClock(NOW),
+    ambiguous = (
+        attempt.submit(answer=answer, idempotency_key="submit-2")
+        .start_correction()
+        .complete_correction(
+            correction_id=CORRECTION_ID,
+            result=CorrectionResult.ambiguous("multiple readings"),
+            clock=FrozenClock(NOW),
+        )
     )
-    unavailable = attempt.submit(answer=answer, idempotency_key="submit-3").start_correction().complete_correction(
-        correction_id=CORRECTION_ID,
-        result=CorrectionResult.not_evaluable("timeout"),
-        clock=FrozenClock(NOW),
+    unavailable = (
+        attempt.submit(answer=answer, idempotency_key="submit-3")
+        .start_correction()
+        .complete_correction(
+            correction_id=CORRECTION_ID,
+            result=CorrectionResult.not_evaluable("timeout"),
+            clock=FrozenClock(NOW),
+        )
     )
 
     assert corrected.status is AttemptStatus.CORRECTED
@@ -101,7 +111,9 @@ def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_cred
 def test_correction_case_is_append_only_and_never_mutates_the_raw_answer() -> None:
     from polyglot.modules.exercises.core.domain import CorrectionCase, CorrectionCaseStatus
 
-    closed = CorrectionCase.closed(case_id=CASE_ID, attempt_id=ATTEMPT_ID, correction_id=CORRECTION_ID)
+    closed = CorrectionCase.closed(
+        case_id=CASE_ID, attempt_id=ATTEMPT_ID, correction_id=CORRECTION_ID
+    )
     contested = closed.contest(reason="published alternative missing", at=NOW)
     queued = contested.queue_review(at=NOW)
     resolved = queued.resolve(correction_id=UUID("019fe009-0000-7000-8000-000000000010"), at=NOW)
@@ -116,7 +128,9 @@ def test_correction_case_is_append_only_and_never_mutates_the_raw_answer() -> No
     )
 
 
-def test_block_lifecycle_models_skip_abandon_unavailability_and_forced_submission_explicitly() -> None:
+def test_block_lifecycle_models_skip_abandon_unavailability_and_forced_submission_explicitly() -> (
+    None
+):
     from polyglot.modules.exercises.core.domain import (
         Attempt,
         AttemptStatus,
@@ -125,7 +139,9 @@ def test_block_lifecycle_models_skip_abandon_unavailability_and_forced_submissio
         TerminalReason,
     )
 
-    available = ExerciseBlockRun.create(block_id=UUID("019fe009-0000-7000-8000-000000000011")).make_available()
+    available = ExerciseBlockRun.create(
+        block_id=UUID("019fe009-0000-7000-8000-000000000011")
+    ).make_available()
     skipped = available.skip(reason="learner_choice")
     abandoned = available.start().abandon()
     unavailable = available.mark_unavailable(reason="media_missing")
