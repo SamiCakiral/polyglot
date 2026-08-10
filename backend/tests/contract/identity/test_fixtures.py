@@ -140,4 +140,5 @@ def test_canonical_identity_fixtures_never_store_plaintext_secrets_or_tokens() -
         manifest, payload = _load_fixture(fixture_code, payload_name)
         documents.extend((manifest, payload))
 
-    assert not (set().union(*(_all_keys(document) for document in documents)) & FORBIDDEN_SECRET_FIELDS)
+    fixture_keys = set().union(*(_all_keys(document) for document in documents))
+    assert not (fixture_keys & FORBIDDEN_SECRET_FIELDS)

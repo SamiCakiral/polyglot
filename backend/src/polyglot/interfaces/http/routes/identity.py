@@ -36,12 +36,18 @@ class CredentialsRequest(ClosedModel):
 
     @model_validator(mode="after")
     def validate_provider_shape(self) -> "CredentialsRequest":
-        local = self.provider_type == "local_password"
-        local_shape = self.identifier is not None and self.password is not None
-        oidc_shape = self.authorization_code is not None
-        if local and (not local_shape or oidc_shape):
-            raise ValueError("local credentials are incomplete")
-        if not local and (local_shape or not oidc_shape):
+        if self.provider_type == "local_password":
+            if (
+                self.identifier is None
+                or self.password is None
+                or self.authorization_code is not None
+            ):
+                raise ValueError("local credentials are incomplete")
+        elif (
+            self.authorization_code is None
+            or self.identifier is not None
+            or self.password is not None
+        ):
             raise ValueError("OIDC credentials are incomplete")
         return self
 
