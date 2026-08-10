@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 1014,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "assessment.json": "sha256:a03f5dd6eccd3bd193d73e68a7d3fdd67c26805a118eab12e2e0fd54f289ecac"
+  },
+  "oracles": [
+    "selection_60_20_20",
+    "server_timer_and_exact_resume",
+    "idempotent_submission",
+    "modality_isolation",
+    "oral_without_review_is_not_evaluable"
+  ],
+  "network_dependencies": [],
+  "pedagogical_review": "pending_human"
+}

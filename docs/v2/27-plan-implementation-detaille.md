@@ -940,14 +940,14 @@ soumission, item defectueux, audio absent et oral simule.
 
 **Etapes TDD :**
 
-- [ ] Ecrire les contrats des quatre protocoles et leurs erreurs.
-- [ ] Implementer la machine de run et le minuteur fonde sur l'heure serveur.
-- [ ] Ecrire les tests PostgreSQL, puis ajouter `0014_assessments`.
-- [ ] Tester sauvegarde, reprise, pause interdite, expiration et double soumission.
-- [ ] Implementer scoring/grilles avec versions figees.
-- [ ] Prouver l'isolation stricte des preuves par modalite.
-- [ ] Ajouter les degradations media absent et oral simule.
-- [ ] Publier `FX-ASSESS`; garder le pilote humain comme preuve future separee.
+- [x] Ecrire les contrats des quatre protocoles et leurs erreurs.
+- [x] Implementer la machine de run et le minuteur fonde sur l'heure serveur.
+- [x] Ecrire les tests PostgreSQL, puis ajouter `0014_assessments`.
+- [x] Tester sauvegarde, reprise, pause interdite, expiration et double soumission.
+- [x] Implementer scoring/grilles avec versions figees.
+- [x] Prouver l'isolation stricte des preuves par modalite.
+- [x] Ajouter les degradations media absent et oral simule.
+- [x] Publier `FX-ASSESS`; garder le pilote humain comme preuve future separee.
 
 **Preuves cibles :** `uv run pytest tests/unit/assessments
 tests/property/assessments tests/integration/assessments -q`; le pilote humain

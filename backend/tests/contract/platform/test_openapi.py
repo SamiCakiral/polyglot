@@ -35,7 +35,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w12_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w14_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -44,6 +44,13 @@ def test_openapi_exports_the_implemented_w01_through_w12_surface() -> None:
     assert set(document["paths"]) == {
         "/api/v1/account/password",
         "/api/v1/account/preferences",
+            "/api/v1/assessments/{id}",
+            "/api/v1/assessments/{run_id}/responses/{item_id}",
+            "/api/v1/assessments/{run_id}:pause",
+            "/api/v1/assessments/{run_id}:resolve-review",
+            "/api/v1/assessments/{run_id}:resume",
+            "/api/v1/assessments/{run_id}:start",
+            "/api/v1/assessments/{run_id}:submit",
             "/api/v1/accounts",
             "/api/v1/attempts/{attempt_id}/correction-case",
             "/api/v1/attempts/{attempt_id}/draft",
@@ -71,6 +78,7 @@ def test_openapi_exports_the_implemented_w01_through_w12_surface() -> None:
         "/api/v1/language-profiles/{id}/progress",
         "/api/v1/language-profiles/{id}/recommendations",
         "/api/v1/language-profiles/{profile_id}",
+        "/api/v1/language-profiles/{profile_id}/assessments",
         "/api/v1/language-profiles/{profile_id}/diagnostics",
         "/api/v1/language-profiles/{profile_id}/daily-plans",
         "/api/v1/language-profiles/{profile_id}/encounters",

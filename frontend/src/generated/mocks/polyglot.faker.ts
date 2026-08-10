@@ -10,6 +10,7 @@ import { faker } from "@faker-js/faker";
 import { AnswerKind } from "../model";
 import type {
   AccountResponse,
+  AssessmentRunResponse,
   AttemptResponse,
   CatalogueTargetPageResponse,
   ConsentResponse,
@@ -101,6 +102,895 @@ export const getRegisterAccountResponseMock = (
   overrideResponse: Partial<Extract<AccountResponse, object>> = {},
 ): AccountResponse => ({
   account_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetAssessmentRunResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSaveAssessmentResponseResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPauseAssessmentResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResolveAssessmentReviewResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResumeAssessmentResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartAssessmentResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSubmitAssessmentResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -1846,6 +2736,133 @@ export const getDeleteLanguageProfileResponseMock = (
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   target_variety_id: faker.string.uuid(),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPrepareAssessmentResponseMock = (
+  overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
+): AssessmentRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  deadline_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  form_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pause_allowed: faker.datatype.boolean(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  prepared_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  profile_id: faker.string.uuid(),
+  protocol_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  remaining_time_ms: faker.helpers.arrayElement([faker.number.int(), null]),
+  result: faker.helpers.arrayElement([
+    {
+      band: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      coverage: faker.number.float({ fractionDigits: 2 }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      integrity_factor: faker.number.float({ fractionDigits: 2 }),
+      limiting_criteria: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      result_id: faker.string.uuid(),
+      score: faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  sections: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    instructions: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    items: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      answer: faker.helpers.arrayElement([
+        {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        null,
+      ]),
+      answer_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      coverage_targets: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      item_id: faker.string.uuid(),
+      item_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      max_plays: faker.helpers.arrayElement([faker.number.int(), null]),
+      media_ref: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      ordinal: faker.number.int(),
+      prompt: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      response_version: faker.number.int(),
+      saved_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      section_id: faker.string.uuid(),
+      weight: faker.number.float({ fractionDigits: 2 }),
+    })),
+    ordinal: faker.number.int(),
+    section_id: faker.string.uuid(),
+    section_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    weight: faker.number.float({ fractionDigits: 2 }),
+  })),
+  server_now: faker.date.past().toISOString().slice(0, 19) + "Z",
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  time_limit_ms: faker.number.int(),
   version: faker.number.int(),
   ...overrideResponse,
 });

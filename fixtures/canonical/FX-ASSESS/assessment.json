@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-ASSESS",
+  "clock": "2026-08-10T12:00:00+00:00",
+  "protocols": {
+    "reading": {
+      "policy": "READING_SCORE_V0",
+      "time_limit_ms": 1500000,
+      "minimum_units": 12,
+      "minimum_coverage": 0.8
+    },
+    "listening": {
+      "policy": "LISTENING_SCORE_V0",
+      "time_limit_ms": 1500000,
+      "minimum_units": 10,
+      "minimum_coverage": 0.8
+    },
+    "writing": {
+      "policy": "WRITING_RUBRIC_V0",
+      "time_limit_ms": 2400000,
+      "tasks": 2,
+      "review_required": true
+    },
+    "speaking": {
+      "policy": "SPEAKING_RUBRIC_V0",
+      "time_limit_ms": 1080000,
+      "segments": 4,
+      "without_qualified_review": "not_evaluable"
+    }
+  },
+  "form_selection": {
+    "current_band": 0.6,
+    "lower_anchor": 0.2,
+    "transfer": 0.2,
+    "exposure_window_days": 14,
+    "fallback": null
+  },
+  "normative_cases": [
+    "pause_preserves_server_remaining_time",
+    "pause_forbidden_is_explicit",
+    "resume_window_expires_after_24h",
+    "double_submission_returns_same_result",
+    "divergent_response_after_submission_conflicts",
+    "defective_item_is_excluded_from_coverage",
+    "missing_audio_never_becomes_user_failure",
+    "reading_evidence_only_credits_reading",
+    "oral_self_assessment_never_produces_reliable_mastery"
+  ]
+}

@@ -23,6 +23,7 @@ import type {
 import type {
   AccountResponse,
   ApproveContentRevisionRequest,
+  AssessmentRunResponse,
   AtRequest,
   AttemptResponse,
   CatalogueTargetPageResponse,
@@ -90,6 +91,7 @@ import type {
   PauseEnrollmentRequest,
   PreferencesRequest,
   PreferencesResponse,
+  PrepareAssessmentRequest,
   PreviewDynamicListParams,
   ProblemResponse,
   ProfileResponse,
@@ -102,6 +104,7 @@ import type {
   RecommendationPageResponse,
   RequestExportRequest,
   ResetMemoryPromptRequest,
+  ResolveAssessmentReviewRequest,
   ResolveCorrectionCaseRequest,
   ResolveImportConflictRequest,
   ResourceMutationResponse,
@@ -110,6 +113,7 @@ import type {
   ResumeMemoryPromptRequest,
   ReviseContentDraftRequest,
   ReviseVocabularyListRequest,
+  SaveAssessmentResponseRequest,
   SaveDraftRequest,
   SearchLexiconParams,
   SenseNeighborhoodResponse,
@@ -745,6 +749,1575 @@ export const useRegisterAccount = <
   TContext
 > => {
   return useMutation(getRegisterAccountMutationOptions(options), queryClient);
+};
+
+export type getAssessmentRunResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type getAssessmentRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getAssessmentRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getAssessmentRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getAssessmentRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getAssessmentRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getAssessmentRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getAssessmentRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getAssessmentRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getAssessmentRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getAssessmentRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getAssessmentRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getAssessmentRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getAssessmentRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getAssessmentRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getAssessmentRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getAssessmentRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getAssessmentRunResponseSuccess = getAssessmentRunResponse200 & {
+  headers: Headers;
+};
+export type getAssessmentRunResponseError = (
+  | getAssessmentRunResponse401ApplicationJson
+  | getAssessmentRunResponse401ApplicationProblemJson
+  | getAssessmentRunResponse403ApplicationJson
+  | getAssessmentRunResponse403ApplicationProblemJson
+  | getAssessmentRunResponse409ApplicationJson
+  | getAssessmentRunResponse409ApplicationProblemJson
+  | getAssessmentRunResponse422ApplicationJson
+  | getAssessmentRunResponse422ApplicationProblemJson
+  | getAssessmentRunResponse423ApplicationJson
+  | getAssessmentRunResponse423ApplicationProblemJson
+  | getAssessmentRunResponse428ApplicationJson
+  | getAssessmentRunResponse428ApplicationProblemJson
+  | getAssessmentRunResponse429ApplicationJson
+  | getAssessmentRunResponse429ApplicationProblemJson
+  | getAssessmentRunResponse503ApplicationJson
+  | getAssessmentRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getAssessmentRunResponse =
+  getAssessmentRunResponseSuccess | getAssessmentRunResponseError;
+
+export const getGetAssessmentRunUrl = (id: string) => {
+  return `/api/v1/assessments/${id}`;
+};
+
+/**
+ * @summary Get Assessment Run
+ */
+export const getAssessmentRun = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getAssessmentRunResponse> => {
+  const res = await fetch(getGetAssessmentRunUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getAssessmentRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getAssessmentRunResponse;
+};
+
+export const getGetAssessmentRunQueryKey = (id: string) => {
+  return [`/api/v1/assessments/${id}`] as const;
+};
+
+export const getGetAssessmentRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAssessmentRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAssessmentRunQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAssessmentRun>>
+  > = ({ signal }) => getAssessmentRun(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAssessmentRun>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAssessmentRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAssessmentRun>>
+>;
+export type GetAssessmentRunQueryError = ProblemResponse;
+
+export function useGetAssessmentRun<
+  TData = Awaited<ReturnType<typeof getAssessmentRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAssessmentRun>>,
+          TError,
+          Awaited<ReturnType<typeof getAssessmentRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAssessmentRun<
+  TData = Awaited<ReturnType<typeof getAssessmentRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAssessmentRun>>,
+          TError,
+          Awaited<ReturnType<typeof getAssessmentRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAssessmentRun<
+  TData = Awaited<ReturnType<typeof getAssessmentRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Assessment Run
+ */
+
+export function useGetAssessmentRun<
+  TData = Awaited<ReturnType<typeof getAssessmentRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetAssessmentRunQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type saveAssessmentResponseResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type saveAssessmentResponseResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type saveAssessmentResponseResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type saveAssessmentResponseResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type saveAssessmentResponseResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type saveAssessmentResponseResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type saveAssessmentResponseResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type saveAssessmentResponseResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type saveAssessmentResponseResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type saveAssessmentResponseResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type saveAssessmentResponseResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type saveAssessmentResponseResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type saveAssessmentResponseResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type saveAssessmentResponseResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type saveAssessmentResponseResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type saveAssessmentResponseResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type saveAssessmentResponseResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type saveAssessmentResponseResponseSuccess =
+  saveAssessmentResponseResponse200 & {
+    headers: Headers;
+  };
+export type saveAssessmentResponseResponseError = (
+  | saveAssessmentResponseResponse401ApplicationJson
+  | saveAssessmentResponseResponse401ApplicationProblemJson
+  | saveAssessmentResponseResponse403ApplicationJson
+  | saveAssessmentResponseResponse403ApplicationProblemJson
+  | saveAssessmentResponseResponse409ApplicationJson
+  | saveAssessmentResponseResponse409ApplicationProblemJson
+  | saveAssessmentResponseResponse422ApplicationJson
+  | saveAssessmentResponseResponse422ApplicationProblemJson
+  | saveAssessmentResponseResponse423ApplicationJson
+  | saveAssessmentResponseResponse423ApplicationProblemJson
+  | saveAssessmentResponseResponse428ApplicationJson
+  | saveAssessmentResponseResponse428ApplicationProblemJson
+  | saveAssessmentResponseResponse429ApplicationJson
+  | saveAssessmentResponseResponse429ApplicationProblemJson
+  | saveAssessmentResponseResponse503ApplicationJson
+  | saveAssessmentResponseResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type saveAssessmentResponseResponse =
+  saveAssessmentResponseResponseSuccess | saveAssessmentResponseResponseError;
+
+export const getSaveAssessmentResponseUrl = (runId: string, itemId: string) => {
+  return `/api/v1/assessments/${runId}/responses/${itemId}`;
+};
+
+/**
+ * @summary Save Assessment Response
+ */
+export const saveAssessmentResponse = async (
+  runId: string,
+  itemId: string,
+  saveAssessmentResponseRequest: SaveAssessmentResponseRequest,
+  options?: RequestInit,
+): Promise<saveAssessmentResponseResponse> => {
+  const res = await fetch(getSaveAssessmentResponseUrl(runId, itemId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(saveAssessmentResponseRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: saveAssessmentResponseResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as saveAssessmentResponseResponse;
+};
+
+export const getSaveAssessmentResponseMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveAssessmentResponse>>,
+    TError,
+    { runId: string; itemId: string; data: SaveAssessmentResponseRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveAssessmentResponse>>,
+  TError,
+  { runId: string; itemId: string; data: SaveAssessmentResponseRequest },
+  TContext
+> => {
+  const mutationKey = ["saveAssessmentResponse"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveAssessmentResponse>>,
+    { runId: string; itemId: string; data: SaveAssessmentResponseRequest }
+  > = (props) => {
+    const { runId, itemId, data } = props ?? {};
+
+    return saveAssessmentResponse(runId, itemId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveAssessmentResponseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveAssessmentResponse>>
+>;
+export type SaveAssessmentResponseMutationBody = SaveAssessmentResponseRequest;
+export type SaveAssessmentResponseMutationError = ProblemResponse;
+
+/**
+ * @summary Save Assessment Response
+ */
+export const useSaveAssessmentResponse = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof saveAssessmentResponse>>,
+      TError,
+      { runId: string; itemId: string; data: SaveAssessmentResponseRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof saveAssessmentResponse>>,
+  TError,
+  { runId: string; itemId: string; data: SaveAssessmentResponseRequest },
+  TContext
+> => {
+  return useMutation(
+    getSaveAssessmentResponseMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type pauseAssessmentResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type pauseAssessmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type pauseAssessmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type pauseAssessmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type pauseAssessmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type pauseAssessmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type pauseAssessmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type pauseAssessmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type pauseAssessmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type pauseAssessmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type pauseAssessmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type pauseAssessmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type pauseAssessmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type pauseAssessmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type pauseAssessmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type pauseAssessmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type pauseAssessmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type pauseAssessmentResponseSuccess = pauseAssessmentResponse200 & {
+  headers: Headers;
+};
+export type pauseAssessmentResponseError = (
+  | pauseAssessmentResponse401ApplicationJson
+  | pauseAssessmentResponse401ApplicationProblemJson
+  | pauseAssessmentResponse403ApplicationJson
+  | pauseAssessmentResponse403ApplicationProblemJson
+  | pauseAssessmentResponse409ApplicationJson
+  | pauseAssessmentResponse409ApplicationProblemJson
+  | pauseAssessmentResponse422ApplicationJson
+  | pauseAssessmentResponse422ApplicationProblemJson
+  | pauseAssessmentResponse423ApplicationJson
+  | pauseAssessmentResponse423ApplicationProblemJson
+  | pauseAssessmentResponse428ApplicationJson
+  | pauseAssessmentResponse428ApplicationProblemJson
+  | pauseAssessmentResponse429ApplicationJson
+  | pauseAssessmentResponse429ApplicationProblemJson
+  | pauseAssessmentResponse503ApplicationJson
+  | pauseAssessmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type pauseAssessmentResponse =
+  pauseAssessmentResponseSuccess | pauseAssessmentResponseError;
+
+export const getPauseAssessmentUrl = (runId: string) => {
+  return `/api/v1/assessments/${runId}:pause`;
+};
+
+/**
+ * @summary Endpoint
+ */
+export const pauseAssessment = async (
+  runId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<pauseAssessmentResponse> => {
+  const res = await fetch(getPauseAssessmentUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: pauseAssessmentResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as pauseAssessmentResponse;
+};
+
+export const getPauseAssessmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pauseAssessment>>,
+    TError,
+    { runId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pauseAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["pauseAssessment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pauseAssessment>>,
+    { runId: string; data: EmptyRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return pauseAssessment(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PauseAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pauseAssessment>>
+>;
+export type PauseAssessmentMutationBody = EmptyRequest;
+export type PauseAssessmentMutationError = ProblemResponse;
+
+/**
+ * @summary Endpoint
+ */
+export const usePauseAssessment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pauseAssessment>>,
+      TError,
+      { runId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pauseAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getPauseAssessmentMutationOptions(options), queryClient);
+};
+
+export type resolveAssessmentReviewResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type resolveAssessmentReviewResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resolveAssessmentReviewResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resolveAssessmentReviewResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resolveAssessmentReviewResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resolveAssessmentReviewResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resolveAssessmentReviewResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resolveAssessmentReviewResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resolveAssessmentReviewResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resolveAssessmentReviewResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resolveAssessmentReviewResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resolveAssessmentReviewResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resolveAssessmentReviewResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resolveAssessmentReviewResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resolveAssessmentReviewResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resolveAssessmentReviewResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resolveAssessmentReviewResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resolveAssessmentReviewResponseSuccess =
+  resolveAssessmentReviewResponse200 & {
+    headers: Headers;
+  };
+export type resolveAssessmentReviewResponseError = (
+  | resolveAssessmentReviewResponse401ApplicationJson
+  | resolveAssessmentReviewResponse401ApplicationProblemJson
+  | resolveAssessmentReviewResponse403ApplicationJson
+  | resolveAssessmentReviewResponse403ApplicationProblemJson
+  | resolveAssessmentReviewResponse409ApplicationJson
+  | resolveAssessmentReviewResponse409ApplicationProblemJson
+  | resolveAssessmentReviewResponse422ApplicationJson
+  | resolveAssessmentReviewResponse422ApplicationProblemJson
+  | resolveAssessmentReviewResponse423ApplicationJson
+  | resolveAssessmentReviewResponse423ApplicationProblemJson
+  | resolveAssessmentReviewResponse428ApplicationJson
+  | resolveAssessmentReviewResponse428ApplicationProblemJson
+  | resolveAssessmentReviewResponse429ApplicationJson
+  | resolveAssessmentReviewResponse429ApplicationProblemJson
+  | resolveAssessmentReviewResponse503ApplicationJson
+  | resolveAssessmentReviewResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resolveAssessmentReviewResponse =
+  resolveAssessmentReviewResponseSuccess | resolveAssessmentReviewResponseError;
+
+export const getResolveAssessmentReviewUrl = (runId: string) => {
+  return `/api/v1/assessments/${runId}:resolve-review`;
+};
+
+/**
+ * @summary Resolve Assessment Review
+ */
+export const resolveAssessmentReview = async (
+  runId: string,
+  resolveAssessmentReviewRequest: ResolveAssessmentReviewRequest,
+  options?: RequestInit,
+): Promise<resolveAssessmentReviewResponse> => {
+  const res = await fetch(getResolveAssessmentReviewUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resolveAssessmentReviewRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resolveAssessmentReviewResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resolveAssessmentReviewResponse;
+};
+
+export const getResolveAssessmentReviewMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveAssessmentReview>>,
+    TError,
+    { runId: string; data: ResolveAssessmentReviewRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolveAssessmentReview>>,
+  TError,
+  { runId: string; data: ResolveAssessmentReviewRequest },
+  TContext
+> => {
+  const mutationKey = ["resolveAssessmentReview"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveAssessmentReview>>,
+    { runId: string; data: ResolveAssessmentReviewRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return resolveAssessmentReview(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolveAssessmentReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveAssessmentReview>>
+>;
+export type ResolveAssessmentReviewMutationBody =
+  ResolveAssessmentReviewRequest;
+export type ResolveAssessmentReviewMutationError = ProblemResponse;
+
+/**
+ * @summary Resolve Assessment Review
+ */
+export const useResolveAssessmentReview = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resolveAssessmentReview>>,
+      TError,
+      { runId: string; data: ResolveAssessmentReviewRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resolveAssessmentReview>>,
+  TError,
+  { runId: string; data: ResolveAssessmentReviewRequest },
+  TContext
+> => {
+  return useMutation(
+    getResolveAssessmentReviewMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type resumeAssessmentResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type resumeAssessmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumeAssessmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumeAssessmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumeAssessmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumeAssessmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumeAssessmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumeAssessmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumeAssessmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumeAssessmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resumeAssessmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resumeAssessmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumeAssessmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumeAssessmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resumeAssessmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resumeAssessmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumeAssessmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumeAssessmentResponseSuccess = resumeAssessmentResponse200 & {
+  headers: Headers;
+};
+export type resumeAssessmentResponseError = (
+  | resumeAssessmentResponse401ApplicationJson
+  | resumeAssessmentResponse401ApplicationProblemJson
+  | resumeAssessmentResponse403ApplicationJson
+  | resumeAssessmentResponse403ApplicationProblemJson
+  | resumeAssessmentResponse409ApplicationJson
+  | resumeAssessmentResponse409ApplicationProblemJson
+  | resumeAssessmentResponse422ApplicationJson
+  | resumeAssessmentResponse422ApplicationProblemJson
+  | resumeAssessmentResponse423ApplicationJson
+  | resumeAssessmentResponse423ApplicationProblemJson
+  | resumeAssessmentResponse428ApplicationJson
+  | resumeAssessmentResponse428ApplicationProblemJson
+  | resumeAssessmentResponse429ApplicationJson
+  | resumeAssessmentResponse429ApplicationProblemJson
+  | resumeAssessmentResponse503ApplicationJson
+  | resumeAssessmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resumeAssessmentResponse =
+  resumeAssessmentResponseSuccess | resumeAssessmentResponseError;
+
+export const getResumeAssessmentUrl = (runId: string) => {
+  return `/api/v1/assessments/${runId}:resume`;
+};
+
+/**
+ * @summary Endpoint
+ */
+export const resumeAssessment = async (
+  runId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<resumeAssessmentResponse> => {
+  const res = await fetch(getResumeAssessmentUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resumeAssessmentResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resumeAssessmentResponse;
+};
+
+export const getResumeAssessmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resumeAssessment>>,
+    TError,
+    { runId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resumeAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["resumeAssessment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resumeAssessment>>,
+    { runId: string; data: EmptyRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return resumeAssessment(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResumeAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resumeAssessment>>
+>;
+export type ResumeAssessmentMutationBody = EmptyRequest;
+export type ResumeAssessmentMutationError = ProblemResponse;
+
+/**
+ * @summary Endpoint
+ */
+export const useResumeAssessment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resumeAssessment>>,
+      TError,
+      { runId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resumeAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getResumeAssessmentMutationOptions(options), queryClient);
+};
+
+export type startAssessmentResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type startAssessmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startAssessmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startAssessmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startAssessmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startAssessmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startAssessmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startAssessmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startAssessmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startAssessmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startAssessmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startAssessmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startAssessmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startAssessmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startAssessmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startAssessmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startAssessmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startAssessmentResponseSuccess = startAssessmentResponse200 & {
+  headers: Headers;
+};
+export type startAssessmentResponseError = (
+  | startAssessmentResponse401ApplicationJson
+  | startAssessmentResponse401ApplicationProblemJson
+  | startAssessmentResponse403ApplicationJson
+  | startAssessmentResponse403ApplicationProblemJson
+  | startAssessmentResponse409ApplicationJson
+  | startAssessmentResponse409ApplicationProblemJson
+  | startAssessmentResponse422ApplicationJson
+  | startAssessmentResponse422ApplicationProblemJson
+  | startAssessmentResponse423ApplicationJson
+  | startAssessmentResponse423ApplicationProblemJson
+  | startAssessmentResponse428ApplicationJson
+  | startAssessmentResponse428ApplicationProblemJson
+  | startAssessmentResponse429ApplicationJson
+  | startAssessmentResponse429ApplicationProblemJson
+  | startAssessmentResponse503ApplicationJson
+  | startAssessmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startAssessmentResponse =
+  startAssessmentResponseSuccess | startAssessmentResponseError;
+
+export const getStartAssessmentUrl = (runId: string) => {
+  return `/api/v1/assessments/${runId}:start`;
+};
+
+/**
+ * @summary Start Assessment
+ */
+export const startAssessment = async (
+  runId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<startAssessmentResponse> => {
+  const res = await fetch(getStartAssessmentUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startAssessmentResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startAssessmentResponse;
+};
+
+export const getStartAssessmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startAssessment>>,
+    TError,
+    { runId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["startAssessment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startAssessment>>,
+    { runId: string; data: EmptyRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return startAssessment(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startAssessment>>
+>;
+export type StartAssessmentMutationBody = EmptyRequest;
+export type StartAssessmentMutationError = ProblemResponse;
+
+/**
+ * @summary Start Assessment
+ */
+export const useStartAssessment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startAssessment>>,
+      TError,
+      { runId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getStartAssessmentMutationOptions(options), queryClient);
+};
+
+export type submitAssessmentResponse200 = {
+  data: AssessmentRunResponse;
+  status: 200;
+};
+
+export type submitAssessmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitAssessmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitAssessmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitAssessmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitAssessmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitAssessmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitAssessmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitAssessmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitAssessmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitAssessmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitAssessmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitAssessmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitAssessmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitAssessmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitAssessmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitAssessmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitAssessmentResponseSuccess = submitAssessmentResponse200 & {
+  headers: Headers;
+};
+export type submitAssessmentResponseError = (
+  | submitAssessmentResponse401ApplicationJson
+  | submitAssessmentResponse401ApplicationProblemJson
+  | submitAssessmentResponse403ApplicationJson
+  | submitAssessmentResponse403ApplicationProblemJson
+  | submitAssessmentResponse409ApplicationJson
+  | submitAssessmentResponse409ApplicationProblemJson
+  | submitAssessmentResponse422ApplicationJson
+  | submitAssessmentResponse422ApplicationProblemJson
+  | submitAssessmentResponse423ApplicationJson
+  | submitAssessmentResponse423ApplicationProblemJson
+  | submitAssessmentResponse428ApplicationJson
+  | submitAssessmentResponse428ApplicationProblemJson
+  | submitAssessmentResponse429ApplicationJson
+  | submitAssessmentResponse429ApplicationProblemJson
+  | submitAssessmentResponse503ApplicationJson
+  | submitAssessmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type submitAssessmentResponse =
+  submitAssessmentResponseSuccess | submitAssessmentResponseError;
+
+export const getSubmitAssessmentUrl = (runId: string) => {
+  return `/api/v1/assessments/${runId}:submit`;
+};
+
+/**
+ * @summary Endpoint
+ */
+export const submitAssessment = async (
+  runId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<submitAssessmentResponse> => {
+  const res = await fetch(getSubmitAssessmentUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: submitAssessmentResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as submitAssessmentResponse;
+};
+
+export const getSubmitAssessmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitAssessment>>,
+    TError,
+    { runId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["submitAssessment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitAssessment>>,
+    { runId: string; data: EmptyRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return submitAssessment(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitAssessment>>
+>;
+export type SubmitAssessmentMutationBody = EmptyRequest;
+export type SubmitAssessmentMutationError = ProblemResponse;
+
+/**
+ * @summary Endpoint
+ */
+export const useSubmitAssessment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof submitAssessment>>,
+      TError,
+      { runId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof submitAssessment>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getSubmitAssessmentMutationOptions(options), queryClient);
 };
 
 export type contestCorrectionResponse201 = {
@@ -10712,6 +12285,217 @@ export const useDeleteLanguageProfile = <
     getDeleteLanguageProfileMutationOptions(options),
     queryClient,
   );
+};
+
+export type prepareAssessmentResponse201 = {
+  data: AssessmentRunResponse;
+  status: 201;
+};
+
+export type prepareAssessmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type prepareAssessmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type prepareAssessmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type prepareAssessmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type prepareAssessmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type prepareAssessmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type prepareAssessmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type prepareAssessmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type prepareAssessmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type prepareAssessmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type prepareAssessmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type prepareAssessmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type prepareAssessmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type prepareAssessmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type prepareAssessmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type prepareAssessmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type prepareAssessmentResponseSuccess = prepareAssessmentResponse201 & {
+  headers: Headers;
+};
+export type prepareAssessmentResponseError = (
+  | prepareAssessmentResponse401ApplicationJson
+  | prepareAssessmentResponse401ApplicationProblemJson
+  | prepareAssessmentResponse403ApplicationJson
+  | prepareAssessmentResponse403ApplicationProblemJson
+  | prepareAssessmentResponse409ApplicationJson
+  | prepareAssessmentResponse409ApplicationProblemJson
+  | prepareAssessmentResponse422ApplicationJson
+  | prepareAssessmentResponse422ApplicationProblemJson
+  | prepareAssessmentResponse423ApplicationJson
+  | prepareAssessmentResponse423ApplicationProblemJson
+  | prepareAssessmentResponse428ApplicationJson
+  | prepareAssessmentResponse428ApplicationProblemJson
+  | prepareAssessmentResponse429ApplicationJson
+  | prepareAssessmentResponse429ApplicationProblemJson
+  | prepareAssessmentResponse503ApplicationJson
+  | prepareAssessmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type prepareAssessmentResponse =
+  prepareAssessmentResponseSuccess | prepareAssessmentResponseError;
+
+export const getPrepareAssessmentUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/assessments`;
+};
+
+/**
+ * @summary Prepare Assessment
+ */
+export const prepareAssessment = async (
+  profileId: string,
+  prepareAssessmentRequest: PrepareAssessmentRequest,
+  options?: RequestInit,
+): Promise<prepareAssessmentResponse> => {
+  const res = await fetch(getPrepareAssessmentUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(prepareAssessmentRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: prepareAssessmentResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as prepareAssessmentResponse;
+};
+
+export const getPrepareAssessmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof prepareAssessment>>,
+    TError,
+    { profileId: string; data: PrepareAssessmentRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof prepareAssessment>>,
+  TError,
+  { profileId: string; data: PrepareAssessmentRequest },
+  TContext
+> => {
+  const mutationKey = ["prepareAssessment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof prepareAssessment>>,
+    { profileId: string; data: PrepareAssessmentRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return prepareAssessment(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PrepareAssessmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof prepareAssessment>>
+>;
+export type PrepareAssessmentMutationBody = PrepareAssessmentRequest;
+export type PrepareAssessmentMutationError = ProblemResponse;
+
+/**
+ * @summary Prepare Assessment
+ */
+export const usePrepareAssessment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof prepareAssessment>>,
+      TError,
+      { profileId: string; data: PrepareAssessmentRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof prepareAssessment>>,
+  TError,
+  { profileId: string; data: PrepareAssessmentRequest },
+  TContext
+> => {
+  return useMutation(getPrepareAssessmentMutationOptions(options), queryClient);
 };
 
 export type composeDailySessionResponse201 = {

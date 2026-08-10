@@ -19,6 +19,7 @@ from polyglot.bootstrap.database import (
 from polyglot.bootstrap.object_storage import FilesystemObjectStorageProbe
 from polyglot.interfaces.http.dependencies import ReadinessCheck, valid_correlation_id
 from polyglot.interfaces.http.errors import register_error_handlers
+from polyglot.interfaces.http.routes.assessments import assessments_router
 from polyglot.interfaces.http.routes.catalogue import catalogue_router
 from polyglot.interfaces.http.routes.content import content_router
 from polyglot.interfaces.http.routes.curriculum import curriculum_router
@@ -34,6 +35,7 @@ from polyglot.interfaces.http.routes.word_bank import (
     WordBankService,
     word_bank_router,
 )
+from polyglot.modules.assessments.application import AssessmentApplicationService
 from polyglot.modules.catalogue.core.service import CatalogueApplicationService, CatalogueReader
 from polyglot.modules.content.application import ContentApplicationService
 from polyglot.modules.curriculum.application import CurriculumApplicationService
@@ -88,6 +90,7 @@ def create_app(
     curriculum_service: CurriculumApplicationService | None = None,
     sprint_service: SprintApplicationService | None = None,
     progress_service: ProgressService | None = None,
+    assessment_service: AssessmentApplicationService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -161,6 +164,13 @@ def create_app(
         )
     )
     app.include_router(progress_router(progress_service, identity_service))
+    app.include_router(
+        assessments_router(
+            assessment_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
 
     @app.middleware("http")
     async def request_context(
@@ -225,6 +235,7 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 
     memory_service = SqlMemoryService(session_factory, FsrsV6Scheduler())
+    from polyglot.modules.assessments.persistence import SqlAssessmentService
     from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
@@ -236,6 +247,7 @@ def create_runtime_app() -> FastAPI:
     curriculum_service = SqlCurriculumService(session_factory)
     sprint_service = SqlSprintService(session_factory)
     progress_service = SqlProgressQueryService(session_factory)
+    assessment_service = SqlAssessmentService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -260,5 +272,6 @@ def create_runtime_app() -> FastAPI:
         curriculum_service=curriculum_service,
         sprint_service=sprint_service,
         progress_service=progress_service,
+        assessment_service=assessment_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )
