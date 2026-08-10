@@ -34,7 +34,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w06_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -44,6 +44,7 @@ def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
         "/api/v1/account/password",
         "/api/v1/account/preferences",
         "/api/v1/accounts",
+        "/api/v1/attempts/{attempt_id}/lexical-gaps",
         "/api/v1/authoring/content/{id}/history",
         "/api/v1/authoring/drafts",
         "/api/v1/authoring/drafts/{draft_id}",
@@ -60,8 +61,16 @@ def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
         "/api/v1/language-profiles/{id}",
         "/api/v1/language-profiles/{profile_id}",
         "/api/v1/language-profiles/{profile_id}/diagnostics",
+        "/api/v1/language-profiles/{profile_id}/encounters",
         "/api/v1/language-profiles/{profile_id}/foundation-runs",
         "/api/v1/language-profiles/{profile_id}/goals",
+        "/api/v1/language-profiles/{profile_id}/lexical-annotations",
+        "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation",
+        "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration",
+        "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
+        "/api/v1/language-profiles/{profile_id}/private-lexicon",
+        "/api/v1/language-profiles/{profile_id}/private-lexicon:merge",
+        "/api/v1/language-profiles/{profile_id}/word-bank",
         "/api/v1/language-profiles/{profile_id}:archive",
         "/api/v1/language-profiles/{profile_id}:pause",
         "/api/v1/language-profiles/{profile_id}:restore",
@@ -70,7 +79,14 @@ def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
         "/api/v1/diagnostics/{run_id}:complete",
         "/api/v1/foundation-runs/{id}",
         "/api/v1/foundation-runs/{run_id}:complete",
+        "/api/v1/lexical-annotations/{annotation_id}",
+        "/api/v1/lexical-encounters/{encounter_id}/private-context",
+        "/api/v1/lexical-mentions/{mention_id}:resolve",
+        "/api/v1/lexical-senses/{sense_id}",
+        "/api/v1/lexical-senses/{sense_id}/personal-relations",
+        "/api/v1/lexical-senses/{sense_id}:split-private",
         "/api/v1/lexicon/search",
+        "/api/v1/personal-lexical-relations/{relation_id}:retract",
         "/api/v1/session",
         "/api/v1/validation-reports/{id}",
     }
