@@ -112,9 +112,15 @@ CREATE UNIQUE INDEX uq_content_active_publication ON content.publication_manifes
 CREATE TABLE content.publication_manifest_entries (
     publication_manifest_id uuid NOT NULL REFERENCES content.publication_manifests(publication_manifest_id) ON DELETE RESTRICT,
     ordinal integer NOT NULL, referenced_revision_id uuid NOT NULL, reference_kind varchar(120) NOT NULL,
+    reference_checksum varchar(64) NOT NULL,
+    reference_provenance_id uuid NOT NULL REFERENCES platform.provenance_records(provenance_id) ON DELETE RESTRICT,
+    reference_rights_ref varchar(500) NOT NULL, reference_status varchar(24) NOT NULL,
     CONSTRAINT ck_content_publication_entry_uuid7 CHECK (
         content.is_uuid7(publication_manifest_id) AND content.is_uuid7(referenced_revision_id)
+        AND content.is_uuid7(reference_provenance_id)
     ),
+    CONSTRAINT ck_content_publication_entry_checksum CHECK (reference_checksum ~ '^[0-9a-f]{64}$'),
+    CONSTRAINT ck_content_publication_entry_status CHECK (reference_status = 'published'),
     PRIMARY KEY (publication_manifest_id, ordinal)
 );
 CREATE TABLE content.historical_content_references (

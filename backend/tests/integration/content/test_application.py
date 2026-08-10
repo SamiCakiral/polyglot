@@ -14,8 +14,10 @@ from .conftest import IDS, NOW, VARIETY_ID, seed_published_catalogue_reference
 
 
 class AlwaysRecentAuthentication:
-    async def is_recent(self, *, actor_id: UUID, session_id: UUID, now: object) -> bool:
-        del actor_id, session_id, now
+    async def is_recent(
+        self, *, session: AsyncSession, actor_id: UUID, session_id: UUID, now: object
+    ) -> bool:
+        del session, actor_id, session_id, now
         return True
 
 
@@ -144,7 +146,6 @@ async def test_six_commands_are_versioned_idempotent_and_emit_exact_events(facto
         RetireContentRevision,
         ReviseContentDraft,
     )
-
     from polyglot.platform.persistence.models import domain_events, outbox_messages
 
     service = _service(factory)
@@ -200,7 +201,7 @@ async def test_six_commands_are_versioned_idempotent_and_emit_exact_events(facto
             (
                 await session.execute(
                     select(domain_events.c.event_type).order_by(
-                        domain_events.c.recorded_at, domain_events.c.event_id
+                        domain_events.c.aggregate_version
                     )
                 )
             ).scalars()
@@ -339,7 +340,6 @@ async def test_failure_after_event_rolls_back_editorial_state_but_finishes_recei
 
 async def test_spk_publish_serializes_two_first_publications_on_aggregate_lock(factory) -> None:
     from polyglot.modules.content.application import ReviseContentDraft
-
     from polyglot.modules.content.persistence import publication_manifests
     from polyglot.platform.persistence.models import domain_events
 
@@ -402,7 +402,6 @@ async def test_spk_publish_serializes_two_first_publications_on_aggregate_lock(f
 
 async def test_replacement_manifest_and_historical_read_preserve_complete_evidence(factory) -> None:
     from polyglot.modules.content.application import RetireContentRevision, ReviseContentDraft
-
     from polyglot.modules.content.persistence import (
         SqlContentRepository,
         publication_manifest_entries,

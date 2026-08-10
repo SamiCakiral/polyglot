@@ -175,7 +175,11 @@ class ContentRevision:
         rights_ref: str,
         now: datetime,
     ) -> ContentRevision:
-        if self.status is not ContentRevisionStatus.DRAFT:
+        if self.status in {
+            ContentRevisionStatus.VALIDATING,
+            ContentRevisionStatus.VALIDATED,
+            ContentRevisionStatus.ABANDONED,
+        }:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         if actor_id != self.created_by_actor_id or revision_no != self.revision_no + 1:
             raise DomainError(ErrorCode.FORBIDDEN)

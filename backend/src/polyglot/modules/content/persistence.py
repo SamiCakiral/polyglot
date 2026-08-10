@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 
 import hashlib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
@@ -15,17 +16,19 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    func,
     select,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_bytes
 from polyglot.platform.json_types import JsonValue
 from polyglot.platform.persistence.models import metadata
-from polyglot.platform.persistence.records import DomainEvent
-from polyglot.platform.persistence.repositories import SqlEventOutboxRepository
 
 content_items = Table(
     "content_items",
@@ -296,9 +299,27 @@ publication_manifest_entries = Table(
     Column("ordinal", Integer, primary_key=True),
     Column("referenced_revision_id", PG_UUID(as_uuid=True), nullable=False),
     Column("reference_kind", String(120), nullable=False),
+    Column("reference_checksum", String(64), nullable=False),
+    Column(
+        "reference_provenance_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("platform.provenance_records.provenance_id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("reference_rights_ref", String(500), nullable=False),
+    Column("reference_status", String(24), nullable=False),
     CheckConstraint(
-        "content.is_uuid7(publication_manifest_id) AND content.is_uuid7(referenced_revision_id)",
+        "content.is_uuid7(publication_manifest_id) AND content.is_uuid7(referenced_revision_id) "
+        "AND content.is_uuid7(reference_provenance_id)",
         name="ck_content_publication_entry_uuid7",
+    ),
+    CheckConstraint(
+        "reference_checksum ~ '^[0-9a-f]{64}$'",
+        name="ck_content_publication_entry_checksum",
+    ),
+    CheckConstraint(
+        "reference_status = 'published'",
+        name="ck_content_publication_entry_status",
     ),
     schema="content",
 )
@@ -336,27 +357,69 @@ Index(
 class StoredContentRevision:
     content_revision_id: UUID
     content_id: UUID
+    revision_no: int
     status: str
     payload: dict[str, JsonValue]
+    payload_checksum: str
+    provenance_id: UUID
+    rights_ref: str
+    pinned_revision_refs: tuple[dict[str, JsonValue], ...]
+    created_by_actor_id: UUID
+    approved_by_actor_id: UUID | None
 
 
-class SqlContentPublicationRepository:
+@dataclass(frozen=True, slots=True)
+class StoredContentItem:
+    content_id: UUID
+    content_type: str
+    variety_id: UUID
+    editorial_owner_id: UUID
+    version: int
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedReferenceSnapshot:
+    revision_id: UUID
+    reference_kind: str
+    checksum: str
+    provenance_id: UUID
+    rights_ref: str
+    status: str = "published"
+
+
+def _stored_revision(row: RowMapping) -> StoredContentRevision:
+    return StoredContentRevision(
+        content_revision_id=row["content_revision_id"],
+        content_id=row["content_id"],
+        revision_no=row["revision_no"],
+        status=row["status"],
+        payload=dict(row["payload"]),
+        payload_checksum=row["payload_checksum"],
+        provenance_id=row["provenance_id"],
+        rights_ref=row["rights_ref"],
+        pinned_revision_refs=tuple(dict(item) for item in row["pinned_revision_refs"]),
+        created_by_actor_id=row["created_by_actor_id"],
+        approved_by_actor_id=row["approved_by_actor_id"],
+    )
+
+
+class SqlContentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create_approved_revision(
+    async def create_item_and_draft(
         self,
         *,
         content_id: UUID,
         content_revision_id: UUID,
         variety_id: UUID,
         author_id: UUID,
-        reviewer_id: UUID,
         provenance_id: UUID,
         payload: dict[str, JsonValue],
         rights_ref: str,
+        pinned_revision_refs: tuple[dict[str, JsonValue], ...],
         now: datetime,
-    ) -> None:
+    ) -> StoredContentRevision:
         checksum = hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
         await self._session.execute(
             content_items.insert().values(
@@ -380,33 +443,297 @@ class SqlContentPublicationRepository:
                 payload_checksum=checksum,
                 provenance_id=provenance_id,
                 rights_ref=rights_ref,
-                pinned_revision_refs=[],
+                pinned_revision_refs=list(pinned_revision_refs),
                 created_by_actor_id=author_id,
-                approved_by_actor_id=reviewer_id,
-                status="approved",
+                approved_by_actor_id=None,
+                status="draft",
                 channel_code=None,
                 compatibility_range=None,
                 supersedes_revision_id=None,
                 created_at=now,
-                validated_at=now,
-                approved_at=now,
+                validated_at=None,
+                approved_at=None,
                 published_at=None,
                 retired_at=None,
             )
         )
+        return await self.get_revision(content_revision_id)
+
+    async def get_revision(self, content_revision_id: UUID) -> StoredContentRevision:
+        row = (
+            await self._session.execute(
+                select(content_revisions).where(
+                    content_revisions.c.content_revision_id == content_revision_id
+                )
+            )
+        ).mappings().one_or_none()
+        if row is None:
+            raise DomainError(ErrorCode.DRAFT_NOT_FOUND)
+        return _stored_revision(row)
+
+    async def lock_item_for_revision(
+        self,
+        content_revision_id: UUID,
+        *,
+        expected_version: int,
+    ) -> tuple[StoredContentItem, StoredContentRevision]:
+        revision = await self.get_revision(content_revision_id)
+        item_row = (
+            await self._session.execute(
+                select(content_items)
+                .where(content_items.c.content_id == revision.content_id)
+                .with_for_update()
+            )
+        ).mappings().one()
+        item = StoredContentItem(
+            content_id=item_row["content_id"],
+            content_type=item_row["content_type"],
+            variety_id=item_row["variety_id"],
+            editorial_owner_id=item_row["editorial_owner_id"],
+            version=item_row["version"],
+        )
+        if item.version != expected_version:
+            raise DomainError(ErrorCode.VERSION_CONFLICT)
+        return item, await self.get_revision(content_revision_id)
+
+    async def bump_version(self, content_id: UUID, expected_version: int) -> int:
+        version = await self._session.scalar(
+            content_items.update()
+            .where(
+                content_items.c.content_id == content_id,
+                content_items.c.version == expected_version,
+            )
+            .values(version=expected_version + 1)
+            .returning(content_items.c.version)
+        )
+        if version is None:
+            raise DomainError(ErrorCode.VERSION_CONFLICT)
+        return int(version)
+
+    async def add_revised_draft(
+        self,
+        *,
+        source: StoredContentRevision,
+        content_revision_id: UUID,
+        actor_id: UUID,
+        payload: dict[str, JsonValue],
+        provenance_id: UUID,
+        rights_ref: str,
+        pinned_revision_refs: tuple[dict[str, JsonValue], ...],
+        now: datetime,
+    ) -> StoredContentRevision:
+        latest_revision_no = await self._session.scalar(
+            select(func.max(content_revisions.c.revision_no)).where(
+                content_revisions.c.content_id == source.content_id
+            )
+        )
+        revision_no = (
+            latest_revision_no
+            if isinstance(latest_revision_no, int) and not isinstance(latest_revision_no, bool)
+            else 0
+        ) + 1
+        schema_version = payload.get("schema_version")
+        if not isinstance(schema_version, int) or isinstance(schema_version, bool):
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+        await self._session.execute(
+            content_revisions.insert().values(
+                content_revision_id=content_revision_id,
+                content_id=source.content_id,
+                revision_no=revision_no,
+                schema_version=schema_version,
+                payload=payload,
+                payload_checksum=hashlib.sha256(canonical_json_bytes(payload)).hexdigest(),
+                provenance_id=provenance_id,
+                rights_ref=rights_ref,
+                pinned_revision_refs=list(pinned_revision_refs),
+                created_by_actor_id=actor_id,
+                approved_by_actor_id=None,
+                status="draft",
+                channel_code=None,
+                compatibility_range=None,
+                supersedes_revision_id=source.content_revision_id,
+                created_at=now,
+                validated_at=None,
+                approved_at=None,
+                published_at=None,
+                retired_at=None,
+            )
+        )
+        return await self.get_revision(content_revision_id)
+
+    async def begin_validation(self, content_revision_id: UUID) -> None:
+        updated_id = await self._session.scalar(
+            content_revisions.update()
+            .where(
+                content_revisions.c.content_revision_id == content_revision_id,
+                content_revisions.c.status == "draft",
+            )
+            .values(status="validating")
+            .returning(content_revisions.c.content_revision_id)
+        )
+        if updated_id is None:
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+
+    async def complete_validation(
+        self,
+        *,
+        content_revision_id: UUID,
+        report_id: UUID,
+        validator_set_revision_id: UUID,
+        status: str,
+        summary_checksum: str,
+        findings: tuple[Mapping[str, object], ...],
+        now: datetime,
+    ) -> StoredContentRevision:
+        await self._session.execute(
+            validation_reports.insert().values(
+                report_id=report_id,
+                subject_revision_id=content_revision_id,
+                validator_set_revision_id=validator_set_revision_id,
+                status=status,
+                started_at=now,
+                completed_at=now,
+                summary_checksum=summary_checksum,
+            )
+        )
+        if findings:
+            await self._session.execute(
+                validation_findings.insert(),
+                [dict(finding, report_id=report_id) for finding in findings],
+            )
+        final_status = "validated" if status == "passed" else "draft"
+        values: dict[str, object] = {"status": final_status}
+        if final_status == "validated":
+            values["validated_at"] = now
+        await self._session.execute(
+            content_revisions.update()
+            .where(
+                content_revisions.c.content_revision_id == content_revision_id,
+                content_revisions.c.status == "validating",
+            )
+            .values(**values)
+        )
+        return await self.get_revision(content_revision_id)
+
+    async def approve(
+        self,
+        *,
+        content_revision_id: UUID,
+        decision_id: UUID,
+        author_id: UUID,
+        reviewer_id: UUID,
+        reason_code: str,
+        now: datetime,
+    ) -> StoredContentRevision:
+        await self._session.execute(
+            content_approval_decisions.insert().values(
+                approval_decision_id=decision_id,
+                content_revision_id=content_revision_id,
+                author_id=author_id,
+                reviewer_id=reviewer_id,
+                decision="approved",
+                reason_code=reason_code,
+                decided_at=now,
+            )
+        )
+        await self._session.execute(
+            content_revisions.update()
+            .where(
+                content_revisions.c.content_revision_id == content_revision_id,
+                content_revisions.c.status == "validated",
+            )
+            .values(
+                status="approved",
+                approved_by_actor_id=reviewer_id,
+                approved_at=now,
+            )
+        )
+        return await self.get_revision(content_revision_id)
+
+    async def require_provenance(self, provenance_id: UUID) -> None:
+        source_type = await self._session.scalar(
+            text(
+                "SELECT source_type FROM platform.provenance_records "
+                "WHERE provenance_id = :provenance_id"
+            ),
+            {"provenance_id": provenance_id},
+        )
+        if source_type not in {"fixture", "human_author", "import", "tool"}:
+            raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+
+    async def resolve_published_references(
+        self,
+        *,
+        variety_id: UUID,
+        references: tuple[dict[str, JsonValue], ...],
+    ) -> tuple[PublishedReferenceSnapshot, ...]:
+        resolved: list[PublishedReferenceSnapshot] = []
+        for reference in references:
+            kind = reference.get("reference_kind")
+            raw_id = reference.get("revision_id")
+            if kind != "skill_revision" or not isinstance(raw_id, str):
+                raise DomainError(ErrorCode.REFERENCE_NOT_PUBLISHABLE)
+            try:
+                revision_id = UUID(raw_id)
+            except ValueError:
+                raise DomainError(ErrorCode.REFERENCE_NOT_PUBLISHABLE) from None
+            row = (
+                await self._session.execute(
+                    text(
+                        "SELECT skill_revision.skill_revision_id, skill_revision.skill_type, "
+                        "skill_revision.modality, skill_revision.operation, "
+                        "skill_revision.target_ref, skill_revision.scope, "
+                        "skill_revision.load_profile, skill_revision.provenance_id, "
+                        "pack_revision.license_refs "
+                        "FROM catalogue.skill_revisions AS skill_revision "
+                        "JOIN catalogue.language_pack_revisions AS pack_revision "
+                        "ON pack_revision.pack_revision_id = skill_revision.pack_revision_id "
+                        "JOIN catalogue.language_pack_publications AS publication "
+                        "ON publication.pack_revision_id = pack_revision.pack_revision_id "
+                        "WHERE skill_revision.skill_revision_id = :revision_id "
+                        "AND skill_revision.status = 'published' "
+                        "AND pack_revision.status = 'published' "
+                        "AND pack_revision.target_variety_id = :variety_id "
+                        "AND publication.retired_at IS NULL"
+                    ),
+                    {"revision_id": revision_id, "variety_id": variety_id},
+                )
+            ).mappings().one_or_none()
+            if row is None or not row["license_refs"]:
+                raise DomainError(ErrorCode.REFERENCE_NOT_PUBLISHABLE)
+            checksum_payload = {
+                "revision_id": str(row["skill_revision_id"]),
+                "skill_type": row["skill_type"],
+                "modality": row["modality"],
+                "operation": row["operation"],
+                "target_ref": row["target_ref"],
+                "scope": row["scope"],
+                "load_profile": row["load_profile"],
+            }
+            resolved.append(
+                PublishedReferenceSnapshot(
+                    revision_id=revision_id,
+                    reference_kind=kind,
+                    checksum=hashlib.sha256(
+                        canonical_json_bytes(checksum_payload)
+                    ).hexdigest(),
+                    provenance_id=row["provenance_id"],
+                    rights_ref=row["license_refs"][0],
+                )
+            )
+        return tuple(resolved)
 
     async def publish(
         self,
         *,
         content_id: UUID,
         content_revision_id: UUID,
-        actor_id: UUID,
-        command_id: UUID,
-        correlation_id: UUID,
-        event_id: UUID,
         manifest_id: UUID,
+        publication_provenance_id: UUID,
         channel_code: str,
         compatibility_range: str,
+        manifest_checksum: str,
+        references: tuple[PublishedReferenceSnapshot, ...],
         now: datetime,
     ) -> StoredContentRevision:
         revision = (
@@ -452,7 +779,37 @@ class SqlContentPublicationRepository:
                 .where(
                     content_revisions.c.content_revision_id == old_manifest["content_revision_id"]
                 )
-                .values(status="superseded")
+                .values(status="superseded", retired_at=now)
+            )
+        await self._session.execute(
+            publication_manifests.insert().values(
+                publication_manifest_id=manifest_id,
+                content_id=content_id,
+                content_revision_id=content_revision_id,
+                channel_code=channel_code,
+                compatibility_range=compatibility_range,
+                checksum=manifest_checksum,
+                provenance_id=publication_provenance_id,
+                published_at=now,
+                retired_at=None,
+            )
+        )
+        if references:
+            await self._session.execute(
+                publication_manifest_entries.insert(),
+                [
+                    {
+                        "publication_manifest_id": manifest_id,
+                        "ordinal": ordinal,
+                        "referenced_revision_id": reference.revision_id,
+                        "reference_kind": reference.reference_kind,
+                        "reference_checksum": reference.checksum,
+                        "reference_provenance_id": reference.provenance_id,
+                        "reference_rights_ref": reference.rights_ref,
+                        "reference_status": reference.status,
+                    }
+                    for ordinal, reference in enumerate(references, start=1)
+                ],
             )
         await self._session.execute(
             content_revisions.update()
@@ -464,57 +821,7 @@ class SqlContentPublicationRepository:
                 published_at=now,
             )
         )
-        checksum = hashlib.sha256(canonical_json_bytes(revision["payload"])).hexdigest()
-        await self._session.execute(
-            publication_manifests.insert().values(
-                publication_manifest_id=manifest_id,
-                content_id=content_id,
-                content_revision_id=content_revision_id,
-                channel_code=channel_code,
-                compatibility_range=compatibility_range,
-                checksum=checksum,
-                provenance_id=revision["provenance_id"],
-                published_at=now,
-                retired_at=None,
-            )
-        )
-        aggregate_version = await self._session.scalar(
-            content_items.update()
-            .where(content_items.c.content_id == content_id)
-            .values(version=content_items.c.version + 1)
-            .returning(content_items.c.version)
-        )
-        assert isinstance(aggregate_version, int)
-        event = DomainEvent(
-            event_id=event_id,
-            event_type="content_published",
-            schema_version=1,
-            aggregate_type="content_item",
-            aggregate_id=content_id,
-            aggregate_version=aggregate_version,
-            actor_type="account",
-            actor_id=actor_id,
-            profile_id=None,
-            occurred_at=now,
-            recorded_at=now,
-            correlation_id=correlation_id,
-            causation_id=None,
-            command_id=command_id,
-            privacy_class="public",
-            policy_versions={},
-            payload={
-                "schema_version": 1,
-                "content_revision_id": str(content_revision_id),
-                "publication_manifest_id": str(manifest_id),
-            },
-        )
-        await SqlEventOutboxRepository(self._session).add(event, destinations=("local",))
-        return StoredContentRevision(
-            content_revision_id=content_revision_id,
-            content_id=content_id,
-            status="published",
-            payload=dict(revision["payload"]),
-        )
+        return await self.get_revision(content_revision_id)
 
     async def record_historical_reference(
         self,
@@ -539,20 +846,20 @@ class SqlContentPublicationRepository:
 
     async def retire(self, *, content_revision_id: UUID, now: datetime) -> None:
         await self._session.execute(
-            content_revisions.update()
-            .where(
-                content_revisions.c.content_revision_id == content_revision_id,
-                content_revisions.c.status == "published",
-            )
-            .values(status="retired", retired_at=now)
-        )
-        await self._session.execute(
             publication_manifests.update()
             .where(
                 publication_manifests.c.content_revision_id == content_revision_id,
                 publication_manifests.c.retired_at.is_(None),
             )
             .values(retired_at=now)
+        )
+        await self._session.execute(
+            content_revisions.update()
+            .where(
+                content_revisions.c.content_revision_id == content_revision_id,
+                content_revisions.c.status == "published",
+            )
+            .values(status="retired", retired_at=now)
         )
 
     async def get_historical_revision(self, content_revision_id: UUID) -> StoredContentRevision:
@@ -567,9 +874,4 @@ class SqlContentPublicationRepository:
             .mappings()
             .one()
         )
-        return StoredContentRevision(
-            content_revision_id=revision["content_revision_id"],
-            content_id=revision["content_id"],
-            status=revision["status"],
-            payload=dict(revision["payload"]),
-        )
+        return _stored_revision(revision)

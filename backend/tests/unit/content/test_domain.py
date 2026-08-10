@@ -88,7 +88,7 @@ def test_human_required_validation_cannot_transition_to_approval() -> None:
     assert rejected.value.code is ErrorCode.INVALID_TRANSITION
 
 
-def test_published_revision_cannot_be_revised_or_republished() -> None:
+def test_published_revision_can_spawn_a_draft_but_cannot_be_republished() -> None:
     from polyglot.modules.content.domain import ValidationOutcome
 
     published = (
@@ -99,20 +99,21 @@ def test_published_revision_cannot_be_revised_or_republished() -> None:
         .publish(now=NOW)
     )
 
-    with pytest.raises(DomainError) as revise_rejected:
-        published.revise(
-            content_revision_id=NEXT_REVISION_ID,
-            revision_no=2,
-            actor_id=AUTHOR_ID,
-            payload={"schema_version": 1, "kind": "dialogue", "text": "Ciao."},
-            provenance_id=PROVENANCE_ID,
-            rights_ref="rights:fixture:content",
-            now=NOW,
-        )
+    correction = published.revise(
+        content_revision_id=NEXT_REVISION_ID,
+        revision_no=2,
+        actor_id=AUTHOR_ID,
+        payload={"schema_version": 1, "kind": "dialogue", "text": "Ciao."},
+        provenance_id=PROVENANCE_ID,
+        rights_ref="rights:fixture:content",
+        now=NOW,
+    )
     with pytest.raises(DomainError) as publish_rejected:
         published.publish(now=NOW)
 
-    assert revise_rejected.value.code is ErrorCode.INVALID_TRANSITION
+    assert published.status.value == "published"
+    assert correction.status.value == "draft"
+    assert correction.supersedes_revision_id == published.content_revision_id
     assert publish_rejected.value.code is ErrorCode.INVALID_TRANSITION
 
 

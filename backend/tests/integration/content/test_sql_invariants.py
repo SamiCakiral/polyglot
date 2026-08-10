@@ -200,6 +200,10 @@ async def _insert_complete_audit_chain(session: AsyncSession) -> tuple[Table, ..
             ordinal=1,
             referenced_revision_id=IDS["catalogue_revision"],
             reference_kind="skill_revision",
+            reference_checksum="f" * 64,
+            reference_provenance_id=IDS["provenance"],
+            reference_rights_ref="CC-BY-4.0",
+            reference_status="published",
         )
     )
     await session.execute(
