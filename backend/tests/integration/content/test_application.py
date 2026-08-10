@@ -478,3 +478,32 @@ async def test_replacement_manifest_and_historical_read_preserve_complete_eviden
     assert entry["reference_checksum"]
     assert entry["reference_provenance_id"] == IDS["provenance"]
     assert entry["reference_rights_ref"] == "CC-BY-4.0"
+
+
+async def test_create_round_trips_the_requested_content_type(factory) -> None:
+    from polyglot.modules.content.application import CreateContentDraft
+    from polyglot.modules.content.persistence import content_items
+
+    service = _service(factory)
+    created = await service.create_draft(
+        CreateContentDraft(
+            actor=_actor(IDS["author"], "author"),
+            content_type="grammar_note",
+            variety_id=VARIETY_ID,
+            payload={"schema_version": 1, "text": "Il futuro prossimo."},
+            provenance_id=IDS["provenance"],
+            rights_ref="rights:fixture:content",
+            pinned_revision_refs=(_reference(),),
+            idempotency_key="content-type",
+            context=_context(),
+        )
+    )
+
+    async with factory() as session:
+        stored_type = await session.scalar(
+            select(content_items.c.content_type).where(
+                content_items.c.content_id == created.revision.content_id
+            )
+        )
+
+    assert stored_type == "grammar_note"
