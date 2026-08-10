@@ -20,9 +20,11 @@ from polyglot.bootstrap.object_storage import FilesystemObjectStorageProbe
 from polyglot.interfaces.http.dependencies import ReadinessCheck, valid_correlation_id
 from polyglot.interfaces.http.errors import register_error_handlers
 from polyglot.interfaces.http.routes.catalogue import catalogue_router
+from polyglot.interfaces.http.routes.content import content_router
 from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
 from polyglot.modules.catalogue.core.service import CatalogueApplicationService, CatalogueReader
+from polyglot.modules.content.application import ContentApplicationService
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
@@ -64,6 +66,7 @@ def create_app(
     identity_service: IdentityApplicationService | None = None,
     language_profile_service: LanguageProfileApplicationService | None = None,
     catalogue_service: CatalogueReader | None = None,
+    content_service: ContentApplicationService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -77,6 +80,13 @@ def create_app(
     )
     register_error_handlers(app)
     app.include_router(catalogue_router(catalogue_service))
+    app.include_router(
+        content_router(
+            content_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
     app.include_router(
         identity_router(identity_service, allowed_origin=allowed_origin),
     )
@@ -144,6 +154,7 @@ def create_runtime_app() -> FastAPI:
         oidc_enabled=_enabled_from_environment("POLYGLOT_OIDC_ENABLED"),
     )
     catalogue_service = CatalogueApplicationService(session_factory)
+    content_service = ContentApplicationService(session_factory)
     language_profile_service = LanguageProfileApplicationService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
@@ -160,6 +171,7 @@ def create_runtime_app() -> FastAPI:
         lifespan=lifespan,
         identity_service=identity_service,
         catalogue_service=catalogue_service,
+        content_service=content_service,
         language_profile_service=language_profile_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

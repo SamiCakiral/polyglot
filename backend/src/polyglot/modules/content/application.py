@@ -8,8 +8,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.modules.content.persistence import (
+    ContentRevisionPage,
     SqlContentRepository,
     StoredContentRevision,
+    StoredValidationReport,
 )
 from polyglot.modules.identity.application import RECENT_AUTHENTICATION, RequestContext
 from polyglot.modules.identity.persistence import auth_sessions
@@ -337,8 +339,17 @@ class ContentApplicationService:
                 version = result_payload.get("version")
                 if not isinstance(version, int):
                     raise DomainError(ErrorCode.INTERNAL_ERROR)
+                report_id, manifest_id = await repository.get_command_proofs(
+                    reservation.receipt.command_id
+                )
                 await uow.commit()
-                return ContentMutationResult(revision, version, replayed=True)
+                return ContentMutationResult(
+                    revision,
+                    version,
+                    replayed=True,
+                    report_id=report_id,
+                    manifest_id=manifest_id,
+                )
 
             savepoint = await session.begin_nested()
             try:
@@ -450,6 +461,7 @@ class ContentApplicationService:
             revision = await repository.create_item_and_draft(
                 content_id=content_id,
                 content_revision_id=revision_id,
+                content_type=command.content_type,
                 variety_id=command.variety_id,
                 author_id=command.actor.actor_id,
                 provenance_id=command.provenance_id,
@@ -833,3 +845,81 @@ class ContentApplicationService:
             expected_version=command.expected_version,
             action=action,
         )
+
+    async def list_drafts(
+        self,
+        *,
+        actor: EditorialActor,
+        limit: int,
+        cursor: str | None,
+    ) -> ContentRevisionPage:
+        self._require_role(actor, "author", "reviewer")
+        async with self._uow() as uow:
+            repository = SqlContentRepository(self._session(uow))
+            page = await repository.list_drafts(
+                actor_id=actor.actor_id,
+                reviewer="reviewer" in actor.roles,
+                limit=limit,
+                cursor=cursor,
+            )
+            await uow.commit()
+            return page
+        raise RuntimeError("content query was unexpectedly suppressed")
+
+    async def get_draft(
+        self,
+        *,
+        actor: EditorialActor,
+        revision_id: UUID,
+    ) -> StoredContentRevision:
+        self._require_role(actor, "author", "reviewer")
+        async with self._uow() as uow:
+            repository = SqlContentRepository(self._session(uow))
+            revision = await repository.get_draft_for_actor(
+                revision_id,
+                actor_id=actor.actor_id,
+                reviewer="reviewer" in actor.roles,
+            )
+            await uow.commit()
+            return revision
+        raise RuntimeError("content query was unexpectedly suppressed")
+
+    async def get_history(
+        self,
+        *,
+        actor: EditorialActor,
+        content_id: UUID,
+        limit: int,
+        cursor: str | None,
+    ) -> ContentRevisionPage:
+        self._require_role(actor, "author", "reviewer")
+        async with self._uow() as uow:
+            repository = SqlContentRepository(self._session(uow))
+            page = await repository.get_history_for_actor(
+                content_id,
+                actor_id=actor.actor_id,
+                reviewer="reviewer" in actor.roles,
+                limit=limit,
+                cursor=cursor,
+            )
+            await uow.commit()
+            return page
+        raise RuntimeError("content query was unexpectedly suppressed")
+
+    async def get_validation_report(
+        self,
+        *,
+        actor: EditorialActor,
+        report_id: UUID,
+    ) -> StoredValidationReport:
+        self._require_role(actor, "author", "reviewer")
+        async with self._uow() as uow:
+            repository = SqlContentRepository(self._session(uow))
+            report = await repository.get_validation_report_for_actor(
+                report_id,
+                actor_id=actor.actor_id,
+                reviewer="reviewer" in actor.roles,
+            )
+            await uow.commit()
+            return report
+        raise RuntimeError("content query was unexpectedly suppressed")

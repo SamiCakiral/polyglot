@@ -44,7 +44,14 @@ def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
         "/api/v1/account/password",
         "/api/v1/account/preferences",
         "/api/v1/accounts",
+        "/api/v1/authoring/content/{id}/history",
+        "/api/v1/authoring/drafts",
+        "/api/v1/authoring/drafts/{draft_id}",
+        "/api/v1/authoring/drafts/{draft_id}:approve",
+        "/api/v1/authoring/drafts/{draft_id}:publish",
+        "/api/v1/authoring/drafts/{draft_id}:validate",
         "/api/v1/consents/{purpose}",
+        "/api/v1/content/{content_id}/revisions/{revision_id}:retire",
         "/api/v1/catalogue/targets",
         "/api/v1/health/live",
         "/api/v1/health/ready",
@@ -65,6 +72,7 @@ def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
         "/api/v1/foundation-runs/{run_id}:complete",
         "/api/v1/lexicon/search",
         "/api/v1/session",
+        "/api/v1/validation-reports/{id}",
     }
     validate_registry_compatibility(document, ROOT / "contracts/registry")
 

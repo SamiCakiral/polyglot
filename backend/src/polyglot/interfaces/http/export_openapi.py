@@ -59,6 +59,32 @@ REQUIRED_W04_QUERIES = {
         frozenset({"q", "language_tag"}),
     ),
 }
+REQUIRED_W05_OPERATIONS = {
+    ("post", "/api/v1/authoring/drafts"): ("create_content_draft", False),
+    ("patch", "/api/v1/authoring/drafts/{draft_id}"): ("revise_content_draft", True),
+    ("post", "/api/v1/authoring/drafts/{draft_id}:validate"): (
+        "validate_content_revision",
+        True,
+    ),
+    ("post", "/api/v1/authoring/drafts/{draft_id}:approve"): (
+        "approve_content_revision",
+        True,
+    ),
+    ("post", "/api/v1/authoring/drafts/{draft_id}:publish"): (
+        "publish_content_revision",
+        True,
+    ),
+    ("post", "/api/v1/content/{content_id}/revisions/{revision_id}:retire"): (
+        "retire_content_revision",
+        True,
+    ),
+}
+REQUIRED_W05_READS = {
+    ("get", "/api/v1/authoring/drafts"): "list_content_drafts",
+    ("get", "/api/v1/authoring/drafts/{draft_id}"): "get_content_draft",
+    ("get", "/api/v1/authoring/content/{id}/history"): "get_content_history",
+    ("get", "/api/v1/validation-reports/{id}"): "get_validation_report",
+}
 
 
 def _operation_id(command_name: str) -> str:
@@ -167,6 +193,28 @@ def validate_registry_compatibility(
             problem = content.get("application/problem+json", {}).get("schema", {})
             if problem.get("$ref") != "#/components/schemas/ProblemResponse":
                 raise ValueError(f"required W04 problem response is missing: get {route}")
+
+    for (method, route), (operation_id, needs_version) in REQUIRED_W05_OPERATIONS.items():
+        operation = document.get("paths", {}).get(route, {}).get(method)
+        if operation is None or operation.get("operationId") != operation_id:
+            raise ValueError(f"required W05 command missing or noncanonical: {method} {route}")
+        parameters = _parameters_by_name(operation)
+        required_headers = {"Origin", "X-CSRF-Token", "Idempotency-Key"}
+        if needs_version:
+            required_headers.add("If-Match")
+        if not required_headers <= parameters.keys() or any(
+            parameters[name].get("required") is not True for name in required_headers
+        ):
+            raise ValueError(f"required W05 command headers missing: {method} {route}")
+        if operation.get("security") != [{"SessionCookie": []}]:
+            raise ValueError(f"required W05 cookie security missing: {method} {route}")
+
+    for (method, route), operation_id in REQUIRED_W05_READS.items():
+        operation = document.get("paths", {}).get(route, {}).get(method)
+        if operation is None or operation.get("operationId") != operation_id:
+            raise ValueError(f"required W05 query missing or noncanonical: {method} {route}")
+        if operation.get("security") != [{"SessionCookie": []}]:
+            raise ValueError(f"required W05 query cookie security missing: {method} {route}")
 
     schemes = document.get("components", {}).get("securitySchemes", {})
     if schemes.get("SessionCookie") != {

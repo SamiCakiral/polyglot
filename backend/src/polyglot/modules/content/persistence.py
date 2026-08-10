@@ -1,6 +1,8 @@
 # ruff: noqa: E501
 
+import base64
 import hashlib
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,7 +18,9 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    and_,
     func,
+    or_,
     select,
     text,
 )
@@ -369,6 +373,11 @@ class StoredContentRevision:
     pinned_revision_refs: tuple[dict[str, JsonValue], ...]
     created_by_actor_id: UUID
     approved_by_actor_id: UUID | None
+    created_at: datetime
+    validated_at: datetime | None
+    approved_at: datetime | None
+    published_at: datetime | None
+    retired_at: datetime | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -390,6 +399,55 @@ class PublishedReferenceSnapshot:
     status: str = "published"
 
 
+@dataclass(frozen=True, slots=True)
+class ContentRevisionPage:
+    items: tuple[StoredContentRevision, ...]
+    next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class StoredValidationFinding:
+    finding_id: UUID
+    ordinal: int
+    validator_code: str
+    severity: str
+    path: str
+    message_code: str
+    redacted_value: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class StoredValidationReport:
+    report_id: UUID
+    subject_revision_id: UUID
+    validator_set_revision_id: UUID
+    status: str
+    started_at: datetime
+    completed_at: datetime
+    summary_checksum: str
+    findings: tuple[StoredValidationFinding, ...]
+
+
+def _encode_cursor(kind: str, created_at: datetime, identifier: UUID) -> str:
+    payload = json.dumps(
+        [kind, created_at.isoformat(), str(identifier)], separators=(",", ":")
+    ).encode()
+    return base64.urlsafe_b64encode(payload).decode().rstrip("=")
+
+
+def _decode_cursor(cursor: str | None, kind: str) -> tuple[datetime, UUID] | None:
+    if cursor is None:
+        return None
+    try:
+        padded = cursor + "=" * (-len(cursor) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded).decode())
+        if not isinstance(payload, list) or len(payload) != 3 or payload[0] != kind:
+            raise ValueError
+        return datetime.fromisoformat(payload[1]), UUID(payload[2])
+    except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise DomainError(ErrorCode.CURSOR_INVALID) from error
+
+
 def _stored_revision(row: RowMapping) -> StoredContentRevision:
     return StoredContentRevision(
         content_revision_id=row["content_revision_id"],
@@ -403,6 +461,11 @@ def _stored_revision(row: RowMapping) -> StoredContentRevision:
         pinned_revision_refs=tuple(dict(item) for item in row["pinned_revision_refs"]),
         created_by_actor_id=row["created_by_actor_id"],
         approved_by_actor_id=row["approved_by_actor_id"],
+        created_at=row["created_at"],
+        validated_at=row["validated_at"],
+        approved_at=row["approved_at"],
+        published_at=row["published_at"],
+        retired_at=row["retired_at"],
     )
 
 
@@ -416,11 +479,25 @@ class SqlContentRepository:
             {"command_id": command_id},
         )
 
+    async def get_command_proofs(self, command_id: UUID) -> tuple[UUID | None, UUID | None]:
+        report_id = await self._session.scalar(
+            select(validation_reports.c.report_id).where(
+                validation_reports.c.command_id == command_id
+            )
+        )
+        manifest_id = await self._session.scalar(
+            select(publication_manifests.c.publication_manifest_id).where(
+                publication_manifests.c.command_id == command_id
+            )
+        )
+        return report_id, manifest_id
+
     async def create_item_and_draft(
         self,
         *,
         content_id: UUID,
         content_revision_id: UUID,
+        content_type: str,
         variety_id: UUID,
         author_id: UUID,
         provenance_id: UUID,
@@ -433,7 +510,7 @@ class SqlContentRepository:
         await self._session.execute(
             content_items.insert().values(
                 content_id=content_id,
-                content_type="dialogue",
+                content_type=content_type,
                 variety_id=variety_id,
                 editorial_owner_id=author_id,
                 lineage_root_id=content_id,
@@ -479,6 +556,181 @@ class SqlContentRepository:
         if row is None:
             raise DomainError(ErrorCode.DRAFT_NOT_FOUND)
         return _stored_revision(row)
+
+    async def list_drafts(
+        self,
+        *,
+        actor_id: UUID,
+        reviewer: bool,
+        limit: int,
+        cursor: str | None,
+    ) -> ContentRevisionPage:
+        after = _decode_cursor(cursor, "content_drafts")
+        statement = (
+            select(content_revisions)
+            .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
+            .where(
+                content_revisions.c.status.in_(
+                    ("draft", "validating", "validated", "approved", "rejected")
+                )
+            )
+        )
+        if not reviewer:
+            statement = statement.where(content_items.c.editorial_owner_id == actor_id)
+        if after is not None:
+            after_time, after_id = after
+            statement = statement.where(
+                or_(
+                    content_revisions.c.created_at > after_time,
+                    and_(
+                        content_revisions.c.created_at == after_time,
+                        content_revisions.c.content_revision_id > after_id,
+                    ),
+                )
+            )
+        rows = (
+            await self._session.execute(
+                statement.order_by(
+                    content_revisions.c.created_at,
+                    content_revisions.c.content_revision_id,
+                ).limit(limit + 1)
+            )
+        ).mappings().all()
+        visible = rows[:limit]
+        next_cursor = None
+        if len(rows) > limit and visible:
+            last = visible[-1]
+            next_cursor = _encode_cursor(
+                "content_drafts", last["created_at"], last["content_revision_id"]
+            )
+        return ContentRevisionPage(
+            tuple(_stored_revision(row) for row in visible), next_cursor
+        )
+
+    async def get_draft_for_actor(
+        self,
+        content_revision_id: UUID,
+        *,
+        actor_id: UUID,
+        reviewer: bool,
+    ) -> StoredContentRevision:
+        row = (
+            await self._session.execute(
+                select(content_revisions, content_items.c.editorial_owner_id)
+                .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
+                .where(
+                    content_revisions.c.content_revision_id == content_revision_id,
+                    content_revisions.c.status.in_(
+                        ("draft", "validating", "validated", "approved", "rejected")
+                    ),
+                )
+            )
+        ).mappings().one_or_none()
+        if row is None or (not reviewer and row["editorial_owner_id"] != actor_id):
+            raise DomainError(ErrorCode.NOT_FOUND)
+        return _stored_revision(row)
+
+    async def get_history_for_actor(
+        self,
+        content_id: UUID,
+        *,
+        actor_id: UUID,
+        reviewer: bool,
+        limit: int,
+        cursor: str | None,
+    ) -> ContentRevisionPage:
+        after = _decode_cursor(cursor, "content_history")
+        statement = (
+            select(content_revisions)
+            .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
+            .where(content_revisions.c.content_id == content_id)
+        )
+        if not reviewer:
+            statement = statement.where(content_items.c.editorial_owner_id == actor_id)
+        if after is not None:
+            after_time, after_id = after
+            statement = statement.where(
+                or_(
+                    content_revisions.c.created_at > after_time,
+                    and_(
+                        content_revisions.c.created_at == after_time,
+                        content_revisions.c.content_revision_id > after_id,
+                    ),
+                )
+            )
+        rows = (
+            await self._session.execute(
+                statement.order_by(
+                    content_revisions.c.created_at,
+                    content_revisions.c.content_revision_id,
+                ).limit(limit + 1)
+            )
+        ).mappings().all()
+        if not rows and cursor is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        visible = rows[:limit]
+        next_cursor = None
+        if len(rows) > limit and visible:
+            last = visible[-1]
+            next_cursor = _encode_cursor(
+                "content_history", last["created_at"], last["content_revision_id"]
+            )
+        return ContentRevisionPage(
+            tuple(_stored_revision(row) for row in visible), next_cursor
+        )
+
+    async def get_validation_report_for_actor(
+        self,
+        report_id: UUID,
+        *,
+        actor_id: UUID,
+        reviewer: bool,
+    ) -> StoredValidationReport:
+        row = (
+            await self._session.execute(
+                select(validation_reports, content_items.c.editorial_owner_id)
+                .join(
+                    content_revisions,
+                    content_revisions.c.content_revision_id
+                    == validation_reports.c.subject_revision_id,
+                )
+                .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
+                .where(validation_reports.c.report_id == report_id)
+            )
+        ).mappings().one_or_none()
+        if row is None or (not reviewer and row["editorial_owner_id"] != actor_id):
+            raise DomainError(ErrorCode.NOT_FOUND)
+        finding_rows = (
+            await self._session.execute(
+                select(validation_findings)
+                .where(validation_findings.c.report_id == report_id)
+                .order_by(validation_findings.c.ordinal)
+            )
+        ).mappings().all()
+        completed_at = row["completed_at"]
+        if not isinstance(completed_at, datetime):
+            raise DomainError(ErrorCode.INTERNAL_ERROR)
+        return StoredValidationReport(
+            report_id=row["report_id"],
+            subject_revision_id=row["subject_revision_id"],
+            validator_set_revision_id=row["validator_set_revision_id"],
+            status=row["status"],
+            started_at=row["started_at"],
+            completed_at=completed_at,
+            summary_checksum=row["summary_checksum"],
+            findings=tuple(
+                StoredValidationFinding(
+                    finding_id=finding["finding_id"],
+                    ordinal=finding["ordinal"],
+                    validator_code=finding["validator_code"],
+                    severity=finding["severity"],
+                    path=finding["path"],
+                    message_code=finding["message_code"],
+                    redacted_value=finding["redacted_value"],
+                )
+                for finding in finding_rows
+            ),
+        )
 
     async def lock_item_for_revision(
         self,
