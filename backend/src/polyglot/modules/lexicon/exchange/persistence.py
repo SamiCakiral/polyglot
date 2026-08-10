@@ -1401,6 +1401,8 @@ class SqlExchangeService:
         *,
         idempotency_key: str,
     ) -> ImportRunView:
+        if command.format_id == "polyglot.user.export/v1":
+            raise DomainError(ErrorCode.UNSUPPORTED_IMPORT_FORMAT)
         parsed = parse_import(
             command.payload,
             command.format_id,
@@ -1940,6 +1942,21 @@ class SqlExchangeService:
                 raise DomainError(ErrorCode.PREVIEW_STALE)
             if run.unresolved_conflicts:
                 raise DomainError(ErrorCode.UNRESOLVED_CONFLICT)
+            if run.format_id == "polyglot.memory.prompts/v1":
+                raise DomainError(
+                    ErrorCode.DEPENDENCY_UNAVAILABLE,
+                    detail="transactional memory import port is unavailable",
+                )
+            if run.format_id == "polyglot.authoring.bundle/v1":
+                raise DomainError(
+                    ErrorCode.INVALID_TRANSITION,
+                    detail="authoring imports require editorial handoff",
+                )
+            if run.format_id not in {
+                "polyglot.lexicon.bundle/v1",
+                "polyglot.generic.qa/v1",
+            }:
+                raise DomainError(ErrorCode.UNSUPPORTED_IMPORT_FORMAT)
             rows = (
                 await session.execute(
                     text(

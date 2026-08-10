@@ -354,6 +354,96 @@ async def test_import_preview_reads_candidates_through_lexical_reference_port(
     assert references.calls == [PROFILE_A]
 
 
+@pytest.mark.parametrize(
+    ("format_id", "expected_error"),
+    (
+        ("polyglot.memory.prompts/v1", ErrorCode.DEPENDENCY_UNAVAILABLE),
+        ("polyglot.authoring.bundle/v1", ErrorCode.INVALID_TRANSITION),
+    ),
+)
+async def test_non_lexical_import_never_mutates_private_lexicon(
+    runtime_factory,
+    format_id,
+    expected_error,
+) -> None:
+    mutations = LexicalMutationRecorder()
+    service = SqlExchangeService(runtime_factory, lexical_mutations=mutations)
+    row_key = "prompts" if format_id == "polyglot.memory.prompts/v1" else "artifacts"
+    payload = json.dumps(
+        {
+            "format": format_id,
+            "schema_version": 1,
+            row_key: [
+                {
+                    "source_key": "foreign-record",
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": "non lexical payload",
+                    "semantic_key": "foreign.record",
+                    "visibility": "private",
+                }
+            ],
+        }
+    ).encode()
+    preview = await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id=format_id,
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key=f"non-lexical-{format_id}",
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        await service.commit_import(
+            ACCOUNT_A,
+            preview.import_id,
+            preview_checksum=preview.preview_checksum,
+            current_catalogue_version="catalogue:17",
+            expected_version=1,
+            committed_at=NOW + timedelta(minutes=1),
+            idempotency_key=f"non-lexical-commit-{format_id}",
+        )
+
+    assert rejected.value.code is expected_error
+    assert mutations.calls == []
+
+
+async def test_user_export_reimport_is_refused_before_preview(runtime_factory) -> None:
+    service = SqlExchangeService(runtime_factory)
+    payload = json.dumps(
+        {
+            "format": "polyglot.user.export/v1",
+            "schema_version": 1,
+            "entries": [{"source_key": "export-record"}],
+        }
+    ).encode()
+
+    with pytest.raises(DomainError) as rejected:
+        await service.create_import(
+            ACCOUNT_A,
+            PROFILE_A,
+            CreateImport(
+                format_id="polyglot.user.export/v1",
+                encoding="utf-8",
+                payload=payload,
+                strategy=ImportStrategy.INTERACTIVE,
+                catalogue_version="catalogue:17",
+                created_at=NOW,
+                expires_at=NOW + timedelta(hours=2),
+            ),
+            idempotency_key="user-export-reimport",
+        )
+
+    assert rejected.value.code is ErrorCode.UNSUPPORTED_IMPORT_FORMAT
+
+
 async def test_import_preview_lines_are_paginated_and_owner_scoped(runtime_factory) -> None:
     service = SqlExchangeService(
         runtime_factory,
