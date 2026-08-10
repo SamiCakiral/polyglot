@@ -127,6 +127,8 @@ def test_split_task_report_source_is_not_a_secret_but_real_assignments_are() -> 
     sensitive_proof_assignment = f'{sensitive_name} = "{proof_statement}"'
     split_source_value = f'\'"ta" + "{report_fragment}.md"\''
     sensitive_split_assignment = f"{sensitive_name} = {split_source_value}"
+    token_name = "".join(("provider", "_token"))
+    sensitive_token_assignment = f'{token_name}: "{proof_statement}"'
 
     assert _find_secrets(source_reference, "fixture") == []
     assert _find_secrets(proof_statement, "fixture") == []
@@ -136,5 +138,8 @@ def test_split_task_report_source_is_not_a_secret_but_real_assignments_are() -> 
         "fixture:openai_api_key"
     ]
     assert _find_secrets(sensitive_split_assignment, "fixture") == [
+        "fixture:openai_api_key"
+    ]
+    assert _find_secrets(sensitive_token_assignment, "fixture") == [
         "fixture:openai_api_key"
     ]

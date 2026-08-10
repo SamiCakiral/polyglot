@@ -27,6 +27,21 @@ _SYNTHETIC_REPORT_PROOF = re.compile(
     r"(?P<fragment>sk-W\d{2}(?:-[A-Za-z0-9]+)+-report)"
     r"` outside\s+the\s+exact\s+split\s+source\s+context"
 )
+_SENSITIVE_ASSIGNMENT = re.compile(
+    r"^[ \t]*(?:export[ \t]+)?"
+    r"(?P<name>(?:[A-Z][A-Z0-9_]*_)?"
+    r"(?:API_KEY|ACCESS_KEY|SECRET_KEY|PRIVATE_KEY|TOKEN|SECRET|PASSWORD|CREDENTIALS?))"
+    r"[ \t]*(?::=|=|:)[ \t]*(?P<value>[^\r\n]*)$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _is_sensitive_assignment(content: str, match: re.Match[str]) -> bool:
+    return any(
+        assignment.start("value") <= match.start()
+        and match.end() <= assignment.end("value")
+        for assignment in _SENSITIVE_ASSIGNMENT.finditer(content)
+    )
 
 
 def _is_split_task_report_source(content: str, match: re.Match[str]) -> bool:
@@ -41,8 +56,12 @@ def _find_secrets(content: str, scope: str) -> list[str]:
     findings: list[str] = []
     for label, pattern in _SECRET_PATTERNS:
         for match in pattern.finditer(content):
-            if label == "openai_api_key" and _is_split_task_report_source(content, match):
-                continue
+            if label == "openai_api_key":
+                if _is_sensitive_assignment(content, match):
+                    findings.append(f"{scope}:{label}")
+                    break
+                if _is_split_task_report_source(content, match):
+                    continue
             findings.append(f"{scope}:{label}")
             break
     return findings
