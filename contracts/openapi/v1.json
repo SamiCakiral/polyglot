@@ -3662,6 +3662,16 @@
         "operationId": "capture_lexical_gap",
         "parameters": [
           {
+            "in": "path",
+            "name": "attempt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attempt Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -7704,6 +7714,16 @@
         "operationId": "record_lexical_encounter",
         "parameters": [
           {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -8502,6 +8522,26 @@
         "operationId": "upsert_lexical_annotation",
         "parameters": [
           {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sense Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -8710,6 +8750,26 @@
         "operationId": "declare_lexical_familiarity",
         "parameters": [
           {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sense Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -8900,6 +8960,26 @@
       "put": {
         "operationId": "set_lexical_learning_preference",
         "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "sense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sense Id",
+              "type": "string"
+            }
+          },
           {
             "in": "header",
             "name": "Idempotency-Key",
@@ -9311,6 +9391,16 @@
         "operationId": "add_private_lexical_unit",
         "parameters": [
           {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -9501,6 +9591,16 @@
       "post": {
         "operationId": "merge_lexical_units",
         "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          },
           {
             "in": "header",
             "name": "Idempotency-Key",
@@ -10498,6 +10598,16 @@
         "operationId": "delete_lexical_annotation",
         "parameters": [
           {
+            "in": "path",
+            "name": "annotation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Annotation Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -10706,6 +10816,16 @@
         "operationId": "delete_private_context",
         "parameters": [
           {
+            "in": "path",
+            "name": "encounter_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Encounter Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -10896,6 +11016,16 @@
       "post": {
         "operationId": "resolve_mention",
         "parameters": [
+          {
+            "in": "path",
+            "name": "mention_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Mention Id",
+              "type": "string"
+            }
+          },
           {
             "in": "header",
             "name": "Idempotency-Key",
@@ -11298,6 +11428,16 @@
         "operationId": "assert_lexical_relation",
         "parameters": [
           {
+            "in": "path",
+            "name": "sense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sense Id",
+              "type": "string"
+            }
+          },
+          {
             "in": "header",
             "name": "Idempotency-Key",
             "required": true,
@@ -11488,6 +11628,16 @@
       "post": {
         "operationId": "split_lexical_sense",
         "parameters": [
+          {
+            "in": "path",
+            "name": "sense_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Sense Id",
+              "type": "string"
+            }
+          },
           {
             "in": "header",
             "name": "Idempotency-Key",
@@ -13660,6 +13810,16 @@
       "post": {
         "operationId": "retract_lexical_relation",
         "parameters": [
+          {
+            "in": "path",
+            "name": "relation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Relation Id",
+              "type": "string"
+            }
+          },
           {
             "in": "header",
             "name": "Idempotency-Key",

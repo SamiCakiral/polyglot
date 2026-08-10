@@ -2,13 +2,15 @@
 
 # ruff: noqa: E501
 
+import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Any, Protocol
+from inspect import Parameter, Signature, signature
+from typing import Annotated, Any, Protocol, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, Security
+from fastapi import APIRouter, Header, HTTPException, Path, Query, Request, Response, Security
 from fastapi.security import APIKeyCookie
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
@@ -351,6 +353,7 @@ def word_bank_router(
                 if_match: IfMatchHeader,
                 payload: CommandPayload | None = None,
                 session_token: SessionCookieToken = None,
+                **_path_parameters: UUID,
             ) -> MutationResponse:
                 return await execute_mutation(
                     request,
@@ -372,6 +375,7 @@ def word_bank_router(
                 csrf_token: CsrfHeader,
                 payload: CommandPayload | None = None,
                 session_token: SessionCookieToken = None,
+                **_path_parameters: UUID,
             ) -> MutationResponse:
                 return await execute_mutation(
                     request,
@@ -386,6 +390,24 @@ def word_bank_router(
             endpoint = unversioned_endpoint
 
         endpoint.__name__ = operation_id
+        base_parameters = [
+            parameter
+            for parameter in signature(endpoint).parameters.values()
+            if parameter.kind is not Parameter.VAR_KEYWORD
+        ]
+        path_parameters = [
+            Parameter(
+                name,
+                kind=Parameter.KEYWORD_ONLY,
+                annotation=UUID,
+                default=Path(),
+            )
+            for name in re.findall(r"\{([^}]+)\}", path)
+        ]
+        cast(Any, endpoint).__signature__ = Signature(
+            parameters=[*base_parameters, *path_parameters],
+            return_annotation=MutationResponse,
+        )
         router.add_api_route(
             path,
             endpoint,

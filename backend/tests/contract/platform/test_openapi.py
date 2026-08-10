@@ -1,4 +1,5 @@
 import json
+import re
 import subprocess
 import sys
 from copy import deepcopy
@@ -218,3 +219,21 @@ def test_committed_openapi_is_deterministic_and_current() -> None:
     document = json.loads(OPENAPI_PATH.read_text())
     assert document["openapi"] == "3.1.0"
     assert document["info"]["title"] == "Polyglot V2 API"
+
+
+def test_every_declared_url_variable_is_a_required_path_parameter() -> None:
+    from polyglot.interfaces.http.app import create_app
+
+    document = create_app(test_mode=True).openapi()
+    for route, path_item in document["paths"].items():
+        expected = set(re.findall(r"\{([^}]+)\}", route))
+        for method, operation in path_item.items():
+            if method == "parameters":
+                continue
+            parameters = {
+                parameter["name"]: parameter
+                for parameter in operation.get("parameters", [])
+                if parameter.get("in") == "path"
+            }
+            assert set(parameters) == expected, f"{method.upper()} {route}"
+            assert all(parameter["required"] is True for parameter in parameters.values())

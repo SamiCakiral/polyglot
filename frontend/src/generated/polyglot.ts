@@ -22,24 +22,63 @@ import type {
 
 import type {
   AccountResponse,
+  ApproveContentRevisionRequest,
+  AtRequest,
   CatalogueTargetPageResponse,
   ChangePasswordRequest,
+  CommandPayload,
+  CompleteFoundationGateRequest,
   ConsentRequest,
   ConsentResponse,
+  ContentRevisionPageResponse,
+  ContentRevisionResponse,
+  CreateContentDraftRequest,
+  CreateMemoryPromptRequest,
+  CreateProfileRequest,
   CurrentSessionResponse,
+  DeleteMemoryPromptRequest,
+  DiagnosticResponse,
+  DueMemoryPromptPageResponse,
+  FoundationResponse,
+  GetContentHistoryParams,
+  GetLexicalSenseParams,
+  GetWordBankOverviewParams,
   LanguagePackPageResponse,
+  LexicalAnnotationPageResponse,
   LexiconSearchPageResponse,
   ListCatalogueTargetsParams,
+  ListContentDraftsParams,
+  ListDueMemoryPromptsParams,
   ListLanguagePacksParams,
+  ListLexicalAnnotationsParams,
   LiveStatus,
   LocalCredentialsRequest,
+  MemoryPromptResponse,
+  MergeMemoryPromptsRequest,
+  MutationResponse,
   OidcCredentialsRequest,
   PreferencesRequest,
   PreferencesResponse,
   ProblemResponse,
+  ProfileResponse,
+  ProfilesResponse,
+  PublishContentRevisionRequest,
   ReadyStatus,
+  ResetMemoryPromptRequest,
+  RestoreMemoryPromptRequest,
+  ResumeMemoryPromptRequest,
+  ReviseContentDraftRequest,
   SearchLexiconParams,
+  SenseNeighborhoodResponse,
   SessionResponse,
+  StartDiagnosticRequest,
+  StartFoundationRunRequest,
+  SubmitDiagnosticResponseRequest,
+  SubmitMemoryReviewRequest,
+  UpdateGoalsRequest,
+  ValidateContentRevisionRequest,
+  ValidationReportResponse,
+  WordBankOverviewResponse,
 } from "./model";
 
 const withQueryKey = <T extends object, K>(
@@ -659,6 +698,2109 @@ export const useRegisterAccount = <
   return useMutation(getRegisterAccountMutationOptions(options), queryClient);
 };
 
+export type captureLexicalGapResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type captureLexicalGapResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type captureLexicalGapResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type captureLexicalGapResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type captureLexicalGapResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type captureLexicalGapResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type captureLexicalGapResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type captureLexicalGapResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type captureLexicalGapResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type captureLexicalGapResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type captureLexicalGapResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type captureLexicalGapResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type captureLexicalGapResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type captureLexicalGapResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type captureLexicalGapResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type captureLexicalGapResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type captureLexicalGapResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type captureLexicalGapResponseSuccess = captureLexicalGapResponse200 & {
+  headers: Headers;
+};
+export type captureLexicalGapResponseError = (
+  | captureLexicalGapResponse401ApplicationJson
+  | captureLexicalGapResponse401ApplicationProblemJson
+  | captureLexicalGapResponse403ApplicationJson
+  | captureLexicalGapResponse403ApplicationProblemJson
+  | captureLexicalGapResponse409ApplicationJson
+  | captureLexicalGapResponse409ApplicationProblemJson
+  | captureLexicalGapResponse422ApplicationJson
+  | captureLexicalGapResponse422ApplicationProblemJson
+  | captureLexicalGapResponse423ApplicationJson
+  | captureLexicalGapResponse423ApplicationProblemJson
+  | captureLexicalGapResponse428ApplicationJson
+  | captureLexicalGapResponse428ApplicationProblemJson
+  | captureLexicalGapResponse429ApplicationJson
+  | captureLexicalGapResponse429ApplicationProblemJson
+  | captureLexicalGapResponse503ApplicationJson
+  | captureLexicalGapResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type captureLexicalGapResponse =
+  captureLexicalGapResponseSuccess | captureLexicalGapResponseError;
+
+export const getCaptureLexicalGapUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}/lexical-gaps`;
+};
+
+/**
+ * @summary Capture Lexical Gap
+ */
+export const captureLexicalGap = async (
+  attemptId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<captureLexicalGapResponse> => {
+  const res = await fetch(getCaptureLexicalGapUrl(attemptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: captureLexicalGapResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as captureLexicalGapResponse;
+};
+
+export const getCaptureLexicalGapMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof captureLexicalGap>>,
+    TError,
+    { attemptId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof captureLexicalGap>>,
+  TError,
+  { attemptId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["captureLexicalGap"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof captureLexicalGap>>,
+    { attemptId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return captureLexicalGap(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CaptureLexicalGapMutationResult = NonNullable<
+  Awaited<ReturnType<typeof captureLexicalGap>>
+>;
+export type CaptureLexicalGapMutationBody = CommandPayload | null | undefined;
+export type CaptureLexicalGapMutationError = ProblemResponse;
+
+/**
+ * @summary Capture Lexical Gap
+ */
+export const useCaptureLexicalGap = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof captureLexicalGap>>,
+      TError,
+      { attemptId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof captureLexicalGap>>,
+  TError,
+  { attemptId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(getCaptureLexicalGapMutationOptions(options), queryClient);
+};
+
+export type getContentHistoryResponse200 = {
+  data: ContentRevisionPageResponse;
+  status: 200;
+};
+
+export type getContentHistoryResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getContentHistoryResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getContentHistoryResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getContentHistoryResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getContentHistoryResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getContentHistoryResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getContentHistoryResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getContentHistoryResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getContentHistoryResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getContentHistoryResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getContentHistoryResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getContentHistoryResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getContentHistoryResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getContentHistoryResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getContentHistoryResponseSuccess = getContentHistoryResponse200 & {
+  headers: Headers;
+};
+export type getContentHistoryResponseError = (
+  | getContentHistoryResponse401ApplicationJson
+  | getContentHistoryResponse401ApplicationProblemJson
+  | getContentHistoryResponse403ApplicationJson
+  | getContentHistoryResponse403ApplicationProblemJson
+  | getContentHistoryResponse409ApplicationJson
+  | getContentHistoryResponse409ApplicationProblemJson
+  | getContentHistoryResponse422ApplicationJson
+  | getContentHistoryResponse422ApplicationProblemJson
+  | getContentHistoryResponse423ApplicationJson
+  | getContentHistoryResponse423ApplicationProblemJson
+  | getContentHistoryResponse429ApplicationJson
+  | getContentHistoryResponse429ApplicationProblemJson
+  | getContentHistoryResponse503ApplicationJson
+  | getContentHistoryResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getContentHistoryResponse =
+  getContentHistoryResponseSuccess | getContentHistoryResponseError;
+
+export const getGetContentHistoryUrl = (
+  id: string,
+  params?: GetContentHistoryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/authoring/content/${id}/history?${stringifiedParams}`
+    : `/api/v1/authoring/content/${id}/history`;
+};
+
+/**
+ * @summary Get Content History
+ */
+export const getContentHistory = async (
+  id: string,
+  params?: GetContentHistoryParams,
+  options?: RequestInit,
+): Promise<getContentHistoryResponse> => {
+  const res = await fetch(getGetContentHistoryUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getContentHistoryResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getContentHistoryResponse;
+};
+
+export const getGetContentHistoryQueryKey = (
+  id: string,
+  params?: GetContentHistoryParams,
+) => {
+  return [
+    `/api/v1/authoring/content/${id}/history`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetContentHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContentHistory>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetContentHistoryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentHistory>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContentHistoryQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getContentHistory>>
+  > = ({ signal }) =>
+    getContentHistory(id, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContentHistory>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetContentHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContentHistory>>
+>;
+export type GetContentHistoryQueryError = ProblemResponse;
+
+export function useGetContentHistory<
+  TData = Awaited<ReturnType<typeof getContentHistory>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params: undefined | GetContentHistoryParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentHistory>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContentHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getContentHistory>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetContentHistory<
+  TData = Awaited<ReturnType<typeof getContentHistory>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetContentHistoryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentHistory>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContentHistory>>,
+          TError,
+          Awaited<ReturnType<typeof getContentHistory>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetContentHistory<
+  TData = Awaited<ReturnType<typeof getContentHistory>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetContentHistoryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentHistory>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Content History
+ */
+
+export function useGetContentHistory<
+  TData = Awaited<ReturnType<typeof getContentHistory>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetContentHistoryParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentHistory>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetContentHistoryQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type listContentDraftsResponse200 = {
+  data: ContentRevisionPageResponse;
+  status: 200;
+};
+
+export type listContentDraftsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listContentDraftsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listContentDraftsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listContentDraftsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listContentDraftsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listContentDraftsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listContentDraftsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listContentDraftsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listContentDraftsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listContentDraftsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listContentDraftsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listContentDraftsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listContentDraftsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listContentDraftsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listContentDraftsResponseSuccess = listContentDraftsResponse200 & {
+  headers: Headers;
+};
+export type listContentDraftsResponseError = (
+  | listContentDraftsResponse401ApplicationJson
+  | listContentDraftsResponse401ApplicationProblemJson
+  | listContentDraftsResponse403ApplicationJson
+  | listContentDraftsResponse403ApplicationProblemJson
+  | listContentDraftsResponse409ApplicationJson
+  | listContentDraftsResponse409ApplicationProblemJson
+  | listContentDraftsResponse422ApplicationJson
+  | listContentDraftsResponse422ApplicationProblemJson
+  | listContentDraftsResponse423ApplicationJson
+  | listContentDraftsResponse423ApplicationProblemJson
+  | listContentDraftsResponse429ApplicationJson
+  | listContentDraftsResponse429ApplicationProblemJson
+  | listContentDraftsResponse503ApplicationJson
+  | listContentDraftsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listContentDraftsResponse =
+  listContentDraftsResponseSuccess | listContentDraftsResponseError;
+
+export const getListContentDraftsUrl = (params?: ListContentDraftsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/authoring/drafts?${stringifiedParams}`
+    : `/api/v1/authoring/drafts`;
+};
+
+/**
+ * @summary List Content Drafts
+ */
+export const listContentDrafts = async (
+  params?: ListContentDraftsParams,
+  options?: RequestInit,
+): Promise<listContentDraftsResponse> => {
+  const res = await fetch(getListContentDraftsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listContentDraftsResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listContentDraftsResponse;
+};
+
+export const getListContentDraftsQueryKey = (
+  params?: ListContentDraftsParams,
+) => {
+  return [`/api/v1/authoring/drafts`, ...(params ? [params] : [])] as const;
+};
+
+export const getListContentDraftsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listContentDrafts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListContentDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listContentDrafts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListContentDraftsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listContentDrafts>>
+  > = ({ signal }) => listContentDrafts(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listContentDrafts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListContentDraftsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listContentDrafts>>
+>;
+export type ListContentDraftsQueryError = ProblemResponse;
+
+export function useListContentDrafts<
+  TData = Awaited<ReturnType<typeof listContentDrafts>>,
+  TError = ProblemResponse,
+>(
+  params: undefined | ListContentDraftsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listContentDrafts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContentDrafts>>,
+          TError,
+          Awaited<ReturnType<typeof listContentDrafts>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListContentDrafts<
+  TData = Awaited<ReturnType<typeof listContentDrafts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListContentDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listContentDrafts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listContentDrafts>>,
+          TError,
+          Awaited<ReturnType<typeof listContentDrafts>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListContentDrafts<
+  TData = Awaited<ReturnType<typeof listContentDrafts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListContentDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listContentDrafts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Content Drafts
+ */
+
+export function useListContentDrafts<
+  TData = Awaited<ReturnType<typeof listContentDrafts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListContentDraftsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listContentDrafts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListContentDraftsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createContentDraftResponse201 = {
+  data: ContentRevisionResponse;
+  status: 201;
+};
+
+export type createContentDraftResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createContentDraftResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createContentDraftResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createContentDraftResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createContentDraftResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createContentDraftResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createContentDraftResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createContentDraftResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createContentDraftResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createContentDraftResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createContentDraftResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createContentDraftResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createContentDraftResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createContentDraftResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createContentDraftResponseSuccess =
+  createContentDraftResponse201 & {
+    headers: Headers;
+  };
+export type createContentDraftResponseError = (
+  | createContentDraftResponse401ApplicationJson
+  | createContentDraftResponse401ApplicationProblemJson
+  | createContentDraftResponse403ApplicationJson
+  | createContentDraftResponse403ApplicationProblemJson
+  | createContentDraftResponse409ApplicationJson
+  | createContentDraftResponse409ApplicationProblemJson
+  | createContentDraftResponse422ApplicationJson
+  | createContentDraftResponse422ApplicationProblemJson
+  | createContentDraftResponse423ApplicationJson
+  | createContentDraftResponse423ApplicationProblemJson
+  | createContentDraftResponse429ApplicationJson
+  | createContentDraftResponse429ApplicationProblemJson
+  | createContentDraftResponse503ApplicationJson
+  | createContentDraftResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createContentDraftResponse =
+  createContentDraftResponseSuccess | createContentDraftResponseError;
+
+export const getCreateContentDraftUrl = () => {
+  return `/api/v1/authoring/drafts`;
+};
+
+/**
+ * @summary Create Content Draft
+ */
+export const createContentDraft = async (
+  createContentDraftRequest: CreateContentDraftRequest,
+  options?: RequestInit,
+): Promise<createContentDraftResponse> => {
+  const res = await fetch(getCreateContentDraftUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createContentDraftRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createContentDraftResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createContentDraftResponse;
+};
+
+export const getCreateContentDraftMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createContentDraft>>,
+    TError,
+    { data: CreateContentDraftRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createContentDraft>>,
+  TError,
+  { data: CreateContentDraftRequest },
+  TContext
+> => {
+  const mutationKey = ["createContentDraft"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createContentDraft>>,
+    { data: CreateContentDraftRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createContentDraft(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateContentDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createContentDraft>>
+>;
+export type CreateContentDraftMutationBody = CreateContentDraftRequest;
+export type CreateContentDraftMutationError = ProblemResponse;
+
+/**
+ * @summary Create Content Draft
+ */
+export const useCreateContentDraft = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createContentDraft>>,
+      TError,
+      { data: CreateContentDraftRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createContentDraft>>,
+  TError,
+  { data: CreateContentDraftRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateContentDraftMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getContentDraftResponse200 = {
+  data: ContentRevisionResponse;
+  status: 200;
+};
+
+export type getContentDraftResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getContentDraftResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getContentDraftResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getContentDraftResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getContentDraftResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getContentDraftResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getContentDraftResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getContentDraftResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getContentDraftResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getContentDraftResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getContentDraftResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getContentDraftResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getContentDraftResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getContentDraftResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getContentDraftResponseSuccess = getContentDraftResponse200 & {
+  headers: Headers;
+};
+export type getContentDraftResponseError = (
+  | getContentDraftResponse401ApplicationJson
+  | getContentDraftResponse401ApplicationProblemJson
+  | getContentDraftResponse403ApplicationJson
+  | getContentDraftResponse403ApplicationProblemJson
+  | getContentDraftResponse409ApplicationJson
+  | getContentDraftResponse409ApplicationProblemJson
+  | getContentDraftResponse422ApplicationJson
+  | getContentDraftResponse422ApplicationProblemJson
+  | getContentDraftResponse423ApplicationJson
+  | getContentDraftResponse423ApplicationProblemJson
+  | getContentDraftResponse429ApplicationJson
+  | getContentDraftResponse429ApplicationProblemJson
+  | getContentDraftResponse503ApplicationJson
+  | getContentDraftResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getContentDraftResponse =
+  getContentDraftResponseSuccess | getContentDraftResponseError;
+
+export const getGetContentDraftUrl = (draftId: string) => {
+  return `/api/v1/authoring/drafts/${draftId}`;
+};
+
+/**
+ * @summary Get Content Draft
+ */
+export const getContentDraft = async (
+  draftId: string,
+  options?: RequestInit,
+): Promise<getContentDraftResponse> => {
+  const res = await fetch(getGetContentDraftUrl(draftId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getContentDraftResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getContentDraftResponse;
+};
+
+export const getGetContentDraftQueryKey = (draftId: string) => {
+  return [`/api/v1/authoring/drafts/${draftId}`] as const;
+};
+
+export const getGetContentDraftQueryOptions = <
+  TData = Awaited<ReturnType<typeof getContentDraft>>,
+  TError = ProblemResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentDraft>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetContentDraftQueryKey(draftId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getContentDraft>>> = ({
+    signal,
+  }) => getContentDraft(draftId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: draftId !== null && draftId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getContentDraft>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetContentDraftQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getContentDraft>>
+>;
+export type GetContentDraftQueryError = ProblemResponse;
+
+export function useGetContentDraft<
+  TData = Awaited<ReturnType<typeof getContentDraft>>,
+  TError = ProblemResponse,
+>(
+  draftId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentDraft>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContentDraft>>,
+          TError,
+          Awaited<ReturnType<typeof getContentDraft>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetContentDraft<
+  TData = Awaited<ReturnType<typeof getContentDraft>>,
+  TError = ProblemResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentDraft>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getContentDraft>>,
+          TError,
+          Awaited<ReturnType<typeof getContentDraft>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetContentDraft<
+  TData = Awaited<ReturnType<typeof getContentDraft>>,
+  TError = ProblemResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentDraft>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Content Draft
+ */
+
+export function useGetContentDraft<
+  TData = Awaited<ReturnType<typeof getContentDraft>>,
+  TError = ProblemResponse,
+>(
+  draftId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getContentDraft>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetContentDraftQueryOptions(draftId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type reviseContentDraftResponse200 = {
+  data: ContentRevisionResponse;
+  status: 200;
+};
+
+export type reviseContentDraftResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviseContentDraftResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviseContentDraftResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviseContentDraftResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviseContentDraftResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviseContentDraftResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviseContentDraftResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviseContentDraftResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviseContentDraftResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviseContentDraftResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviseContentDraftResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviseContentDraftResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviseContentDraftResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviseContentDraftResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviseContentDraftResponseSuccess =
+  reviseContentDraftResponse200 & {
+    headers: Headers;
+  };
+export type reviseContentDraftResponseError = (
+  | reviseContentDraftResponse401ApplicationJson
+  | reviseContentDraftResponse401ApplicationProblemJson
+  | reviseContentDraftResponse403ApplicationJson
+  | reviseContentDraftResponse403ApplicationProblemJson
+  | reviseContentDraftResponse409ApplicationJson
+  | reviseContentDraftResponse409ApplicationProblemJson
+  | reviseContentDraftResponse422ApplicationJson
+  | reviseContentDraftResponse422ApplicationProblemJson
+  | reviseContentDraftResponse423ApplicationJson
+  | reviseContentDraftResponse423ApplicationProblemJson
+  | reviseContentDraftResponse429ApplicationJson
+  | reviseContentDraftResponse429ApplicationProblemJson
+  | reviseContentDraftResponse503ApplicationJson
+  | reviseContentDraftResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type reviseContentDraftResponse =
+  reviseContentDraftResponseSuccess | reviseContentDraftResponseError;
+
+export const getReviseContentDraftUrl = (draftId: string) => {
+  return `/api/v1/authoring/drafts/${draftId}`;
+};
+
+/**
+ * @summary Revise Content Draft
+ */
+export const reviseContentDraft = async (
+  draftId: string,
+  reviseContentDraftRequest: ReviseContentDraftRequest,
+  options?: RequestInit,
+): Promise<reviseContentDraftResponse> => {
+  const res = await fetch(getReviseContentDraftUrl(draftId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviseContentDraftRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: reviseContentDraftResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as reviseContentDraftResponse;
+};
+
+export const getReviseContentDraftMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviseContentDraft>>,
+    TError,
+    { draftId: string; data: ReviseContentDraftRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviseContentDraft>>,
+  TError,
+  { draftId: string; data: ReviseContentDraftRequest },
+  TContext
+> => {
+  const mutationKey = ["reviseContentDraft"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviseContentDraft>>,
+    { draftId: string; data: ReviseContentDraftRequest }
+  > = (props) => {
+    const { draftId, data } = props ?? {};
+
+    return reviseContentDraft(draftId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviseContentDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviseContentDraft>>
+>;
+export type ReviseContentDraftMutationBody = ReviseContentDraftRequest;
+export type ReviseContentDraftMutationError = ProblemResponse;
+
+/**
+ * @summary Revise Content Draft
+ */
+export const useReviseContentDraft = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reviseContentDraft>>,
+      TError,
+      { draftId: string; data: ReviseContentDraftRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reviseContentDraft>>,
+  TError,
+  { draftId: string; data: ReviseContentDraftRequest },
+  TContext
+> => {
+  return useMutation(
+    getReviseContentDraftMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type approveContentRevisionResponse200 = {
+  data: ContentRevisionResponse;
+  status: 200;
+};
+
+export type approveContentRevisionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type approveContentRevisionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type approveContentRevisionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type approveContentRevisionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type approveContentRevisionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type approveContentRevisionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type approveContentRevisionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type approveContentRevisionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type approveContentRevisionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type approveContentRevisionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type approveContentRevisionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type approveContentRevisionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type approveContentRevisionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type approveContentRevisionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type approveContentRevisionResponseSuccess =
+  approveContentRevisionResponse200 & {
+    headers: Headers;
+  };
+export type approveContentRevisionResponseError = (
+  | approveContentRevisionResponse401ApplicationJson
+  | approveContentRevisionResponse401ApplicationProblemJson
+  | approveContentRevisionResponse403ApplicationJson
+  | approveContentRevisionResponse403ApplicationProblemJson
+  | approveContentRevisionResponse409ApplicationJson
+  | approveContentRevisionResponse409ApplicationProblemJson
+  | approveContentRevisionResponse422ApplicationJson
+  | approveContentRevisionResponse422ApplicationProblemJson
+  | approveContentRevisionResponse423ApplicationJson
+  | approveContentRevisionResponse423ApplicationProblemJson
+  | approveContentRevisionResponse429ApplicationJson
+  | approveContentRevisionResponse429ApplicationProblemJson
+  | approveContentRevisionResponse503ApplicationJson
+  | approveContentRevisionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type approveContentRevisionResponse =
+  approveContentRevisionResponseSuccess | approveContentRevisionResponseError;
+
+export const getApproveContentRevisionUrl = (draftId: string) => {
+  return `/api/v1/authoring/drafts/${draftId}:approve`;
+};
+
+/**
+ * @summary Approve Content Revision
+ */
+export const approveContentRevision = async (
+  draftId: string,
+  approveContentRevisionRequest: ApproveContentRevisionRequest,
+  options?: RequestInit,
+): Promise<approveContentRevisionResponse> => {
+  const res = await fetch(getApproveContentRevisionUrl(draftId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(approveContentRevisionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: approveContentRevisionResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as approveContentRevisionResponse;
+};
+
+export const getApproveContentRevisionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof approveContentRevision>>,
+    TError,
+    { draftId: string; data: ApproveContentRevisionRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof approveContentRevision>>,
+  TError,
+  { draftId: string; data: ApproveContentRevisionRequest },
+  TContext
+> => {
+  const mutationKey = ["approveContentRevision"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof approveContentRevision>>,
+    { draftId: string; data: ApproveContentRevisionRequest }
+  > = (props) => {
+    const { draftId, data } = props ?? {};
+
+    return approveContentRevision(draftId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ApproveContentRevisionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof approveContentRevision>>
+>;
+export type ApproveContentRevisionMutationBody = ApproveContentRevisionRequest;
+export type ApproveContentRevisionMutationError = ProblemResponse;
+
+/**
+ * @summary Approve Content Revision
+ */
+export const useApproveContentRevision = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof approveContentRevision>>,
+      TError,
+      { draftId: string; data: ApproveContentRevisionRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof approveContentRevision>>,
+  TError,
+  { draftId: string; data: ApproveContentRevisionRequest },
+  TContext
+> => {
+  return useMutation(
+    getApproveContentRevisionMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type publishContentRevisionResponse200 = {
+  data: ContentRevisionResponse;
+  status: 200;
+};
+
+export type publishContentRevisionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type publishContentRevisionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type publishContentRevisionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type publishContentRevisionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type publishContentRevisionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type publishContentRevisionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type publishContentRevisionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type publishContentRevisionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type publishContentRevisionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type publishContentRevisionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type publishContentRevisionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type publishContentRevisionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type publishContentRevisionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type publishContentRevisionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type publishContentRevisionResponseSuccess =
+  publishContentRevisionResponse200 & {
+    headers: Headers;
+  };
+export type publishContentRevisionResponseError = (
+  | publishContentRevisionResponse401ApplicationJson
+  | publishContentRevisionResponse401ApplicationProblemJson
+  | publishContentRevisionResponse403ApplicationJson
+  | publishContentRevisionResponse403ApplicationProblemJson
+  | publishContentRevisionResponse409ApplicationJson
+  | publishContentRevisionResponse409ApplicationProblemJson
+  | publishContentRevisionResponse422ApplicationJson
+  | publishContentRevisionResponse422ApplicationProblemJson
+  | publishContentRevisionResponse423ApplicationJson
+  | publishContentRevisionResponse423ApplicationProblemJson
+  | publishContentRevisionResponse429ApplicationJson
+  | publishContentRevisionResponse429ApplicationProblemJson
+  | publishContentRevisionResponse503ApplicationJson
+  | publishContentRevisionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type publishContentRevisionResponse =
+  publishContentRevisionResponseSuccess | publishContentRevisionResponseError;
+
+export const getPublishContentRevisionUrl = (draftId: string) => {
+  return `/api/v1/authoring/drafts/${draftId}:publish`;
+};
+
+/**
+ * @summary Publish Content Revision
+ */
+export const publishContentRevision = async (
+  draftId: string,
+  publishContentRevisionRequest: PublishContentRevisionRequest,
+  options?: RequestInit,
+): Promise<publishContentRevisionResponse> => {
+  const res = await fetch(getPublishContentRevisionUrl(draftId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(publishContentRevisionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: publishContentRevisionResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as publishContentRevisionResponse;
+};
+
+export const getPublishContentRevisionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof publishContentRevision>>,
+    TError,
+    { draftId: string; data: PublishContentRevisionRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof publishContentRevision>>,
+  TError,
+  { draftId: string; data: PublishContentRevisionRequest },
+  TContext
+> => {
+  const mutationKey = ["publishContentRevision"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof publishContentRevision>>,
+    { draftId: string; data: PublishContentRevisionRequest }
+  > = (props) => {
+    const { draftId, data } = props ?? {};
+
+    return publishContentRevision(draftId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PublishContentRevisionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof publishContentRevision>>
+>;
+export type PublishContentRevisionMutationBody = PublishContentRevisionRequest;
+export type PublishContentRevisionMutationError = ProblemResponse;
+
+/**
+ * @summary Publish Content Revision
+ */
+export const usePublishContentRevision = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof publishContentRevision>>,
+      TError,
+      { draftId: string; data: PublishContentRevisionRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof publishContentRevision>>,
+  TError,
+  { draftId: string; data: PublishContentRevisionRequest },
+  TContext
+> => {
+  return useMutation(
+    getPublishContentRevisionMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type validateContentRevisionResponse200 = {
+  data: ContentRevisionResponse;
+  status: 200;
+};
+
+export type validateContentRevisionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type validateContentRevisionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type validateContentRevisionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type validateContentRevisionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type validateContentRevisionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type validateContentRevisionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type validateContentRevisionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type validateContentRevisionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type validateContentRevisionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type validateContentRevisionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type validateContentRevisionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type validateContentRevisionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type validateContentRevisionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type validateContentRevisionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type validateContentRevisionResponseSuccess =
+  validateContentRevisionResponse200 & {
+    headers: Headers;
+  };
+export type validateContentRevisionResponseError = (
+  | validateContentRevisionResponse401ApplicationJson
+  | validateContentRevisionResponse401ApplicationProblemJson
+  | validateContentRevisionResponse403ApplicationJson
+  | validateContentRevisionResponse403ApplicationProblemJson
+  | validateContentRevisionResponse409ApplicationJson
+  | validateContentRevisionResponse409ApplicationProblemJson
+  | validateContentRevisionResponse422ApplicationJson
+  | validateContentRevisionResponse422ApplicationProblemJson
+  | validateContentRevisionResponse423ApplicationJson
+  | validateContentRevisionResponse423ApplicationProblemJson
+  | validateContentRevisionResponse429ApplicationJson
+  | validateContentRevisionResponse429ApplicationProblemJson
+  | validateContentRevisionResponse503ApplicationJson
+  | validateContentRevisionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type validateContentRevisionResponse =
+  validateContentRevisionResponseSuccess | validateContentRevisionResponseError;
+
+export const getValidateContentRevisionUrl = (draftId: string) => {
+  return `/api/v1/authoring/drafts/${draftId}:validate`;
+};
+
+/**
+ * @summary Validate Content Revision
+ */
+export const validateContentRevision = async (
+  draftId: string,
+  validateContentRevisionRequest: ValidateContentRevisionRequest,
+  options?: RequestInit,
+): Promise<validateContentRevisionResponse> => {
+  const res = await fetch(getValidateContentRevisionUrl(draftId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(validateContentRevisionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: validateContentRevisionResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as validateContentRevisionResponse;
+};
+
+export const getValidateContentRevisionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof validateContentRevision>>,
+    TError,
+    { draftId: string; data: ValidateContentRevisionRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof validateContentRevision>>,
+  TError,
+  { draftId: string; data: ValidateContentRevisionRequest },
+  TContext
+> => {
+  const mutationKey = ["validateContentRevision"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof validateContentRevision>>,
+    { draftId: string; data: ValidateContentRevisionRequest }
+  > = (props) => {
+    const { draftId, data } = props ?? {};
+
+    return validateContentRevision(draftId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ValidateContentRevisionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof validateContentRevision>>
+>;
+export type ValidateContentRevisionMutationBody =
+  ValidateContentRevisionRequest;
+export type ValidateContentRevisionMutationError = ProblemResponse;
+
+/**
+ * @summary Validate Content Revision
+ */
+export const useValidateContentRevision = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof validateContentRevision>>,
+      TError,
+      { draftId: string; data: ValidateContentRevisionRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof validateContentRevision>>,
+  TError,
+  { draftId: string; data: ValidateContentRevisionRequest },
+  TContext
+> => {
+  return useMutation(
+    getValidateContentRevisionMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type listCatalogueTargetsResponse200 = {
   data: CatalogueTargetPageResponse;
   status: 200;
@@ -1097,6 +3239,1442 @@ export const useUpdateConsent = <TError = ProblemResponse, TContext = unknown>(
   TContext
 > => {
   return useMutation(getUpdateConsentMutationOptions(options), queryClient);
+};
+
+export type retireContentRevisionResponse200 = {
+  data: ContentRevisionResponse;
+  status: 200;
+};
+
+export type retireContentRevisionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type retireContentRevisionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type retireContentRevisionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type retireContentRevisionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type retireContentRevisionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type retireContentRevisionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type retireContentRevisionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type retireContentRevisionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type retireContentRevisionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type retireContentRevisionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type retireContentRevisionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type retireContentRevisionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type retireContentRevisionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type retireContentRevisionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type retireContentRevisionResponseSuccess =
+  retireContentRevisionResponse200 & {
+    headers: Headers;
+  };
+export type retireContentRevisionResponseError = (
+  | retireContentRevisionResponse401ApplicationJson
+  | retireContentRevisionResponse401ApplicationProblemJson
+  | retireContentRevisionResponse403ApplicationJson
+  | retireContentRevisionResponse403ApplicationProblemJson
+  | retireContentRevisionResponse409ApplicationJson
+  | retireContentRevisionResponse409ApplicationProblemJson
+  | retireContentRevisionResponse422ApplicationJson
+  | retireContentRevisionResponse422ApplicationProblemJson
+  | retireContentRevisionResponse423ApplicationJson
+  | retireContentRevisionResponse423ApplicationProblemJson
+  | retireContentRevisionResponse429ApplicationJson
+  | retireContentRevisionResponse429ApplicationProblemJson
+  | retireContentRevisionResponse503ApplicationJson
+  | retireContentRevisionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type retireContentRevisionResponse =
+  retireContentRevisionResponseSuccess | retireContentRevisionResponseError;
+
+export const getRetireContentRevisionUrl = (
+  contentId: string,
+  revisionId: string,
+) => {
+  return `/api/v1/content/${contentId}/revisions/${revisionId}:retire`;
+};
+
+/**
+ * @summary Retire Content Revision
+ */
+export const retireContentRevision = async (
+  contentId: string,
+  revisionId: string,
+  options?: RequestInit,
+): Promise<retireContentRevisionResponse> => {
+  const res = await fetch(getRetireContentRevisionUrl(contentId, revisionId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: retireContentRevisionResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as retireContentRevisionResponse;
+};
+
+export const getRetireContentRevisionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof retireContentRevision>>,
+    TError,
+    { contentId: string; revisionId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof retireContentRevision>>,
+  TError,
+  { contentId: string; revisionId: string },
+  TContext
+> => {
+  const mutationKey = ["retireContentRevision"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof retireContentRevision>>,
+    { contentId: string; revisionId: string }
+  > = (props) => {
+    const { contentId, revisionId } = props ?? {};
+
+    return retireContentRevision(contentId, revisionId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RetireContentRevisionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof retireContentRevision>>
+>;
+
+export type RetireContentRevisionMutationError = ProblemResponse;
+
+/**
+ * @summary Retire Content Revision
+ */
+export const useRetireContentRevision = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof retireContentRevision>>,
+      TError,
+      { contentId: string; revisionId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof retireContentRevision>>,
+  TError,
+  { contentId: string; revisionId: string },
+  TContext
+> => {
+  return useMutation(
+    getRetireContentRevisionMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getDiagnosticSummaryResponse200 = {
+  data: DiagnosticResponse;
+  status: 200;
+};
+
+export type getDiagnosticSummaryResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getDiagnosticSummaryResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getDiagnosticSummaryResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getDiagnosticSummaryResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getDiagnosticSummaryResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getDiagnosticSummaryResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getDiagnosticSummaryResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getDiagnosticSummaryResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getDiagnosticSummaryResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getDiagnosticSummaryResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getDiagnosticSummaryResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getDiagnosticSummaryResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getDiagnosticSummaryResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getDiagnosticSummaryResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getDiagnosticSummaryResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getDiagnosticSummaryResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getDiagnosticSummaryResponseSuccess =
+  getDiagnosticSummaryResponse200 & {
+    headers: Headers;
+  };
+export type getDiagnosticSummaryResponseError = (
+  | getDiagnosticSummaryResponse401ApplicationJson
+  | getDiagnosticSummaryResponse401ApplicationProblemJson
+  | getDiagnosticSummaryResponse403ApplicationJson
+  | getDiagnosticSummaryResponse403ApplicationProblemJson
+  | getDiagnosticSummaryResponse409ApplicationJson
+  | getDiagnosticSummaryResponse409ApplicationProblemJson
+  | getDiagnosticSummaryResponse422ApplicationJson
+  | getDiagnosticSummaryResponse422ApplicationProblemJson
+  | getDiagnosticSummaryResponse423ApplicationJson
+  | getDiagnosticSummaryResponse423ApplicationProblemJson
+  | getDiagnosticSummaryResponse428ApplicationJson
+  | getDiagnosticSummaryResponse428ApplicationProblemJson
+  | getDiagnosticSummaryResponse429ApplicationJson
+  | getDiagnosticSummaryResponse429ApplicationProblemJson
+  | getDiagnosticSummaryResponse503ApplicationJson
+  | getDiagnosticSummaryResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getDiagnosticSummaryResponse =
+  getDiagnosticSummaryResponseSuccess | getDiagnosticSummaryResponseError;
+
+export const getGetDiagnosticSummaryUrl = (id: string) => {
+  return `/api/v1/diagnostics/${id}`;
+};
+
+/**
+ * @summary Get Diagnostic
+ */
+export const getDiagnosticSummary = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getDiagnosticSummaryResponse> => {
+  const res = await fetch(getGetDiagnosticSummaryUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getDiagnosticSummaryResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getDiagnosticSummaryResponse;
+};
+
+export const getGetDiagnosticSummaryQueryKey = (id: string) => {
+  return [`/api/v1/diagnostics/${id}`] as const;
+};
+
+export const getGetDiagnosticSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDiagnosticSummary>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDiagnosticSummary>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDiagnosticSummaryQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDiagnosticSummary>>
+  > = ({ signal }) => getDiagnosticSummary(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDiagnosticSummary>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetDiagnosticSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDiagnosticSummary>>
+>;
+export type GetDiagnosticSummaryQueryError = ProblemResponse;
+
+export function useGetDiagnosticSummary<
+  TData = Awaited<ReturnType<typeof getDiagnosticSummary>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDiagnosticSummary>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDiagnosticSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getDiagnosticSummary>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetDiagnosticSummary<
+  TData = Awaited<ReturnType<typeof getDiagnosticSummary>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDiagnosticSummary>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDiagnosticSummary>>,
+          TError,
+          Awaited<ReturnType<typeof getDiagnosticSummary>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetDiagnosticSummary<
+  TData = Awaited<ReturnType<typeof getDiagnosticSummary>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDiagnosticSummary>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Diagnostic
+ */
+
+export function useGetDiagnosticSummary<
+  TData = Awaited<ReturnType<typeof getDiagnosticSummary>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getDiagnosticSummary>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetDiagnosticSummaryQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type submitDiagnosticResponseResponse200 = {
+  data: DiagnosticResponse;
+  status: 200;
+};
+
+export type submitDiagnosticResponseResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitDiagnosticResponseResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitDiagnosticResponseResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitDiagnosticResponseResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitDiagnosticResponseResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitDiagnosticResponseResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitDiagnosticResponseResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitDiagnosticResponseResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitDiagnosticResponseResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitDiagnosticResponseResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitDiagnosticResponseResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitDiagnosticResponseResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitDiagnosticResponseResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitDiagnosticResponseResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitDiagnosticResponseResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitDiagnosticResponseResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitDiagnosticResponseResponseSuccess =
+  submitDiagnosticResponseResponse200 & {
+    headers: Headers;
+  };
+export type submitDiagnosticResponseResponseError = (
+  | submitDiagnosticResponseResponse401ApplicationJson
+  | submitDiagnosticResponseResponse401ApplicationProblemJson
+  | submitDiagnosticResponseResponse403ApplicationJson
+  | submitDiagnosticResponseResponse403ApplicationProblemJson
+  | submitDiagnosticResponseResponse409ApplicationJson
+  | submitDiagnosticResponseResponse409ApplicationProblemJson
+  | submitDiagnosticResponseResponse422ApplicationJson
+  | submitDiagnosticResponseResponse422ApplicationProblemJson
+  | submitDiagnosticResponseResponse423ApplicationJson
+  | submitDiagnosticResponseResponse423ApplicationProblemJson
+  | submitDiagnosticResponseResponse428ApplicationJson
+  | submitDiagnosticResponseResponse428ApplicationProblemJson
+  | submitDiagnosticResponseResponse429ApplicationJson
+  | submitDiagnosticResponseResponse429ApplicationProblemJson
+  | submitDiagnosticResponseResponse503ApplicationJson
+  | submitDiagnosticResponseResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type submitDiagnosticResponseResponse =
+  | submitDiagnosticResponseResponseSuccess
+  | submitDiagnosticResponseResponseError;
+
+export const getSubmitDiagnosticResponseUrl = (runId: string) => {
+  return `/api/v1/diagnostics/${runId}/responses`;
+};
+
+/**
+ * @summary Submit Diagnostic Response
+ */
+export const submitDiagnosticResponse = async (
+  runId: string,
+  submitDiagnosticResponseRequest: SubmitDiagnosticResponseRequest,
+  options?: RequestInit,
+): Promise<submitDiagnosticResponseResponse> => {
+  const res = await fetch(getSubmitDiagnosticResponseUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitDiagnosticResponseRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: submitDiagnosticResponseResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as submitDiagnosticResponseResponse;
+};
+
+export const getSubmitDiagnosticResponseMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitDiagnosticResponse>>,
+    TError,
+    { runId: string; data: SubmitDiagnosticResponseRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitDiagnosticResponse>>,
+  TError,
+  { runId: string; data: SubmitDiagnosticResponseRequest },
+  TContext
+> => {
+  const mutationKey = ["submitDiagnosticResponse"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitDiagnosticResponse>>,
+    { runId: string; data: SubmitDiagnosticResponseRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return submitDiagnosticResponse(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitDiagnosticResponseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitDiagnosticResponse>>
+>;
+export type SubmitDiagnosticResponseMutationBody =
+  SubmitDiagnosticResponseRequest;
+export type SubmitDiagnosticResponseMutationError = ProblemResponse;
+
+/**
+ * @summary Submit Diagnostic Response
+ */
+export const useSubmitDiagnosticResponse = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof submitDiagnosticResponse>>,
+      TError,
+      { runId: string; data: SubmitDiagnosticResponseRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof submitDiagnosticResponse>>,
+  TError,
+  { runId: string; data: SubmitDiagnosticResponseRequest },
+  TContext
+> => {
+  return useMutation(
+    getSubmitDiagnosticResponseMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type completeDiagnosticResponse200 = {
+  data: DiagnosticResponse;
+  status: 200;
+};
+
+export type completeDiagnosticResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeDiagnosticResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeDiagnosticResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeDiagnosticResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeDiagnosticResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeDiagnosticResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeDiagnosticResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeDiagnosticResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeDiagnosticResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeDiagnosticResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeDiagnosticResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeDiagnosticResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeDiagnosticResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeDiagnosticResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeDiagnosticResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeDiagnosticResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeDiagnosticResponseSuccess =
+  completeDiagnosticResponse200 & {
+    headers: Headers;
+  };
+export type completeDiagnosticResponseError = (
+  | completeDiagnosticResponse401ApplicationJson
+  | completeDiagnosticResponse401ApplicationProblemJson
+  | completeDiagnosticResponse403ApplicationJson
+  | completeDiagnosticResponse403ApplicationProblemJson
+  | completeDiagnosticResponse409ApplicationJson
+  | completeDiagnosticResponse409ApplicationProblemJson
+  | completeDiagnosticResponse422ApplicationJson
+  | completeDiagnosticResponse422ApplicationProblemJson
+  | completeDiagnosticResponse423ApplicationJson
+  | completeDiagnosticResponse423ApplicationProblemJson
+  | completeDiagnosticResponse428ApplicationJson
+  | completeDiagnosticResponse428ApplicationProblemJson
+  | completeDiagnosticResponse429ApplicationJson
+  | completeDiagnosticResponse429ApplicationProblemJson
+  | completeDiagnosticResponse503ApplicationJson
+  | completeDiagnosticResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type completeDiagnosticResponse =
+  completeDiagnosticResponseSuccess | completeDiagnosticResponseError;
+
+export const getCompleteDiagnosticUrl = (runId: string) => {
+  return `/api/v1/diagnostics/${runId}:complete`;
+};
+
+/**
+ * @summary Complete Diagnostic
+ */
+export const completeDiagnostic = async (
+  runId: string,
+  options?: RequestInit,
+): Promise<completeDiagnosticResponse> => {
+  const res = await fetch(getCompleteDiagnosticUrl(runId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: completeDiagnosticResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as completeDiagnosticResponse;
+};
+
+export const getCompleteDiagnosticMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeDiagnostic>>,
+    TError,
+    { runId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeDiagnostic>>,
+  TError,
+  { runId: string },
+  TContext
+> => {
+  const mutationKey = ["completeDiagnostic"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeDiagnostic>>,
+    { runId: string }
+  > = (props) => {
+    const { runId } = props ?? {};
+
+    return completeDiagnostic(runId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteDiagnosticMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeDiagnostic>>
+>;
+
+export type CompleteDiagnosticMutationError = ProblemResponse;
+
+/**
+ * @summary Complete Diagnostic
+ */
+export const useCompleteDiagnostic = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeDiagnostic>>,
+      TError,
+      { runId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeDiagnostic>>,
+  TError,
+  { runId: string },
+  TContext
+> => {
+  return useMutation(
+    getCompleteDiagnosticMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getFoundationRunResponse200 = {
+  data: FoundationResponse;
+  status: 200;
+};
+
+export type getFoundationRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getFoundationRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getFoundationRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getFoundationRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getFoundationRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getFoundationRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getFoundationRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getFoundationRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getFoundationRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getFoundationRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getFoundationRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getFoundationRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getFoundationRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getFoundationRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getFoundationRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getFoundationRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getFoundationRunResponseSuccess = getFoundationRunResponse200 & {
+  headers: Headers;
+};
+export type getFoundationRunResponseError = (
+  | getFoundationRunResponse401ApplicationJson
+  | getFoundationRunResponse401ApplicationProblemJson
+  | getFoundationRunResponse403ApplicationJson
+  | getFoundationRunResponse403ApplicationProblemJson
+  | getFoundationRunResponse409ApplicationJson
+  | getFoundationRunResponse409ApplicationProblemJson
+  | getFoundationRunResponse422ApplicationJson
+  | getFoundationRunResponse422ApplicationProblemJson
+  | getFoundationRunResponse423ApplicationJson
+  | getFoundationRunResponse423ApplicationProblemJson
+  | getFoundationRunResponse428ApplicationJson
+  | getFoundationRunResponse428ApplicationProblemJson
+  | getFoundationRunResponse429ApplicationJson
+  | getFoundationRunResponse429ApplicationProblemJson
+  | getFoundationRunResponse503ApplicationJson
+  | getFoundationRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getFoundationRunResponse =
+  getFoundationRunResponseSuccess | getFoundationRunResponseError;
+
+export const getGetFoundationRunUrl = (id: string) => {
+  return `/api/v1/foundation-runs/${id}`;
+};
+
+/**
+ * @summary Get Foundation Run
+ */
+export const getFoundationRun = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getFoundationRunResponse> => {
+  const res = await fetch(getGetFoundationRunUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getFoundationRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getFoundationRunResponse;
+};
+
+export const getGetFoundationRunQueryKey = (id: string) => {
+  return [`/api/v1/foundation-runs/${id}`] as const;
+};
+
+export const getGetFoundationRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFoundationRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFoundationRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetFoundationRunQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFoundationRun>>
+  > = ({ signal }) => getFoundationRun(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFoundationRun>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetFoundationRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFoundationRun>>
+>;
+export type GetFoundationRunQueryError = ProblemResponse;
+
+export function useGetFoundationRun<
+  TData = Awaited<ReturnType<typeof getFoundationRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFoundationRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFoundationRun>>,
+          TError,
+          Awaited<ReturnType<typeof getFoundationRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetFoundationRun<
+  TData = Awaited<ReturnType<typeof getFoundationRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFoundationRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFoundationRun>>,
+          TError,
+          Awaited<ReturnType<typeof getFoundationRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetFoundationRun<
+  TData = Awaited<ReturnType<typeof getFoundationRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFoundationRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Foundation Run
+ */
+
+export function useGetFoundationRun<
+  TData = Awaited<ReturnType<typeof getFoundationRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getFoundationRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetFoundationRunQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type completeFoundationGateResponse200 = {
+  data: FoundationResponse;
+  status: 200;
+};
+
+export type completeFoundationGateResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeFoundationGateResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeFoundationGateResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeFoundationGateResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeFoundationGateResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeFoundationGateResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeFoundationGateResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeFoundationGateResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeFoundationGateResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeFoundationGateResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeFoundationGateResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeFoundationGateResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeFoundationGateResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeFoundationGateResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeFoundationGateResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeFoundationGateResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeFoundationGateResponseSuccess =
+  completeFoundationGateResponse200 & {
+    headers: Headers;
+  };
+export type completeFoundationGateResponseError = (
+  | completeFoundationGateResponse401ApplicationJson
+  | completeFoundationGateResponse401ApplicationProblemJson
+  | completeFoundationGateResponse403ApplicationJson
+  | completeFoundationGateResponse403ApplicationProblemJson
+  | completeFoundationGateResponse409ApplicationJson
+  | completeFoundationGateResponse409ApplicationProblemJson
+  | completeFoundationGateResponse422ApplicationJson
+  | completeFoundationGateResponse422ApplicationProblemJson
+  | completeFoundationGateResponse423ApplicationJson
+  | completeFoundationGateResponse423ApplicationProblemJson
+  | completeFoundationGateResponse428ApplicationJson
+  | completeFoundationGateResponse428ApplicationProblemJson
+  | completeFoundationGateResponse429ApplicationJson
+  | completeFoundationGateResponse429ApplicationProblemJson
+  | completeFoundationGateResponse503ApplicationJson
+  | completeFoundationGateResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type completeFoundationGateResponse =
+  completeFoundationGateResponseSuccess | completeFoundationGateResponseError;
+
+export const getCompleteFoundationGateUrl = (runId: string) => {
+  return `/api/v1/foundation-runs/${runId}:complete`;
+};
+
+/**
+ * @summary Complete Foundation Gate
+ */
+export const completeFoundationGate = async (
+  runId: string,
+  completeFoundationGateRequest: CompleteFoundationGateRequest,
+  options?: RequestInit,
+): Promise<completeFoundationGateResponse> => {
+  const res = await fetch(getCompleteFoundationGateUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(completeFoundationGateRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: completeFoundationGateResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as completeFoundationGateResponse;
+};
+
+export const getCompleteFoundationGateMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeFoundationGate>>,
+    TError,
+    { runId: string; data: CompleteFoundationGateRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeFoundationGate>>,
+  TError,
+  { runId: string; data: CompleteFoundationGateRequest },
+  TContext
+> => {
+  const mutationKey = ["completeFoundationGate"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeFoundationGate>>,
+    { runId: string; data: CompleteFoundationGateRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return completeFoundationGate(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteFoundationGateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeFoundationGate>>
+>;
+export type CompleteFoundationGateMutationBody = CompleteFoundationGateRequest;
+export type CompleteFoundationGateMutationError = ProblemResponse;
+
+/**
+ * @summary Complete Foundation Gate
+ */
+export const useCompleteFoundationGate = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeFoundationGate>>,
+      TError,
+      { runId: string; data: CompleteFoundationGateRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeFoundationGate>>,
+  TError,
+  { runId: string; data: CompleteFoundationGateRequest },
+  TContext
+> => {
+  return useMutation(
+    getCompleteFoundationGateMutationOptions(options),
+    queryClient,
+  );
 };
 
 export type healthLiveResponse200 = {
@@ -1656,6 +5234,5861 @@ export function useListLanguagePacks<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export type listLanguageProfilesResponse200 = {
+  data: ProfilesResponse;
+  status: 200;
+};
+
+export type listLanguageProfilesResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listLanguageProfilesResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listLanguageProfilesResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listLanguageProfilesResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listLanguageProfilesResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLanguageProfilesResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLanguageProfilesResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLanguageProfilesResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLanguageProfilesResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listLanguageProfilesResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listLanguageProfilesResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listLanguageProfilesResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listLanguageProfilesResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLanguageProfilesResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLanguageProfilesResponseSuccess =
+  listLanguageProfilesResponse200 & {
+    headers: Headers;
+  };
+export type listLanguageProfilesResponseError = (
+  | listLanguageProfilesResponse401ApplicationJson
+  | listLanguageProfilesResponse401ApplicationProblemJson
+  | listLanguageProfilesResponse403ApplicationJson
+  | listLanguageProfilesResponse403ApplicationProblemJson
+  | listLanguageProfilesResponse409ApplicationJson
+  | listLanguageProfilesResponse409ApplicationProblemJson
+  | listLanguageProfilesResponse422ApplicationJson
+  | listLanguageProfilesResponse422ApplicationProblemJson
+  | listLanguageProfilesResponse423ApplicationJson
+  | listLanguageProfilesResponse423ApplicationProblemJson
+  | listLanguageProfilesResponse429ApplicationJson
+  | listLanguageProfilesResponse429ApplicationProblemJson
+  | listLanguageProfilesResponse503ApplicationJson
+  | listLanguageProfilesResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listLanguageProfilesResponse =
+  listLanguageProfilesResponseSuccess | listLanguageProfilesResponseError;
+
+export const getListLanguageProfilesUrl = () => {
+  return `/api/v1/language-profiles`;
+};
+
+/**
+ * @summary List Language Profiles
+ */
+export const listLanguageProfiles = async (
+  options?: RequestInit,
+): Promise<listLanguageProfilesResponse> => {
+  const res = await fetch(getListLanguageProfilesUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listLanguageProfilesResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listLanguageProfilesResponse;
+};
+
+export const getListLanguageProfilesQueryKey = () => {
+  return [`/api/v1/language-profiles`] as const;
+};
+
+export const getListLanguageProfilesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLanguageProfiles>>,
+  TError = ProblemResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listLanguageProfiles>>,
+      TError,
+      TData
+    >
+  >;
+  fetch?: RequestInit;
+}) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLanguageProfilesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLanguageProfiles>>
+  > = ({ signal }) => listLanguageProfiles({ signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLanguageProfiles>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLanguageProfilesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLanguageProfiles>>
+>;
+export type ListLanguageProfilesQueryError = ProblemResponse;
+
+export function useListLanguageProfiles<
+  TData = Awaited<ReturnType<typeof listLanguageProfiles>>,
+  TError = ProblemResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguageProfiles>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLanguageProfiles>>,
+          TError,
+          Awaited<ReturnType<typeof listLanguageProfiles>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLanguageProfiles<
+  TData = Awaited<ReturnType<typeof listLanguageProfiles>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguageProfiles>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLanguageProfiles>>,
+          TError,
+          Awaited<ReturnType<typeof listLanguageProfiles>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLanguageProfiles<
+  TData = Awaited<ReturnType<typeof listLanguageProfiles>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguageProfiles>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Language Profiles
+ */
+
+export function useListLanguageProfiles<
+  TData = Awaited<ReturnType<typeof listLanguageProfiles>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguageProfiles>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListLanguageProfilesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createLanguageProfileResponse201 = {
+  data: ProfileResponse;
+  status: 201;
+};
+
+export type createLanguageProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createLanguageProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createLanguageProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createLanguageProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createLanguageProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createLanguageProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createLanguageProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createLanguageProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createLanguageProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createLanguageProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createLanguageProfileResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createLanguageProfileResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createLanguageProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createLanguageProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createLanguageProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createLanguageProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createLanguageProfileResponseSuccess =
+  createLanguageProfileResponse201 & {
+    headers: Headers;
+  };
+export type createLanguageProfileResponseError = (
+  | createLanguageProfileResponse401ApplicationJson
+  | createLanguageProfileResponse401ApplicationProblemJson
+  | createLanguageProfileResponse403ApplicationJson
+  | createLanguageProfileResponse403ApplicationProblemJson
+  | createLanguageProfileResponse409ApplicationJson
+  | createLanguageProfileResponse409ApplicationProblemJson
+  | createLanguageProfileResponse422ApplicationJson
+  | createLanguageProfileResponse422ApplicationProblemJson
+  | createLanguageProfileResponse423ApplicationJson
+  | createLanguageProfileResponse423ApplicationProblemJson
+  | createLanguageProfileResponse428ApplicationJson
+  | createLanguageProfileResponse428ApplicationProblemJson
+  | createLanguageProfileResponse429ApplicationJson
+  | createLanguageProfileResponse429ApplicationProblemJson
+  | createLanguageProfileResponse503ApplicationJson
+  | createLanguageProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createLanguageProfileResponse =
+  createLanguageProfileResponseSuccess | createLanguageProfileResponseError;
+
+export const getCreateLanguageProfileUrl = () => {
+  return `/api/v1/language-profiles`;
+};
+
+/**
+ * @summary Create Language Profile
+ */
+export const createLanguageProfile = async (
+  createProfileRequest: CreateProfileRequest,
+  options?: RequestInit,
+): Promise<createLanguageProfileResponse> => {
+  const res = await fetch(getCreateLanguageProfileUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createProfileRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createLanguageProfileResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createLanguageProfileResponse;
+};
+
+export const getCreateLanguageProfileMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createLanguageProfile>>,
+    TError,
+    { data: CreateProfileRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createLanguageProfile>>,
+  TError,
+  { data: CreateProfileRequest },
+  TContext
+> => {
+  const mutationKey = ["createLanguageProfile"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createLanguageProfile>>,
+    { data: CreateProfileRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createLanguageProfile(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateLanguageProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createLanguageProfile>>
+>;
+export type CreateLanguageProfileMutationBody = CreateProfileRequest;
+export type CreateLanguageProfileMutationError = ProblemResponse;
+
+/**
+ * @summary Create Language Profile
+ */
+export const useCreateLanguageProfile = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createLanguageProfile>>,
+      TError,
+      { data: CreateProfileRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createLanguageProfile>>,
+  TError,
+  { data: CreateProfileRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateLanguageProfileMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getLanguageProfileResponse200 = {
+  data: ProfileResponse;
+  status: 200;
+};
+
+export type getLanguageProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getLanguageProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getLanguageProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getLanguageProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getLanguageProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getLanguageProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getLanguageProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getLanguageProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getLanguageProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getLanguageProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getLanguageProfileResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getLanguageProfileResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getLanguageProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getLanguageProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getLanguageProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getLanguageProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getLanguageProfileResponseSuccess =
+  getLanguageProfileResponse200 & {
+    headers: Headers;
+  };
+export type getLanguageProfileResponseError = (
+  | getLanguageProfileResponse401ApplicationJson
+  | getLanguageProfileResponse401ApplicationProblemJson
+  | getLanguageProfileResponse403ApplicationJson
+  | getLanguageProfileResponse403ApplicationProblemJson
+  | getLanguageProfileResponse409ApplicationJson
+  | getLanguageProfileResponse409ApplicationProblemJson
+  | getLanguageProfileResponse422ApplicationJson
+  | getLanguageProfileResponse422ApplicationProblemJson
+  | getLanguageProfileResponse423ApplicationJson
+  | getLanguageProfileResponse423ApplicationProblemJson
+  | getLanguageProfileResponse428ApplicationJson
+  | getLanguageProfileResponse428ApplicationProblemJson
+  | getLanguageProfileResponse429ApplicationJson
+  | getLanguageProfileResponse429ApplicationProblemJson
+  | getLanguageProfileResponse503ApplicationJson
+  | getLanguageProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getLanguageProfileResponse =
+  getLanguageProfileResponseSuccess | getLanguageProfileResponseError;
+
+export const getGetLanguageProfileUrl = (id: string) => {
+  return `/api/v1/language-profiles/${id}`;
+};
+
+/**
+ * @summary Get Language Profile
+ */
+export const getLanguageProfile = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getLanguageProfileResponse> => {
+  const res = await fetch(getGetLanguageProfileUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getLanguageProfileResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getLanguageProfileResponse;
+};
+
+export const getGetLanguageProfileQueryKey = (id: string) => {
+  return [`/api/v1/language-profiles/${id}`] as const;
+};
+
+export const getGetLanguageProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLanguageProfile>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLanguageProfile>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLanguageProfileQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLanguageProfile>>
+  > = ({ signal }) => getLanguageProfile(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLanguageProfile>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetLanguageProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLanguageProfile>>
+>;
+export type GetLanguageProfileQueryError = ProblemResponse;
+
+export function useGetLanguageProfile<
+  TData = Awaited<ReturnType<typeof getLanguageProfile>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLanguageProfile>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLanguageProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getLanguageProfile>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetLanguageProfile<
+  TData = Awaited<ReturnType<typeof getLanguageProfile>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLanguageProfile>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLanguageProfile>>,
+          TError,
+          Awaited<ReturnType<typeof getLanguageProfile>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetLanguageProfile<
+  TData = Awaited<ReturnType<typeof getLanguageProfile>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLanguageProfile>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Language Profile
+ */
+
+export function useGetLanguageProfile<
+  TData = Awaited<ReturnType<typeof getLanguageProfile>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLanguageProfile>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetLanguageProfileQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type deleteLanguageProfileResponse200 = {
+  data: ProfileResponse;
+  status: 200;
+};
+
+export type deleteLanguageProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteLanguageProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteLanguageProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteLanguageProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteLanguageProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteLanguageProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteLanguageProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteLanguageProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteLanguageProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteLanguageProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteLanguageProfileResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteLanguageProfileResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteLanguageProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteLanguageProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteLanguageProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteLanguageProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteLanguageProfileResponseSuccess =
+  deleteLanguageProfileResponse200 & {
+    headers: Headers;
+  };
+export type deleteLanguageProfileResponseError = (
+  | deleteLanguageProfileResponse401ApplicationJson
+  | deleteLanguageProfileResponse401ApplicationProblemJson
+  | deleteLanguageProfileResponse403ApplicationJson
+  | deleteLanguageProfileResponse403ApplicationProblemJson
+  | deleteLanguageProfileResponse409ApplicationJson
+  | deleteLanguageProfileResponse409ApplicationProblemJson
+  | deleteLanguageProfileResponse422ApplicationJson
+  | deleteLanguageProfileResponse422ApplicationProblemJson
+  | deleteLanguageProfileResponse423ApplicationJson
+  | deleteLanguageProfileResponse423ApplicationProblemJson
+  | deleteLanguageProfileResponse428ApplicationJson
+  | deleteLanguageProfileResponse428ApplicationProblemJson
+  | deleteLanguageProfileResponse429ApplicationJson
+  | deleteLanguageProfileResponse429ApplicationProblemJson
+  | deleteLanguageProfileResponse503ApplicationJson
+  | deleteLanguageProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type deleteLanguageProfileResponse =
+  deleteLanguageProfileResponseSuccess | deleteLanguageProfileResponseError;
+
+export const getDeleteLanguageProfileUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}`;
+};
+
+/**
+ * @summary Route
+ */
+export const deleteLanguageProfile = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<deleteLanguageProfileResponse> => {
+  const res = await fetch(getDeleteLanguageProfileUrl(profileId), {
+    ...options,
+    method: "DELETE",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteLanguageProfileResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as deleteLanguageProfileResponse;
+};
+
+export const getDeleteLanguageProfileMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLanguageProfile>>,
+    TError,
+    { profileId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteLanguageProfile"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteLanguageProfile>>,
+    { profileId: string }
+  > = (props) => {
+    const { profileId } = props ?? {};
+
+    return deleteLanguageProfile(profileId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteLanguageProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteLanguageProfile>>
+>;
+
+export type DeleteLanguageProfileMutationError = ProblemResponse;
+
+/**
+ * @summary Route
+ */
+export const useDeleteLanguageProfile = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteLanguageProfile>>,
+      TError,
+      { profileId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  return useMutation(
+    getDeleteLanguageProfileMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type startDiagnosticResponse201 = {
+  data: DiagnosticResponse;
+  status: 201;
+};
+
+export type startDiagnosticResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startDiagnosticResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startDiagnosticResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startDiagnosticResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startDiagnosticResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startDiagnosticResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startDiagnosticResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startDiagnosticResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startDiagnosticResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startDiagnosticResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startDiagnosticResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startDiagnosticResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startDiagnosticResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startDiagnosticResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startDiagnosticResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startDiagnosticResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startDiagnosticResponseSuccess = startDiagnosticResponse201 & {
+  headers: Headers;
+};
+export type startDiagnosticResponseError = (
+  | startDiagnosticResponse401ApplicationJson
+  | startDiagnosticResponse401ApplicationProblemJson
+  | startDiagnosticResponse403ApplicationJson
+  | startDiagnosticResponse403ApplicationProblemJson
+  | startDiagnosticResponse409ApplicationJson
+  | startDiagnosticResponse409ApplicationProblemJson
+  | startDiagnosticResponse422ApplicationJson
+  | startDiagnosticResponse422ApplicationProblemJson
+  | startDiagnosticResponse423ApplicationJson
+  | startDiagnosticResponse423ApplicationProblemJson
+  | startDiagnosticResponse428ApplicationJson
+  | startDiagnosticResponse428ApplicationProblemJson
+  | startDiagnosticResponse429ApplicationJson
+  | startDiagnosticResponse429ApplicationProblemJson
+  | startDiagnosticResponse503ApplicationJson
+  | startDiagnosticResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startDiagnosticResponse =
+  startDiagnosticResponseSuccess | startDiagnosticResponseError;
+
+export const getStartDiagnosticUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/diagnostics`;
+};
+
+/**
+ * @summary Start Diagnostic
+ */
+export const startDiagnostic = async (
+  profileId: string,
+  startDiagnosticRequest: StartDiagnosticRequest,
+  options?: RequestInit,
+): Promise<startDiagnosticResponse> => {
+  const res = await fetch(getStartDiagnosticUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startDiagnosticRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startDiagnosticResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startDiagnosticResponse;
+};
+
+export const getStartDiagnosticMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startDiagnostic>>,
+    TError,
+    { profileId: string; data: StartDiagnosticRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startDiagnostic>>,
+  TError,
+  { profileId: string; data: StartDiagnosticRequest },
+  TContext
+> => {
+  const mutationKey = ["startDiagnostic"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startDiagnostic>>,
+    { profileId: string; data: StartDiagnosticRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return startDiagnostic(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartDiagnosticMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startDiagnostic>>
+>;
+export type StartDiagnosticMutationBody = StartDiagnosticRequest;
+export type StartDiagnosticMutationError = ProblemResponse;
+
+/**
+ * @summary Start Diagnostic
+ */
+export const useStartDiagnostic = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startDiagnostic>>,
+      TError,
+      { profileId: string; data: StartDiagnosticRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startDiagnostic>>,
+  TError,
+  { profileId: string; data: StartDiagnosticRequest },
+  TContext
+> => {
+  return useMutation(getStartDiagnosticMutationOptions(options), queryClient);
+};
+
+export type recordLexicalEncounterResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type recordLexicalEncounterResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type recordLexicalEncounterResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type recordLexicalEncounterResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type recordLexicalEncounterResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type recordLexicalEncounterResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type recordLexicalEncounterResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type recordLexicalEncounterResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type recordLexicalEncounterResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type recordLexicalEncounterResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type recordLexicalEncounterResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type recordLexicalEncounterResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type recordLexicalEncounterResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type recordLexicalEncounterResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type recordLexicalEncounterResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type recordLexicalEncounterResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type recordLexicalEncounterResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type recordLexicalEncounterResponseSuccess =
+  recordLexicalEncounterResponse200 & {
+    headers: Headers;
+  };
+export type recordLexicalEncounterResponseError = (
+  | recordLexicalEncounterResponse401ApplicationJson
+  | recordLexicalEncounterResponse401ApplicationProblemJson
+  | recordLexicalEncounterResponse403ApplicationJson
+  | recordLexicalEncounterResponse403ApplicationProblemJson
+  | recordLexicalEncounterResponse409ApplicationJson
+  | recordLexicalEncounterResponse409ApplicationProblemJson
+  | recordLexicalEncounterResponse422ApplicationJson
+  | recordLexicalEncounterResponse422ApplicationProblemJson
+  | recordLexicalEncounterResponse423ApplicationJson
+  | recordLexicalEncounterResponse423ApplicationProblemJson
+  | recordLexicalEncounterResponse428ApplicationJson
+  | recordLexicalEncounterResponse428ApplicationProblemJson
+  | recordLexicalEncounterResponse429ApplicationJson
+  | recordLexicalEncounterResponse429ApplicationProblemJson
+  | recordLexicalEncounterResponse503ApplicationJson
+  | recordLexicalEncounterResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type recordLexicalEncounterResponse =
+  recordLexicalEncounterResponseSuccess | recordLexicalEncounterResponseError;
+
+export const getRecordLexicalEncounterUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/encounters`;
+};
+
+/**
+ * @summary Record Lexical Encounter
+ */
+export const recordLexicalEncounter = async (
+  profileId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<recordLexicalEncounterResponse> => {
+  const res = await fetch(getRecordLexicalEncounterUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: recordLexicalEncounterResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as recordLexicalEncounterResponse;
+};
+
+export const getRecordLexicalEncounterMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordLexicalEncounter>>,
+    TError,
+    { profileId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordLexicalEncounter>>,
+  TError,
+  { profileId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["recordLexicalEncounter"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordLexicalEncounter>>,
+    { profileId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return recordLexicalEncounter(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordLexicalEncounterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordLexicalEncounter>>
+>;
+export type RecordLexicalEncounterMutationBody =
+  CommandPayload | null | undefined;
+export type RecordLexicalEncounterMutationError = ProblemResponse;
+
+/**
+ * @summary Record Lexical Encounter
+ */
+export const useRecordLexicalEncounter = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof recordLexicalEncounter>>,
+      TError,
+      { profileId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof recordLexicalEncounter>>,
+  TError,
+  { profileId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getRecordLexicalEncounterMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type startFoundationRunResponse201 = {
+  data: FoundationResponse;
+  status: 201;
+};
+
+export type startFoundationRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startFoundationRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startFoundationRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startFoundationRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startFoundationRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startFoundationRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startFoundationRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startFoundationRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startFoundationRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startFoundationRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startFoundationRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startFoundationRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startFoundationRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startFoundationRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startFoundationRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startFoundationRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startFoundationRunResponseSuccess =
+  startFoundationRunResponse201 & {
+    headers: Headers;
+  };
+export type startFoundationRunResponseError = (
+  | startFoundationRunResponse401ApplicationJson
+  | startFoundationRunResponse401ApplicationProblemJson
+  | startFoundationRunResponse403ApplicationJson
+  | startFoundationRunResponse403ApplicationProblemJson
+  | startFoundationRunResponse409ApplicationJson
+  | startFoundationRunResponse409ApplicationProblemJson
+  | startFoundationRunResponse422ApplicationJson
+  | startFoundationRunResponse422ApplicationProblemJson
+  | startFoundationRunResponse423ApplicationJson
+  | startFoundationRunResponse423ApplicationProblemJson
+  | startFoundationRunResponse428ApplicationJson
+  | startFoundationRunResponse428ApplicationProblemJson
+  | startFoundationRunResponse429ApplicationJson
+  | startFoundationRunResponse429ApplicationProblemJson
+  | startFoundationRunResponse503ApplicationJson
+  | startFoundationRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startFoundationRunResponse =
+  startFoundationRunResponseSuccess | startFoundationRunResponseError;
+
+export const getStartFoundationRunUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/foundation-runs`;
+};
+
+/**
+ * @summary Start Foundation Run
+ */
+export const startFoundationRun = async (
+  profileId: string,
+  startFoundationRunRequest: StartFoundationRunRequest,
+  options?: RequestInit,
+): Promise<startFoundationRunResponse> => {
+  const res = await fetch(getStartFoundationRunUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startFoundationRunRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startFoundationRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startFoundationRunResponse;
+};
+
+export const getStartFoundationRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startFoundationRun>>,
+    TError,
+    { profileId: string; data: StartFoundationRunRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startFoundationRun>>,
+  TError,
+  { profileId: string; data: StartFoundationRunRequest },
+  TContext
+> => {
+  const mutationKey = ["startFoundationRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startFoundationRun>>,
+    { profileId: string; data: StartFoundationRunRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return startFoundationRun(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartFoundationRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startFoundationRun>>
+>;
+export type StartFoundationRunMutationBody = StartFoundationRunRequest;
+export type StartFoundationRunMutationError = ProblemResponse;
+
+/**
+ * @summary Start Foundation Run
+ */
+export const useStartFoundationRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startFoundationRun>>,
+      TError,
+      { profileId: string; data: StartFoundationRunRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startFoundationRun>>,
+  TError,
+  { profileId: string; data: StartFoundationRunRequest },
+  TContext
+> => {
+  return useMutation(
+    getStartFoundationRunMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type updateLearningGoalsResponse200 = {
+  data: ProfileResponse;
+  status: 200;
+};
+
+export type updateLearningGoalsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type updateLearningGoalsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type updateLearningGoalsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type updateLearningGoalsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type updateLearningGoalsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type updateLearningGoalsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type updateLearningGoalsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type updateLearningGoalsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type updateLearningGoalsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type updateLearningGoalsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type updateLearningGoalsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type updateLearningGoalsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type updateLearningGoalsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type updateLearningGoalsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type updateLearningGoalsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type updateLearningGoalsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type updateLearningGoalsResponseSuccess =
+  updateLearningGoalsResponse200 & {
+    headers: Headers;
+  };
+export type updateLearningGoalsResponseError = (
+  | updateLearningGoalsResponse401ApplicationJson
+  | updateLearningGoalsResponse401ApplicationProblemJson
+  | updateLearningGoalsResponse403ApplicationJson
+  | updateLearningGoalsResponse403ApplicationProblemJson
+  | updateLearningGoalsResponse409ApplicationJson
+  | updateLearningGoalsResponse409ApplicationProblemJson
+  | updateLearningGoalsResponse422ApplicationJson
+  | updateLearningGoalsResponse422ApplicationProblemJson
+  | updateLearningGoalsResponse423ApplicationJson
+  | updateLearningGoalsResponse423ApplicationProblemJson
+  | updateLearningGoalsResponse428ApplicationJson
+  | updateLearningGoalsResponse428ApplicationProblemJson
+  | updateLearningGoalsResponse429ApplicationJson
+  | updateLearningGoalsResponse429ApplicationProblemJson
+  | updateLearningGoalsResponse503ApplicationJson
+  | updateLearningGoalsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type updateLearningGoalsResponse =
+  updateLearningGoalsResponseSuccess | updateLearningGoalsResponseError;
+
+export const getUpdateLearningGoalsUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/goals`;
+};
+
+/**
+ * @summary Update Learning Goals
+ */
+export const updateLearningGoals = async (
+  profileId: string,
+  updateGoalsRequest: UpdateGoalsRequest,
+  options?: RequestInit,
+): Promise<updateLearningGoalsResponse> => {
+  const res = await fetch(getUpdateLearningGoalsUrl(profileId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateGoalsRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: updateLearningGoalsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as updateLearningGoalsResponse;
+};
+
+export const getUpdateLearningGoalsMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateLearningGoals>>,
+    TError,
+    { profileId: string; data: UpdateGoalsRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateLearningGoals>>,
+  TError,
+  { profileId: string; data: UpdateGoalsRequest },
+  TContext
+> => {
+  const mutationKey = ["updateLearningGoals"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateLearningGoals>>,
+    { profileId: string; data: UpdateGoalsRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return updateLearningGoals(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateLearningGoalsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateLearningGoals>>
+>;
+export type UpdateLearningGoalsMutationBody = UpdateGoalsRequest;
+export type UpdateLearningGoalsMutationError = ProblemResponse;
+
+/**
+ * @summary Update Learning Goals
+ */
+export const useUpdateLearningGoals = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateLearningGoals>>,
+      TError,
+      { profileId: string; data: UpdateGoalsRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateLearningGoals>>,
+  TError,
+  { profileId: string; data: UpdateGoalsRequest },
+  TContext
+> => {
+  return useMutation(
+    getUpdateLearningGoalsMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type listLexicalAnnotationsResponse200 = {
+  data: LexicalAnnotationPageResponse;
+  status: 200;
+};
+
+export type listLexicalAnnotationsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listLexicalAnnotationsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listLexicalAnnotationsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listLexicalAnnotationsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listLexicalAnnotationsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLexicalAnnotationsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLexicalAnnotationsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLexicalAnnotationsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLexicalAnnotationsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listLexicalAnnotationsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listLexicalAnnotationsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listLexicalAnnotationsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listLexicalAnnotationsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listLexicalAnnotationsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listLexicalAnnotationsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLexicalAnnotationsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLexicalAnnotationsResponseSuccess =
+  listLexicalAnnotationsResponse200 & {
+    headers: Headers;
+  };
+export type listLexicalAnnotationsResponseError = (
+  | listLexicalAnnotationsResponse401ApplicationJson
+  | listLexicalAnnotationsResponse401ApplicationProblemJson
+  | listLexicalAnnotationsResponse403ApplicationJson
+  | listLexicalAnnotationsResponse403ApplicationProblemJson
+  | listLexicalAnnotationsResponse409ApplicationJson
+  | listLexicalAnnotationsResponse409ApplicationProblemJson
+  | listLexicalAnnotationsResponse422ApplicationJson
+  | listLexicalAnnotationsResponse422ApplicationProblemJson
+  | listLexicalAnnotationsResponse423ApplicationJson
+  | listLexicalAnnotationsResponse423ApplicationProblemJson
+  | listLexicalAnnotationsResponse428ApplicationJson
+  | listLexicalAnnotationsResponse428ApplicationProblemJson
+  | listLexicalAnnotationsResponse429ApplicationJson
+  | listLexicalAnnotationsResponse429ApplicationProblemJson
+  | listLexicalAnnotationsResponse503ApplicationJson
+  | listLexicalAnnotationsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listLexicalAnnotationsResponse =
+  listLexicalAnnotationsResponseSuccess | listLexicalAnnotationsResponseError;
+
+export const getListLexicalAnnotationsUrl = (
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/language-profiles/${profileId}/lexical-annotations?${stringifiedParams}`
+    : `/api/v1/language-profiles/${profileId}/lexical-annotations`;
+};
+
+/**
+ * @summary List Lexical Annotations
+ */
+export const listLexicalAnnotations = async (
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+  options?: RequestInit,
+): Promise<listLexicalAnnotationsResponse> => {
+  const res = await fetch(getListLexicalAnnotationsUrl(profileId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listLexicalAnnotationsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listLexicalAnnotationsResponse;
+};
+
+export const getListLexicalAnnotationsQueryKey = (
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+) => {
+  return [
+    `/api/v1/language-profiles/${profileId}/lexical-annotations`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListLexicalAnnotationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLexicalAnnotations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLexicalAnnotations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListLexicalAnnotationsQueryKey(profileId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLexicalAnnotations>>
+  > = ({ signal }) =>
+    listLexicalAnnotations(profileId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLexicalAnnotations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLexicalAnnotationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLexicalAnnotations>>
+>;
+export type ListLexicalAnnotationsQueryError = ProblemResponse;
+
+export function useListLexicalAnnotations<
+  TData = Awaited<ReturnType<typeof listLexicalAnnotations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params: undefined | ListLexicalAnnotationsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLexicalAnnotations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLexicalAnnotations>>,
+          TError,
+          Awaited<ReturnType<typeof listLexicalAnnotations>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLexicalAnnotations<
+  TData = Awaited<ReturnType<typeof listLexicalAnnotations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLexicalAnnotations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLexicalAnnotations>>,
+          TError,
+          Awaited<ReturnType<typeof listLexicalAnnotations>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLexicalAnnotations<
+  TData = Awaited<ReturnType<typeof listLexicalAnnotations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLexicalAnnotations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Lexical Annotations
+ */
+
+export function useListLexicalAnnotations<
+  TData = Awaited<ReturnType<typeof listLexicalAnnotations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: ListLexicalAnnotationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLexicalAnnotations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListLexicalAnnotationsQueryOptions(
+    profileId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type upsertLexicalAnnotationResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type upsertLexicalAnnotationResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type upsertLexicalAnnotationResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type upsertLexicalAnnotationResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type upsertLexicalAnnotationResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type upsertLexicalAnnotationResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type upsertLexicalAnnotationResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type upsertLexicalAnnotationResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type upsertLexicalAnnotationResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type upsertLexicalAnnotationResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type upsertLexicalAnnotationResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type upsertLexicalAnnotationResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type upsertLexicalAnnotationResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type upsertLexicalAnnotationResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type upsertLexicalAnnotationResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type upsertLexicalAnnotationResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type upsertLexicalAnnotationResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type upsertLexicalAnnotationResponseSuccess =
+  upsertLexicalAnnotationResponse200 & {
+    headers: Headers;
+  };
+export type upsertLexicalAnnotationResponseError = (
+  | upsertLexicalAnnotationResponse401ApplicationJson
+  | upsertLexicalAnnotationResponse401ApplicationProblemJson
+  | upsertLexicalAnnotationResponse403ApplicationJson
+  | upsertLexicalAnnotationResponse403ApplicationProblemJson
+  | upsertLexicalAnnotationResponse409ApplicationJson
+  | upsertLexicalAnnotationResponse409ApplicationProblemJson
+  | upsertLexicalAnnotationResponse422ApplicationJson
+  | upsertLexicalAnnotationResponse422ApplicationProblemJson
+  | upsertLexicalAnnotationResponse423ApplicationJson
+  | upsertLexicalAnnotationResponse423ApplicationProblemJson
+  | upsertLexicalAnnotationResponse428ApplicationJson
+  | upsertLexicalAnnotationResponse428ApplicationProblemJson
+  | upsertLexicalAnnotationResponse429ApplicationJson
+  | upsertLexicalAnnotationResponse429ApplicationProblemJson
+  | upsertLexicalAnnotationResponse503ApplicationJson
+  | upsertLexicalAnnotationResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type upsertLexicalAnnotationResponse =
+  upsertLexicalAnnotationResponseSuccess | upsertLexicalAnnotationResponseError;
+
+export const getUpsertLexicalAnnotationUrl = (
+  profileId: string,
+  senseId: string,
+) => {
+  return `/api/v1/language-profiles/${profileId}/lexical-senses/${senseId}/annotation`;
+};
+
+/**
+ * @summary Upsert Lexical Annotation
+ */
+export const upsertLexicalAnnotation = async (
+  profileId: string,
+  senseId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<upsertLexicalAnnotationResponse> => {
+  const res = await fetch(getUpsertLexicalAnnotationUrl(profileId, senseId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: upsertLexicalAnnotationResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as upsertLexicalAnnotationResponse;
+};
+
+export const getUpsertLexicalAnnotationMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertLexicalAnnotation>>,
+    TError,
+    { profileId: string; senseId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertLexicalAnnotation>>,
+  TError,
+  { profileId: string; senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["upsertLexicalAnnotation"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertLexicalAnnotation>>,
+    { profileId: string; senseId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { profileId, senseId, data } = props ?? {};
+
+    return upsertLexicalAnnotation(profileId, senseId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertLexicalAnnotationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertLexicalAnnotation>>
+>;
+export type UpsertLexicalAnnotationMutationBody =
+  CommandPayload | null | undefined;
+export type UpsertLexicalAnnotationMutationError = ProblemResponse;
+
+/**
+ * @summary Upsert Lexical Annotation
+ */
+export const useUpsertLexicalAnnotation = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof upsertLexicalAnnotation>>,
+      TError,
+      { profileId: string; senseId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof upsertLexicalAnnotation>>,
+  TError,
+  { profileId: string; senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getUpsertLexicalAnnotationMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type declareLexicalFamiliarityResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type declareLexicalFamiliarityResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type declareLexicalFamiliarityResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type declareLexicalFamiliarityResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type declareLexicalFamiliarityResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type declareLexicalFamiliarityResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type declareLexicalFamiliarityResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type declareLexicalFamiliarityResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type declareLexicalFamiliarityResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type declareLexicalFamiliarityResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type declareLexicalFamiliarityResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type declareLexicalFamiliarityResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type declareLexicalFamiliarityResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type declareLexicalFamiliarityResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type declareLexicalFamiliarityResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type declareLexicalFamiliarityResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type declareLexicalFamiliarityResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type declareLexicalFamiliarityResponseSuccess =
+  declareLexicalFamiliarityResponse200 & {
+    headers: Headers;
+  };
+export type declareLexicalFamiliarityResponseError = (
+  | declareLexicalFamiliarityResponse401ApplicationJson
+  | declareLexicalFamiliarityResponse401ApplicationProblemJson
+  | declareLexicalFamiliarityResponse403ApplicationJson
+  | declareLexicalFamiliarityResponse403ApplicationProblemJson
+  | declareLexicalFamiliarityResponse409ApplicationJson
+  | declareLexicalFamiliarityResponse409ApplicationProblemJson
+  | declareLexicalFamiliarityResponse422ApplicationJson
+  | declareLexicalFamiliarityResponse422ApplicationProblemJson
+  | declareLexicalFamiliarityResponse423ApplicationJson
+  | declareLexicalFamiliarityResponse423ApplicationProblemJson
+  | declareLexicalFamiliarityResponse428ApplicationJson
+  | declareLexicalFamiliarityResponse428ApplicationProblemJson
+  | declareLexicalFamiliarityResponse429ApplicationJson
+  | declareLexicalFamiliarityResponse429ApplicationProblemJson
+  | declareLexicalFamiliarityResponse503ApplicationJson
+  | declareLexicalFamiliarityResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type declareLexicalFamiliarityResponse =
+  | declareLexicalFamiliarityResponseSuccess
+  | declareLexicalFamiliarityResponseError;
+
+export const getDeclareLexicalFamiliarityUrl = (
+  profileId: string,
+  senseId: string,
+) => {
+  return `/api/v1/language-profiles/${profileId}/lexical-senses/${senseId}/declaration`;
+};
+
+/**
+ * @summary Declare Lexical Familiarity
+ */
+export const declareLexicalFamiliarity = async (
+  profileId: string,
+  senseId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<declareLexicalFamiliarityResponse> => {
+  const res = await fetch(getDeclareLexicalFamiliarityUrl(profileId, senseId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: declareLexicalFamiliarityResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as declareLexicalFamiliarityResponse;
+};
+
+export const getDeclareLexicalFamiliarityMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof declareLexicalFamiliarity>>,
+    TError,
+    { profileId: string; senseId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof declareLexicalFamiliarity>>,
+  TError,
+  { profileId: string; senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["declareLexicalFamiliarity"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof declareLexicalFamiliarity>>,
+    { profileId: string; senseId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { profileId, senseId, data } = props ?? {};
+
+    return declareLexicalFamiliarity(profileId, senseId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeclareLexicalFamiliarityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof declareLexicalFamiliarity>>
+>;
+export type DeclareLexicalFamiliarityMutationBody =
+  CommandPayload | null | undefined;
+export type DeclareLexicalFamiliarityMutationError = ProblemResponse;
+
+/**
+ * @summary Declare Lexical Familiarity
+ */
+export const useDeclareLexicalFamiliarity = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof declareLexicalFamiliarity>>,
+      TError,
+      { profileId: string; senseId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof declareLexicalFamiliarity>>,
+  TError,
+  { profileId: string; senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getDeclareLexicalFamiliarityMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type setLexicalLearningPreferenceResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type setLexicalLearningPreferenceResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type setLexicalLearningPreferenceResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type setLexicalLearningPreferenceResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type setLexicalLearningPreferenceResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type setLexicalLearningPreferenceResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type setLexicalLearningPreferenceResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type setLexicalLearningPreferenceResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type setLexicalLearningPreferenceResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type setLexicalLearningPreferenceResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type setLexicalLearningPreferenceResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type setLexicalLearningPreferenceResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type setLexicalLearningPreferenceResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type setLexicalLearningPreferenceResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type setLexicalLearningPreferenceResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type setLexicalLearningPreferenceResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type setLexicalLearningPreferenceResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type setLexicalLearningPreferenceResponseSuccess =
+  setLexicalLearningPreferenceResponse200 & {
+    headers: Headers;
+  };
+export type setLexicalLearningPreferenceResponseError = (
+  | setLexicalLearningPreferenceResponse401ApplicationJson
+  | setLexicalLearningPreferenceResponse401ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse403ApplicationJson
+  | setLexicalLearningPreferenceResponse403ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse409ApplicationJson
+  | setLexicalLearningPreferenceResponse409ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse422ApplicationJson
+  | setLexicalLearningPreferenceResponse422ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse423ApplicationJson
+  | setLexicalLearningPreferenceResponse423ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse428ApplicationJson
+  | setLexicalLearningPreferenceResponse428ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse429ApplicationJson
+  | setLexicalLearningPreferenceResponse429ApplicationProblemJson
+  | setLexicalLearningPreferenceResponse503ApplicationJson
+  | setLexicalLearningPreferenceResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type setLexicalLearningPreferenceResponse =
+  | setLexicalLearningPreferenceResponseSuccess
+  | setLexicalLearningPreferenceResponseError;
+
+export const getSetLexicalLearningPreferenceUrl = (
+  profileId: string,
+  senseId: string,
+) => {
+  return `/api/v1/language-profiles/${profileId}/lexical-senses/${senseId}/preference`;
+};
+
+/**
+ * @summary Set Lexical Learning Preference
+ */
+export const setLexicalLearningPreference = async (
+  profileId: string,
+  senseId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<setLexicalLearningPreferenceResponse> => {
+  const res = await fetch(
+    getSetLexicalLearningPreferenceUrl(profileId, senseId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(commandPayloadNull),
+    },
+  );
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: setLexicalLearningPreferenceResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as setLexicalLearningPreferenceResponse;
+};
+
+export const getSetLexicalLearningPreferenceMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof setLexicalLearningPreference>>,
+    TError,
+    { profileId: string; senseId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof setLexicalLearningPreference>>,
+  TError,
+  { profileId: string; senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["setLexicalLearningPreference"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof setLexicalLearningPreference>>,
+    { profileId: string; senseId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { profileId, senseId, data } = props ?? {};
+
+    return setLexicalLearningPreference(profileId, senseId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SetLexicalLearningPreferenceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof setLexicalLearningPreference>>
+>;
+export type SetLexicalLearningPreferenceMutationBody =
+  CommandPayload | null | undefined;
+export type SetLexicalLearningPreferenceMutationError = ProblemResponse;
+
+/**
+ * @summary Set Lexical Learning Preference
+ */
+export const useSetLexicalLearningPreference = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof setLexicalLearningPreference>>,
+      TError,
+      { profileId: string; senseId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof setLexicalLearningPreference>>,
+  TError,
+  { profileId: string; senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getSetLexicalLearningPreferenceMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type createMemoryPromptResponse201 = {
+  data: MemoryPromptResponse;
+  status: 201;
+};
+
+export type createMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createMemoryPromptResponseSuccess =
+  createMemoryPromptResponse201 & {
+    headers: Headers;
+  };
+export type createMemoryPromptResponseError = (
+  | createMemoryPromptResponse401ApplicationJson
+  | createMemoryPromptResponse401ApplicationProblemJson
+  | createMemoryPromptResponse403ApplicationJson
+  | createMemoryPromptResponse403ApplicationProblemJson
+  | createMemoryPromptResponse409ApplicationJson
+  | createMemoryPromptResponse409ApplicationProblemJson
+  | createMemoryPromptResponse422ApplicationJson
+  | createMemoryPromptResponse422ApplicationProblemJson
+  | createMemoryPromptResponse423ApplicationJson
+  | createMemoryPromptResponse423ApplicationProblemJson
+  | createMemoryPromptResponse428ApplicationJson
+  | createMemoryPromptResponse428ApplicationProblemJson
+  | createMemoryPromptResponse429ApplicationJson
+  | createMemoryPromptResponse429ApplicationProblemJson
+  | createMemoryPromptResponse503ApplicationJson
+  | createMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createMemoryPromptResponse =
+  createMemoryPromptResponseSuccess | createMemoryPromptResponseError;
+
+export const getCreateMemoryPromptUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/memory-prompts`;
+};
+
+/**
+ * @summary Create Memory Prompt
+ */
+export const createMemoryPrompt = async (
+  profileId: string,
+  createMemoryPromptRequest: CreateMemoryPromptRequest,
+  options?: RequestInit,
+): Promise<createMemoryPromptResponse> => {
+  const res = await fetch(getCreateMemoryPromptUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createMemoryPromptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createMemoryPromptResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createMemoryPromptResponse;
+};
+
+export const getCreateMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMemoryPrompt>>,
+    TError,
+    { profileId: string; data: CreateMemoryPromptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMemoryPrompt>>,
+  TError,
+  { profileId: string; data: CreateMemoryPromptRequest },
+  TContext
+> => {
+  const mutationKey = ["createMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMemoryPrompt>>,
+    { profileId: string; data: CreateMemoryPromptRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return createMemoryPrompt(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMemoryPrompt>>
+>;
+export type CreateMemoryPromptMutationBody = CreateMemoryPromptRequest;
+export type CreateMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Create Memory Prompt
+ */
+export const useCreateMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createMemoryPrompt>>,
+      TError,
+      { profileId: string; data: CreateMemoryPromptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createMemoryPrompt>>,
+  TError,
+  { profileId: string; data: CreateMemoryPromptRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateMemoryPromptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type addPrivateLexicalUnitResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type addPrivateLexicalUnitResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type addPrivateLexicalUnitResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type addPrivateLexicalUnitResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type addPrivateLexicalUnitResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type addPrivateLexicalUnitResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type addPrivateLexicalUnitResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type addPrivateLexicalUnitResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type addPrivateLexicalUnitResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type addPrivateLexicalUnitResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type addPrivateLexicalUnitResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type addPrivateLexicalUnitResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type addPrivateLexicalUnitResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type addPrivateLexicalUnitResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type addPrivateLexicalUnitResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type addPrivateLexicalUnitResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type addPrivateLexicalUnitResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type addPrivateLexicalUnitResponseSuccess =
+  addPrivateLexicalUnitResponse200 & {
+    headers: Headers;
+  };
+export type addPrivateLexicalUnitResponseError = (
+  | addPrivateLexicalUnitResponse401ApplicationJson
+  | addPrivateLexicalUnitResponse401ApplicationProblemJson
+  | addPrivateLexicalUnitResponse403ApplicationJson
+  | addPrivateLexicalUnitResponse403ApplicationProblemJson
+  | addPrivateLexicalUnitResponse409ApplicationJson
+  | addPrivateLexicalUnitResponse409ApplicationProblemJson
+  | addPrivateLexicalUnitResponse422ApplicationJson
+  | addPrivateLexicalUnitResponse422ApplicationProblemJson
+  | addPrivateLexicalUnitResponse423ApplicationJson
+  | addPrivateLexicalUnitResponse423ApplicationProblemJson
+  | addPrivateLexicalUnitResponse428ApplicationJson
+  | addPrivateLexicalUnitResponse428ApplicationProblemJson
+  | addPrivateLexicalUnitResponse429ApplicationJson
+  | addPrivateLexicalUnitResponse429ApplicationProblemJson
+  | addPrivateLexicalUnitResponse503ApplicationJson
+  | addPrivateLexicalUnitResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type addPrivateLexicalUnitResponse =
+  addPrivateLexicalUnitResponseSuccess | addPrivateLexicalUnitResponseError;
+
+export const getAddPrivateLexicalUnitUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/private-lexicon`;
+};
+
+/**
+ * @summary Add Private Lexical Unit
+ */
+export const addPrivateLexicalUnit = async (
+  profileId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<addPrivateLexicalUnitResponse> => {
+  const res = await fetch(getAddPrivateLexicalUnitUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: addPrivateLexicalUnitResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as addPrivateLexicalUnitResponse;
+};
+
+export const getAddPrivateLexicalUnitMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addPrivateLexicalUnit>>,
+    TError,
+    { profileId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addPrivateLexicalUnit>>,
+  TError,
+  { profileId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["addPrivateLexicalUnit"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addPrivateLexicalUnit>>,
+    { profileId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return addPrivateLexicalUnit(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddPrivateLexicalUnitMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addPrivateLexicalUnit>>
+>;
+export type AddPrivateLexicalUnitMutationBody =
+  CommandPayload | null | undefined;
+export type AddPrivateLexicalUnitMutationError = ProblemResponse;
+
+/**
+ * @summary Add Private Lexical Unit
+ */
+export const useAddPrivateLexicalUnit = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof addPrivateLexicalUnit>>,
+      TError,
+      { profileId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof addPrivateLexicalUnit>>,
+  TError,
+  { profileId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getAddPrivateLexicalUnitMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type mergeLexicalUnitsResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type mergeLexicalUnitsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type mergeLexicalUnitsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type mergeLexicalUnitsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type mergeLexicalUnitsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type mergeLexicalUnitsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type mergeLexicalUnitsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type mergeLexicalUnitsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type mergeLexicalUnitsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type mergeLexicalUnitsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type mergeLexicalUnitsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type mergeLexicalUnitsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type mergeLexicalUnitsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type mergeLexicalUnitsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type mergeLexicalUnitsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type mergeLexicalUnitsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type mergeLexicalUnitsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type mergeLexicalUnitsResponseSuccess = mergeLexicalUnitsResponse200 & {
+  headers: Headers;
+};
+export type mergeLexicalUnitsResponseError = (
+  | mergeLexicalUnitsResponse401ApplicationJson
+  | mergeLexicalUnitsResponse401ApplicationProblemJson
+  | mergeLexicalUnitsResponse403ApplicationJson
+  | mergeLexicalUnitsResponse403ApplicationProblemJson
+  | mergeLexicalUnitsResponse409ApplicationJson
+  | mergeLexicalUnitsResponse409ApplicationProblemJson
+  | mergeLexicalUnitsResponse422ApplicationJson
+  | mergeLexicalUnitsResponse422ApplicationProblemJson
+  | mergeLexicalUnitsResponse423ApplicationJson
+  | mergeLexicalUnitsResponse423ApplicationProblemJson
+  | mergeLexicalUnitsResponse428ApplicationJson
+  | mergeLexicalUnitsResponse428ApplicationProblemJson
+  | mergeLexicalUnitsResponse429ApplicationJson
+  | mergeLexicalUnitsResponse429ApplicationProblemJson
+  | mergeLexicalUnitsResponse503ApplicationJson
+  | mergeLexicalUnitsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type mergeLexicalUnitsResponse =
+  mergeLexicalUnitsResponseSuccess | mergeLexicalUnitsResponseError;
+
+export const getMergeLexicalUnitsUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/private-lexicon:merge`;
+};
+
+/**
+ * @summary Merge Lexical Units
+ */
+export const mergeLexicalUnits = async (
+  profileId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<mergeLexicalUnitsResponse> => {
+  const res = await fetch(getMergeLexicalUnitsUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: mergeLexicalUnitsResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as mergeLexicalUnitsResponse;
+};
+
+export const getMergeLexicalUnitsMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mergeLexicalUnits>>,
+    TError,
+    { profileId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mergeLexicalUnits>>,
+  TError,
+  { profileId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["mergeLexicalUnits"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mergeLexicalUnits>>,
+    { profileId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return mergeLexicalUnits(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MergeLexicalUnitsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mergeLexicalUnits>>
+>;
+export type MergeLexicalUnitsMutationBody = CommandPayload | null | undefined;
+export type MergeLexicalUnitsMutationError = ProblemResponse;
+
+/**
+ * @summary Merge Lexical Units
+ */
+export const useMergeLexicalUnits = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof mergeLexicalUnits>>,
+      TError,
+      { profileId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof mergeLexicalUnits>>,
+  TError,
+  { profileId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(getMergeLexicalUnitsMutationOptions(options), queryClient);
+};
+
+export type getWordBankOverviewResponse200 = {
+  data: WordBankOverviewResponse;
+  status: 200;
+};
+
+export type getWordBankOverviewResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getWordBankOverviewResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getWordBankOverviewResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getWordBankOverviewResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getWordBankOverviewResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getWordBankOverviewResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getWordBankOverviewResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getWordBankOverviewResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getWordBankOverviewResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getWordBankOverviewResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getWordBankOverviewResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getWordBankOverviewResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getWordBankOverviewResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getWordBankOverviewResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getWordBankOverviewResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getWordBankOverviewResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getWordBankOverviewResponseSuccess =
+  getWordBankOverviewResponse200 & {
+    headers: Headers;
+  };
+export type getWordBankOverviewResponseError = (
+  | getWordBankOverviewResponse401ApplicationJson
+  | getWordBankOverviewResponse401ApplicationProblemJson
+  | getWordBankOverviewResponse403ApplicationJson
+  | getWordBankOverviewResponse403ApplicationProblemJson
+  | getWordBankOverviewResponse409ApplicationJson
+  | getWordBankOverviewResponse409ApplicationProblemJson
+  | getWordBankOverviewResponse422ApplicationJson
+  | getWordBankOverviewResponse422ApplicationProblemJson
+  | getWordBankOverviewResponse423ApplicationJson
+  | getWordBankOverviewResponse423ApplicationProblemJson
+  | getWordBankOverviewResponse428ApplicationJson
+  | getWordBankOverviewResponse428ApplicationProblemJson
+  | getWordBankOverviewResponse429ApplicationJson
+  | getWordBankOverviewResponse429ApplicationProblemJson
+  | getWordBankOverviewResponse503ApplicationJson
+  | getWordBankOverviewResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getWordBankOverviewResponse =
+  getWordBankOverviewResponseSuccess | getWordBankOverviewResponseError;
+
+export const getGetWordBankOverviewUrl = (
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/language-profiles/${profileId}/word-bank?${stringifiedParams}`
+    : `/api/v1/language-profiles/${profileId}/word-bank`;
+};
+
+/**
+ * @summary Get Word Bank Overview
+ */
+export const getWordBankOverview = async (
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+  options?: RequestInit,
+): Promise<getWordBankOverviewResponse> => {
+  const res = await fetch(getGetWordBankOverviewUrl(profileId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getWordBankOverviewResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getWordBankOverviewResponse;
+};
+
+export const getGetWordBankOverviewQueryKey = (
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+) => {
+  return [
+    `/api/v1/language-profiles/${profileId}/word-bank`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetWordBankOverviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWordBankOverview>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWordBankOverview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetWordBankOverviewQueryKey(profileId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWordBankOverview>>
+  > = ({ signal }) =>
+    getWordBankOverview(profileId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWordBankOverview>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetWordBankOverviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWordBankOverview>>
+>;
+export type GetWordBankOverviewQueryError = ProblemResponse;
+
+export function useGetWordBankOverview<
+  TData = Awaited<ReturnType<typeof getWordBankOverview>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params: undefined | GetWordBankOverviewParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWordBankOverview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWordBankOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getWordBankOverview>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWordBankOverview<
+  TData = Awaited<ReturnType<typeof getWordBankOverview>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWordBankOverview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWordBankOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getWordBankOverview>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetWordBankOverview<
+  TData = Awaited<ReturnType<typeof getWordBankOverview>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWordBankOverview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Word Bank Overview
+ */
+
+export function useGetWordBankOverview<
+  TData = Awaited<ReturnType<typeof getWordBankOverview>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  params?: GetWordBankOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getWordBankOverview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetWordBankOverviewQueryOptions(
+    profileId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type archiveLanguageProfileResponse200 = {
+  data: ProfileResponse;
+  status: 200;
+};
+
+export type archiveLanguageProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveLanguageProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveLanguageProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveLanguageProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveLanguageProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveLanguageProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveLanguageProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveLanguageProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveLanguageProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveLanguageProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveLanguageProfileResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type archiveLanguageProfileResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type archiveLanguageProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveLanguageProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveLanguageProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveLanguageProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveLanguageProfileResponseSuccess =
+  archiveLanguageProfileResponse200 & {
+    headers: Headers;
+  };
+export type archiveLanguageProfileResponseError = (
+  | archiveLanguageProfileResponse401ApplicationJson
+  | archiveLanguageProfileResponse401ApplicationProblemJson
+  | archiveLanguageProfileResponse403ApplicationJson
+  | archiveLanguageProfileResponse403ApplicationProblemJson
+  | archiveLanguageProfileResponse409ApplicationJson
+  | archiveLanguageProfileResponse409ApplicationProblemJson
+  | archiveLanguageProfileResponse422ApplicationJson
+  | archiveLanguageProfileResponse422ApplicationProblemJson
+  | archiveLanguageProfileResponse423ApplicationJson
+  | archiveLanguageProfileResponse423ApplicationProblemJson
+  | archiveLanguageProfileResponse428ApplicationJson
+  | archiveLanguageProfileResponse428ApplicationProblemJson
+  | archiveLanguageProfileResponse429ApplicationJson
+  | archiveLanguageProfileResponse429ApplicationProblemJson
+  | archiveLanguageProfileResponse503ApplicationJson
+  | archiveLanguageProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type archiveLanguageProfileResponse =
+  archiveLanguageProfileResponseSuccess | archiveLanguageProfileResponseError;
+
+export const getArchiveLanguageProfileUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}:archive`;
+};
+
+/**
+ * @summary Route
+ */
+export const archiveLanguageProfile = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<archiveLanguageProfileResponse> => {
+  const res = await fetch(getArchiveLanguageProfileUrl(profileId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: archiveLanguageProfileResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as archiveLanguageProfileResponse;
+};
+
+export const getArchiveLanguageProfileMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveLanguageProfile>>,
+    TError,
+    { profileId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  const mutationKey = ["archiveLanguageProfile"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveLanguageProfile>>,
+    { profileId: string }
+  > = (props) => {
+    const { profileId } = props ?? {};
+
+    return archiveLanguageProfile(profileId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveLanguageProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveLanguageProfile>>
+>;
+
+export type ArchiveLanguageProfileMutationError = ProblemResponse;
+
+/**
+ * @summary Route
+ */
+export const useArchiveLanguageProfile = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof archiveLanguageProfile>>,
+      TError,
+      { profileId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof archiveLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  return useMutation(
+    getArchiveLanguageProfileMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type pauseLanguageProfileResponse200 = {
+  data: ProfileResponse;
+  status: 200;
+};
+
+export type pauseLanguageProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type pauseLanguageProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type pauseLanguageProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type pauseLanguageProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type pauseLanguageProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type pauseLanguageProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type pauseLanguageProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type pauseLanguageProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type pauseLanguageProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type pauseLanguageProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type pauseLanguageProfileResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type pauseLanguageProfileResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type pauseLanguageProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type pauseLanguageProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type pauseLanguageProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type pauseLanguageProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type pauseLanguageProfileResponseSuccess =
+  pauseLanguageProfileResponse200 & {
+    headers: Headers;
+  };
+export type pauseLanguageProfileResponseError = (
+  | pauseLanguageProfileResponse401ApplicationJson
+  | pauseLanguageProfileResponse401ApplicationProblemJson
+  | pauseLanguageProfileResponse403ApplicationJson
+  | pauseLanguageProfileResponse403ApplicationProblemJson
+  | pauseLanguageProfileResponse409ApplicationJson
+  | pauseLanguageProfileResponse409ApplicationProblemJson
+  | pauseLanguageProfileResponse422ApplicationJson
+  | pauseLanguageProfileResponse422ApplicationProblemJson
+  | pauseLanguageProfileResponse423ApplicationJson
+  | pauseLanguageProfileResponse423ApplicationProblemJson
+  | pauseLanguageProfileResponse428ApplicationJson
+  | pauseLanguageProfileResponse428ApplicationProblemJson
+  | pauseLanguageProfileResponse429ApplicationJson
+  | pauseLanguageProfileResponse429ApplicationProblemJson
+  | pauseLanguageProfileResponse503ApplicationJson
+  | pauseLanguageProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type pauseLanguageProfileResponse =
+  pauseLanguageProfileResponseSuccess | pauseLanguageProfileResponseError;
+
+export const getPauseLanguageProfileUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}:pause`;
+};
+
+/**
+ * @summary Route
+ */
+export const pauseLanguageProfile = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<pauseLanguageProfileResponse> => {
+  const res = await fetch(getPauseLanguageProfileUrl(profileId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: pauseLanguageProfileResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as pauseLanguageProfileResponse;
+};
+
+export const getPauseLanguageProfileMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pauseLanguageProfile>>,
+    TError,
+    { profileId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pauseLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  const mutationKey = ["pauseLanguageProfile"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pauseLanguageProfile>>,
+    { profileId: string }
+  > = (props) => {
+    const { profileId } = props ?? {};
+
+    return pauseLanguageProfile(profileId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PauseLanguageProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pauseLanguageProfile>>
+>;
+
+export type PauseLanguageProfileMutationError = ProblemResponse;
+
+/**
+ * @summary Route
+ */
+export const usePauseLanguageProfile = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pauseLanguageProfile>>,
+      TError,
+      { profileId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pauseLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  return useMutation(
+    getPauseLanguageProfileMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type restoreLanguageProfileResponse200 = {
+  data: ProfileResponse;
+  status: 200;
+};
+
+export type restoreLanguageProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type restoreLanguageProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type restoreLanguageProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type restoreLanguageProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type restoreLanguageProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type restoreLanguageProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type restoreLanguageProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type restoreLanguageProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type restoreLanguageProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type restoreLanguageProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type restoreLanguageProfileResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type restoreLanguageProfileResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type restoreLanguageProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type restoreLanguageProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type restoreLanguageProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type restoreLanguageProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type restoreLanguageProfileResponseSuccess =
+  restoreLanguageProfileResponse200 & {
+    headers: Headers;
+  };
+export type restoreLanguageProfileResponseError = (
+  | restoreLanguageProfileResponse401ApplicationJson
+  | restoreLanguageProfileResponse401ApplicationProblemJson
+  | restoreLanguageProfileResponse403ApplicationJson
+  | restoreLanguageProfileResponse403ApplicationProblemJson
+  | restoreLanguageProfileResponse409ApplicationJson
+  | restoreLanguageProfileResponse409ApplicationProblemJson
+  | restoreLanguageProfileResponse422ApplicationJson
+  | restoreLanguageProfileResponse422ApplicationProblemJson
+  | restoreLanguageProfileResponse423ApplicationJson
+  | restoreLanguageProfileResponse423ApplicationProblemJson
+  | restoreLanguageProfileResponse428ApplicationJson
+  | restoreLanguageProfileResponse428ApplicationProblemJson
+  | restoreLanguageProfileResponse429ApplicationJson
+  | restoreLanguageProfileResponse429ApplicationProblemJson
+  | restoreLanguageProfileResponse503ApplicationJson
+  | restoreLanguageProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type restoreLanguageProfileResponse =
+  restoreLanguageProfileResponseSuccess | restoreLanguageProfileResponseError;
+
+export const getRestoreLanguageProfileUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}:restore`;
+};
+
+/**
+ * @summary Route
+ */
+export const restoreLanguageProfile = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<restoreLanguageProfileResponse> => {
+  const res = await fetch(getRestoreLanguageProfileUrl(profileId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: restoreLanguageProfileResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as restoreLanguageProfileResponse;
+};
+
+export const getRestoreLanguageProfileMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreLanguageProfile>>,
+    TError,
+    { profileId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof restoreLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  const mutationKey = ["restoreLanguageProfile"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof restoreLanguageProfile>>,
+    { profileId: string }
+  > = (props) => {
+    const { profileId } = props ?? {};
+
+    return restoreLanguageProfile(profileId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RestoreLanguageProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof restoreLanguageProfile>>
+>;
+
+export type RestoreLanguageProfileMutationError = ProblemResponse;
+
+/**
+ * @summary Route
+ */
+export const useRestoreLanguageProfile = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof restoreLanguageProfile>>,
+      TError,
+      { profileId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof restoreLanguageProfile>>,
+  TError,
+  { profileId: string },
+  TContext
+> => {
+  return useMutation(
+    getRestoreLanguageProfileMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type deleteLexicalAnnotationResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type deleteLexicalAnnotationResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteLexicalAnnotationResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteLexicalAnnotationResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteLexicalAnnotationResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteLexicalAnnotationResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteLexicalAnnotationResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteLexicalAnnotationResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteLexicalAnnotationResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteLexicalAnnotationResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteLexicalAnnotationResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteLexicalAnnotationResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteLexicalAnnotationResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteLexicalAnnotationResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteLexicalAnnotationResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteLexicalAnnotationResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteLexicalAnnotationResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteLexicalAnnotationResponseSuccess =
+  deleteLexicalAnnotationResponse200 & {
+    headers: Headers;
+  };
+export type deleteLexicalAnnotationResponseError = (
+  | deleteLexicalAnnotationResponse401ApplicationJson
+  | deleteLexicalAnnotationResponse401ApplicationProblemJson
+  | deleteLexicalAnnotationResponse403ApplicationJson
+  | deleteLexicalAnnotationResponse403ApplicationProblemJson
+  | deleteLexicalAnnotationResponse409ApplicationJson
+  | deleteLexicalAnnotationResponse409ApplicationProblemJson
+  | deleteLexicalAnnotationResponse422ApplicationJson
+  | deleteLexicalAnnotationResponse422ApplicationProblemJson
+  | deleteLexicalAnnotationResponse423ApplicationJson
+  | deleteLexicalAnnotationResponse423ApplicationProblemJson
+  | deleteLexicalAnnotationResponse428ApplicationJson
+  | deleteLexicalAnnotationResponse428ApplicationProblemJson
+  | deleteLexicalAnnotationResponse429ApplicationJson
+  | deleteLexicalAnnotationResponse429ApplicationProblemJson
+  | deleteLexicalAnnotationResponse503ApplicationJson
+  | deleteLexicalAnnotationResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type deleteLexicalAnnotationResponse =
+  deleteLexicalAnnotationResponseSuccess | deleteLexicalAnnotationResponseError;
+
+export const getDeleteLexicalAnnotationUrl = (annotationId: string) => {
+  return `/api/v1/lexical-annotations/${annotationId}`;
+};
+
+/**
+ * @summary Delete Lexical Annotation
+ */
+export const deleteLexicalAnnotation = async (
+  annotationId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<deleteLexicalAnnotationResponse> => {
+  const res = await fetch(getDeleteLexicalAnnotationUrl(annotationId), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteLexicalAnnotationResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as deleteLexicalAnnotationResponse;
+};
+
+export const getDeleteLexicalAnnotationMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteLexicalAnnotation>>,
+    TError,
+    { annotationId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteLexicalAnnotation>>,
+  TError,
+  { annotationId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["deleteLexicalAnnotation"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteLexicalAnnotation>>,
+    { annotationId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { annotationId, data } = props ?? {};
+
+    return deleteLexicalAnnotation(annotationId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteLexicalAnnotationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteLexicalAnnotation>>
+>;
+export type DeleteLexicalAnnotationMutationBody =
+  CommandPayload | null | undefined;
+export type DeleteLexicalAnnotationMutationError = ProblemResponse;
+
+/**
+ * @summary Delete Lexical Annotation
+ */
+export const useDeleteLexicalAnnotation = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteLexicalAnnotation>>,
+      TError,
+      { annotationId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteLexicalAnnotation>>,
+  TError,
+  { annotationId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getDeleteLexicalAnnotationMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type deletePrivateContextResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type deletePrivateContextResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deletePrivateContextResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deletePrivateContextResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deletePrivateContextResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deletePrivateContextResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deletePrivateContextResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deletePrivateContextResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deletePrivateContextResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deletePrivateContextResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deletePrivateContextResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deletePrivateContextResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deletePrivateContextResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deletePrivateContextResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deletePrivateContextResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deletePrivateContextResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deletePrivateContextResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deletePrivateContextResponseSuccess =
+  deletePrivateContextResponse200 & {
+    headers: Headers;
+  };
+export type deletePrivateContextResponseError = (
+  | deletePrivateContextResponse401ApplicationJson
+  | deletePrivateContextResponse401ApplicationProblemJson
+  | deletePrivateContextResponse403ApplicationJson
+  | deletePrivateContextResponse403ApplicationProblemJson
+  | deletePrivateContextResponse409ApplicationJson
+  | deletePrivateContextResponse409ApplicationProblemJson
+  | deletePrivateContextResponse422ApplicationJson
+  | deletePrivateContextResponse422ApplicationProblemJson
+  | deletePrivateContextResponse423ApplicationJson
+  | deletePrivateContextResponse423ApplicationProblemJson
+  | deletePrivateContextResponse428ApplicationJson
+  | deletePrivateContextResponse428ApplicationProblemJson
+  | deletePrivateContextResponse429ApplicationJson
+  | deletePrivateContextResponse429ApplicationProblemJson
+  | deletePrivateContextResponse503ApplicationJson
+  | deletePrivateContextResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type deletePrivateContextResponse =
+  deletePrivateContextResponseSuccess | deletePrivateContextResponseError;
+
+export const getDeletePrivateContextUrl = (encounterId: string) => {
+  return `/api/v1/lexical-encounters/${encounterId}/private-context`;
+};
+
+/**
+ * @summary Delete Private Context
+ */
+export const deletePrivateContext = async (
+  encounterId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<deletePrivateContextResponse> => {
+  const res = await fetch(getDeletePrivateContextUrl(encounterId), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deletePrivateContextResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as deletePrivateContextResponse;
+};
+
+export const getDeletePrivateContextMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePrivateContext>>,
+    TError,
+    { encounterId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePrivateContext>>,
+  TError,
+  { encounterId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["deletePrivateContext"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePrivateContext>>,
+    { encounterId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { encounterId, data } = props ?? {};
+
+    return deletePrivateContext(encounterId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePrivateContextMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePrivateContext>>
+>;
+export type DeletePrivateContextMutationBody =
+  CommandPayload | null | undefined;
+export type DeletePrivateContextMutationError = ProblemResponse;
+
+/**
+ * @summary Delete Private Context
+ */
+export const useDeletePrivateContext = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deletePrivateContext>>,
+      TError,
+      { encounterId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deletePrivateContext>>,
+  TError,
+  { encounterId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getDeletePrivateContextMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type resolveMentionResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type resolveMentionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resolveMentionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resolveMentionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resolveMentionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resolveMentionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resolveMentionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resolveMentionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resolveMentionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resolveMentionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resolveMentionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resolveMentionResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resolveMentionResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resolveMentionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resolveMentionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resolveMentionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resolveMentionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resolveMentionResponseSuccess = resolveMentionResponse200 & {
+  headers: Headers;
+};
+export type resolveMentionResponseError = (
+  | resolveMentionResponse401ApplicationJson
+  | resolveMentionResponse401ApplicationProblemJson
+  | resolveMentionResponse403ApplicationJson
+  | resolveMentionResponse403ApplicationProblemJson
+  | resolveMentionResponse409ApplicationJson
+  | resolveMentionResponse409ApplicationProblemJson
+  | resolveMentionResponse422ApplicationJson
+  | resolveMentionResponse422ApplicationProblemJson
+  | resolveMentionResponse423ApplicationJson
+  | resolveMentionResponse423ApplicationProblemJson
+  | resolveMentionResponse428ApplicationJson
+  | resolveMentionResponse428ApplicationProblemJson
+  | resolveMentionResponse429ApplicationJson
+  | resolveMentionResponse429ApplicationProblemJson
+  | resolveMentionResponse503ApplicationJson
+  | resolveMentionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resolveMentionResponse =
+  resolveMentionResponseSuccess | resolveMentionResponseError;
+
+export const getResolveMentionUrl = (mentionId: string) => {
+  return `/api/v1/lexical-mentions/${mentionId}:resolve`;
+};
+
+/**
+ * @summary Resolve Mention
+ */
+export const resolveMention = async (
+  mentionId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<resolveMentionResponse> => {
+  const res = await fetch(getResolveMentionUrl(mentionId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resolveMentionResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resolveMentionResponse;
+};
+
+export const getResolveMentionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resolveMention>>,
+    TError,
+    { mentionId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resolveMention>>,
+  TError,
+  { mentionId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["resolveMention"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resolveMention>>,
+    { mentionId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { mentionId, data } = props ?? {};
+
+    return resolveMention(mentionId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResolveMentionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resolveMention>>
+>;
+export type ResolveMentionMutationBody = CommandPayload | null | undefined;
+export type ResolveMentionMutationError = ProblemResponse;
+
+/**
+ * @summary Resolve Mention
+ */
+export const useResolveMention = <TError = ProblemResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resolveMention>>,
+      TError,
+      { mentionId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resolveMention>>,
+  TError,
+  { mentionId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(getResolveMentionMutationOptions(options), queryClient);
+};
+
+export type getLexicalSenseResponse200 = {
+  data: SenseNeighborhoodResponse;
+  status: 200;
+};
+
+export type getLexicalSenseResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getLexicalSenseResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getLexicalSenseResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getLexicalSenseResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getLexicalSenseResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getLexicalSenseResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getLexicalSenseResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getLexicalSenseResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getLexicalSenseResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getLexicalSenseResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getLexicalSenseResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getLexicalSenseResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getLexicalSenseResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getLexicalSenseResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getLexicalSenseResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getLexicalSenseResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getLexicalSenseResponseSuccess = getLexicalSenseResponse200 & {
+  headers: Headers;
+};
+export type getLexicalSenseResponseError = (
+  | getLexicalSenseResponse401ApplicationJson
+  | getLexicalSenseResponse401ApplicationProblemJson
+  | getLexicalSenseResponse403ApplicationJson
+  | getLexicalSenseResponse403ApplicationProblemJson
+  | getLexicalSenseResponse409ApplicationJson
+  | getLexicalSenseResponse409ApplicationProblemJson
+  | getLexicalSenseResponse422ApplicationJson
+  | getLexicalSenseResponse422ApplicationProblemJson
+  | getLexicalSenseResponse423ApplicationJson
+  | getLexicalSenseResponse423ApplicationProblemJson
+  | getLexicalSenseResponse428ApplicationJson
+  | getLexicalSenseResponse428ApplicationProblemJson
+  | getLexicalSenseResponse429ApplicationJson
+  | getLexicalSenseResponse429ApplicationProblemJson
+  | getLexicalSenseResponse503ApplicationJson
+  | getLexicalSenseResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getLexicalSenseResponse =
+  getLexicalSenseResponseSuccess | getLexicalSenseResponseError;
+
+export const getGetLexicalSenseUrl = (
+  senseId: string,
+  params: GetLexicalSenseParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["edge_types"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? "null" : String(v));
+      });
+      return;
+    }
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/lexical-senses/${senseId}?${stringifiedParams}`
+    : `/api/v1/lexical-senses/${senseId}`;
+};
+
+/**
+ * @summary Get Lexical Sense
+ */
+export const getLexicalSense = async (
+  senseId: string,
+  params: GetLexicalSenseParams,
+  options?: RequestInit,
+): Promise<getLexicalSenseResponse> => {
+  const res = await fetch(getGetLexicalSenseUrl(senseId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getLexicalSenseResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getLexicalSenseResponse;
+};
+
+export const getGetLexicalSenseQueryKey = (
+  senseId: string,
+  params?: GetLexicalSenseParams,
+) => {
+  return [
+    `/api/v1/lexical-senses/${senseId}`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetLexicalSenseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLexicalSense>>,
+  TError = ProblemResponse,
+>(
+  senseId: string,
+  params: GetLexicalSenseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLexicalSense>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetLexicalSenseQueryKey(senseId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getLexicalSense>>> = ({
+    signal,
+  }) => getLexicalSense(senseId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: senseId !== null && senseId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLexicalSense>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetLexicalSenseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLexicalSense>>
+>;
+export type GetLexicalSenseQueryError = ProblemResponse;
+
+export function useGetLexicalSense<
+  TData = Awaited<ReturnType<typeof getLexicalSense>>,
+  TError = ProblemResponse,
+>(
+  senseId: string,
+  params: GetLexicalSenseParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLexicalSense>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLexicalSense>>,
+          TError,
+          Awaited<ReturnType<typeof getLexicalSense>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetLexicalSense<
+  TData = Awaited<ReturnType<typeof getLexicalSense>>,
+  TError = ProblemResponse,
+>(
+  senseId: string,
+  params: GetLexicalSenseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLexicalSense>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLexicalSense>>,
+          TError,
+          Awaited<ReturnType<typeof getLexicalSense>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetLexicalSense<
+  TData = Awaited<ReturnType<typeof getLexicalSense>>,
+  TError = ProblemResponse,
+>(
+  senseId: string,
+  params: GetLexicalSenseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLexicalSense>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Lexical Sense
+ */
+
+export function useGetLexicalSense<
+  TData = Awaited<ReturnType<typeof getLexicalSense>>,
+  TError = ProblemResponse,
+>(
+  senseId: string,
+  params: GetLexicalSenseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getLexicalSense>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetLexicalSenseQueryOptions(senseId, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type assertLexicalRelationResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type assertLexicalRelationResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type assertLexicalRelationResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type assertLexicalRelationResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type assertLexicalRelationResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type assertLexicalRelationResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type assertLexicalRelationResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type assertLexicalRelationResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type assertLexicalRelationResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type assertLexicalRelationResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type assertLexicalRelationResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type assertLexicalRelationResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type assertLexicalRelationResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type assertLexicalRelationResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type assertLexicalRelationResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type assertLexicalRelationResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type assertLexicalRelationResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type assertLexicalRelationResponseSuccess =
+  assertLexicalRelationResponse200 & {
+    headers: Headers;
+  };
+export type assertLexicalRelationResponseError = (
+  | assertLexicalRelationResponse401ApplicationJson
+  | assertLexicalRelationResponse401ApplicationProblemJson
+  | assertLexicalRelationResponse403ApplicationJson
+  | assertLexicalRelationResponse403ApplicationProblemJson
+  | assertLexicalRelationResponse409ApplicationJson
+  | assertLexicalRelationResponse409ApplicationProblemJson
+  | assertLexicalRelationResponse422ApplicationJson
+  | assertLexicalRelationResponse422ApplicationProblemJson
+  | assertLexicalRelationResponse423ApplicationJson
+  | assertLexicalRelationResponse423ApplicationProblemJson
+  | assertLexicalRelationResponse428ApplicationJson
+  | assertLexicalRelationResponse428ApplicationProblemJson
+  | assertLexicalRelationResponse429ApplicationJson
+  | assertLexicalRelationResponse429ApplicationProblemJson
+  | assertLexicalRelationResponse503ApplicationJson
+  | assertLexicalRelationResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type assertLexicalRelationResponse =
+  assertLexicalRelationResponseSuccess | assertLexicalRelationResponseError;
+
+export const getAssertLexicalRelationUrl = (senseId: string) => {
+  return `/api/v1/lexical-senses/${senseId}/personal-relations`;
+};
+
+/**
+ * @summary Assert Lexical Relation
+ */
+export const assertLexicalRelation = async (
+  senseId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<assertLexicalRelationResponse> => {
+  const res = await fetch(getAssertLexicalRelationUrl(senseId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: assertLexicalRelationResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as assertLexicalRelationResponse;
+};
+
+export const getAssertLexicalRelationMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof assertLexicalRelation>>,
+    TError,
+    { senseId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof assertLexicalRelation>>,
+  TError,
+  { senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["assertLexicalRelation"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof assertLexicalRelation>>,
+    { senseId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { senseId, data } = props ?? {};
+
+    return assertLexicalRelation(senseId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AssertLexicalRelationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof assertLexicalRelation>>
+>;
+export type AssertLexicalRelationMutationBody =
+  CommandPayload | null | undefined;
+export type AssertLexicalRelationMutationError = ProblemResponse;
+
+/**
+ * @summary Assert Lexical Relation
+ */
+export const useAssertLexicalRelation = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof assertLexicalRelation>>,
+      TError,
+      { senseId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof assertLexicalRelation>>,
+  TError,
+  { senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getAssertLexicalRelationMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type splitLexicalSenseResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type splitLexicalSenseResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type splitLexicalSenseResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type splitLexicalSenseResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type splitLexicalSenseResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type splitLexicalSenseResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type splitLexicalSenseResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type splitLexicalSenseResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type splitLexicalSenseResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type splitLexicalSenseResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type splitLexicalSenseResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type splitLexicalSenseResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type splitLexicalSenseResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type splitLexicalSenseResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type splitLexicalSenseResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type splitLexicalSenseResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type splitLexicalSenseResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type splitLexicalSenseResponseSuccess = splitLexicalSenseResponse200 & {
+  headers: Headers;
+};
+export type splitLexicalSenseResponseError = (
+  | splitLexicalSenseResponse401ApplicationJson
+  | splitLexicalSenseResponse401ApplicationProblemJson
+  | splitLexicalSenseResponse403ApplicationJson
+  | splitLexicalSenseResponse403ApplicationProblemJson
+  | splitLexicalSenseResponse409ApplicationJson
+  | splitLexicalSenseResponse409ApplicationProblemJson
+  | splitLexicalSenseResponse422ApplicationJson
+  | splitLexicalSenseResponse422ApplicationProblemJson
+  | splitLexicalSenseResponse423ApplicationJson
+  | splitLexicalSenseResponse423ApplicationProblemJson
+  | splitLexicalSenseResponse428ApplicationJson
+  | splitLexicalSenseResponse428ApplicationProblemJson
+  | splitLexicalSenseResponse429ApplicationJson
+  | splitLexicalSenseResponse429ApplicationProblemJson
+  | splitLexicalSenseResponse503ApplicationJson
+  | splitLexicalSenseResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type splitLexicalSenseResponse =
+  splitLexicalSenseResponseSuccess | splitLexicalSenseResponseError;
+
+export const getSplitLexicalSenseUrl = (senseId: string) => {
+  return `/api/v1/lexical-senses/${senseId}:split-private`;
+};
+
+/**
+ * @summary Split Lexical Sense
+ */
+export const splitLexicalSense = async (
+  senseId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<splitLexicalSenseResponse> => {
+  const res = await fetch(getSplitLexicalSenseUrl(senseId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: splitLexicalSenseResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as splitLexicalSenseResponse;
+};
+
+export const getSplitLexicalSenseMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof splitLexicalSense>>,
+    TError,
+    { senseId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof splitLexicalSense>>,
+  TError,
+  { senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["splitLexicalSense"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof splitLexicalSense>>,
+    { senseId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { senseId, data } = props ?? {};
+
+    return splitLexicalSense(senseId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SplitLexicalSenseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof splitLexicalSense>>
+>;
+export type SplitLexicalSenseMutationBody = CommandPayload | null | undefined;
+export type SplitLexicalSenseMutationError = ProblemResponse;
+
+/**
+ * @summary Split Lexical Sense
+ */
+export const useSplitLexicalSense = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof splitLexicalSense>>,
+      TError,
+      { senseId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof splitLexicalSense>>,
+  TError,
+  { senseId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(getSplitLexicalSenseMutationOptions(options), queryClient);
+};
+
 export type searchLexiconResponse200 = {
   data: LexiconSearchPageResponse;
   status: 200;
@@ -1871,6 +11304,2249 @@ export function useSearchLexicon<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export type listDueMemoryPromptsResponse200 = {
+  data: DueMemoryPromptPageResponse;
+  status: 200;
+};
+
+export type listDueMemoryPromptsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listDueMemoryPromptsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listDueMemoryPromptsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listDueMemoryPromptsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listDueMemoryPromptsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listDueMemoryPromptsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listDueMemoryPromptsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listDueMemoryPromptsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listDueMemoryPromptsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listDueMemoryPromptsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listDueMemoryPromptsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listDueMemoryPromptsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listDueMemoryPromptsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listDueMemoryPromptsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listDueMemoryPromptsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listDueMemoryPromptsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listDueMemoryPromptsResponseSuccess =
+  listDueMemoryPromptsResponse200 & {
+    headers: Headers;
+  };
+export type listDueMemoryPromptsResponseError = (
+  | listDueMemoryPromptsResponse401ApplicationJson
+  | listDueMemoryPromptsResponse401ApplicationProblemJson
+  | listDueMemoryPromptsResponse403ApplicationJson
+  | listDueMemoryPromptsResponse403ApplicationProblemJson
+  | listDueMemoryPromptsResponse409ApplicationJson
+  | listDueMemoryPromptsResponse409ApplicationProblemJson
+  | listDueMemoryPromptsResponse422ApplicationJson
+  | listDueMemoryPromptsResponse422ApplicationProblemJson
+  | listDueMemoryPromptsResponse423ApplicationJson
+  | listDueMemoryPromptsResponse423ApplicationProblemJson
+  | listDueMemoryPromptsResponse428ApplicationJson
+  | listDueMemoryPromptsResponse428ApplicationProblemJson
+  | listDueMemoryPromptsResponse429ApplicationJson
+  | listDueMemoryPromptsResponse429ApplicationProblemJson
+  | listDueMemoryPromptsResponse503ApplicationJson
+  | listDueMemoryPromptsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listDueMemoryPromptsResponse =
+  listDueMemoryPromptsResponseSuccess | listDueMemoryPromptsResponseError;
+
+export const getListDueMemoryPromptsUrl = (
+  params: ListDueMemoryPromptsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/memory-prompts/due?${stringifiedParams}`
+    : `/api/v1/memory-prompts/due`;
+};
+
+/**
+ * @summary List Due Memory Prompts
+ */
+export const listDueMemoryPrompts = async (
+  params: ListDueMemoryPromptsParams,
+  options?: RequestInit,
+): Promise<listDueMemoryPromptsResponse> => {
+  const res = await fetch(getListDueMemoryPromptsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listDueMemoryPromptsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listDueMemoryPromptsResponse;
+};
+
+export const getListDueMemoryPromptsQueryKey = (
+  params?: ListDueMemoryPromptsParams,
+) => {
+  return [`/api/v1/memory-prompts/due`, ...(params ? [params] : [])] as const;
+};
+
+export const getListDueMemoryPromptsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+  TError = ProblemResponse,
+>(
+  params: ListDueMemoryPromptsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListDueMemoryPromptsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listDueMemoryPrompts>>
+  > = ({ signal }) => listDueMemoryPrompts(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListDueMemoryPromptsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listDueMemoryPrompts>>
+>;
+export type ListDueMemoryPromptsQueryError = ProblemResponse;
+
+export function useListDueMemoryPrompts<
+  TData = Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+  TError = ProblemResponse,
+>(
+  params: ListDueMemoryPromptsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+          TError,
+          Awaited<ReturnType<typeof listDueMemoryPrompts>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListDueMemoryPrompts<
+  TData = Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+  TError = ProblemResponse,
+>(
+  params: ListDueMemoryPromptsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+          TError,
+          Awaited<ReturnType<typeof listDueMemoryPrompts>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListDueMemoryPrompts<
+  TData = Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+  TError = ProblemResponse,
+>(
+  params: ListDueMemoryPromptsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Due Memory Prompts
+ */
+
+export function useListDueMemoryPrompts<
+  TData = Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+  TError = ProblemResponse,
+>(
+  params: ListDueMemoryPromptsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listDueMemoryPrompts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListDueMemoryPromptsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type deleteMemoryPromptResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type deleteMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteMemoryPromptResponseSuccess =
+  deleteMemoryPromptResponse200 & {
+    headers: Headers;
+  };
+export type deleteMemoryPromptResponseError = (
+  | deleteMemoryPromptResponse401ApplicationJson
+  | deleteMemoryPromptResponse401ApplicationProblemJson
+  | deleteMemoryPromptResponse403ApplicationJson
+  | deleteMemoryPromptResponse403ApplicationProblemJson
+  | deleteMemoryPromptResponse409ApplicationJson
+  | deleteMemoryPromptResponse409ApplicationProblemJson
+  | deleteMemoryPromptResponse422ApplicationJson
+  | deleteMemoryPromptResponse422ApplicationProblemJson
+  | deleteMemoryPromptResponse423ApplicationJson
+  | deleteMemoryPromptResponse423ApplicationProblemJson
+  | deleteMemoryPromptResponse428ApplicationJson
+  | deleteMemoryPromptResponse428ApplicationProblemJson
+  | deleteMemoryPromptResponse429ApplicationJson
+  | deleteMemoryPromptResponse429ApplicationProblemJson
+  | deleteMemoryPromptResponse503ApplicationJson
+  | deleteMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type deleteMemoryPromptResponse =
+  deleteMemoryPromptResponseSuccess | deleteMemoryPromptResponseError;
+
+export const getDeleteMemoryPromptUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}`;
+};
+
+/**
+ * @summary Delete Memory Prompt
+ */
+export const deleteMemoryPrompt = async (
+  promptId: string,
+  deleteMemoryPromptRequest: DeleteMemoryPromptRequest,
+  options?: RequestInit,
+): Promise<deleteMemoryPromptResponse> => {
+  const res = await fetch(getDeleteMemoryPromptUrl(promptId), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(deleteMemoryPromptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteMemoryPromptResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as deleteMemoryPromptResponse;
+};
+
+export const getDeleteMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMemoryPrompt>>,
+    TError,
+    { promptId: string; data: DeleteMemoryPromptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMemoryPrompt>>,
+  TError,
+  { promptId: string; data: DeleteMemoryPromptRequest },
+  TContext
+> => {
+  const mutationKey = ["deleteMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMemoryPrompt>>,
+    { promptId: string; data: DeleteMemoryPromptRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return deleteMemoryPrompt(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMemoryPrompt>>
+>;
+export type DeleteMemoryPromptMutationBody = DeleteMemoryPromptRequest;
+export type DeleteMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Delete Memory Prompt
+ */
+export const useDeleteMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteMemoryPrompt>>,
+      TError,
+      { promptId: string; data: DeleteMemoryPromptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMemoryPrompt>>,
+  TError,
+  { promptId: string; data: DeleteMemoryPromptRequest },
+  TContext
+> => {
+  return useMutation(
+    getDeleteMemoryPromptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type submitMemoryReviewResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type submitMemoryReviewResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitMemoryReviewResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitMemoryReviewResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitMemoryReviewResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitMemoryReviewResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitMemoryReviewResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitMemoryReviewResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitMemoryReviewResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitMemoryReviewResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitMemoryReviewResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitMemoryReviewResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitMemoryReviewResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitMemoryReviewResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitMemoryReviewResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitMemoryReviewResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitMemoryReviewResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitMemoryReviewResponseSuccess =
+  submitMemoryReviewResponse200 & {
+    headers: Headers;
+  };
+export type submitMemoryReviewResponseError = (
+  | submitMemoryReviewResponse401ApplicationJson
+  | submitMemoryReviewResponse401ApplicationProblemJson
+  | submitMemoryReviewResponse403ApplicationJson
+  | submitMemoryReviewResponse403ApplicationProblemJson
+  | submitMemoryReviewResponse409ApplicationJson
+  | submitMemoryReviewResponse409ApplicationProblemJson
+  | submitMemoryReviewResponse422ApplicationJson
+  | submitMemoryReviewResponse422ApplicationProblemJson
+  | submitMemoryReviewResponse423ApplicationJson
+  | submitMemoryReviewResponse423ApplicationProblemJson
+  | submitMemoryReviewResponse428ApplicationJson
+  | submitMemoryReviewResponse428ApplicationProblemJson
+  | submitMemoryReviewResponse429ApplicationJson
+  | submitMemoryReviewResponse429ApplicationProblemJson
+  | submitMemoryReviewResponse503ApplicationJson
+  | submitMemoryReviewResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type submitMemoryReviewResponse =
+  submitMemoryReviewResponseSuccess | submitMemoryReviewResponseError;
+
+export const getSubmitMemoryReviewUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}/reviews`;
+};
+
+/**
+ * @summary Submit Memory Review
+ */
+export const submitMemoryReview = async (
+  promptId: string,
+  submitMemoryReviewRequest: SubmitMemoryReviewRequest,
+  options?: RequestInit,
+): Promise<submitMemoryReviewResponse> => {
+  const res = await fetch(getSubmitMemoryReviewUrl(promptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitMemoryReviewRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: submitMemoryReviewResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as submitMemoryReviewResponse;
+};
+
+export const getSubmitMemoryReviewMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitMemoryReview>>,
+    TError,
+    { promptId: string; data: SubmitMemoryReviewRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitMemoryReview>>,
+  TError,
+  { promptId: string; data: SubmitMemoryReviewRequest },
+  TContext
+> => {
+  const mutationKey = ["submitMemoryReview"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitMemoryReview>>,
+    { promptId: string; data: SubmitMemoryReviewRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return submitMemoryReview(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitMemoryReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitMemoryReview>>
+>;
+export type SubmitMemoryReviewMutationBody = SubmitMemoryReviewRequest;
+export type SubmitMemoryReviewMutationError = ProblemResponse;
+
+/**
+ * @summary Submit Memory Review
+ */
+export const useSubmitMemoryReview = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof submitMemoryReview>>,
+      TError,
+      { promptId: string; data: SubmitMemoryReviewRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof submitMemoryReview>>,
+  TError,
+  { promptId: string; data: SubmitMemoryReviewRequest },
+  TContext
+> => {
+  return useMutation(
+    getSubmitMemoryReviewMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type archiveMemoryPromptResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type archiveMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type archiveMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type archiveMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveMemoryPromptResponseSuccess =
+  archiveMemoryPromptResponse200 & {
+    headers: Headers;
+  };
+export type archiveMemoryPromptResponseError = (
+  | archiveMemoryPromptResponse401ApplicationJson
+  | archiveMemoryPromptResponse401ApplicationProblemJson
+  | archiveMemoryPromptResponse403ApplicationJson
+  | archiveMemoryPromptResponse403ApplicationProblemJson
+  | archiveMemoryPromptResponse409ApplicationJson
+  | archiveMemoryPromptResponse409ApplicationProblemJson
+  | archiveMemoryPromptResponse422ApplicationJson
+  | archiveMemoryPromptResponse422ApplicationProblemJson
+  | archiveMemoryPromptResponse423ApplicationJson
+  | archiveMemoryPromptResponse423ApplicationProblemJson
+  | archiveMemoryPromptResponse428ApplicationJson
+  | archiveMemoryPromptResponse428ApplicationProblemJson
+  | archiveMemoryPromptResponse429ApplicationJson
+  | archiveMemoryPromptResponse429ApplicationProblemJson
+  | archiveMemoryPromptResponse503ApplicationJson
+  | archiveMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type archiveMemoryPromptResponse =
+  archiveMemoryPromptResponseSuccess | archiveMemoryPromptResponseError;
+
+export const getArchiveMemoryPromptUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}:archive`;
+};
+
+/**
+ * @summary Archive Memory Prompt
+ */
+export const archiveMemoryPrompt = async (
+  promptId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<archiveMemoryPromptResponse> => {
+  const res = await fetch(getArchiveMemoryPromptUrl(promptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: archiveMemoryPromptResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as archiveMemoryPromptResponse;
+};
+
+export const getArchiveMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveMemoryPrompt>>,
+    TError,
+    { promptId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveMemoryPrompt>>,
+  TError,
+  { promptId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["archiveMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveMemoryPrompt>>,
+    { promptId: string; data: AtRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return archiveMemoryPrompt(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveMemoryPrompt>>
+>;
+export type ArchiveMemoryPromptMutationBody = AtRequest;
+export type ArchiveMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Archive Memory Prompt
+ */
+export const useArchiveMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof archiveMemoryPrompt>>,
+      TError,
+      { promptId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof archiveMemoryPrompt>>,
+  TError,
+  { promptId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(
+    getArchiveMemoryPromptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type resetMemoryPromptResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type resetMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resetMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resetMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resetMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resetMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resetMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resetMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resetMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resetMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resetMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resetMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resetMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resetMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resetMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resetMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resetMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resetMemoryPromptResponseSuccess = resetMemoryPromptResponse200 & {
+  headers: Headers;
+};
+export type resetMemoryPromptResponseError = (
+  | resetMemoryPromptResponse401ApplicationJson
+  | resetMemoryPromptResponse401ApplicationProblemJson
+  | resetMemoryPromptResponse403ApplicationJson
+  | resetMemoryPromptResponse403ApplicationProblemJson
+  | resetMemoryPromptResponse409ApplicationJson
+  | resetMemoryPromptResponse409ApplicationProblemJson
+  | resetMemoryPromptResponse422ApplicationJson
+  | resetMemoryPromptResponse422ApplicationProblemJson
+  | resetMemoryPromptResponse423ApplicationJson
+  | resetMemoryPromptResponse423ApplicationProblemJson
+  | resetMemoryPromptResponse428ApplicationJson
+  | resetMemoryPromptResponse428ApplicationProblemJson
+  | resetMemoryPromptResponse429ApplicationJson
+  | resetMemoryPromptResponse429ApplicationProblemJson
+  | resetMemoryPromptResponse503ApplicationJson
+  | resetMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resetMemoryPromptResponse =
+  resetMemoryPromptResponseSuccess | resetMemoryPromptResponseError;
+
+export const getResetMemoryPromptUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}:reset`;
+};
+
+/**
+ * @summary Reset Memory Prompt
+ */
+export const resetMemoryPrompt = async (
+  promptId: string,
+  resetMemoryPromptRequest: ResetMemoryPromptRequest,
+  options?: RequestInit,
+): Promise<resetMemoryPromptResponse> => {
+  const res = await fetch(getResetMemoryPromptUrl(promptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resetMemoryPromptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resetMemoryPromptResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resetMemoryPromptResponse;
+};
+
+export const getResetMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resetMemoryPrompt>>,
+    TError,
+    { promptId: string; data: ResetMemoryPromptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resetMemoryPrompt>>,
+  TError,
+  { promptId: string; data: ResetMemoryPromptRequest },
+  TContext
+> => {
+  const mutationKey = ["resetMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resetMemoryPrompt>>,
+    { promptId: string; data: ResetMemoryPromptRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return resetMemoryPrompt(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResetMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resetMemoryPrompt>>
+>;
+export type ResetMemoryPromptMutationBody = ResetMemoryPromptRequest;
+export type ResetMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Reset Memory Prompt
+ */
+export const useResetMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resetMemoryPrompt>>,
+      TError,
+      { promptId: string; data: ResetMemoryPromptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resetMemoryPrompt>>,
+  TError,
+  { promptId: string; data: ResetMemoryPromptRequest },
+  TContext
+> => {
+  return useMutation(getResetMemoryPromptMutationOptions(options), queryClient);
+};
+
+export type restoreMemoryPromptResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type restoreMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type restoreMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type restoreMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type restoreMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type restoreMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type restoreMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type restoreMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type restoreMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type restoreMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type restoreMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type restoreMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type restoreMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type restoreMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type restoreMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type restoreMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type restoreMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type restoreMemoryPromptResponseSuccess =
+  restoreMemoryPromptResponse200 & {
+    headers: Headers;
+  };
+export type restoreMemoryPromptResponseError = (
+  | restoreMemoryPromptResponse401ApplicationJson
+  | restoreMemoryPromptResponse401ApplicationProblemJson
+  | restoreMemoryPromptResponse403ApplicationJson
+  | restoreMemoryPromptResponse403ApplicationProblemJson
+  | restoreMemoryPromptResponse409ApplicationJson
+  | restoreMemoryPromptResponse409ApplicationProblemJson
+  | restoreMemoryPromptResponse422ApplicationJson
+  | restoreMemoryPromptResponse422ApplicationProblemJson
+  | restoreMemoryPromptResponse423ApplicationJson
+  | restoreMemoryPromptResponse423ApplicationProblemJson
+  | restoreMemoryPromptResponse428ApplicationJson
+  | restoreMemoryPromptResponse428ApplicationProblemJson
+  | restoreMemoryPromptResponse429ApplicationJson
+  | restoreMemoryPromptResponse429ApplicationProblemJson
+  | restoreMemoryPromptResponse503ApplicationJson
+  | restoreMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type restoreMemoryPromptResponse =
+  restoreMemoryPromptResponseSuccess | restoreMemoryPromptResponseError;
+
+export const getRestoreMemoryPromptUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}:restore`;
+};
+
+/**
+ * @summary Restore Memory Prompt
+ */
+export const restoreMemoryPrompt = async (
+  promptId: string,
+  restoreMemoryPromptRequest: RestoreMemoryPromptRequest,
+  options?: RequestInit,
+): Promise<restoreMemoryPromptResponse> => {
+  const res = await fetch(getRestoreMemoryPromptUrl(promptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(restoreMemoryPromptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: restoreMemoryPromptResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as restoreMemoryPromptResponse;
+};
+
+export const getRestoreMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof restoreMemoryPrompt>>,
+    TError,
+    { promptId: string; data: RestoreMemoryPromptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof restoreMemoryPrompt>>,
+  TError,
+  { promptId: string; data: RestoreMemoryPromptRequest },
+  TContext
+> => {
+  const mutationKey = ["restoreMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof restoreMemoryPrompt>>,
+    { promptId: string; data: RestoreMemoryPromptRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return restoreMemoryPrompt(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RestoreMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof restoreMemoryPrompt>>
+>;
+export type RestoreMemoryPromptMutationBody = RestoreMemoryPromptRequest;
+export type RestoreMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Restore Memory Prompt
+ */
+export const useRestoreMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof restoreMemoryPrompt>>,
+      TError,
+      { promptId: string; data: RestoreMemoryPromptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof restoreMemoryPrompt>>,
+  TError,
+  { promptId: string; data: RestoreMemoryPromptRequest },
+  TContext
+> => {
+  return useMutation(
+    getRestoreMemoryPromptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type resumeMemoryPromptResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type resumeMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumeMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumeMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumeMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumeMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumeMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumeMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumeMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumeMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resumeMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resumeMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumeMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumeMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resumeMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resumeMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumeMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumeMemoryPromptResponseSuccess =
+  resumeMemoryPromptResponse200 & {
+    headers: Headers;
+  };
+export type resumeMemoryPromptResponseError = (
+  | resumeMemoryPromptResponse401ApplicationJson
+  | resumeMemoryPromptResponse401ApplicationProblemJson
+  | resumeMemoryPromptResponse403ApplicationJson
+  | resumeMemoryPromptResponse403ApplicationProblemJson
+  | resumeMemoryPromptResponse409ApplicationJson
+  | resumeMemoryPromptResponse409ApplicationProblemJson
+  | resumeMemoryPromptResponse422ApplicationJson
+  | resumeMemoryPromptResponse422ApplicationProblemJson
+  | resumeMemoryPromptResponse423ApplicationJson
+  | resumeMemoryPromptResponse423ApplicationProblemJson
+  | resumeMemoryPromptResponse428ApplicationJson
+  | resumeMemoryPromptResponse428ApplicationProblemJson
+  | resumeMemoryPromptResponse429ApplicationJson
+  | resumeMemoryPromptResponse429ApplicationProblemJson
+  | resumeMemoryPromptResponse503ApplicationJson
+  | resumeMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resumeMemoryPromptResponse =
+  resumeMemoryPromptResponseSuccess | resumeMemoryPromptResponseError;
+
+export const getResumeMemoryPromptUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}:resume`;
+};
+
+/**
+ * @summary Resume Memory Prompt
+ */
+export const resumeMemoryPrompt = async (
+  promptId: string,
+  resumeMemoryPromptRequest: ResumeMemoryPromptRequest,
+  options?: RequestInit,
+): Promise<resumeMemoryPromptResponse> => {
+  const res = await fetch(getResumeMemoryPromptUrl(promptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resumeMemoryPromptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resumeMemoryPromptResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resumeMemoryPromptResponse;
+};
+
+export const getResumeMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resumeMemoryPrompt>>,
+    TError,
+    { promptId: string; data: ResumeMemoryPromptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resumeMemoryPrompt>>,
+  TError,
+  { promptId: string; data: ResumeMemoryPromptRequest },
+  TContext
+> => {
+  const mutationKey = ["resumeMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resumeMemoryPrompt>>,
+    { promptId: string; data: ResumeMemoryPromptRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return resumeMemoryPrompt(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResumeMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resumeMemoryPrompt>>
+>;
+export type ResumeMemoryPromptMutationBody = ResumeMemoryPromptRequest;
+export type ResumeMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Resume Memory Prompt
+ */
+export const useResumeMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resumeMemoryPrompt>>,
+      TError,
+      { promptId: string; data: ResumeMemoryPromptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resumeMemoryPrompt>>,
+  TError,
+  { promptId: string; data: ResumeMemoryPromptRequest },
+  TContext
+> => {
+  return useMutation(
+    getResumeMemoryPromptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type suspendMemoryPromptResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type suspendMemoryPromptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type suspendMemoryPromptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type suspendMemoryPromptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type suspendMemoryPromptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type suspendMemoryPromptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type suspendMemoryPromptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type suspendMemoryPromptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type suspendMemoryPromptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type suspendMemoryPromptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type suspendMemoryPromptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type suspendMemoryPromptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type suspendMemoryPromptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type suspendMemoryPromptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type suspendMemoryPromptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type suspendMemoryPromptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type suspendMemoryPromptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type suspendMemoryPromptResponseSuccess =
+  suspendMemoryPromptResponse200 & {
+    headers: Headers;
+  };
+export type suspendMemoryPromptResponseError = (
+  | suspendMemoryPromptResponse401ApplicationJson
+  | suspendMemoryPromptResponse401ApplicationProblemJson
+  | suspendMemoryPromptResponse403ApplicationJson
+  | suspendMemoryPromptResponse403ApplicationProblemJson
+  | suspendMemoryPromptResponse409ApplicationJson
+  | suspendMemoryPromptResponse409ApplicationProblemJson
+  | suspendMemoryPromptResponse422ApplicationJson
+  | suspendMemoryPromptResponse422ApplicationProblemJson
+  | suspendMemoryPromptResponse423ApplicationJson
+  | suspendMemoryPromptResponse423ApplicationProblemJson
+  | suspendMemoryPromptResponse428ApplicationJson
+  | suspendMemoryPromptResponse428ApplicationProblemJson
+  | suspendMemoryPromptResponse429ApplicationJson
+  | suspendMemoryPromptResponse429ApplicationProblemJson
+  | suspendMemoryPromptResponse503ApplicationJson
+  | suspendMemoryPromptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type suspendMemoryPromptResponse =
+  suspendMemoryPromptResponseSuccess | suspendMemoryPromptResponseError;
+
+export const getSuspendMemoryPromptUrl = (promptId: string) => {
+  return `/api/v1/memory-prompts/${promptId}:suspend`;
+};
+
+/**
+ * @summary Suspend Memory Prompt
+ */
+export const suspendMemoryPrompt = async (
+  promptId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<suspendMemoryPromptResponse> => {
+  const res = await fetch(getSuspendMemoryPromptUrl(promptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: suspendMemoryPromptResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as suspendMemoryPromptResponse;
+};
+
+export const getSuspendMemoryPromptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof suspendMemoryPrompt>>,
+    TError,
+    { promptId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof suspendMemoryPrompt>>,
+  TError,
+  { promptId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["suspendMemoryPrompt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof suspendMemoryPrompt>>,
+    { promptId: string; data: AtRequest }
+  > = (props) => {
+    const { promptId, data } = props ?? {};
+
+    return suspendMemoryPrompt(promptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SuspendMemoryPromptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof suspendMemoryPrompt>>
+>;
+export type SuspendMemoryPromptMutationBody = AtRequest;
+export type SuspendMemoryPromptMutationError = ProblemResponse;
+
+/**
+ * @summary Suspend Memory Prompt
+ */
+export const useSuspendMemoryPrompt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof suspendMemoryPrompt>>,
+      TError,
+      { promptId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof suspendMemoryPrompt>>,
+  TError,
+  { promptId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(
+    getSuspendMemoryPromptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type mergeMemoryPromptsResponse200 = {
+  data: MemoryPromptResponse;
+  status: 200;
+};
+
+export type mergeMemoryPromptsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type mergeMemoryPromptsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type mergeMemoryPromptsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type mergeMemoryPromptsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type mergeMemoryPromptsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type mergeMemoryPromptsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type mergeMemoryPromptsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type mergeMemoryPromptsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type mergeMemoryPromptsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type mergeMemoryPromptsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type mergeMemoryPromptsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type mergeMemoryPromptsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type mergeMemoryPromptsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type mergeMemoryPromptsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type mergeMemoryPromptsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type mergeMemoryPromptsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type mergeMemoryPromptsResponseSuccess =
+  mergeMemoryPromptsResponse200 & {
+    headers: Headers;
+  };
+export type mergeMemoryPromptsResponseError = (
+  | mergeMemoryPromptsResponse401ApplicationJson
+  | mergeMemoryPromptsResponse401ApplicationProblemJson
+  | mergeMemoryPromptsResponse403ApplicationJson
+  | mergeMemoryPromptsResponse403ApplicationProblemJson
+  | mergeMemoryPromptsResponse409ApplicationJson
+  | mergeMemoryPromptsResponse409ApplicationProblemJson
+  | mergeMemoryPromptsResponse422ApplicationJson
+  | mergeMemoryPromptsResponse422ApplicationProblemJson
+  | mergeMemoryPromptsResponse423ApplicationJson
+  | mergeMemoryPromptsResponse423ApplicationProblemJson
+  | mergeMemoryPromptsResponse428ApplicationJson
+  | mergeMemoryPromptsResponse428ApplicationProblemJson
+  | mergeMemoryPromptsResponse429ApplicationJson
+  | mergeMemoryPromptsResponse429ApplicationProblemJson
+  | mergeMemoryPromptsResponse503ApplicationJson
+  | mergeMemoryPromptsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type mergeMemoryPromptsResponse =
+  mergeMemoryPromptsResponseSuccess | mergeMemoryPromptsResponseError;
+
+export const getMergeMemoryPromptsUrl = () => {
+  return `/api/v1/memory-prompts:merge`;
+};
+
+/**
+ * @summary Merge Memory Prompts
+ */
+export const mergeMemoryPrompts = async (
+  mergeMemoryPromptsRequest: MergeMemoryPromptsRequest,
+  options?: RequestInit,
+): Promise<mergeMemoryPromptsResponse> => {
+  const res = await fetch(getMergeMemoryPromptsUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(mergeMemoryPromptsRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: mergeMemoryPromptsResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as mergeMemoryPromptsResponse;
+};
+
+export const getMergeMemoryPromptsMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof mergeMemoryPrompts>>,
+    TError,
+    { data: MergeMemoryPromptsRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof mergeMemoryPrompts>>,
+  TError,
+  { data: MergeMemoryPromptsRequest },
+  TContext
+> => {
+  const mutationKey = ["mergeMemoryPrompts"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof mergeMemoryPrompts>>,
+    { data: MergeMemoryPromptsRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return mergeMemoryPrompts(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MergeMemoryPromptsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof mergeMemoryPrompts>>
+>;
+export type MergeMemoryPromptsMutationBody = MergeMemoryPromptsRequest;
+export type MergeMemoryPromptsMutationError = ProblemResponse;
+
+/**
+ * @summary Merge Memory Prompts
+ */
+export const useMergeMemoryPrompts = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof mergeMemoryPrompts>>,
+      TError,
+      { data: MergeMemoryPromptsRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof mergeMemoryPrompts>>,
+  TError,
+  { data: MergeMemoryPromptsRequest },
+  TContext
+> => {
+  return useMutation(
+    getMergeMemoryPromptsMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type retractLexicalRelationResponse200 = {
+  data: MutationResponse;
+  status: 200;
+};
+
+export type retractLexicalRelationResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type retractLexicalRelationResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type retractLexicalRelationResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type retractLexicalRelationResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type retractLexicalRelationResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type retractLexicalRelationResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type retractLexicalRelationResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type retractLexicalRelationResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type retractLexicalRelationResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type retractLexicalRelationResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type retractLexicalRelationResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type retractLexicalRelationResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type retractLexicalRelationResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type retractLexicalRelationResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type retractLexicalRelationResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type retractLexicalRelationResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type retractLexicalRelationResponseSuccess =
+  retractLexicalRelationResponse200 & {
+    headers: Headers;
+  };
+export type retractLexicalRelationResponseError = (
+  | retractLexicalRelationResponse401ApplicationJson
+  | retractLexicalRelationResponse401ApplicationProblemJson
+  | retractLexicalRelationResponse403ApplicationJson
+  | retractLexicalRelationResponse403ApplicationProblemJson
+  | retractLexicalRelationResponse409ApplicationJson
+  | retractLexicalRelationResponse409ApplicationProblemJson
+  | retractLexicalRelationResponse422ApplicationJson
+  | retractLexicalRelationResponse422ApplicationProblemJson
+  | retractLexicalRelationResponse423ApplicationJson
+  | retractLexicalRelationResponse423ApplicationProblemJson
+  | retractLexicalRelationResponse428ApplicationJson
+  | retractLexicalRelationResponse428ApplicationProblemJson
+  | retractLexicalRelationResponse429ApplicationJson
+  | retractLexicalRelationResponse429ApplicationProblemJson
+  | retractLexicalRelationResponse503ApplicationJson
+  | retractLexicalRelationResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type retractLexicalRelationResponse =
+  retractLexicalRelationResponseSuccess | retractLexicalRelationResponseError;
+
+export const getRetractLexicalRelationUrl = (relationId: string) => {
+  return `/api/v1/personal-lexical-relations/${relationId}:retract`;
+};
+
+/**
+ * @summary Retract Lexical Relation
+ */
+export const retractLexicalRelation = async (
+  relationId: string,
+  commandPayloadNull?: CommandPayload | null,
+  options?: RequestInit,
+): Promise<retractLexicalRelationResponse> => {
+  const res = await fetch(getRetractLexicalRelationUrl(relationId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commandPayloadNull),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: retractLexicalRelationResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as retractLexicalRelationResponse;
+};
+
+export const getRetractLexicalRelationMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof retractLexicalRelation>>,
+    TError,
+    { relationId: string; data?: CommandPayload | null },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof retractLexicalRelation>>,
+  TError,
+  { relationId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  const mutationKey = ["retractLexicalRelation"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof retractLexicalRelation>>,
+    { relationId: string; data?: CommandPayload | null }
+  > = (props) => {
+    const { relationId, data } = props ?? {};
+
+    return retractLexicalRelation(relationId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RetractLexicalRelationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof retractLexicalRelation>>
+>;
+export type RetractLexicalRelationMutationBody =
+  CommandPayload | null | undefined;
+export type RetractLexicalRelationMutationError = ProblemResponse;
+
+/**
+ * @summary Retract Lexical Relation
+ */
+export const useRetractLexicalRelation = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof retractLexicalRelation>>,
+      TError,
+      { relationId: string; data?: CommandPayload | null },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof retractLexicalRelation>>,
+  TError,
+  { relationId: string; data?: CommandPayload | null },
+  TContext
+> => {
+  return useMutation(
+    getRetractLexicalRelationMutationOptions(options),
+    queryClient,
+  );
+};
 
 export type revokeSessionResponse204 = {
   data: void;
@@ -2533,3 +14209,283 @@ export const useAuthenticateSession = <
     queryClient,
   );
 };
+
+export type getValidationReportResponse200 = {
+  data: ValidationReportResponse;
+  status: 200;
+};
+
+export type getValidationReportResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getValidationReportResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getValidationReportResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getValidationReportResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getValidationReportResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getValidationReportResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getValidationReportResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getValidationReportResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getValidationReportResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getValidationReportResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getValidationReportResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getValidationReportResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getValidationReportResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getValidationReportResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getValidationReportResponseSuccess =
+  getValidationReportResponse200 & {
+    headers: Headers;
+  };
+export type getValidationReportResponseError = (
+  | getValidationReportResponse401ApplicationJson
+  | getValidationReportResponse401ApplicationProblemJson
+  | getValidationReportResponse403ApplicationJson
+  | getValidationReportResponse403ApplicationProblemJson
+  | getValidationReportResponse409ApplicationJson
+  | getValidationReportResponse409ApplicationProblemJson
+  | getValidationReportResponse422ApplicationJson
+  | getValidationReportResponse422ApplicationProblemJson
+  | getValidationReportResponse423ApplicationJson
+  | getValidationReportResponse423ApplicationProblemJson
+  | getValidationReportResponse429ApplicationJson
+  | getValidationReportResponse429ApplicationProblemJson
+  | getValidationReportResponse503ApplicationJson
+  | getValidationReportResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getValidationReportResponse =
+  getValidationReportResponseSuccess | getValidationReportResponseError;
+
+export const getGetValidationReportUrl = (id: string) => {
+  return `/api/v1/validation-reports/${id}`;
+};
+
+/**
+ * @summary Get Validation Report
+ */
+export const getValidationReport = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getValidationReportResponse> => {
+  const res = await fetch(getGetValidationReportUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getValidationReportResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getValidationReportResponse;
+};
+
+export const getGetValidationReportQueryKey = (id: string) => {
+  return [`/api/v1/validation-reports/${id}`] as const;
+};
+
+export const getGetValidationReportQueryOptions = <
+  TData = Awaited<ReturnType<typeof getValidationReport>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getValidationReport>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetValidationReportQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getValidationReport>>
+  > = ({ signal }) => getValidationReport(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getValidationReport>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetValidationReportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getValidationReport>>
+>;
+export type GetValidationReportQueryError = ProblemResponse;
+
+export function useGetValidationReport<
+  TData = Awaited<ReturnType<typeof getValidationReport>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getValidationReport>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getValidationReport>>,
+          TError,
+          Awaited<ReturnType<typeof getValidationReport>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetValidationReport<
+  TData = Awaited<ReturnType<typeof getValidationReport>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getValidationReport>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getValidationReport>>,
+          TError,
+          Awaited<ReturnType<typeof getValidationReport>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetValidationReport<
+  TData = Awaited<ReturnType<typeof getValidationReport>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getValidationReport>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Validation Report
+ */
+
+export function useGetValidationReport<
+  TData = Awaited<ReturnType<typeof getValidationReport>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getValidationReport>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetValidationReportQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
