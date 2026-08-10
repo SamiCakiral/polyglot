@@ -515,6 +515,27 @@ class LanguageProfileApplicationService:
                 ).mappings().one()
                 await uow.commit()
                 return self._diagnostic_summary(dict(row))
+            active = (
+                await session.execute(
+                    select(diagnostic_runs)
+                    .where(
+                        diagnostic_runs.c.profile_id == profile_id,
+                        diagnostic_runs.c.status.in_(("prepared", "in_progress", "interrupted")),
+                        diagnostic_runs.c.expires_at > now,
+                    )
+                    .with_for_update()
+                )
+            ).mappings().one_or_none()
+            if active is not None:
+                active_summary = self._diagnostic_summary(dict(active))
+                await self._complete(
+                    store,
+                    receipt,
+                    active_summary.diagnostic_run_id,
+                    active_summary.version,
+                )
+                await uow.commit()
+                return active_summary
             run_id = self._id_generator.new()
             try:
                 await session.execute(
@@ -584,6 +605,44 @@ class LanguageProfileApplicationService:
             return self._diagnostic_summary(dict(row))
         raise RuntimeError("diagnostic lookup was unexpectedly suppressed")
 
+    async def _expire_diagnostic_response_run_if_due(
+        self,
+        *,
+        run_id: UUID,
+        account_id: UUID,
+        expected_version: int,
+        now: datetime,
+    ) -> bool:
+        async with self._uow() as uow:
+            session = self._session(uow)
+            repository = SqlLanguageProfileRepository(session)
+            await repository.set_actor(account_id)
+            row = (
+                await session.execute(
+                    select(diagnostic_runs)
+                    .where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                    .with_for_update()
+                )
+            ).mappings().one_or_none()
+            if row is None:
+                raise DomainError(ErrorCode.NOT_FOUND)
+            await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
+            if row["status"] != "in_progress":
+                raise DomainError(ErrorCode.INVALID_TRANSITION)
+            if cast(int, row["version"]) != expected_version:
+                raise DomainError(ErrorCode.VERSION_CONFLICT)
+            if now < cast(datetime, row["expires_at"]):
+                await uow.commit()
+                return False
+            await session.execute(
+                diagnostic_runs.update()
+                .where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                .values(status="expired", version=expected_version + 1)
+            )
+            await uow.commit()
+            return True
+        raise RuntimeError("diagnostic expiry was unexpectedly suppressed")
+
     async def submit_diagnostic_response(
         self,
         *,
@@ -597,6 +656,13 @@ class LanguageProfileApplicationService:
         context: RequestContext,
     ) -> DiagnosticRunSummary:
         now = self._clock.now()
+        if await self._expire_diagnostic_response_run_if_due(
+            run_id=run_id,
+            account_id=account_id,
+            expected_version=expected_version,
+            now=now,
+        ):
+            raise DomainError(ErrorCode.RUN_EXPIRED)
         async with self._uow() as uow:
             session = self._session(uow)
             repository = SqlLanguageProfileRepository(session)
@@ -613,8 +679,6 @@ class LanguageProfileApplicationService:
                 raise DomainError(ErrorCode.INVALID_TRANSITION)
             if cast(int, row["version"]) != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
-            if now >= cast(datetime, row["expires_at"]):
-                raise DomainError(ErrorCode.RUN_EXPIRED)
             catalogue = await self._published_foundations(cast(UUID, row["pack_revision_id"]))
             item_context = next(
                 (
