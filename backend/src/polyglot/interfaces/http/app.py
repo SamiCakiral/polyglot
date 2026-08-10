@@ -21,6 +21,7 @@ from polyglot.interfaces.http.dependencies import ReadinessCheck, valid_correlat
 from polyglot.interfaces.http.errors import register_error_handlers
 from polyglot.interfaces.http.routes.catalogue import catalogue_router
 from polyglot.interfaces.http.routes.content import content_router
+from polyglot.interfaces.http.routes.curriculum import curriculum_router
 from polyglot.interfaces.http.routes.exchange import ExchangeService, exchange_router
 from polyglot.interfaces.http.routes.exercises import exercises_router
 from polyglot.interfaces.http.routes.identity import identity_router
@@ -33,6 +34,7 @@ from polyglot.interfaces.http.routes.word_bank import (
 )
 from polyglot.modules.catalogue.core.service import CatalogueApplicationService, CatalogueReader
 from polyglot.modules.content.application import ContentApplicationService
+from polyglot.modules.curriculum.application import CurriculumApplicationService
 from polyglot.modules.exercises.core.application import ExerciseApplicationService
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
@@ -80,6 +82,7 @@ def create_app(
     memory_service: MemoryService | None = None,
     exchange_service: ExchangeService | None = None,
     exercise_service: ExerciseApplicationService | None = None,
+    curriculum_service: CurriculumApplicationService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -138,6 +141,13 @@ def create_app(
             allowed_origin=allowed_origin,
         )
     )
+    app.include_router(
+        curriculum_router(
+            curriculum_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
 
     @app.middleware("http")
     async def request_context(
@@ -187,9 +197,7 @@ def create_runtime_app() -> FastAPI:
     session_factory = create_session_factory(engine)
     identity_service = IdentityApplicationService(
         session_factory,
-        session_secrets=SessionSecrets.from_key(
-            os.environ["POLYGLOT_SESSION_SECRET"].encode()
-        ),
+        session_secrets=SessionSecrets.from_key(os.environ["POLYGLOT_SESSION_SECRET"].encode()),
         oidc_provider=FakeOidcProvider({}),
         registration_enabled=_enabled_from_environment("POLYGLOT_REGISTRATION_ENABLED"),
         oidc_enabled=_enabled_from_environment("POLYGLOT_OIDC_ENABLED"),
@@ -204,11 +212,13 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 
     memory_service = SqlMemoryService(session_factory, FsrsV6Scheduler())
+    from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
 
     exchange_service = SqlExchangeService(session_factory)
     exercise_service = SqlExerciseService(session_factory)
+    curriculum_service = SqlCurriculumService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -230,5 +240,6 @@ def create_runtime_app() -> FastAPI:
         memory_service=memory_service,
         exchange_service=exchange_service,
         exercise_service=exercise_service,
+        curriculum_service=curriculum_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

@@ -20,6 +20,7 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  EnrollmentResponse,
   ExerciseInstanceResponse,
   FoundationResponse,
   GetExport200,
@@ -32,6 +33,7 @@ import type {
   ListSnapshotResponse,
   LiveStatus,
   MemoryPromptResponse,
+  ModuleResponse,
   MutationResponse,
   PreferencesResponse,
   ProfileResponse,
@@ -1940,6 +1942,47 @@ export const getCreateMemoryPromptResponseMock = (
   ...overrideResponse,
 });
 
+export const getEnrollInModuleResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
 export const getAddPrivateLexicalUnitResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
 ): MutationResponse => ({
@@ -2620,6 +2663,148 @@ export const getMergeMemoryPromptsResponseMock = (
   version: faker.number.int(),
   ...overrideResponse,
 });
+
+export const getGetModuleEnrollmentResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getCompleteModuleEnrollmentResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getPauseModuleEnrollmentResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getListLearningModulesResponseMock = (): ModuleResponse[] =>
+  Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    entry_profile_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    max_days: faker.number.int(),
+    max_minutes: faker.number.int(),
+    min_minutes: faker.number.int(),
+    module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    module_id: faker.string.uuid(),
+    module_revision_id: faker.string.uuid(),
+    nominal_days: faker.number.int(),
+    primary_intention: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  }));
 
 export const getRetractLexicalRelationResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},

@@ -23,6 +23,7 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  EnrollmentResponse,
   ExerciseInstanceResponse,
   FoundationResponse,
   GetExport200,
@@ -35,6 +36,7 @@ import type {
   ListSnapshotResponse,
   LiveStatus,
   MemoryPromptResponse,
+  ModuleResponse,
   MutationResponse,
   PreferencesResponse,
   ProfileResponse,
@@ -1943,6 +1945,47 @@ export const getCreateMemoryPromptResponseMock = (
   ...overrideResponse,
 });
 
+export const getEnrollInModuleResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
 export const getAddPrivateLexicalUnitResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
 ): MutationResponse => ({
@@ -2623,6 +2666,148 @@ export const getMergeMemoryPromptsResponseMock = (
   version: faker.number.int(),
   ...overrideResponse,
 });
+
+export const getGetModuleEnrollmentResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getCompleteModuleEnrollmentResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getPauseModuleEnrollmentResponseMock = (
+  overrideResponse: Partial<Extract<EnrollmentResponse, object>> = {},
+): EnrollmentResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  current_day_ordinal: faker.number.int(),
+  enrollment_id: faker.string.uuid(),
+  max_days: faker.number.int(),
+  migration_map_revision_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  module_revision_id: faker.string.uuid(),
+  nominal_days: faker.number.int(),
+  paused_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  started_on_pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  terminal_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  waiver_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getListLearningModulesResponseMock = (): ModuleResponse[] =>
+  Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    entry_profile_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    max_days: faker.number.int(),
+    max_minutes: faker.number.int(),
+    min_minutes: faker.number.int(),
+    module_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    module_id: faker.string.uuid(),
+    module_revision_id: faker.string.uuid(),
+    nominal_days: faker.number.int(),
+    primary_intention: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  }));
 
 export const getRetractLexicalRelationResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
@@ -4384,6 +4569,32 @@ export const getCreateMemoryPromptMockHandler = (
   );
 };
 
+export const getEnrollInModuleMockHandler = (
+  overrideResponse?:
+    | EnrollmentResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<EnrollmentResponse> | EnrollmentResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/module-enrollments",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getEnrollInModuleResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
 export const getAddPrivateLexicalUnitMockHandler = (
   overrideResponse?:
     | MutationResponse
@@ -4985,6 +5196,110 @@ export const getMergeMemoryPromptsMockHandler = (
   );
 };
 
+export const getGetModuleEnrollmentMockHandler = (
+  overrideResponse?:
+    | EnrollmentResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<EnrollmentResponse> | EnrollmentResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/module-enrollments/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetModuleEnrollmentResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCompleteModuleEnrollmentMockHandler = (
+  overrideResponse?:
+    | EnrollmentResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<EnrollmentResponse> | EnrollmentResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/module-enrollments/:id\\:complete",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCompleteModuleEnrollmentResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getPauseModuleEnrollmentMockHandler = (
+  overrideResponse?:
+    | EnrollmentResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<EnrollmentResponse> | EnrollmentResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/module-enrollments/:id\\:pause",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getPauseModuleEnrollmentResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getListLearningModulesMockHandler = (
+  overrideResponse?:
+    | ModuleResponse[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ModuleResponse[]> | ModuleResponse[]),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/modules",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListLearningModulesResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getRetractLexicalRelationMockHandler = (
   overrideResponse?:
     | MutationResponse
@@ -5503,6 +5818,7 @@ export const getPolyglotV2APIMock = () => [
   getDeclareLexicalFamiliarityMockHandler(),
   getSetLexicalLearningPreferenceMockHandler(),
   getCreateMemoryPromptMockHandler(),
+  getEnrollInModuleMockHandler(),
   getAddPrivateLexicalUnitMockHandler(),
   getMergeLexicalUnitsMockHandler(),
   getCreateVocabularyListMockHandler(),
@@ -5526,6 +5842,10 @@ export const getPolyglotV2APIMock = () => [
   getResumeMemoryPromptMockHandler(),
   getSuspendMemoryPromptMockHandler(),
   getMergeMemoryPromptsMockHandler(),
+  getGetModuleEnrollmentMockHandler(),
+  getCompleteModuleEnrollmentMockHandler(),
+  getPauseModuleEnrollmentMockHandler(),
+  getListLearningModulesMockHandler(),
   getRetractLexicalRelationMockHandler(),
   getRevokeSessionMockHandler(),
   getGetCurrentSessionMockHandler(),

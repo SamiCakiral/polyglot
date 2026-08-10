@@ -117,6 +117,7 @@
     "ListDueMemoryPrompts",
     "ListLearningNeeds",
     "GetCurrentModule",
+    "ListLearningModules",
     "GetModuleTimeline",
     "GetTodayPlan",
     "ExplainSessionSelection",
@@ -934,6 +935,10 @@
     {
       "method": "GET",
       "route": "/module-enrollments/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/modules"
     },
     {
       "method": "GET",

@@ -90,6 +90,10 @@
     },
     {
       "method": "GET",
+      "route": "/modules"
+    },
+    {
+      "method": "GET",
       "route": "/session-plans/{id}"
     },
     {
@@ -185,6 +189,7 @@
     "ListDueMemoryPrompts",
     "ListLearningNeeds",
     "GetCurrentModule",
+    "ListLearningModules",
     "GetModuleTimeline",
     "GetTodayPlan",
     "ExplainSessionSelection",

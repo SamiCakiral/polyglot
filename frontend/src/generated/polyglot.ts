@@ -31,6 +31,7 @@ import type {
   CloneVocabularyListRequest,
   CommandPayload,
   CommitImportRequest,
+  CompleteEnrollmentRequest,
   CompleteFoundationGateRequest,
   ConsentRequest,
   ConsentResponse,
@@ -48,6 +49,8 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  EnrollInModuleRequest,
+  EnrollmentResponse,
   ExerciseInstanceResponse,
   FoundationResponse,
   GetContentHistoryParams,
@@ -75,9 +78,11 @@ import type {
   MemoryPromptResponse,
   MergeMemoryPromptsRequest,
   MergeVocabularyListsRequest,
+  ModuleResponse,
   MutationResponse,
   OidcCredentialsRequest,
   OpenAttemptRequest,
+  PauseEnrollmentRequest,
   PreferencesRequest,
   PreferencesResponse,
   PreviewDynamicListParams,
@@ -12576,6 +12581,214 @@ export const useCreateMemoryPrompt = <
   );
 };
 
+export type enrollInModuleResponse201 = {
+  data: EnrollmentResponse;
+  status: 201;
+};
+
+export type enrollInModuleResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type enrollInModuleResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type enrollInModuleResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type enrollInModuleResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type enrollInModuleResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type enrollInModuleResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type enrollInModuleResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type enrollInModuleResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type enrollInModuleResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type enrollInModuleResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type enrollInModuleResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type enrollInModuleResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type enrollInModuleResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type enrollInModuleResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type enrollInModuleResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type enrollInModuleResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type enrollInModuleResponseSuccess = enrollInModuleResponse201 & {
+  headers: Headers;
+};
+export type enrollInModuleResponseError = (
+  | enrollInModuleResponse401ApplicationJson
+  | enrollInModuleResponse401ApplicationProblemJson
+  | enrollInModuleResponse403ApplicationJson
+  | enrollInModuleResponse403ApplicationProblemJson
+  | enrollInModuleResponse409ApplicationJson
+  | enrollInModuleResponse409ApplicationProblemJson
+  | enrollInModuleResponse422ApplicationJson
+  | enrollInModuleResponse422ApplicationProblemJson
+  | enrollInModuleResponse423ApplicationJson
+  | enrollInModuleResponse423ApplicationProblemJson
+  | enrollInModuleResponse428ApplicationJson
+  | enrollInModuleResponse428ApplicationProblemJson
+  | enrollInModuleResponse429ApplicationJson
+  | enrollInModuleResponse429ApplicationProblemJson
+  | enrollInModuleResponse503ApplicationJson
+  | enrollInModuleResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type enrollInModuleResponse =
+  enrollInModuleResponseSuccess | enrollInModuleResponseError;
+
+export const getEnrollInModuleUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/module-enrollments`;
+};
+
+/**
+ * @summary Enroll In Module
+ */
+export const enrollInModule = async (
+  profileId: string,
+  enrollInModuleRequest: EnrollInModuleRequest,
+  options?: RequestInit,
+): Promise<enrollInModuleResponse> => {
+  const res = await fetch(getEnrollInModuleUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(enrollInModuleRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: enrollInModuleResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as enrollInModuleResponse;
+};
+
+export const getEnrollInModuleMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof enrollInModule>>,
+    TError,
+    { profileId: string; data: EnrollInModuleRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof enrollInModule>>,
+  TError,
+  { profileId: string; data: EnrollInModuleRequest },
+  TContext
+> => {
+  const mutationKey = ["enrollInModule"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof enrollInModule>>,
+    { profileId: string; data: EnrollInModuleRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return enrollInModule(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EnrollInModuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof enrollInModule>>
+>;
+export type EnrollInModuleMutationBody = EnrollInModuleRequest;
+export type EnrollInModuleMutationError = ProblemResponse;
+
+/**
+ * @summary Enroll In Module
+ */
+export const useEnrollInModule = <TError = ProblemResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof enrollInModule>>,
+      TError,
+      { profileId: string; data: EnrollInModuleRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof enrollInModule>>,
+  TError,
+  { profileId: string; data: EnrollInModuleRequest },
+  TContext
+> => {
+  return useMutation(getEnrollInModuleMutationOptions(options), queryClient);
+};
+
 export type addPrivateLexicalUnitResponse200 = {
   data: MutationResponse;
   status: 200;
@@ -17834,6 +18047,1012 @@ export const useMergeMemoryPrompts = <
     queryClient,
   );
 };
+
+export type getModuleEnrollmentResponse200 = {
+  data: EnrollmentResponse;
+  status: 200;
+};
+
+export type getModuleEnrollmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getModuleEnrollmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getModuleEnrollmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getModuleEnrollmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getModuleEnrollmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getModuleEnrollmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getModuleEnrollmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getModuleEnrollmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getModuleEnrollmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getModuleEnrollmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getModuleEnrollmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getModuleEnrollmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getModuleEnrollmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getModuleEnrollmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getModuleEnrollmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getModuleEnrollmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getModuleEnrollmentResponseSuccess =
+  getModuleEnrollmentResponse200 & {
+    headers: Headers;
+  };
+export type getModuleEnrollmentResponseError = (
+  | getModuleEnrollmentResponse401ApplicationJson
+  | getModuleEnrollmentResponse401ApplicationProblemJson
+  | getModuleEnrollmentResponse403ApplicationJson
+  | getModuleEnrollmentResponse403ApplicationProblemJson
+  | getModuleEnrollmentResponse409ApplicationJson
+  | getModuleEnrollmentResponse409ApplicationProblemJson
+  | getModuleEnrollmentResponse422ApplicationJson
+  | getModuleEnrollmentResponse422ApplicationProblemJson
+  | getModuleEnrollmentResponse423ApplicationJson
+  | getModuleEnrollmentResponse423ApplicationProblemJson
+  | getModuleEnrollmentResponse428ApplicationJson
+  | getModuleEnrollmentResponse428ApplicationProblemJson
+  | getModuleEnrollmentResponse429ApplicationJson
+  | getModuleEnrollmentResponse429ApplicationProblemJson
+  | getModuleEnrollmentResponse503ApplicationJson
+  | getModuleEnrollmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getModuleEnrollmentResponse =
+  getModuleEnrollmentResponseSuccess | getModuleEnrollmentResponseError;
+
+export const getGetModuleEnrollmentUrl = (id: string) => {
+  return `/api/v1/module-enrollments/${id}`;
+};
+
+/**
+ * @summary Get Module Enrollment
+ */
+export const getModuleEnrollment = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getModuleEnrollmentResponse> => {
+  const res = await fetch(getGetModuleEnrollmentUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getModuleEnrollmentResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getModuleEnrollmentResponse;
+};
+
+export const getGetModuleEnrollmentQueryKey = (id: string) => {
+  return [`/api/v1/module-enrollments/${id}`] as const;
+};
+
+export const getGetModuleEnrollmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof getModuleEnrollment>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getModuleEnrollment>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetModuleEnrollmentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getModuleEnrollment>>
+  > = ({ signal }) => getModuleEnrollment(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getModuleEnrollment>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetModuleEnrollmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getModuleEnrollment>>
+>;
+export type GetModuleEnrollmentQueryError = ProblemResponse;
+
+export function useGetModuleEnrollment<
+  TData = Awaited<ReturnType<typeof getModuleEnrollment>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getModuleEnrollment>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getModuleEnrollment>>,
+          TError,
+          Awaited<ReturnType<typeof getModuleEnrollment>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetModuleEnrollment<
+  TData = Awaited<ReturnType<typeof getModuleEnrollment>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getModuleEnrollment>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getModuleEnrollment>>,
+          TError,
+          Awaited<ReturnType<typeof getModuleEnrollment>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetModuleEnrollment<
+  TData = Awaited<ReturnType<typeof getModuleEnrollment>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getModuleEnrollment>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Module Enrollment
+ */
+
+export function useGetModuleEnrollment<
+  TData = Awaited<ReturnType<typeof getModuleEnrollment>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getModuleEnrollment>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetModuleEnrollmentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type completeModuleEnrollmentResponse200 = {
+  data: EnrollmentResponse;
+  status: 200;
+};
+
+export type completeModuleEnrollmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeModuleEnrollmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeModuleEnrollmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeModuleEnrollmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeModuleEnrollmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeModuleEnrollmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeModuleEnrollmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeModuleEnrollmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeModuleEnrollmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeModuleEnrollmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeModuleEnrollmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeModuleEnrollmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeModuleEnrollmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeModuleEnrollmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeModuleEnrollmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeModuleEnrollmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeModuleEnrollmentResponseSuccess =
+  completeModuleEnrollmentResponse200 & {
+    headers: Headers;
+  };
+export type completeModuleEnrollmentResponseError = (
+  | completeModuleEnrollmentResponse401ApplicationJson
+  | completeModuleEnrollmentResponse401ApplicationProblemJson
+  | completeModuleEnrollmentResponse403ApplicationJson
+  | completeModuleEnrollmentResponse403ApplicationProblemJson
+  | completeModuleEnrollmentResponse409ApplicationJson
+  | completeModuleEnrollmentResponse409ApplicationProblemJson
+  | completeModuleEnrollmentResponse422ApplicationJson
+  | completeModuleEnrollmentResponse422ApplicationProblemJson
+  | completeModuleEnrollmentResponse423ApplicationJson
+  | completeModuleEnrollmentResponse423ApplicationProblemJson
+  | completeModuleEnrollmentResponse428ApplicationJson
+  | completeModuleEnrollmentResponse428ApplicationProblemJson
+  | completeModuleEnrollmentResponse429ApplicationJson
+  | completeModuleEnrollmentResponse429ApplicationProblemJson
+  | completeModuleEnrollmentResponse503ApplicationJson
+  | completeModuleEnrollmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type completeModuleEnrollmentResponse =
+  | completeModuleEnrollmentResponseSuccess
+  | completeModuleEnrollmentResponseError;
+
+export const getCompleteModuleEnrollmentUrl = (id: string) => {
+  return `/api/v1/module-enrollments/${id}:complete`;
+};
+
+/**
+ * @summary Complete Module Enrollment
+ */
+export const completeModuleEnrollment = async (
+  id: string,
+  completeEnrollmentRequest: CompleteEnrollmentRequest,
+  options?: RequestInit,
+): Promise<completeModuleEnrollmentResponse> => {
+  const res = await fetch(getCompleteModuleEnrollmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(completeEnrollmentRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: completeModuleEnrollmentResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as completeModuleEnrollmentResponse;
+};
+
+export const getCompleteModuleEnrollmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeModuleEnrollment>>,
+    TError,
+    { id: string; data: CompleteEnrollmentRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeModuleEnrollment>>,
+  TError,
+  { id: string; data: CompleteEnrollmentRequest },
+  TContext
+> => {
+  const mutationKey = ["completeModuleEnrollment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeModuleEnrollment>>,
+    { id: string; data: CompleteEnrollmentRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return completeModuleEnrollment(id, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteModuleEnrollmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeModuleEnrollment>>
+>;
+export type CompleteModuleEnrollmentMutationBody = CompleteEnrollmentRequest;
+export type CompleteModuleEnrollmentMutationError = ProblemResponse;
+
+/**
+ * @summary Complete Module Enrollment
+ */
+export const useCompleteModuleEnrollment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeModuleEnrollment>>,
+      TError,
+      { id: string; data: CompleteEnrollmentRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeModuleEnrollment>>,
+  TError,
+  { id: string; data: CompleteEnrollmentRequest },
+  TContext
+> => {
+  return useMutation(
+    getCompleteModuleEnrollmentMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type pauseModuleEnrollmentResponse200 = {
+  data: EnrollmentResponse;
+  status: 200;
+};
+
+export type pauseModuleEnrollmentResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type pauseModuleEnrollmentResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type pauseModuleEnrollmentResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type pauseModuleEnrollmentResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type pauseModuleEnrollmentResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type pauseModuleEnrollmentResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type pauseModuleEnrollmentResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type pauseModuleEnrollmentResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type pauseModuleEnrollmentResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type pauseModuleEnrollmentResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type pauseModuleEnrollmentResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type pauseModuleEnrollmentResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type pauseModuleEnrollmentResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type pauseModuleEnrollmentResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type pauseModuleEnrollmentResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type pauseModuleEnrollmentResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type pauseModuleEnrollmentResponseSuccess =
+  pauseModuleEnrollmentResponse200 & {
+    headers: Headers;
+  };
+export type pauseModuleEnrollmentResponseError = (
+  | pauseModuleEnrollmentResponse401ApplicationJson
+  | pauseModuleEnrollmentResponse401ApplicationProblemJson
+  | pauseModuleEnrollmentResponse403ApplicationJson
+  | pauseModuleEnrollmentResponse403ApplicationProblemJson
+  | pauseModuleEnrollmentResponse409ApplicationJson
+  | pauseModuleEnrollmentResponse409ApplicationProblemJson
+  | pauseModuleEnrollmentResponse422ApplicationJson
+  | pauseModuleEnrollmentResponse422ApplicationProblemJson
+  | pauseModuleEnrollmentResponse423ApplicationJson
+  | pauseModuleEnrollmentResponse423ApplicationProblemJson
+  | pauseModuleEnrollmentResponse428ApplicationJson
+  | pauseModuleEnrollmentResponse428ApplicationProblemJson
+  | pauseModuleEnrollmentResponse429ApplicationJson
+  | pauseModuleEnrollmentResponse429ApplicationProblemJson
+  | pauseModuleEnrollmentResponse503ApplicationJson
+  | pauseModuleEnrollmentResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type pauseModuleEnrollmentResponse =
+  pauseModuleEnrollmentResponseSuccess | pauseModuleEnrollmentResponseError;
+
+export const getPauseModuleEnrollmentUrl = (id: string) => {
+  return `/api/v1/module-enrollments/${id}:pause`;
+};
+
+/**
+ * @summary Pause Module Enrollment
+ */
+export const pauseModuleEnrollment = async (
+  id: string,
+  pauseEnrollmentRequest: PauseEnrollmentRequest,
+  options?: RequestInit,
+): Promise<pauseModuleEnrollmentResponse> => {
+  const res = await fetch(getPauseModuleEnrollmentUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(pauseEnrollmentRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: pauseModuleEnrollmentResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as pauseModuleEnrollmentResponse;
+};
+
+export const getPauseModuleEnrollmentMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof pauseModuleEnrollment>>,
+    TError,
+    { id: string; data: PauseEnrollmentRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof pauseModuleEnrollment>>,
+  TError,
+  { id: string; data: PauseEnrollmentRequest },
+  TContext
+> => {
+  const mutationKey = ["pauseModuleEnrollment"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof pauseModuleEnrollment>>,
+    { id: string; data: PauseEnrollmentRequest }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return pauseModuleEnrollment(id, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PauseModuleEnrollmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof pauseModuleEnrollment>>
+>;
+export type PauseModuleEnrollmentMutationBody = PauseEnrollmentRequest;
+export type PauseModuleEnrollmentMutationError = ProblemResponse;
+
+/**
+ * @summary Pause Module Enrollment
+ */
+export const usePauseModuleEnrollment = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof pauseModuleEnrollment>>,
+      TError,
+      { id: string; data: PauseEnrollmentRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof pauseModuleEnrollment>>,
+  TError,
+  { id: string; data: PauseEnrollmentRequest },
+  TContext
+> => {
+  return useMutation(
+    getPauseModuleEnrollmentMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type listLearningModulesResponse200 = {
+  data: ModuleResponse[];
+  status: 200;
+};
+
+export type listLearningModulesResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listLearningModulesResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listLearningModulesResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listLearningModulesResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listLearningModulesResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLearningModulesResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLearningModulesResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLearningModulesResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLearningModulesResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listLearningModulesResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listLearningModulesResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listLearningModulesResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listLearningModulesResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listLearningModulesResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listLearningModulesResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLearningModulesResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLearningModulesResponseSuccess =
+  listLearningModulesResponse200 & {
+    headers: Headers;
+  };
+export type listLearningModulesResponseError = (
+  | listLearningModulesResponse401ApplicationJson
+  | listLearningModulesResponse401ApplicationProblemJson
+  | listLearningModulesResponse403ApplicationJson
+  | listLearningModulesResponse403ApplicationProblemJson
+  | listLearningModulesResponse409ApplicationJson
+  | listLearningModulesResponse409ApplicationProblemJson
+  | listLearningModulesResponse422ApplicationJson
+  | listLearningModulesResponse422ApplicationProblemJson
+  | listLearningModulesResponse423ApplicationJson
+  | listLearningModulesResponse423ApplicationProblemJson
+  | listLearningModulesResponse428ApplicationJson
+  | listLearningModulesResponse428ApplicationProblemJson
+  | listLearningModulesResponse429ApplicationJson
+  | listLearningModulesResponse429ApplicationProblemJson
+  | listLearningModulesResponse503ApplicationJson
+  | listLearningModulesResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listLearningModulesResponse =
+  listLearningModulesResponseSuccess | listLearningModulesResponseError;
+
+export const getListLearningModulesUrl = () => {
+  return `/api/v1/modules`;
+};
+
+/**
+ * @summary List Learning Modules
+ */
+export const listLearningModules = async (
+  options?: RequestInit,
+): Promise<listLearningModulesResponse> => {
+  const res = await fetch(getListLearningModulesUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listLearningModulesResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listLearningModulesResponse;
+};
+
+export const getListLearningModulesQueryKey = () => {
+  return [`/api/v1/modules`] as const;
+};
+
+export const getListLearningModulesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLearningModules>>,
+  TError = ProblemResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listLearningModules>>,
+      TError,
+      TData
+    >
+  >;
+  fetch?: RequestInit;
+}) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLearningModulesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLearningModules>>
+  > = ({ signal }) => listLearningModules({ signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLearningModules>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLearningModulesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLearningModules>>
+>;
+export type ListLearningModulesQueryError = ProblemResponse;
+
+export function useListLearningModules<
+  TData = Awaited<ReturnType<typeof listLearningModules>>,
+  TError = ProblemResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLearningModules>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLearningModules>>,
+          TError,
+          Awaited<ReturnType<typeof listLearningModules>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLearningModules<
+  TData = Awaited<ReturnType<typeof listLearningModules>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLearningModules>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLearningModules>>,
+          TError,
+          Awaited<ReturnType<typeof listLearningModules>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLearningModules<
+  TData = Awaited<ReturnType<typeof listLearningModules>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLearningModules>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Learning Modules
+ */
+
+export function useListLearningModules<
+  TData = Awaited<ReturnType<typeof listLearningModules>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLearningModules>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListLearningModulesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type retractLexicalRelationResponse200 = {
   data: MutationResponse;

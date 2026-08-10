@@ -129,23 +129,33 @@ async def test_delete_private_context_rejects_stale_real_session(migration_sessi
 
 
 async def seed_open_attempt_and_support_language(session) -> None:
-    await session.execute(
+    inserted = await session.execute(
         text(
             "INSERT INTO catalogue.language_varieties "
             "(variety_id,language_tag,script_codes,text_direction,segmentation_policy_revision_id,"
             "media_capabilities,normalization_policy_revision_id) VALUES "
             "(:variety,'fr-FR',ARRAY['Latn'],'ltr',:segment,'{\"schema_version\":\"1\"}',:normal) "
-            "ON CONFLICT (variety_id) DO NOTHING"
+            "ON CONFLICT (language_tag) DO NOTHING RETURNING variety_id"
         ),
         {"variety": uid(5100), "segment": uid(5101), "normal": uid(5102)},
     )
+    variety_id = inserted.scalar_one_or_none()
+    if variety_id is None:
+        variety_id = (
+            await session.execute(
+                text(
+                    "SELECT variety_id FROM catalogue.language_varieties "
+                    "WHERE language_tag = 'fr-FR'"
+                )
+            )
+        ).scalar_one()
     await session.execute(
         text(
             "INSERT INTO language_profiles.support_language_authorizations "
             "(authorization_id,profile_id,variety_id,authorized_at) VALUES "
             "(:id,:profile,:variety,:now)"
         ),
-        {"id": uid(5103), "profile": uid(11), "variety": uid(5100), "now": NOW},
+        {"id": uid(5103), "profile": uid(11), "variety": variety_id, "now": NOW},
     )
     await session.execute(
         text(

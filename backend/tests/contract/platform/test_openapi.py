@@ -35,7 +35,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w09_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w11_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -78,6 +78,7 @@ def test_openapi_exports_the_implemented_w01_through_w09_surface() -> None:
         "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration",
             "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
         "/api/v1/language-profiles/{profile_id}/memory-prompts",
+        "/api/v1/language-profiles/{profile_id}/module-enrollments",
         "/api/v1/language-profiles/{profile_id}/imports",
         "/api/v1/language-profiles/{profile_id}/private-lexicon",
         "/api/v1/language-profiles/{profile_id}/private-lexicon:merge",
@@ -110,6 +111,10 @@ def test_openapi_exports_the_implemented_w01_through_w09_surface() -> None:
             "/api/v1/memory-prompts/{prompt_id}:restore",
             "/api/v1/memory-prompts/{prompt_id}:resume",
         "/api/v1/memory-prompts/{prompt_id}:suspend",
+        "/api/v1/module-enrollments/{id}",
+        "/api/v1/module-enrollments/{id}:complete",
+        "/api/v1/module-enrollments/{id}:pause",
+        "/api/v1/modules",
         "/api/v1/imports/{id}",
             "/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve",
             "/api/v1/imports/{import_id}/preview",
