@@ -199,6 +199,10 @@ def _reference_findings(data: ValidationInput) -> list[ValidationFinding]:
     resolved = {item.reference: item for item in data.resolved_references}
     expectations = {item.reference: item for item in data.reference_manifest.entries}
     findings: list[ValidationFinding] = []
+    if len(resolved) != len(data.resolved_references):
+        findings.append(
+            _finding("module_reference_duplicate", "resolved_references")
+        )
     manifest_mismatch = (
         data.reference_manifest.checksum != data.module.reference_manifest_checksum
     )
@@ -408,6 +412,10 @@ def _load_findings(data: ValidationInput) -> list[ValidationFinding]:
         ):
             findings.append(_finding("module_novelty_budget_exceeded", f"days.{ordinal}.novelty"))
     limits = dict(data.profile_novelty_limits)
+    if len(limits) != len(data.profile_novelty_limits):
+        findings.append(
+            _finding("module_reference_duplicate", "profile_novelty_limits")
+        )
     total = sum(points for _, points in data.day_novelty_points)
     for profile in data.module.entry_profile_codes:
         if profile not in limits or total > limits[profile] * data.module.nominal_days:
@@ -420,6 +428,16 @@ def validate_curriculum(data: ValidationInput) -> ValidationReport:
     findings.extend(_graph_findings(data))
     findings.extend(_grammar_findings(data))
     findings.extend(_load_findings(data))
+    if len({item.target_ref for item in data.morphology_oracles}) != len(
+        data.morphology_oracles
+    ):
+        findings.append(_finding("module_reference_duplicate", "morphology_oracles"))
+    if len({item.target_ref for item in data.pronunciation_oracles}) != len(
+        data.pronunciation_oracles
+    ):
+        findings.append(
+            _finding("module_reference_duplicate", "pronunciation_oracles")
+        )
     for morphology in data.morphology_oracles:
         if (
             not morphology.oracle_available

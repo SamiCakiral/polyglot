@@ -58,6 +58,9 @@ class SkillTargetBinding:
 
     def __post_init__(self) -> None:
         _require_uuid7(self.skill_revision_id, "skill_revision_id")
+        _require_unique(self.modalities, "modalities")
+        _require_unique(self.operations, "operations")
+        _require_unique(self.evidence_protocol_ids, "evidence_protocol_ids")
         object.__setattr__(self, "modalities", tuple(sorted(set(self.modalities))))
         object.__setattr__(self, "operations", tuple(sorted(set(self.operations))))
         object.__setattr__(self, "evidence_protocol_ids", tuple(self.evidence_protocol_ids))
@@ -109,6 +112,8 @@ class GrammarTargetBinding:
         _require_uuid7(self.structure_revision_id, "structure_revision_id")
         _require_uuid7(self.function_skill_id, "function_skill_id")
         object.__setattr__(self, "pattern_ids", tuple(self.pattern_ids))
+        _require_unique(self.pattern_ids, "pattern_ids")
+        _require_unique(self.allowed_operations, "allowed_operations")
         object.__setattr__(self, "allowed_operations", tuple(sorted(set(self.allowed_operations))))
         for value in self.pattern_ids:
             _require_uuid7(value, "pattern_id")
@@ -134,6 +139,10 @@ class MorphologyTargetBinding:
 
     def __post_init__(self) -> None:
         _require_uuid7(self.form_analysis_id, "form_analysis_id")
+        _require_unique(
+            tuple(key for key, _ in self.feature_bundle), "feature_bundle"
+        )
+        _require_unique(self.allowed_operations, "allowed_operations")
         object.__setattr__(self, "feature_bundle", tuple(sorted(self.feature_bundle)))
         object.__setattr__(self, "allowed_operations", tuple(sorted(set(self.allowed_operations))))
         if not self.paradigm_code or not self.feature_bundle:
@@ -186,6 +195,7 @@ class ExerciseBinding:
         _require_uuid7(self.definition_revision_id, "definition_revision_id")
         _require_uuid7(self.correction_policy_revision_id, "correction_policy_revision_id")
         object.__setattr__(self, "target_bindings", tuple(self.target_bindings))
+        _require_unique(self.target_bindings, "target_bindings")
         if self.primitive_id not in CORE_PRIMITIVE_IDS:
             raise CurriculumError("module_target_unresolved")
         if self.gym_operation is not None and not _is_gym_operation(self.gym_operation):

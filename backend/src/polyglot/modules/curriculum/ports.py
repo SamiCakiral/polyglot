@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Protocol
 
+from .bindings import _require_unique
+
 
 class ReferenceStatus(StrEnum):
     PUBLISHED = "published"
@@ -44,6 +46,9 @@ class ReferenceManifest:
 
     def __post_init__(self) -> None:
         entries = tuple(self.entries)
+        _require_unique(
+            tuple(item.reference for item in entries), "reference_manifest.entries"
+        )
         object.__setattr__(self, "entries", entries)
         payload = {
             "source_catalog_id": self.source_catalog_id,

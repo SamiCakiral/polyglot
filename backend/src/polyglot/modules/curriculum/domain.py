@@ -198,10 +198,10 @@ class LearningModuleRevision:
             _require_unique(values, field)
             for value in values:
                 _require_uuid7(value, field)
-        object.__setattr__(
-            self, "entry_profile_codes", tuple(sorted(set(self.entry_profile_codes)))
-        )
-        object.__setattr__(self, "rights_refs", tuple(sorted(set(self.rights_refs))))
+        _require_unique(self.entry_profile_codes, "entry_profile_codes")
+        _require_unique(self.rights_refs, "rights_refs")
+        object.__setattr__(self, "entry_profile_codes", tuple(sorted(self.entry_profile_codes)))
+        object.__setattr__(self, "rights_refs", tuple(sorted(self.rights_refs)))
         object.__setattr__(self, "days", tuple(self.days))
         if self.supersedes_revision_id is not None:
             _require_uuid7(self.supersedes_revision_id, "supersedes_revision_id")
