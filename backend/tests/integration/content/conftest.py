@@ -26,6 +26,11 @@ IDS = {
         ("correlation", 0x8006, 1),
         ("manifest", 0x8007, 1),
         ("history", 0x8008, 1),
+        ("report", 0x8009, 1),
+        ("validator_set", 0x800A, 1),
+        ("finding", 0x800B, 1),
+        ("decision", 0x800C, 1),
+        ("catalogue_revision", 0x800D, 1),
     )
 }
 VARIETY_ID = UUID("019fe900-5000-7000-8001-000000000001")

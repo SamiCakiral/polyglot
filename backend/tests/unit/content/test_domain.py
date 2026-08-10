@@ -55,7 +55,7 @@ def test_revising_a_draft_creates_a_new_immutable_revision() -> None:
 def test_author_cannot_approve_own_validated_revision_even_with_reviewer_role() -> None:
     from polyglot.modules.content.domain import ValidationOutcome
 
-    validated = draft().complete_validation(
+    validated = draft().start_validation().complete_validation(
         outcome=ValidationOutcome.passed(VALIDATOR_SET_ID),
         now=NOW,
     )
@@ -69,7 +69,7 @@ def test_author_cannot_approve_own_validated_revision_even_with_reviewer_role() 
 def test_human_required_validation_cannot_transition_to_approval() -> None:
     from polyglot.modules.content.domain import ValidationOutcome
 
-    pending_human_review = draft().complete_validation(
+    pending_human_review = draft().start_validation().complete_validation(
         outcome=ValidationOutcome.human_required(VALIDATOR_SET_ID),
         now=NOW,
     )
@@ -85,6 +85,7 @@ def test_published_revision_cannot_be_revised_or_republished() -> None:
 
     published = (
         draft()
+        .start_validation()
         .complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
         .approve(actor_id=REVIEWER_ID, now=NOW)
         .publish(now=NOW)
@@ -105,3 +106,34 @@ def test_published_revision_cannot_be_revised_or_republished() -> None:
 
     assert revise_rejected.value.code is ErrorCode.INVALID_TRANSITION
     assert publish_rejected.value.code is ErrorCode.INVALID_TRANSITION
+
+
+def test_validation_models_every_transition_without_skipping_validating() -> None:
+    from polyglot.modules.content.domain import ContentRevisionStatus, ValidationOutcome
+
+    with pytest.raises(DomainError) as skipped:
+        draft().complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
+
+    validating = draft().start_validation()
+    failed = validating.complete_validation(ValidationOutcome.failed(VALIDATOR_SET_ID), now=NOW)
+    passed = validating.complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
+
+    assert skipped.value.code is ErrorCode.INVALID_TRANSITION
+    assert validating.status is ContentRevisionStatus.VALIDATING
+    assert failed.status is ContentRevisionStatus.DRAFT
+    assert passed.status is ContentRevisionStatus.VALIDATED
+
+
+def test_draft_can_be_abandoned_and_validated_revision_can_be_rejected() -> None:
+    from polyglot.modules.content.domain import ContentRevisionStatus, ValidationOutcome
+
+    abandoned = draft().abandon(now=NOW)
+    rejected = (
+        draft()
+        .start_validation()
+        .complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
+        .reject(now=NOW)
+    )
+
+    assert abandoned.status is ContentRevisionStatus.ABANDONED
+    assert rejected.status is ContentRevisionStatus.REJECTED

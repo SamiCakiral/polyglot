@@ -65,7 +65,7 @@ def test_same_actor_is_never_an_approver() -> None:
         rights_ref="rights:fixture:content",
         payload={"schema_version": 1, "text": "Ciao."},
         now=NOW,
-    ).complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
+    ).start_validation().complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
 
     with pytest.raises(DomainError) as rejected:
         revision.approve(actor_id=AUTHOR_ID, now=NOW)
