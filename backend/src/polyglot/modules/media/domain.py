@@ -50,6 +50,14 @@ _MIMES_BY_KIND = {
     MediaKind.VIDEO: frozenset({"video/mp4", "video/webm"}),
     MediaKind.ARCHIVE: frozenset({"application/zip"}),
 }
+_DELETION_SOURCE_STATUSES = frozenset(
+    {
+        MediaStatus.QUARANTINED,
+        MediaStatus.READY,
+        MediaStatus.REJECTED,
+        MediaStatus.FAILED,
+    }
+)
 
 
 def _invalid(field: str) -> DomainError:
@@ -241,6 +249,9 @@ class MediaAsset:
     def begin_upload(self, *, at: datetime) -> MediaAsset:
         return self._transition(MediaStatus.RESERVED, MediaStatus.UPLOADING, at=at)
 
+    def cancel_reservation(self, *, at: datetime) -> MediaAsset:
+        return self._transition(MediaStatus.RESERVED, MediaStatus.REJECTED, at=at)
+
     def complete_upload(self, *, at: datetime) -> MediaAsset:
         return self._transition(MediaStatus.UPLOADING, MediaStatus.UPLOADED, at=at)
 
@@ -286,7 +297,7 @@ class MediaAsset:
         return replace(self, status=MediaStatus.READY, updated_at=at)
 
     def request_deletion(self) -> MediaAsset:
-        if self.status in {MediaStatus.DELETING, MediaStatus.DELETED}:
+        if self.status not in _DELETION_SOURCE_STATUSES:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         return replace(self, status=MediaStatus.DELETING, quarantine_reason=None)
 
