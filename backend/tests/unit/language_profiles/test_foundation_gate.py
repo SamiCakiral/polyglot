@@ -10,7 +10,6 @@ from polyglot.modules.language_profiles.foundations import (
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 
-
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 SESSION_ONE = UUID("019fe903-1000-7000-8000-000000000001")
 SESSION_TWO = UUID("019fe903-1000-7000-8000-000000000002")
