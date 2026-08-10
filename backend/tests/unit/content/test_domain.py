@@ -5,7 +5,6 @@ import pytest
 
 from polyglot.platform.errors import DomainError, ErrorCode
 
-
 NOW = datetime(2026, 8, 10, 9, 0, tzinfo=UTC)
 AUTHOR_ID = UUID("019fe001-0000-7000-8000-000000000001")
 REVIEWER_ID = UUID("019fe001-0000-7000-8000-000000000002")

@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 import pytest
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +9,7 @@ from .conftest import IDS, NOW, VARIETY_ID, seed_provenance
 
 
 async def test_migration_enforces_immutable_published_revisions_and_single_active_publication(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
     from polyglot.modules.content.persistence import (
         content_items,
@@ -17,8 +17,8 @@ async def test_migration_enforces_immutable_published_revisions_and_single_activ
         publication_manifests,
     )
 
-    await seed_provenance(session)
-    await session.execute(
+    await seed_provenance(migration_session)
+    await migration_session.execute(
         content_items.insert().values(
             content_id=IDS["content"],
             content_type="dialogue",
@@ -30,7 +30,7 @@ async def test_migration_enforces_immutable_published_revisions_and_single_activ
             created_at=NOW,
         )
     )
-    await session.execute(
+    await migration_session.execute(
         content_revisions.insert().values(
             content_revision_id=IDS["revision"],
             content_id=IDS["content"],
@@ -54,7 +54,7 @@ async def test_migration_enforces_immutable_published_revisions_and_single_activ
             retired_at=None,
         )
     )
-    await session.execute(
+    await migration_session.execute(
         publication_manifests.insert().values(
             publication_manifest_id=IDS["manifest"],
             content_id=IDS["content"],
@@ -67,18 +67,18 @@ async def test_migration_enforces_immutable_published_revisions_and_single_activ
             retired_at=None,
         )
     )
-    await session.commit()
+    await migration_session.commit()
 
     with pytest.raises(DBAPIError, match="published revision is immutable"):
-        await session.execute(
+        await migration_session.execute(
             content_revisions.update()
             .where(content_revisions.c.content_revision_id == IDS["revision"])
             .values(payload={"schema_version": 1, "text": "Ciao, Luca."})
         )
-    await session.rollback()
+    await migration_session.rollback()
 
     with pytest.raises(IntegrityError):
-        await session.execute(
+        await migration_session.execute(
             publication_manifests.insert().values(
                 publication_manifest_id=IDS["history"],
                 content_id=IDS["content"],
@@ -91,16 +91,19 @@ async def test_migration_enforces_immutable_published_revisions_and_single_activ
                 retired_at=None,
             )
         )
-    await session.rollback()
+    await migration_session.rollback()
 
 
 async def test_publish_writes_manifest_event_and_outbox_in_one_transaction(
+    migration_session: AsyncSession,
     session: AsyncSession,
 ) -> None:
     from polyglot.modules.content.persistence import SqlContentPublicationRepository
     from polyglot.platform.persistence.models import domain_events, outbox_messages
 
-    await seed_provenance(session)
+    await seed_provenance(migration_session)
+    await migration_session.commit()
+
     repository = SqlContentPublicationRepository(session)
     await repository.create_approved_revision(
         content_id=IDS["content"],
@@ -129,24 +132,79 @@ async def test_publish_writes_manifest_event_and_outbox_in_one_transaction(
     await session.commit()
 
     assert published.status == "published"
-    assert await session.scalar(
-        select(func.count()).select_from(domain_events).where(
-            domain_events.c.event_type == "content_published"
+    assert (
+        await session.scalar(
+            select(func.count())
+            .select_from(domain_events)
+            .where(domain_events.c.event_type == "content_published")
         )
-    ) == 1
-    assert await session.scalar(
-        select(func.count()).select_from(outbox_messages).where(
-            outbox_messages.c.event_id == IDS["event"]
+        == 1
+    )
+    assert (
+        await session.scalar(
+            select(func.count())
+            .select_from(outbox_messages)
+            .where(outbox_messages.c.event_id == IDS["event"])
         )
-    ) == 1
+        == 1
+    )
+
+
+async def test_publish_rollback_removes_revision_manifest_event_and_outbox(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import (
+        SqlContentPublicationRepository,
+        content_revisions,
+        publication_manifests,
+    )
+    from polyglot.platform.persistence.models import domain_events, outbox_messages
+
+    await seed_provenance(migration_session)
+    await migration_session.commit()
+
+    repository = SqlContentPublicationRepository(session)
+    await repository.create_approved_revision(
+        content_id=IDS["content"],
+        content_revision_id=IDS["revision"],
+        variety_id=VARIETY_ID,
+        author_id=IDS["author"],
+        reviewer_id=IDS["reviewer"],
+        provenance_id=IDS["provenance"],
+        payload={"schema_version": 1, "text": "Ciao."},
+        rights_ref="rights:fixture:content",
+        now=NOW,
+    )
+    await repository.publish(
+        content_id=IDS["content"],
+        content_revision_id=IDS["revision"],
+        actor_id=IDS["reviewer"],
+        command_id=IDS["command"],
+        correlation_id=IDS["correlation"],
+        event_id=IDS["event"],
+        manifest_id=IDS["manifest"],
+        channel_code="stable",
+        compatibility_range=">=2.0.0,<2.1.0",
+        now=NOW,
+    )
+    await session.rollback()
+
+    assert await session.scalar(select(func.count()).select_from(content_revisions)) == 0
+    assert await session.scalar(select(func.count()).select_from(publication_manifests)) == 0
+    assert await session.scalar(select(func.count()).select_from(domain_events)) == 0
+    assert await session.scalar(select(func.count()).select_from(outbox_messages)) == 0
 
 
 async def test_historical_reference_resolves_retired_revision_without_rewriting_it(
+    migration_session: AsyncSession,
     session: AsyncSession,
 ) -> None:
     from polyglot.modules.content.persistence import SqlContentPublicationRepository
 
-    await seed_provenance(session)
+    await seed_provenance(migration_session)
+    await migration_session.commit()
+
     repository = SqlContentPublicationRepository(session)
     await repository.create_approved_revision(
         content_id=IDS["content"],

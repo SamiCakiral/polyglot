@@ -11,7 +11,6 @@ from polyglot.bootstrap.database import (
     migration_database_url_from_environment,
 )
 
-
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 IDS = {
     name: UUID(f"019fe003-0000-7000-{namespace:04x}-{number:012x}")
@@ -52,6 +51,16 @@ async def session(database_url: str) -> AsyncIterator[AsyncSession]:
     await engine.dispose()
 
 
+@pytest.fixture
+async def migration_session(migration_database_url: str) -> AsyncIterator[AsyncSession]:
+    engine = create_async_engine(migration_database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    async with factory() as database_session:
+        yield database_session
+        await database_session.rollback()
+    await engine.dispose()
+
+
 @pytest.fixture(autouse=True)
 async def clean_content_tables(migration_database_url: str) -> AsyncIterator[None]:
     engine = create_async_engine(migration_database_url)
@@ -65,6 +74,17 @@ async def clean_content_tables(migration_database_url: str) -> AsyncIterator[Non
 
 
 async def seed_provenance(session: AsyncSession) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.language_varieties "
+            "(variety_id, language_tag, region_code, script_codes, text_direction, "
+            "segmentation_policy_revision_id, media_capabilities, "
+            "normalization_policy_revision_id) VALUES "
+            "(:id, 'it-IT', 'IT', ARRAY['Latn'], 'ltr', :id, "
+            "'{\"schema_version\": 1}'::jsonb, :id) ON CONFLICT (variety_id) DO NOTHING"
+        ),
+        {"id": VARIETY_ID},
+    )
     await session.execute(
         text(
             "INSERT INTO platform.provenance_records "

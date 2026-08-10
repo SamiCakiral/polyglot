@@ -2,10 +2,10 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from polyglot.platform.errors import DomainError, ErrorCode
-
 
 NOW = datetime(2026, 8, 10, 9, 0, tzinfo=UTC)
 AUTHOR_ID = UUID("019fe002-0000-7000-8000-000000000001")

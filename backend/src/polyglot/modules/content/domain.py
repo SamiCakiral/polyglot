@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
 from types import MappingProxyType
-from typing import Mapping
+from typing import Any
 from uuid import UUID
 
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -232,5 +233,5 @@ class ContentRevision:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         return self._with(status=ContentRevisionStatus.SUPERSEDED)
 
-    def _with(self, **changes: object) -> ContentRevision:
+    def _with(self, **changes: Any) -> ContentRevision:
         return replace(self, **changes)
