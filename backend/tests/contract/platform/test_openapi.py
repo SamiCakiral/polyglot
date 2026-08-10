@@ -7,15 +7,20 @@ ROOT = Path(__file__).resolve().parents[4]
 OPENAPI_PATH = ROOT / "contracts/openapi/v1.json"
 
 
-def test_openapi_exports_only_the_implemented_w01_surface() -> None:
+def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
     document = create_app(test_mode=True).openapi()
 
     assert set(document["paths"]) == {
+        "/api/v1/account/password",
+        "/api/v1/account/preferences",
+        "/api/v1/accounts",
+        "/api/v1/consents/{purpose}",
         "/api/v1/health/live",
         "/api/v1/health/ready",
+        "/api/v1/session",
     }
     validate_registry_compatibility(document, ROOT / "contracts/registry")
 

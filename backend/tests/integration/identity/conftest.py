@@ -59,5 +59,21 @@ async def clean_identity_tables(migration_database_url: str) -> AsyncIterator[No
                 await connection.execute(
                     text(f'TRUNCATE TABLE identity."{table_name}" CASCADE')
                 )
+        platform_exists = await connection.scalar(text("SELECT to_regnamespace('platform')"))
+        if platform_exists is not None:
+            await connection.execute(text("TRUNCATE TABLE platform.domain_events CASCADE"))
+            platform_tables = (
+                await connection.execute(
+                    text(
+                        "SELECT table_name FROM information_schema.tables "
+                        "WHERE table_schema = 'platform' "
+                        "AND table_name != 'domain_events'"
+                    )
+                )
+            ).scalars()
+            for table_name in platform_tables:
+                await connection.execute(
+                    text(f'TRUNCATE TABLE platform."{table_name}" CASCADE')
+                )
     await engine.dispose()
     yield
