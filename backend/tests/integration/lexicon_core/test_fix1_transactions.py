@@ -215,8 +215,8 @@ async def test_replay_rejects_non_integer_stored_version(service_factory) -> Non
                 "(command_id,command_type,actor_id,aggregate_type,aggregate_id,idempotency_key,"
                 "request_fingerprint,expected_version,received_at,result_ref,result_payload,status,"
                 "expires_at) VALUES (:command,'RecordLexicalEncounter',:account,'language_profile',"
-                ":profile,'invalid-stored-version',:fingerprint,NULL,:now,:result,"
-                "jsonb_build_object('resource_id',CAST(:result AS text),'version','1'),"
+                    ":profile,'invalid-stored-version',:fingerprint,NULL,:now,CAST(:result AS uuid),"
+                    "jsonb_build_object('resource_id',CAST(CAST(:result AS uuid) AS text),'version','1'),"
                 "'succeeded',:expires)"
             ),
             {
