@@ -35,7 +35,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w14_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w16_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -72,6 +72,9 @@ def test_openapi_exports_the_implemented_w01_through_w14_surface() -> None:
         "/api/v1/catalogue/targets",
         "/api/v1/health/live",
         "/api/v1/health/ready",
+        "/api/v1/generation-jobs",
+        "/api/v1/generation-jobs/{job_id}:cancel",
+        "/api/v1/jobs/{id}",
         "/api/v1/language-packs",
         "/api/v1/language-profiles",
         "/api/v1/language-profiles/{id}",
@@ -152,6 +155,8 @@ def test_openapi_exports_the_implemented_w01_through_w14_surface() -> None:
         "/api/v1/sprint-runs/{run_id}:interrupt",
         "/api/v1/sprint-runs/{run_id}:resume",
         "/api/v1/sprint-runs/{run_id}:stop",
+        "/api/v1/tools/{tool_name}:invoke",
+        "/api/v1/tools",
         "/api/v1/exports/{id}",
         "/api/v1/shared-vocabulary-lists",
         "/api/v1/shared-vocabulary-lists/{id}",

@@ -1,0 +1,1 @@
+"""Closed authoring tool facade."""

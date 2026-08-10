@@ -27,6 +27,7 @@ import type {
   EnrollmentResponse,
   ExerciseInstanceResponse,
   FoundationResponse,
+  GenerationJobResponse,
   GetExport200,
   GetSharedVocabularyList200,
   ImportPreviewPageResponse,
@@ -52,6 +53,8 @@ import type {
   SessionPlanResponse,
   SessionResponse,
   SprintRunResponse,
+  ToolDefinitionResponse,
+  ToolResultResponse,
   TtsCapabilitiesResponse,
   TtsSynthesisResponse,
   ValidationReportResponse,
@@ -2312,6 +2315,74 @@ export const getCompleteFoundationGateResponseMock = (
   ...overrideResponse,
 });
 
+export const getRequestGenerationJobResponseMock = (
+  overrideResponse: Partial<Extract<GenerationJobResponse, object>> = {},
+): GenerationJobResponse => ({
+  attempt_count: faker.number.int(),
+  error_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  finished_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  job_id: faker.string.uuid(),
+  max_attempts: faker.number.int(),
+  model_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prompt_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  provider_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  requested_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  requested_by_actor_id: faker.string.uuid(),
+  result_draft_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  task_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tool_allowlist: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCancelGenerationJobResponseMock = (
+  overrideResponse: Partial<Extract<GenerationJobResponse, object>> = {},
+): GenerationJobResponse => ({
+  attempt_count: faker.number.int(),
+  error_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  finished_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  job_id: faker.string.uuid(),
+  max_attempts: faker.number.int(),
+  model_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prompt_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  provider_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  requested_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  requested_by_actor_id: faker.string.uuid(),
+  result_draft_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  task_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tool_allowlist: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getHealthLiveResponseMock = (
   overrideResponse: Partial<Extract<LiveStatus, object>> = {},
 ): LiveStatus => ({ status: "ok", ...overrideResponse });
@@ -2461,6 +2532,40 @@ export const getRevertImportResponseMock = (
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   strategy: faker.string.alpha({ length: { min: 10, max: 20 } }),
   unresolved_conflicts: faker.number.int(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetGenerationJobResponseMock = (
+  overrideResponse: Partial<Extract<GenerationJobResponse, object>> = {},
+): GenerationJobResponse => ({
+  attempt_count: faker.number.int(),
+  error_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  finished_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  job_id: faker.string.uuid(),
+  max_attempts: faker.number.int(),
+  model_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  prompt_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  provider_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  requested_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  requested_by_actor_id: faker.string.uuid(),
+  result_draft_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  started_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  task_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tool_allowlist: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -5019,6 +5124,91 @@ export const getStopSprintRunResponseMock = (
   ...overrideResponse,
 });
 
+export const getListAuthoringToolsResponseMock = (): ToolDefinitionResponse[] =>
+  Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    effect: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    input_schema: {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    max_input_bytes: faker.number.int(),
+    max_output_bytes: faker.number.int(),
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    output_schema: {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    timeout_ms: faker.number.int(),
+    version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  }));
+
+export const getInvokeAuthoringToolResponseMock = (
+  overrideResponse: Partial<Extract<ToolResultResponse, object>> = {},
+): ToolResultResponse => ({
+  error: faker.helpers.arrayElement([
+    {
+      code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      details_codes: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+      field_path: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      retryable: faker.datatype.boolean(),
+    },
+    null,
+  ]),
+  finished_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  invocation_id: faker.string.uuid(),
+  output: faker.helpers.arrayElement([
+    {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    null,
+  ]),
+  output_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  output_schema_version: faker.number.int(),
+  provenance_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  tool_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ...overrideResponse,
+});
+
 export const getGetValidationReportResponseMock = (
   overrideResponse: Partial<Extract<ValidationReportResponse, object>> = {},
 ): ValidationReportResponse => ({
@@ -6222,6 +6412,58 @@ export const getCompleteFoundationGateMockHandler = (
   );
 };
 
+export const getRequestGenerationJobMockHandler = (
+  overrideResponse?:
+    | GenerationJobResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<GenerationJobResponse> | GenerationJobResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/generation-jobs",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRequestGenerationJobResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCancelGenerationJobMockHandler = (
+  overrideResponse?:
+    | GenerationJobResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<GenerationJobResponse> | GenerationJobResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/generation-jobs/:jobId\\:cancel",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCancelGenerationJobResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getHealthLiveMockHandler = (
   overrideResponse?:
     | LiveStatus
@@ -6397,6 +6639,32 @@ export const getRevertImportMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getRevertImportResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetGenerationJobMockHandler = (
+  overrideResponse?:
+    | GenerationJobResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<GenerationJobResponse> | GenerationJobResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/jobs/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetGenerationJobResponseMock(),
         { status: 200 },
       );
     },
@@ -8348,6 +8616,58 @@ export const getStopSprintRunMockHandler = (
   );
 };
 
+export const getListAuthoringToolsMockHandler = (
+  overrideResponse?:
+    | ToolDefinitionResponse[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ToolDefinitionResponse[]> | ToolDefinitionResponse[]),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/tools",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListAuthoringToolsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getInvokeAuthoringToolMockHandler = (
+  overrideResponse?:
+    | ToolResultResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<ToolResultResponse> | ToolResultResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/tools/:toolName\\:invoke",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getInvokeAuthoringToolResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getGetValidationReportMockHandler = (
   overrideResponse?:
     | ValidationReportResponse
@@ -8672,6 +8992,8 @@ export const getPolyglotV2APIMock = () => [
   getGetExportMockHandler(),
   getGetFoundationRunMockHandler(),
   getCompleteFoundationGateMockHandler(),
+  getRequestGenerationJobMockHandler(),
+  getCancelGenerationJobMockHandler(),
   getHealthLiveMockHandler(),
   getHealthReadyMockHandler(),
   getGetImportMockHandler(),
@@ -8679,6 +9001,7 @@ export const getPolyglotV2APIMock = () => [
   getGetImportPreviewMockHandler(),
   getCommitImportMockHandler(),
   getRevertImportMockHandler(),
+  getGetGenerationJobMockHandler(),
   getListLanguagePacksMockHandler(),
   getListLanguageProfilesMockHandler(),
   getCreateLanguageProfileMockHandler(),
@@ -8754,6 +9077,8 @@ export const getPolyglotV2APIMock = () => [
   getInterruptSprintRunMockHandler(),
   getResumeSprintRunMockHandler(),
   getStopSprintRunMockHandler(),
+  getListAuthoringToolsMockHandler(),
+  getInvokeAuthoringToolMockHandler(),
   getGetValidationReportMockHandler(),
   getListVocabularyListsMockHandler(),
   getGetVocabularyListMockHandler(),

@@ -1025,15 +1025,15 @@ sortie hostile et fournisseur absent.
 
 **Etapes TDD :**
 
-- [ ] Ecrire les tests du registre outils et des schemas d'entree/sortie.
-- [ ] Ajouter validation de permission, taille, timeout et quota.
-- [ ] Implementer la machine de job/tentative sans retry fournisseur implicite.
-- [ ] Ecrire les tests PostgreSQL, puis ajouter `0016_generation`.
-- [ ] Implementer handlers et faux adaptateurs hors reseau.
-- [ ] Construire le runner de scenario avec graine et horloge explicites.
-- [ ] Produire transcript JSONL et diff reproductible.
-- [ ] Prouver qu'aucun outil/job ne peut publier directement.
-- [ ] Executer `FX-TOOLS` avec reseau explicitement desactive.
+- [x] Ecrire les tests du registre outils et des schemas d'entree/sortie.
+- [x] Ajouter validation de permission, taille, timeout et quota.
+- [x] Implementer la machine de job/tentative sans retry fournisseur implicite.
+- [x] Ecrire les tests PostgreSQL, puis ajouter `0016_generation`.
+- [x] Implementer handlers et faux adaptateurs hors reseau.
+- [x] Construire le runner de scenario avec graine et horloge explicites.
+- [x] Produire transcript JSONL et diff reproductible.
+- [x] Prouver qu'aucun outil/job ne peut publier directement.
+- [x] Executer `FX-TOOLS` avec reseau explicitement desactive.
 
 **Preuves cibles :** `POLYGLOT_NETWORK_DISABLED=1 uv run pytest
 tests/unit/generation tests/integration/generation tests/contract/generation -q`.

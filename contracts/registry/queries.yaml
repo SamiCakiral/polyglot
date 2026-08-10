@@ -162,6 +162,10 @@
     },
     {
       "method": "GET",
+      "route": "/tools"
+    },
+    {
+      "method": "GET",
       "route": "/media/{media_id}"
     },
     {

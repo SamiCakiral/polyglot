@@ -1,0 +1,36 @@
+{
+  "scenario_code": "FX-TOOLS",
+  "scenario_version": 1,
+  "seed": 5016,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "actor_id": "019fec40-0000-7000-8000-000000000001",
+  "calls": [
+    {
+      "tool_name": "catalogue.list_targets",
+      "tool_version": "1.0.0",
+      "invocation_id": "019fec40-0000-7000-8000-000000000002",
+      "actor_role": "learner",
+      "idempotency_key": "fx-tools-read",
+      "correlation_id": "019fec40-0000-7000-8000-000000000003",
+      "input": {
+        "pack_revision_id": "it-v1",
+        "limit": 10
+      },
+      "expected_status": "succeeded"
+    },
+    {
+      "tool_name": "catalogue.list_targets",
+      "tool_version": "1.0.0",
+      "invocation_id": "019fec40-0000-7000-8000-000000000004",
+      "actor_role": "learner",
+      "idempotency_key": "fx-tools-invalid",
+      "correlation_id": "019fec40-0000-7000-8000-000000000005",
+      "input": {
+        "pack_revision_id": "it-v1",
+        "raw_attempts": true
+      },
+      "expected_status": "rejected",
+      "expected_error": "tool_schema_invalid"
+    }
+  ]
+}

@@ -57,6 +57,7 @@ import type {
   EnrollmentResponse,
   ExerciseInstanceResponse,
   FoundationResponse,
+  GenerationJobResponse,
   GetContentHistoryParams,
   GetExport200,
   GetImportPreviewParams,
@@ -67,6 +68,7 @@ import type {
   GetWordBankOverviewParams,
   ImportPreviewPageResponse,
   ImportRunResponse,
+  InvokeToolRequest,
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
   LexiconSearchPageResponse,
@@ -107,6 +109,7 @@ import type {
   ReasonRequest,
   RecommendationPageResponse,
   RequestExportRequest,
+  RequestGenerationJobRequest,
   ReserveMediaUploadRequest,
   ResetMemoryPromptRequest,
   ResolveAssessmentReviewRequest,
@@ -132,6 +135,8 @@ import type {
   SubmitDiagnosticResponseRequest,
   SubmitMemoryReviewRequest,
   SynthesizeSpeechRequest,
+  ToolDefinitionResponse,
+  ToolResultResponse,
   TtsCapabilitiesResponse,
   TtsSynthesisResponse,
   UpdateGoalsRequest,
@@ -8899,6 +8904,436 @@ export const useCompleteFoundationGate = <
   );
 };
 
+export type requestGenerationJobResponse201 = {
+  data: GenerationJobResponse;
+  status: 201;
+};
+
+export type requestGenerationJobResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type requestGenerationJobResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type requestGenerationJobResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type requestGenerationJobResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type requestGenerationJobResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type requestGenerationJobResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type requestGenerationJobResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type requestGenerationJobResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type requestGenerationJobResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type requestGenerationJobResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type requestGenerationJobResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type requestGenerationJobResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type requestGenerationJobResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type requestGenerationJobResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type requestGenerationJobResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type requestGenerationJobResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type requestGenerationJobResponseSuccess =
+  requestGenerationJobResponse201 & {
+    headers: Headers;
+  };
+export type requestGenerationJobResponseError = (
+  | requestGenerationJobResponse401ApplicationJson
+  | requestGenerationJobResponse401ApplicationProblemJson
+  | requestGenerationJobResponse403ApplicationJson
+  | requestGenerationJobResponse403ApplicationProblemJson
+  | requestGenerationJobResponse409ApplicationJson
+  | requestGenerationJobResponse409ApplicationProblemJson
+  | requestGenerationJobResponse422ApplicationJson
+  | requestGenerationJobResponse422ApplicationProblemJson
+  | requestGenerationJobResponse423ApplicationJson
+  | requestGenerationJobResponse423ApplicationProblemJson
+  | requestGenerationJobResponse428ApplicationJson
+  | requestGenerationJobResponse428ApplicationProblemJson
+  | requestGenerationJobResponse429ApplicationJson
+  | requestGenerationJobResponse429ApplicationProblemJson
+  | requestGenerationJobResponse503ApplicationJson
+  | requestGenerationJobResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type requestGenerationJobResponse =
+  requestGenerationJobResponseSuccess | requestGenerationJobResponseError;
+
+export const getRequestGenerationJobUrl = () => {
+  return `/api/v1/generation-jobs`;
+};
+
+/**
+ * @summary Request Generation Job
+ */
+export const requestGenerationJob = async (
+  requestGenerationJobRequest: RequestGenerationJobRequest,
+  options?: RequestInit,
+): Promise<requestGenerationJobResponse> => {
+  const res = await fetch(getRequestGenerationJobUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(requestGenerationJobRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: requestGenerationJobResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as requestGenerationJobResponse;
+};
+
+export const getRequestGenerationJobMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestGenerationJob>>,
+    TError,
+    { data: RequestGenerationJobRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestGenerationJob>>,
+  TError,
+  { data: RequestGenerationJobRequest },
+  TContext
+> => {
+  const mutationKey = ["requestGenerationJob"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestGenerationJob>>,
+    { data: RequestGenerationJobRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestGenerationJob(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestGenerationJobMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestGenerationJob>>
+>;
+export type RequestGenerationJobMutationBody = RequestGenerationJobRequest;
+export type RequestGenerationJobMutationError = ProblemResponse;
+
+/**
+ * @summary Request Generation Job
+ */
+export const useRequestGenerationJob = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof requestGenerationJob>>,
+      TError,
+      { data: RequestGenerationJobRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof requestGenerationJob>>,
+  TError,
+  { data: RequestGenerationJobRequest },
+  TContext
+> => {
+  return useMutation(
+    getRequestGenerationJobMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type cancelGenerationJobResponse200 = {
+  data: GenerationJobResponse;
+  status: 200;
+};
+
+export type cancelGenerationJobResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type cancelGenerationJobResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type cancelGenerationJobResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type cancelGenerationJobResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type cancelGenerationJobResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type cancelGenerationJobResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type cancelGenerationJobResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type cancelGenerationJobResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type cancelGenerationJobResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type cancelGenerationJobResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type cancelGenerationJobResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type cancelGenerationJobResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type cancelGenerationJobResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type cancelGenerationJobResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type cancelGenerationJobResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type cancelGenerationJobResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type cancelGenerationJobResponseSuccess =
+  cancelGenerationJobResponse200 & {
+    headers: Headers;
+  };
+export type cancelGenerationJobResponseError = (
+  | cancelGenerationJobResponse401ApplicationJson
+  | cancelGenerationJobResponse401ApplicationProblemJson
+  | cancelGenerationJobResponse403ApplicationJson
+  | cancelGenerationJobResponse403ApplicationProblemJson
+  | cancelGenerationJobResponse409ApplicationJson
+  | cancelGenerationJobResponse409ApplicationProblemJson
+  | cancelGenerationJobResponse422ApplicationJson
+  | cancelGenerationJobResponse422ApplicationProblemJson
+  | cancelGenerationJobResponse423ApplicationJson
+  | cancelGenerationJobResponse423ApplicationProblemJson
+  | cancelGenerationJobResponse428ApplicationJson
+  | cancelGenerationJobResponse428ApplicationProblemJson
+  | cancelGenerationJobResponse429ApplicationJson
+  | cancelGenerationJobResponse429ApplicationProblemJson
+  | cancelGenerationJobResponse503ApplicationJson
+  | cancelGenerationJobResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type cancelGenerationJobResponse =
+  cancelGenerationJobResponseSuccess | cancelGenerationJobResponseError;
+
+export const getCancelGenerationJobUrl = (jobId: string) => {
+  return `/api/v1/generation-jobs/${jobId}:cancel`;
+};
+
+/**
+ * @summary Cancel Generation Job
+ */
+export const cancelGenerationJob = async (
+  jobId: string,
+  options?: RequestInit,
+): Promise<cancelGenerationJobResponse> => {
+  const res = await fetch(getCancelGenerationJobUrl(jobId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: cancelGenerationJobResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as cancelGenerationJobResponse;
+};
+
+export const getCancelGenerationJobMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelGenerationJob>>,
+    TError,
+    { jobId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelGenerationJob>>,
+  TError,
+  { jobId: string },
+  TContext
+> => {
+  const mutationKey = ["cancelGenerationJob"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelGenerationJob>>,
+    { jobId: string }
+  > = (props) => {
+    const { jobId } = props ?? {};
+
+    return cancelGenerationJob(jobId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelGenerationJobMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelGenerationJob>>
+>;
+
+export type CancelGenerationJobMutationError = ProblemResponse;
+
+/**
+ * @summary Cancel Generation Job
+ */
+export const useCancelGenerationJob = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof cancelGenerationJob>>,
+      TError,
+      { jobId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof cancelGenerationJob>>,
+  TError,
+  { jobId: string },
+  TContext
+> => {
+  return useMutation(
+    getCancelGenerationJobMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type healthLiveResponse200 = {
   data: LiveStatus;
   status: 200;
@@ -10450,6 +10885,295 @@ export const useRevertImport = <TError = ProblemResponse, TContext = unknown>(
 > => {
   return useMutation(getRevertImportMutationOptions(options), queryClient);
 };
+
+export type getGenerationJobResponse200 = {
+  data: GenerationJobResponse;
+  status: 200;
+};
+
+export type getGenerationJobResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getGenerationJobResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getGenerationJobResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getGenerationJobResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getGenerationJobResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getGenerationJobResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getGenerationJobResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getGenerationJobResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getGenerationJobResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getGenerationJobResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getGenerationJobResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getGenerationJobResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getGenerationJobResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getGenerationJobResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getGenerationJobResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getGenerationJobResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getGenerationJobResponseSuccess = getGenerationJobResponse200 & {
+  headers: Headers;
+};
+export type getGenerationJobResponseError = (
+  | getGenerationJobResponse401ApplicationJson
+  | getGenerationJobResponse401ApplicationProblemJson
+  | getGenerationJobResponse403ApplicationJson
+  | getGenerationJobResponse403ApplicationProblemJson
+  | getGenerationJobResponse409ApplicationJson
+  | getGenerationJobResponse409ApplicationProblemJson
+  | getGenerationJobResponse422ApplicationJson
+  | getGenerationJobResponse422ApplicationProblemJson
+  | getGenerationJobResponse423ApplicationJson
+  | getGenerationJobResponse423ApplicationProblemJson
+  | getGenerationJobResponse428ApplicationJson
+  | getGenerationJobResponse428ApplicationProblemJson
+  | getGenerationJobResponse429ApplicationJson
+  | getGenerationJobResponse429ApplicationProblemJson
+  | getGenerationJobResponse503ApplicationJson
+  | getGenerationJobResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getGenerationJobResponse =
+  getGenerationJobResponseSuccess | getGenerationJobResponseError;
+
+export const getGetGenerationJobUrl = (id: string) => {
+  return `/api/v1/jobs/${id}`;
+};
+
+/**
+ * @summary Get Generation Job
+ */
+export const getGenerationJob = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getGenerationJobResponse> => {
+  const res = await fetch(getGetGenerationJobUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getGenerationJobResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getGenerationJobResponse;
+};
+
+export const getGetGenerationJobQueryKey = (id: string) => {
+  return [`/api/v1/jobs/${id}`] as const;
+};
+
+export const getGetGenerationJobQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGenerationJob>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGenerationJob>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetGenerationJobQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGenerationJob>>
+  > = ({ signal }) => getGenerationJob(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGenerationJob>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetGenerationJobQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGenerationJob>>
+>;
+export type GetGenerationJobQueryError = ProblemResponse;
+
+export function useGetGenerationJob<
+  TData = Awaited<ReturnType<typeof getGenerationJob>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGenerationJob>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getGenerationJob>>,
+          TError,
+          Awaited<ReturnType<typeof getGenerationJob>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetGenerationJob<
+  TData = Awaited<ReturnType<typeof getGenerationJob>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGenerationJob>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getGenerationJob>>,
+          TError,
+          Awaited<ReturnType<typeof getGenerationJob>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetGenerationJob<
+  TData = Awaited<ReturnType<typeof getGenerationJob>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGenerationJob>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Generation Job
+ */
+
+export function useGetGenerationJob<
+  TData = Awaited<ReturnType<typeof getGenerationJob>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGenerationJob>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetGenerationJobQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type listLanguagePacksResponse200 = {
   data: LanguagePackPageResponse;
@@ -28017,6 +28741,500 @@ export const useStopSprintRun = <TError = ProblemResponse, TContext = unknown>(
   TContext
 > => {
   return useMutation(getStopSprintRunMutationOptions(options), queryClient);
+};
+
+export type listAuthoringToolsResponse200 = {
+  data: ToolDefinitionResponse[];
+  status: 200;
+};
+
+export type listAuthoringToolsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listAuthoringToolsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listAuthoringToolsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listAuthoringToolsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listAuthoringToolsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listAuthoringToolsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listAuthoringToolsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listAuthoringToolsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listAuthoringToolsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listAuthoringToolsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listAuthoringToolsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listAuthoringToolsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listAuthoringToolsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listAuthoringToolsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listAuthoringToolsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listAuthoringToolsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listAuthoringToolsResponseSuccess =
+  listAuthoringToolsResponse200 & {
+    headers: Headers;
+  };
+export type listAuthoringToolsResponseError = (
+  | listAuthoringToolsResponse401ApplicationJson
+  | listAuthoringToolsResponse401ApplicationProblemJson
+  | listAuthoringToolsResponse403ApplicationJson
+  | listAuthoringToolsResponse403ApplicationProblemJson
+  | listAuthoringToolsResponse409ApplicationJson
+  | listAuthoringToolsResponse409ApplicationProblemJson
+  | listAuthoringToolsResponse422ApplicationJson
+  | listAuthoringToolsResponse422ApplicationProblemJson
+  | listAuthoringToolsResponse423ApplicationJson
+  | listAuthoringToolsResponse423ApplicationProblemJson
+  | listAuthoringToolsResponse428ApplicationJson
+  | listAuthoringToolsResponse428ApplicationProblemJson
+  | listAuthoringToolsResponse429ApplicationJson
+  | listAuthoringToolsResponse429ApplicationProblemJson
+  | listAuthoringToolsResponse503ApplicationJson
+  | listAuthoringToolsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listAuthoringToolsResponse =
+  listAuthoringToolsResponseSuccess | listAuthoringToolsResponseError;
+
+export const getListAuthoringToolsUrl = () => {
+  return `/api/v1/tools`;
+};
+
+/**
+ * @summary List Authoring Tools
+ */
+export const listAuthoringTools = async (
+  options?: RequestInit,
+): Promise<listAuthoringToolsResponse> => {
+  const res = await fetch(getListAuthoringToolsUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listAuthoringToolsResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listAuthoringToolsResponse;
+};
+
+export const getListAuthoringToolsQueryKey = () => {
+  return [`/api/v1/tools`] as const;
+};
+
+export const getListAuthoringToolsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAuthoringTools>>,
+  TError = ProblemResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listAuthoringTools>>,
+      TError,
+      TData
+    >
+  >;
+  fetch?: RequestInit;
+}) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAuthoringToolsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAuthoringTools>>
+  > = ({ signal }) => listAuthoringTools({ signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAuthoringTools>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListAuthoringToolsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAuthoringTools>>
+>;
+export type ListAuthoringToolsQueryError = ProblemResponse;
+
+export function useListAuthoringTools<
+  TData = Awaited<ReturnType<typeof listAuthoringTools>>,
+  TError = ProblemResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringTools>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAuthoringTools>>,
+          TError,
+          Awaited<ReturnType<typeof listAuthoringTools>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAuthoringTools<
+  TData = Awaited<ReturnType<typeof listAuthoringTools>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringTools>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAuthoringTools>>,
+          TError,
+          Awaited<ReturnType<typeof listAuthoringTools>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAuthoringTools<
+  TData = Awaited<ReturnType<typeof listAuthoringTools>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringTools>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Authoring Tools
+ */
+
+export function useListAuthoringTools<
+  TData = Awaited<ReturnType<typeof listAuthoringTools>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringTools>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListAuthoringToolsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type invokeAuthoringToolResponse200 = {
+  data: ToolResultResponse;
+  status: 200;
+};
+
+export type invokeAuthoringToolResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type invokeAuthoringToolResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type invokeAuthoringToolResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type invokeAuthoringToolResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type invokeAuthoringToolResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type invokeAuthoringToolResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type invokeAuthoringToolResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type invokeAuthoringToolResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type invokeAuthoringToolResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type invokeAuthoringToolResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type invokeAuthoringToolResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type invokeAuthoringToolResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type invokeAuthoringToolResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type invokeAuthoringToolResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type invokeAuthoringToolResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type invokeAuthoringToolResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type invokeAuthoringToolResponseSuccess =
+  invokeAuthoringToolResponse200 & {
+    headers: Headers;
+  };
+export type invokeAuthoringToolResponseError = (
+  | invokeAuthoringToolResponse401ApplicationJson
+  | invokeAuthoringToolResponse401ApplicationProblemJson
+  | invokeAuthoringToolResponse403ApplicationJson
+  | invokeAuthoringToolResponse403ApplicationProblemJson
+  | invokeAuthoringToolResponse409ApplicationJson
+  | invokeAuthoringToolResponse409ApplicationProblemJson
+  | invokeAuthoringToolResponse422ApplicationJson
+  | invokeAuthoringToolResponse422ApplicationProblemJson
+  | invokeAuthoringToolResponse423ApplicationJson
+  | invokeAuthoringToolResponse423ApplicationProblemJson
+  | invokeAuthoringToolResponse428ApplicationJson
+  | invokeAuthoringToolResponse428ApplicationProblemJson
+  | invokeAuthoringToolResponse429ApplicationJson
+  | invokeAuthoringToolResponse429ApplicationProblemJson
+  | invokeAuthoringToolResponse503ApplicationJson
+  | invokeAuthoringToolResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type invokeAuthoringToolResponse =
+  invokeAuthoringToolResponseSuccess | invokeAuthoringToolResponseError;
+
+export const getInvokeAuthoringToolUrl = (toolName: string) => {
+  return `/api/v1/tools/${toolName}:invoke`;
+};
+
+/**
+ * @summary Invoke Authoring Tool
+ */
+export const invokeAuthoringTool = async (
+  toolName: string,
+  invokeToolRequest: InvokeToolRequest,
+  options?: RequestInit,
+): Promise<invokeAuthoringToolResponse> => {
+  const res = await fetch(getInvokeAuthoringToolUrl(toolName), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(invokeToolRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: invokeAuthoringToolResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as invokeAuthoringToolResponse;
+};
+
+export const getInvokeAuthoringToolMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof invokeAuthoringTool>>,
+    TError,
+    { toolName: string; data: InvokeToolRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof invokeAuthoringTool>>,
+  TError,
+  { toolName: string; data: InvokeToolRequest },
+  TContext
+> => {
+  const mutationKey = ["invokeAuthoringTool"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof invokeAuthoringTool>>,
+    { toolName: string; data: InvokeToolRequest }
+  > = (props) => {
+    const { toolName, data } = props ?? {};
+
+    return invokeAuthoringTool(toolName, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InvokeAuthoringToolMutationResult = NonNullable<
+  Awaited<ReturnType<typeof invokeAuthoringTool>>
+>;
+export type InvokeAuthoringToolMutationBody = InvokeToolRequest;
+export type InvokeAuthoringToolMutationError = ProblemResponse;
+
+/**
+ * @summary Invoke Authoring Tool
+ */
+export const useInvokeAuthoringTool = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof invokeAuthoringTool>>,
+      TError,
+      { toolName: string; data: InvokeToolRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof invokeAuthoringTool>>,
+  TError,
+  { toolName: string; data: InvokeToolRequest },
+  TContext
+> => {
+  return useMutation(
+    getInvokeAuthoringToolMutationOptions(options),
+    queryClient,
+  );
 };
 
 export type getValidationReportResponse200 = {

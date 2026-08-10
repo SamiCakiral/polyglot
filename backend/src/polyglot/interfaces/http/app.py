@@ -25,6 +25,7 @@ from polyglot.interfaces.http.routes.content import content_router
 from polyglot.interfaces.http.routes.curriculum import curriculum_router
 from polyglot.interfaces.http.routes.exchange import ExchangeService, exchange_router
 from polyglot.interfaces.http.routes.exercises import exercises_router
+from polyglot.interfaces.http.routes.generation import generation_router
 from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
 from polyglot.interfaces.http.routes.media import media_router
@@ -41,6 +42,7 @@ from polyglot.modules.catalogue.core.service import CatalogueApplicationService,
 from polyglot.modules.content.application import ContentApplicationService
 from polyglot.modules.curriculum.application import CurriculumApplicationService
 from polyglot.modules.exercises.core.application import ExerciseApplicationService
+from polyglot.modules.generation.application import GenerationApplicationService
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
@@ -94,6 +96,7 @@ def create_app(
     progress_service: ProgressService | None = None,
     assessment_service: AssessmentApplicationService | None = None,
     media_service: MediaApplicationService | None = None,
+    generation_service: GenerationApplicationService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -181,6 +184,13 @@ def create_app(
             allowed_origin=allowed_origin,
         )
     )
+    app.include_router(
+        generation_router(
+            generation_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
 
     @app.middleware("http")
     async def request_context(
@@ -245,15 +255,19 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 
     memory_service = SqlMemoryService(session_factory, FsrsV6Scheduler())
+    from polyglot.interfaces.tools.deterministic import DeterministicToolHandlers
+    from polyglot.interfaces.tools.executor import ToolExecutor
     from polyglot.modules.assessments.persistence import SqlAssessmentService
     from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
+    from polyglot.modules.generation.persistence import SqlGenerationService
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
     from polyglot.modules.media.persistence import SqlMediaService
     from polyglot.modules.media.ports import MacOSTtsPort, TtsAvailability, TtsVoice
     from polyglot.modules.media.storage import FilesystemObjectStorage, LocalSignedUrlSigner
     from polyglot.modules.progress.application import SqlProgressQueryService
     from polyglot.modules.sprints.persistence import SqlSprintService
+    from polyglot.platform.clock import SystemClock
 
     exchange_service = SqlExchangeService(session_factory)
     exercise_service = SqlExerciseService(session_factory)
@@ -273,6 +287,16 @@ def create_runtime_app() -> FastAPI:
             voices=(TtsVoice("Alice", "it-IT", TtsAvailability.AVAILABLE, "local-v1"),),
             cache_dir=object_storage.path / "tts-cache",
         ),
+    )
+    generation_ids = Uuid7Generator()
+    generation_service = SqlGenerationService(
+        session_factory,
+        ToolExecutor(
+            DeterministicToolHandlers(generation_ids.new).handlers(),
+            now=SystemClock().now,
+            provenance_id=generation_ids.new,
+        ),
+        id_generator=generation_ids,
     )
 
     @asynccontextmanager
@@ -296,5 +320,6 @@ def create_runtime_app() -> FastAPI:
         progress_service=progress_service,
         assessment_service=assessment_service,
         media_service=media_service,
+        generation_service=generation_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )
