@@ -74,6 +74,7 @@ async def test_canonical_identity_routes_execute_and_return_closed_results(
             headers={
                 "Origin": ORIGIN,
                 "X-CSRF-Token": csrf,
+                "If-Match": '"1"',
                 "Idempotency-Key": "password-http",
             },
             json={

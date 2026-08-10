@@ -44,6 +44,13 @@ class DatabaseReadinessProbe:
         return await database_is_ready(self._engine)
 
 
+def _enabled_from_environment(name: str) -> bool:
+    raw = os.environ.get(name, "true").lower()
+    if raw not in {"true", "false"}:
+        raise ValueError(f"{name} must be true or false")
+    return raw == "true"
+
+
 def create_app(
     *,
     id_generator: IdGenerator | None = None,
@@ -119,6 +126,8 @@ def create_runtime_app() -> FastAPI:
             os.environ["POLYGLOT_SESSION_SECRET"].encode()
         ),
         oidc_provider=FakeOidcProvider({}),
+        registration_enabled=_enabled_from_environment("POLYGLOT_REGISTRATION_ENABLED"),
+        oidc_enabled=_enabled_from_environment("POLYGLOT_OIDC_ENABLED"),
     )
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))

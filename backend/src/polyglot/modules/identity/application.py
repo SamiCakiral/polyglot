@@ -1,6 +1,8 @@
 import hashlib
-from dataclasses import dataclass
+from collections import OrderedDict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from threading import Lock
 from typing import cast
 from uuid import UUID
 
@@ -48,6 +50,60 @@ IDENTITY_EVENT_RETENTION = timedelta(days=180)
 RECENT_AUTHENTICATION = timedelta(minutes=5)
 AUDIT_RETENTION = timedelta(days=180)
 _ZERO_FINGERPRINT = "0" * 64
+PUBLIC_REGISTRATION_ACTOR_ID = UUID("01900000-0000-7000-8000-000000000001")
+DUMMY_PASSWORD_HASH = (
+    "$argon2id$v=19$m=65536,t=3,p=4$cG9seWdsb3QtdzAyc2FsdA$"
+    "7gTSeHgiP1jqHsjUppSWDYsTfvQ+l6Kz3rJIkZs23V4"
+)
+
+
+class LoginThrottle:
+    def __init__(
+        self,
+        *,
+        max_failures: int = 5,
+        window: timedelta = timedelta(minutes=5),
+        max_buckets: int = 10_000,
+    ) -> None:
+        if max_failures < 1 or window <= timedelta(0) or max_buckets < 2:
+            raise ValueError("invalid login throttle bounds")
+        self._max_failures = max_failures
+        self._window = window
+        self._max_buckets = max_buckets
+        self._buckets: OrderedDict[str, tuple[datetime, int]] = OrderedDict()
+        self._lock = Lock()
+
+    @property
+    def tracked_bucket_count(self) -> int:
+        with self._lock:
+            return len(self._buckets)
+
+    def _prune(self, now: datetime) -> None:
+        expired = [
+            key
+            for key, (started_at, _) in self._buckets.items()
+            if now - started_at >= self._window
+        ]
+        for key in expired:
+            del self._buckets[key]
+
+    def is_limited(self, keys: tuple[str, ...], now: datetime) -> bool:
+        with self._lock:
+            self._prune(now)
+            return any(
+                self._buckets.get(key, (now, 0))[1] >= self._max_failures
+                for key in keys
+            )
+
+    def record_failure(self, keys: tuple[str, ...], now: datetime) -> None:
+        with self._lock:
+            self._prune(now)
+            for key in keys:
+                started_at, failures = self._buckets.get(key, (now, 0))
+                self._buckets[key] = (started_at, failures + 1)
+                self._buckets.move_to_end(key)
+            while len(self._buckets) > self._max_buckets:
+                self._buckets.popitem(last=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,14 +111,15 @@ class RequestContext:
     request_id: UUID
     correlation_id: UUID
     truncated_ip: str
+    origin: str = "unknown"
 
 
 @dataclass(frozen=True, slots=True)
 class RegisterAccount:
     provider_type: str
     identifier: str | None
-    password: str | None
-    authorization_code: str | None
+    password: str | None = field(repr=False)
+    authorization_code: str | None = field(repr=False)
     idempotency_key: str
     context: RequestContext
 
@@ -71,34 +128,35 @@ class RegisterAccount:
 class AuthenticateSession:
     provider_type: str
     identifier: str | None
-    password: str | None
-    authorization_code: str | None
+    password: str | None = field(repr=False)
+    authorization_code: str | None = field(repr=False)
     idempotency_key: str
     context: RequestContext
 
 
 @dataclass(frozen=True, slots=True)
 class RevokeSession:
-    session_token: str
-    csrf_token: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
     idempotency_key: str | None
     context: RequestContext
 
 
 @dataclass(frozen=True, slots=True)
 class ChangePassword:
-    session_token: str
-    csrf_token: str
-    current_password: str
-    new_password: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
+    current_password: str = field(repr=False)
+    new_password: str = field(repr=False)
+    expected_version: int
     idempotency_key: str
     context: RequestContext
 
 
 @dataclass(frozen=True, slots=True)
 class UpdateUserPreferences:
-    session_token: str
-    csrf_token: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
     expected_version: int
     idempotency_key: str | None
     context: RequestContext
@@ -111,8 +169,8 @@ class UpdateUserPreferences:
 
 @dataclass(frozen=True, slots=True)
 class UpdateConsent:
-    session_token: str
-    csrf_token: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
     purpose_code: str
     status: str
     policy_revision_id: UUID
@@ -136,8 +194,8 @@ class AuthenticatedSessionResult:
     session_id: UUID
     account_id: UUID
     roles: tuple[str, ...]
-    session_token: str
-    csrf_token: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
     idle_expires_at: datetime
     absolute_expires_at: datetime
 
@@ -147,8 +205,8 @@ class CurrentSessionResult:
     session_id: UUID
     account_id: UUID
     roles: tuple[str, ...]
-    session_token: str
-    csrf_token: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
     idle_expires_at: datetime
     absolute_expires_at: datetime
     preferences: UserPreferences
@@ -157,8 +215,8 @@ class CurrentSessionResult:
 
 @dataclass(frozen=True, slots=True)
 class SessionContinuation:
-    session_token: str
-    csrf_token: str
+    session_token: str = field(repr=False)
+    csrf_token: str = field(repr=False)
     rotated: bool
 
 
@@ -192,6 +250,9 @@ class IdentityApplicationService:
         password_hasher: Argon2idPasswordHasher | None = None,
         session_secrets: SessionSecrets,
         oidc_provider: FakeOidcProvider,
+        login_throttle: LoginThrottle | None = None,
+        registration_enabled: bool = True,
+        oidc_enabled: bool = True,
     ) -> None:
         self._session_factory = session_factory
         self._clock = clock or SystemClock()
@@ -199,6 +260,9 @@ class IdentityApplicationService:
         self._password_hasher = password_hasher or Argon2idPasswordHasher()
         self._session_secrets = session_secrets
         self._oidc_provider = oidc_provider
+        self._login_throttle = login_throttle or LoginThrottle()
+        self._registration_enabled = registration_enabled
+        self._oidc_enabled = oidc_enabled
         self._authorization = AuthorizationPolicy()
 
     def _unit_of_work(self) -> SqlAlchemyUnitOfWork:
@@ -370,6 +434,8 @@ class IdentityApplicationService:
                     password_hash=password_hash,
                     created_at=now,
                 )
+            if not self._oidc_enabled:
+                raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
             if command.authorization_code is None:
                 raise IdentityValidationError("OIDC authorization code is required")
             assertion = self._oidc_provider.authenticate(command.authorization_code)
@@ -381,6 +447,8 @@ class IdentityApplicationService:
                 subject=assertion.subject,
                 created_at=now,
             )
+        except DomainError:
+            raise
         except (IdentityValidationError, PasswordPolicyError, ValueError) as error:
             raise DomainError(ErrorCode.VALIDATION_FAILED) from error
 
@@ -400,14 +468,9 @@ class IdentityApplicationService:
         return await repository.find_oidc_for_authentication(identity.issuer, identity.subject)
 
     async def register_account(self, command: RegisterAccount) -> ResourceResult:
+        if not self._registration_enabled:
+            raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         now = self._clock.now()
-        candidate_account_id = self._id_generator.new()
-        lock_key, candidate_identity = self._registration_identity(
-            command,
-            account_id=candidate_account_id,
-            identity_id=self._id_generator.new(),
-            now=now,
-        )
         fingerprint = canonical_json_fingerprint(
             {
                 "provider_type": command.provider_type,
@@ -419,18 +482,11 @@ class IdentityApplicationService:
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            await repository.lock_identifier(lock_key)
-            existing = await self._find_existing_identity(repository, candidate_identity)
-            account_id = (
-                existing.account.account_id
-                if existing is not None
-                else candidate_account_id
-            )
             receipt = self._receipt(
                 command_type="RegisterAccount",
-                actor_id=account_id,
-                aggregate_type="account",
-                aggregate_id=account_id,
+                actor_id=PUBLIC_REGISTRATION_ACTOR_ID,
+                aggregate_type="public_registration",
+                aggregate_id=PUBLIC_REGISTRATION_ACTOR_ID,
                 idempotency_key=command.idempotency_key,
                 fingerprint=fingerprint,
                 expected_version=None,
@@ -440,17 +496,32 @@ class IdentityApplicationService:
             reservation = await store.reserve(receipt)
             if not reservation.created:
                 self._raise_replayed_error(reservation.receipt)
-                await uow.commit()
                 payload = reservation.receipt.result_payload or {}
-                return ResourceResult(account_id, cast(int, payload["version"]))
+                if reservation.receipt.result_ref is None:
+                    raise DomainError(ErrorCode.INTERNAL_ERROR)
+                await uow.commit()
+                return ResourceResult(
+                    reservation.receipt.result_ref,
+                    cast(int, payload["version"]),
+                )
+
+            candidate_account_id = self._id_generator.new()
+            lock_key, candidate_identity = self._registration_identity(
+                command,
+                account_id=candidate_account_id,
+                identity_id=self._id_generator.new(),
+                now=now,
+            )
+            await repository.lock_identifier(lock_key)
+            existing = await self._find_existing_identity(repository, candidate_identity)
             if existing is not None:
                 await self._complete_rejection(store, receipt, ErrorCode.IDENTITY_CONFLICT)
                 await self._append_audit(
                     session,
-                    actor_id=account_id,
+                    actor_id=existing.account.account_id,
                     action="identity.register",
                     resource_type="account",
-                    resource_id=account_id,
+                    resource_id=existing.account.account_id,
                     result="rejected",
                     reason="identity_conflict",
                     context=command.context,
@@ -508,23 +579,32 @@ class IdentityApplicationService:
         except ValueError:
             return None
         if provider_type is IdentityProviderType.LOCAL_PASSWORD:
-            if command.identifier is None or command.password is None:
-                return None
+            identity: IdentityAuthentication | None = None
             try:
-                normalized = normalize_identifier(command.identifier)
-            except IdentityValidationError:
-                return None
-            identity = await repository.find_local_for_authentication(normalized)
-            if identity is None or identity.identity.password_hash is None:
-                return None
-            try:
-                valid = self._password_hasher.verify(
-                    identity.identity.password_hash,
-                    command.password,
+                normalized = (
+                    normalize_identifier(command.identifier)
+                    if command.identifier is not None
+                    else None
                 )
+            except IdentityValidationError:
+                normalized = None
+            if normalized is not None:
+                identity = await repository.find_local_for_authentication(normalized)
+            encoded_hash = DUMMY_PASSWORD_HASH
+            if identity is not None and identity.identity.password_hash is not None:
+                encoded_hash = identity.identity.password_hash
+            supplied_password = command.password or "invalid credential padding"
+            if not 12 <= len(supplied_password) <= 128 or len(
+                supplied_password.encode("utf-8")
+            ) > 512:
+                supplied_password = "invalid credential padding"
+            try:
+                valid = self._password_hasher.verify(encoded_hash, supplied_password)
             except PasswordPolicyError:
                 valid = False
             return identity if valid else None
+        if not self._oidc_enabled:
+            raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         if command.authorization_code is None:
             return None
         try:
@@ -535,6 +615,18 @@ class IdentityApplicationService:
             assertion.issuer,
             assertion.subject,
         )
+
+    def _login_throttle_keys(self, command: AuthenticateSession) -> tuple[str, ...]:
+        source = f"source:{command.context.origin}:{command.context.truncated_ip}"
+        if command.provider_type != IdentityProviderType.LOCAL_PASSWORD.value:
+            return (source,)
+        try:
+            identifier = normalize_identifier(command.identifier or "")
+        except IdentityValidationError:
+            identifier = hashlib.sha256(
+                (command.identifier or "invalid").encode("utf-8", errors="ignore")
+            ).hexdigest()
+        return (source, f"identifier:{identifier}")
 
     async def _session_result(
         self,
@@ -562,6 +654,9 @@ class IdentityApplicationService:
         command: AuthenticateSession,
     ) -> AuthenticatedSessionResult:
         now = self._clock.now()
+        throttle_keys = self._login_throttle_keys(command)
+        if self._login_throttle.is_limited(throttle_keys, now):
+            raise DomainError(ErrorCode.RATE_LIMITED)
         fingerprint = canonical_json_fingerprint(
             {
                 "provider_type": command.provider_type,
@@ -577,6 +672,7 @@ class IdentityApplicationService:
             await repository.lock_identifier(lookup_key)
             authenticated = await self._credentials(repository, command)
             if authenticated is None:
+                self._login_throttle.record_failure(throttle_keys, now)
                 await self._append_audit(
                     session,
                     actor_id=command.context.request_id,
@@ -880,6 +976,38 @@ class IdentityApplicationService:
         if not allowed:
             raise DomainError(ErrorCode.FORBIDDEN)
 
+    async def _load_terminal_session(
+        self,
+        repository: SqlIdentityRepository,
+        token: str,
+        csrf_token: str,
+    ) -> SessionAuthentication:
+        fingerprint = _fingerprint_session_token(token)
+        await repository.lock_session(fingerprint)
+        resolved = await repository.find_session_for_authentication(fingerprint)
+        if resolved is None:
+            raise DomainError(ErrorCode.UNAUTHENTICATED)
+        if not verify_session_csrf(
+            resolved.session.session_fingerprint,
+            csrf_token,
+            resolved.session.csrf_secret_hash,
+        ):
+            raise DomainError(ErrorCode.FORBIDDEN)
+        return resolved
+
+    @staticmethod
+    def _require_active_terminal_session(
+        resolved: SessionAuthentication,
+        now: datetime,
+    ) -> None:
+        if resolved.account.status is AccountStatus.LOCKED:
+            raise DomainError(ErrorCode.ACCOUNT_LOCKED)
+        if resolved.account.status is not AccountStatus.ACTIVE or not resolved.session.is_active(
+            now,
+            resolved.account.session_version,
+        ):
+            raise DomainError(ErrorCode.UNAUTHENTICATED)
+
     async def get_current_session(
         self,
         session_token: str,
@@ -1098,25 +1226,11 @@ class IdentityApplicationService:
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            resolved, _ = await self._resolve_session(
-                session,
+            resolved = await self._load_terminal_session(
                 repository,
                 command.session_token,
-                csrf_token=command.csrf_token,
-                context=command.context,
+                command.csrf_token,
             )
-            self._authorize(resolved.account, IdentityAction.CHANGE_PASSWORD)
-            if now - resolved.session.authenticated_at > RECENT_AUTHENTICATION:
-                raise DomainError(ErrorCode.UNAUTHENTICATED)
-            identity = await repository.get_local_identity(resolved.account.account_id)
-            if identity is None or identity.password_hash is None:
-                raise DomainError(ErrorCode.IDENTITY_PROVIDER_MISMATCH)
-            if not self._password_hasher.verify(identity.password_hash, command.current_password):
-                raise DomainError(ErrorCode.INVALID_CREDENTIALS)
-            try:
-                replacement_hash = self._password_hasher.hash(command.new_password)
-            except PasswordPolicyError as error:
-                raise DomainError(ErrorCode.VALIDATION_FAILED) from error
             fingerprint = canonical_json_fingerprint(
                 {
                     "current_password": command.current_password,
@@ -1130,7 +1244,7 @@ class IdentityApplicationService:
                 aggregate_id=resolved.account.account_id,
                 idempotency_key=command.idempotency_key,
                 fingerprint=fingerprint,
-                expected_version=resolved.account.version,
+                expected_version=command.expected_version,
                 now=now,
             )
             store = SqlCommandReceiptStore(session)
@@ -1143,17 +1257,32 @@ class IdentityApplicationService:
                     resolved.account.account_id,
                     cast(int, payload["version"]),
                 )
-            await repository.update_password(
-                identity.identity_id,
-                password_hash=replacement_hash,
-                now=now,
-            )
+            self._require_active_terminal_session(resolved, now)
+            self._authorize(resolved.account, IdentityAction.CHANGE_PASSWORD)
+            if now - resolved.session.authenticated_at > RECENT_AUTHENTICATION:
+                raise DomainError(ErrorCode.UNAUTHENTICATED)
             new_session_version = await repository.revoke_all_sessions(
                 resolved.account.account_id,
                 now=now,
                 reason="password_changed",
+                expected_version=command.expected_version,
             )
-            new_account_version = resolved.account.version + 1
+            identity = await repository.get_local_identity(resolved.account.account_id)
+            if identity is None or identity.password_hash is None:
+                raise DomainError(ErrorCode.IDENTITY_PROVIDER_MISMATCH)
+            if not self._password_hasher.verify(identity.password_hash, command.current_password):
+                raise DomainError(ErrorCode.INVALID_CREDENTIALS)
+            try:
+                replacement_hash = self._password_hasher.hash(command.new_password)
+            except PasswordPolicyError as error:
+                raise DomainError(ErrorCode.VALIDATION_FAILED) from error
+            await repository.update_password(
+                identity.identity_id,
+                password_hash=replacement_hash,
+                expected_password_hash=identity.password_hash,
+                now=now,
+            )
+            new_account_version = command.expected_version + 1
             await self._append_event(
                 session,
                 event_type="password_changed",
@@ -1205,14 +1334,11 @@ class IdentityApplicationService:
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            resolved, _ = await self._resolve_session(
-                session,
+            resolved = await self._load_terminal_session(
                 repository,
                 command.session_token,
-                csrf_token=command.csrf_token,
-                context=command.context,
+                command.csrf_token,
             )
-            self._authorize(resolved.account, IdentityAction.REVOKE_SESSION)
             fingerprint = canonical_json_fingerprint(
                 {"session_id": str(resolved.session.session_id)}
             )
@@ -1232,11 +1358,15 @@ class IdentityApplicationService:
                 self._raise_replayed_error(reservation.receipt)
                 await uow.commit()
                 return ResourceResult(resolved.session.session_id, 2)
-            await repository.revoke_session(
+            self._require_active_terminal_session(resolved, now)
+            self._authorize(resolved.account, IdentityAction.REVOKE_SESSION)
+            revoked = await repository.revoke_session(
                 resolved.session.session_id,
                 revoked_at=now,
                 reason="logout",
             )
+            if not revoked:
+                raise DomainError(ErrorCode.UNAUTHENTICATED)
             await self._append_event(
                 session,
                 event_type="session_revoked",
@@ -1269,4 +1399,52 @@ class IdentityApplicationService:
             )
             await uow.commit()
             return ResourceResult(resolved.session.session_id, 2)
+        raise RuntimeError("identity operation was unexpectedly suppressed")
+
+    async def global_revoke_sessions(
+        self,
+        account_id: UUID,
+        *,
+        expected_version: int,
+        reason: str,
+        context: RequestContext,
+    ) -> int:
+        if not reason or len(reason) > 100:
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+        now = self._clock.now()
+        async with self._unit_of_work() as uow:
+            session = self._session(uow)
+            repository = SqlIdentityRepository(session, self._id_generator)
+            await repository.set_actor(account_id)
+            new_version = await repository.revoke_all_sessions(
+                account_id,
+                now=now,
+                reason=reason,
+                expected_version=expected_version,
+            )
+            await self._append_event(
+                session,
+                event_type="sessions_revoked",
+                aggregate_type="account_sessions",
+                aggregate_id=account_id,
+                aggregate_version=new_version,
+                actor_id=account_id,
+                command_id=context.request_id,
+                context=context,
+                now=now,
+                payload={"reason": reason},
+            )
+            await self._append_audit(
+                session,
+                actor_id=account_id,
+                action="identity.revoke_sessions",
+                resource_type="account",
+                resource_id=account_id,
+                result="succeeded",
+                reason=reason,
+                context=context,
+                now=now,
+            )
+            await uow.commit()
+            return expected_version + 1
         raise RuntimeError("identity operation was unexpectedly suppressed")

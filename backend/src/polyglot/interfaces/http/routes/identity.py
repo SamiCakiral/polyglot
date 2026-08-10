@@ -120,6 +120,7 @@ def _context(request: Request) -> RequestContext:
         request_id=UUID(request.state.request_id),
         correlation_id=UUID(request.state.correlation_id),
         truncated_ip=truncated_ip,
+        origin=request.headers.get("Origin", "unknown"),
     )
 
 
@@ -356,6 +357,7 @@ def identity_router(
                 csrf_token=csrf_token,
                 current_password=payload.current_password.get_secret_value(),
                 new_password=payload.new_password.get_secret_value(),
+                expected_version=_expected_version(request),
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )

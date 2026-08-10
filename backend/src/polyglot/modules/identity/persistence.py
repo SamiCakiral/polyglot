@@ -25,6 +25,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.engine import RowMapping
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.identity.domain import (
@@ -612,6 +613,7 @@ class SqlIdentityRepository:
         identity_id: UUID,
         *,
         password_hash: str,
+        expected_password_hash: str,
         now: datetime,
     ) -> None:
         updated = await self._session.scalar(
@@ -620,12 +622,13 @@ class SqlIdentityRepository:
                 login_identities.c.identity_id == identity_id,
                 login_identities.c.provider_type == "local_password",
                 login_identities.c.revoked_at.is_(None),
+                login_identities.c.password_hash == expected_password_hash,
             )
             .values(password_hash=password_hash, last_authenticated_at=now)
             .returning(login_identities.c.identity_id)
         )
         if updated is None:
-            raise DomainError(ErrorCode.IDENTITY_PROVIDER_MISMATCH)
+            raise DomainError(ErrorCode.VERSION_CONFLICT)
 
     async def add_session(self, session: AuthSession) -> None:
         await self.set_actor(session.account_id)
@@ -754,6 +757,17 @@ class SqlIdentityRepository:
         *,
         expected_version: int,
     ) -> None:
+        await self._session.execute(
+            text(
+                "SELECT pg_advisory_xact_lock("
+                "hashtextextended(:consent_stream, 0))"
+            ),
+            {
+                "consent_stream": (
+                    f"consent:{decision.account_id}:{decision.purpose_code}"
+                )
+            },
+        )
         current_version = await self._session.scalar(
             select(func.max(consent_grants.c.version)).where(
                 consent_grants.c.account_id == decision.account_id,
@@ -769,9 +783,14 @@ class SqlIdentityRepository:
         )
         if known is not True:
             raise DomainError(ErrorCode.CONSENT_PURPOSE_UNKNOWN)
-        await self._session.execute(
-            consent_grants.insert().values(asdict(decision) | {"status": decision.status.value})
-        )
+        try:
+            await self._session.execute(
+                consent_grants.insert().values(
+                    asdict(decision) | {"status": decision.status.value}
+                )
+            )
+        except IntegrityError as error:
+            raise DomainError(ErrorCode.VERSION_CONFLICT) from error
 
     async def get_current_consents(
         self,
@@ -826,10 +845,14 @@ class SqlIdentityRepository:
         *,
         now: datetime,
         reason: str,
+        expected_version: int,
     ) -> int:
         new_version = await self._session.scalar(
             accounts.update()
-            .where(accounts.c.account_id == account_id)
+            .where(
+                accounts.c.account_id == account_id,
+                accounts.c.version == expected_version,
+            )
             .values(
                 security_version=accounts.c.security_version + 1,
                 session_version=accounts.c.session_version + 1,
@@ -839,7 +862,7 @@ class SqlIdentityRepository:
             .returning(accounts.c.session_version)
         )
         if new_version is None:
-            raise DomainError(ErrorCode.NOT_FOUND)
+            raise DomainError(ErrorCode.VERSION_CONFLICT)
         await self._session.execute(
             auth_sessions.update()
             .where(

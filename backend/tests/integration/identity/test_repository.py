@@ -161,6 +161,7 @@ async def test_global_revoke_updates_account_version_and_every_open_session(
         ACCOUNT_ID,
         now=NOW + timedelta(minutes=1),
         reason="password_changed",
+        expected_version=1,
     )
     resolved = await repository.find_session_for_authentication("c" * 64)
 
