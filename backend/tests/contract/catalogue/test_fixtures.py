@@ -79,6 +79,8 @@ def test_italian_pilot_fixture_loads_revisioned_catalogue_domain() -> None:
     ]
     assert fixture.foundations.definition.gate.gate_code == "FOUNDATIONS_IT_V0"
     assert fixture.foundations.definition.gate.oral_policy == "not_evaluable_non_blocking"
+    references = getattr(fixture.foundations, "references", ())
+    assert references, "W04F foundation reference catalogue is missing"
 
     assert {item.function_code for item in fixture.communicative_functions} >= {
         "IT-PRAG-001",
@@ -202,3 +204,87 @@ def test_fixture_rejects_incoherent_foundation_definitions(
     with pytest.raises(DomainError) as rejected:
         load_catalogue_fixture(fixture)
     assert rejected.value.code in {ErrorCode.REFERENCE_NOT_FOUND, ErrorCode.VALIDATION_FAILED}
+
+
+@pytest.mark.parametrize(
+    "reference_code",
+    (
+        "IT-PHON-001",
+        "IT-GRAM-003",
+        "grapheme_sound_discrimination",
+        "DIAGNOSTIC_WAIVER_V0",
+    ),
+)
+def test_fixture_rejects_each_unresolved_foundation_reference_kind(
+    tmp_path: Path,
+    reference_code: str,
+) -> None:
+    payload = json.loads((FIXTURE / "catalogue.json").read_text())
+    references = payload["foundations"].get("references")
+    assert references, "W04F fixture does not declare resolvable foundation references"
+    fixture = _fixture_with_payload(
+        tmp_path,
+        lambda mutated: mutated["foundations"].update(
+            {
+                "references": [
+                    item
+                    for item in mutated["foundations"]["references"]
+                    if item["reference_code"] != reference_code
+                ]
+            }
+        ),
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        load_catalogue_fixture(fixture)
+
+    assert rejected.value.code is ErrorCode.REFERENCE_NOT_FOUND
+
+
+@pytest.mark.parametrize(
+    "gate_change",
+    (
+        {"minimum_distinct_sessions": 3},
+        {"delayed_control_hours": 25},
+        {"grapheme_sound_minimum": 7},
+        {"grapheme_sound_total": 11},
+        {"targeted_reading_minimum": 7},
+        {"targeted_reading_total": 11},
+        {"survival_exchange_minimum": 3},
+        {"survival_exchange_total": 6},
+    ),
+)
+def test_fixture_rejects_validly_shaped_but_non_contractual_gate_values(
+    tmp_path: Path,
+    gate_change: dict[str, int],
+) -> None:
+    fixture = _fixture_with_payload(
+        tmp_path,
+        lambda payload: payload["foundations"]["gate"].update(gate_change),
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        load_catalogue_fixture(fixture)
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_fixture_revision_checksums_are_content_bound_and_detect_tampering(tmp_path: Path) -> None:
+    loaded = load_catalogue_fixture(FIXTURE).foundations.definition
+    checksums = {
+        loaded.checksum,
+        loaded.gate.checksum,
+        *(block.checksum for block in loaded.blocks),
+        *(item.checksum for block in loaded.blocks for item in block.items),
+    }
+    assert len(checksums) == 17
+
+    fixture = _fixture_with_payload(
+        tmp_path,
+        lambda payload: payload["foundations"]["blocks"][0]["items"][0].update(
+            {"checker_values": ["tampered_but_well_formed"]}
+        ),
+    )
+    with pytest.raises(DomainError) as rejected:
+        load_catalogue_fixture(fixture)
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED

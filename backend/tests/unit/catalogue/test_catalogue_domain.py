@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -14,6 +15,7 @@ from polyglot.modules.catalogue.core.domain import (
     SkillPrerequisiteEdge,
     SkillRevision,
 )
+from polyglot.modules.catalogue.core.fixtures import load_catalogue_fixture
 from polyglot.modules.catalogue.core.graph import SkillGraph
 from polyglot.platform.errors import DomainError, ErrorCode
 
@@ -23,6 +25,7 @@ TARGET_VARIETY_ID = UUID("019fe900-4000-7000-8000-000000000003")
 SUPPORT_VARIETY_ID = UUID("019fe900-4000-7000-8000-000000000004")
 PROVENANCE_ID = UUID("019fe900-4000-7000-8000-000000000005")
 PUBLISHED_AT = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
+FOUNDATION_FIXTURE = Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
 
 
 def skill_revision(number: int, code: str) -> SkillRevision:
@@ -359,3 +362,95 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
     with pytest.raises(DomainError) as invalid_threshold:
         gate_type(**{**gate.as_dict(), "grapheme_sound_minimum": 11})
     assert invalid_threshold.value.code is ErrorCode.VALIDATION_FAILED
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        ("minimum_distinct_sessions", 3),
+        ("delayed_control_hours", 25),
+        ("grapheme_sound_minimum", 7),
+        ("grapheme_sound_total", 11),
+        ("targeted_reading_minimum", 7),
+        ("targeted_reading_total", 11),
+        ("survival_exchange_minimum", 3),
+        ("survival_exchange_total", 6),
+        ("coverage_threshold", 0.8),
+        ("confidence_threshold", 0.7),
+    ),
+)
+def test_foundation_gate_rejects_every_non_contractual_numeric_rule(
+    field: str,
+    value: int | float,
+) -> None:
+    gate = load_catalogue_fixture(FOUNDATION_FIXTURE).foundations.definition.gate
+
+    with pytest.raises(DomainError) as rejected:
+        replace(gate, **{field: value})
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_foundation_gate_expresses_every_blocking_rule_explicitly() -> None:
+    gate = load_catalogue_fixture(FOUNDATION_FIXTURE).foundations.definition.gate
+
+    assert gate.blocking_facet_refs == (
+        "grapheme_sound_discrimination",
+        "controlled_reading",
+        "greeting_recognition",
+        "functional_frame_choice",
+        "written_guided_repair",
+    )
+    assert gate.blocking_facet_minimum_status == "reliable"
+    assert gate.delayed_control_block_code == "F1"
+    assert gate.survival_exchange_without_reveal is True
+
+
+def test_foundation_aggregate_resolves_targets_facets_and_waiver_policies() -> None:
+    catalogue = load_catalogue_fixture(FOUNDATION_FIXTURE).foundations
+    references = getattr(catalogue, "references", ())
+
+    assert references, "published foundation references are missing"
+    reference_codes = {item.reference_code for item in references}
+    used_codes = {
+        *(target for block in catalogue.definition.blocks for target in block.prerequisite_refs),
+        *(
+            target
+            for block in catalogue.definition.blocks
+            for item in block.items
+            for target in item.target_refs
+        ),
+        *(block.waiver_policy_ref for block in catalogue.definition.blocks),
+        *catalogue.definition.gate.blocking_target_refs,
+        *catalogue.definition.gate.blocking_facet_refs,
+    }
+    assert used_codes <= reference_codes
+
+    missing = next(iter(references))
+    with pytest.raises(DomainError) as rejected:
+        replace(catalogue, references=tuple(item for item in references if item != missing))
+    assert rejected.value.code is ErrorCode.REFERENCE_NOT_FOUND
+
+
+@pytest.mark.parametrize(
+    "select_mutation",
+    (
+        lambda catalogue: replace(catalogue.definition, revision_no=2),
+        lambda catalogue: replace(catalogue.definition.blocks[0], component_type="perception"),
+        lambda catalogue: replace(
+            catalogue.definition.blocks[0].items[0],
+            item_revision_id=UUID("019fe900-4200-7000-8060-000000000001"),
+        ),
+        lambda catalogue: replace(
+            catalogue.definition.gate,
+            gate_revision_id=UUID("019fe900-4200-7000-8061-000000000001"),
+        ),
+    ),
+)
+def test_foundation_revision_checksums_bind_their_content(select_mutation: object) -> None:
+    catalogue = load_catalogue_fixture(FOUNDATION_FIXTURE).foundations
+
+    with pytest.raises(DomainError) as rejected:
+        select_mutation(catalogue)
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED

@@ -172,4 +172,13 @@ async def test_repository_reads_only_the_complete_published_foundation_aggregate
         "F5",
     ]
     assert published.definition.gate.gate_code == "FOUNDATIONS_IT_V0"
+    assert published.definition.gate.blocking_facet_minimum_status == "reliable"
+    assert published.definition.gate.delayed_control_block_code == "F1"
+    assert published.definition.gate.survival_exchange_without_reveal is True
+    assert {item.reference_code for item in published.references} >= {
+        "IT-PHON-001",
+        "IT-GRAM-003",
+        "grapheme_sound_discrimination",
+        "DIAGNOSTIC_WAIVER_V0",
+    }
     assert missing is None

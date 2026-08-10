@@ -139,6 +139,7 @@ async def seed_catalogue(
     publish_skills: bool = True,
     publish_lexical: bool = True,
     include_foundations: bool = False,
+    include_foundation_gate: bool = True,
 ) -> None:
     await session.execute(
         text(
@@ -433,11 +434,11 @@ async def seed_catalogue(
         },
     )
     if include_foundations:
-        await _seed_foundations(session)
+        await _seed_foundations(session, include_gate=include_foundation_gate)
     await session.commit()
 
 
-async def _seed_foundations(session: AsyncSession) -> None:
+async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> None:
     await session.execute(
         text(
             "INSERT INTO catalogue.foundation_definitions (foundation_id, foundation_code) "
@@ -601,6 +602,8 @@ async def _seed_foundations(session: AsyncSession) -> None:
                 "modalities": list(modalities),
             },
         )
+    if not include_gate:
+        return
     await session.execute(
         text(
             "INSERT INTO catalogue.foundation_gate_revisions "

@@ -201,18 +201,23 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
             "'catalogue.language_pack_revisions', 'INSERT')"
         )
     )
-    assert await migration_session.scalar(
-        text(
-            "SELECT has_table_privilege('polyglot_runtime', "
-            "'catalogue.foundation_definition_revisions', 'SELECT')"
+    for table_name in (
+        "foundation_definitions",
+        "foundation_definition_revisions",
+        "foundation_reference_revisions",
+        "foundation_block_revisions",
+        "foundation_item_revisions",
+        "foundation_gate_revisions",
+    ):
+        assert await migration_session.scalar(
+            text("SELECT has_table_privilege('polyglot_runtime', :table_name, 'SELECT')"),
+            {"table_name": f"catalogue.{table_name}"},
         )
-    )
-    assert not await migration_session.scalar(
-        text(
-            "SELECT has_table_privilege('polyglot_runtime', "
-            "'catalogue.foundation_definition_revisions', 'INSERT')"
-        )
-    )
+        for privilege in ("INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER"):
+            assert not await migration_session.scalar(
+                text("SELECT has_table_privilege('polyglot_runtime', :table_name, :privilege)"),
+                {"table_name": f"catalogue.{table_name}", "privilege": privilege},
+            )
 
 
 async def test_0003_restricts_incoherent_foundations_and_published_child_reparenting(
@@ -231,6 +236,7 @@ async def test_0003_restricts_incoherent_foundations_and_published_child_reparen
     required_tables = {
         "foundation_definitions",
         "foundation_definition_revisions",
+        "foundation_reference_revisions",
         "foundation_block_revisions",
         "foundation_item_revisions",
         "foundation_gate_revisions",
@@ -261,6 +267,13 @@ async def test_0003_restricts_incoherent_foundations_and_published_child_reparen
         )
     await migration_session.rollback()
 
+    with pytest.raises(DBAPIError, match="published revision is immutable"):
+        await migration_session.execute(
+            text("DELETE FROM catalogue.foundation_item_revisions WHERE item_revision_id = :item"),
+            {"item": IDS["foundation_item_f1_01"]},
+        )
+    await migration_session.rollback()
+
     with pytest.raises(DBAPIError):
         await migration_session.execute(
             text(
@@ -269,10 +282,150 @@ async def test_0003_restricts_incoherent_foundations_and_published_child_reparen
                 "ordinal, target_refs, response_kind, checker_kind, checker_values, "
                 "modalities, status, checksum) "
                 "VALUES ('019fe900-5000-7000-8075-000000000099', :block, :pack, "
-                "'ITF-F1-99', 3, ARRAY['IT-TARGET-F1-99'], 'raw', 'exact_choice', "
-                "ARRAY[]::varchar[], ARRAY['reading'], 'published', repeat('a', 64))"
+                "'ITF-F1-03', 3, ARRAY['IT-PHON-001'], 'raw', 'exact_choice', "
+                "ARRAY['late_but_valid'], ARRAY['reading'], 'published', repeat('e', 64))"
             ),
             {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+        )
+
+
+async def test_0003_rejects_unresolved_foundation_refs_before_publication(
+    migration_session: AsyncSession,
+) -> None:
+    await seed_catalogue(
+        migration_session,
+        include_foundations=True,
+        include_foundation_gate=False,
+    )
+
+    with pytest.raises(DBAPIError, match="foundation reference is not published"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_item_revisions "
+                "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
+                "ordinal, target_refs, response_kind, checker_kind, checker_values, "
+                "modalities, status, checksum) "
+                "VALUES ('019fe900-5000-7000-8075-000000000098', :block, :pack, "
+                "'ITF-F1-03', 3, ARRAY['IT-MISSING-999'], 'raw', 'exact_choice', "
+                "ARRAY['well_formed'], ARRAY['reading'], 'published', repeat('e', 64))"
+            ),
+            {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+        )
+
+
+async def test_0003_rejects_a_well_formed_item_with_a_forged_content_checksum(
+    migration_session: AsyncSession,
+) -> None:
+    await seed_catalogue(
+        migration_session,
+        include_foundations=True,
+        include_foundation_gate=False,
+    )
+
+    with pytest.raises(DBAPIError, match="foundation checksum does not match content"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_item_revisions "
+                "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
+                "ordinal, target_refs, response_kind, checker_kind, checker_values, "
+                "modalities, status, checksum) "
+                "VALUES ('019fe900-5000-7000-8075-000000000097', :block, :pack, "
+                "'ITF-F1-03', 3, ARRAY['IT-PHON-001'], 'raw', 'exact_choice', "
+                "ARRAY['well_formed'], ARRAY['reading'], 'published', repeat('0', 64))"
+            ),
+            {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+        )
+
+
+async def test_0003_rejects_a_structurally_valid_late_item_insert(
+    migration_session: AsyncSession,
+) -> None:
+    await seed_catalogue(migration_session, include_foundations=True)
+
+    with pytest.raises(DBAPIError, match="published foundation is immutable"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_item_revisions "
+                "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
+                "ordinal, target_refs, response_kind, checker_kind, checker_values, "
+                "modalities, status, checksum) "
+                "VALUES ('019fe900-5000-7000-8075-000000000096', :block, :pack, "
+                "'ITF-F1-03', 3, ARRAY['IT-PHON-001'], 'raw', 'exact_choice', "
+                "ARRAY['late_but_valid'], ARRAY['reading'], 'published', repeat('e', 64))"
+            ),
+            {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+        )
+
+
+@pytest.mark.parametrize(
+    (
+        "minimum_distinct_sessions",
+        "delayed_control_hours",
+        "grapheme_minimum",
+        "grapheme_total",
+        "reading_minimum",
+        "reading_total",
+        "survival_minimum",
+        "survival_total",
+    ),
+    (
+        (3, 24, 8, 10, 8, 10, 4, 5),
+        (2, 25, 8, 10, 8, 10, 4, 5),
+        (2, 24, 7, 10, 8, 10, 4, 5),
+        (2, 24, 8, 11, 8, 10, 4, 5),
+        (2, 24, 8, 10, 7, 10, 4, 5),
+        (2, 24, 8, 10, 8, 11, 4, 5),
+        (2, 24, 8, 10, 8, 10, 3, 5),
+        (2, 24, 8, 10, 8, 10, 4, 6),
+    ),
+)
+async def test_0003_rejects_validly_shaped_non_contractual_gate_values(
+    migration_session: AsyncSession,
+    minimum_distinct_sessions: int,
+    delayed_control_hours: int,
+    grapheme_minimum: int,
+    grapheme_total: int,
+    reading_minimum: int,
+    reading_total: int,
+    survival_minimum: int,
+    survival_total: int,
+) -> None:
+    await seed_catalogue(
+        migration_session,
+        include_foundations=True,
+        include_foundation_gate=False,
+    )
+
+    with pytest.raises(DBAPIError):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_gate_revisions "
+                "(gate_revision_id, foundation_revision_id, pack_revision_id, gate_code, "
+                "blocking_target_refs, blocking_facet_refs, coverage_threshold, "
+                "confidence_threshold, minimum_distinct_sessions, delayed_control_hours, "
+                "grapheme_sound_minimum, grapheme_sound_total, targeted_reading_minimum, "
+                "targeted_reading_total, survival_exchange_minimum, survival_exchange_total, "
+                "oral_policy, status, checksum) VALUES "
+                "('019fe900-5000-7000-8076-000000000001', :foundation, :pack, "
+                "'FOUNDATIONS_IT_V0', :targets, :facets, 0.8, 0.6, :sessions, :hours, "
+                ":grapheme_minimum, :grapheme_total, :reading_minimum, :reading_total, "
+                ":survival_minimum, :survival_total, 'not_evaluable_non_blocking', "
+                "'published', repeat('d', 64))"
+            ),
+            {
+                "foundation": IDS["foundation_revision"],
+                "pack": IDS["pack_revision"],
+                "targets": ["IT-PHON-001"],
+                "facets": ["grapheme_sound"],
+                "sessions": minimum_distinct_sessions,
+                "hours": delayed_control_hours,
+                "grapheme_minimum": grapheme_minimum,
+                "grapheme_total": grapheme_total,
+                "reading_minimum": reading_minimum,
+                "reading_total": reading_total,
+                "survival_minimum": survival_minimum,
+                "survival_total": survival_total,
+            },
         )
 
 
