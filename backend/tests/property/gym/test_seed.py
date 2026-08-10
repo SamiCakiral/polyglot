@@ -122,8 +122,11 @@ def test_composition_rejects_duplicates_and_more_than_three_transformations() ->
     with pytest.raises(DomainError) as duplicate:
         _compose(101, cases=[cases[0], cases[0]], grants=grants)
     with pytest.raises(DomainError) as too_many:
-        _compose(101, cases=[*cases, _case(4, "GYM-12")], grants=[*grants, PrerequisiteGrant.acquired("prerequisite:4")])
+        _compose(
+            101,
+            cases=[*cases, _case(4, "GYM-12")],
+            grants=[*grants, PrerequisiteGrant.acquired("prerequisite:4")],
+        )
 
     assert duplicate.value.code is ErrorCode.DUPLICATE_CANDIDATE
     assert too_many.value.code is ErrorCode.VALIDATION_FAILED
-
