@@ -1259,6 +1259,8 @@ class IdentityApplicationService:
                     resolved.account.account_id,
                     cast(int, payload["version"]),
                 )
+            if resolved.account.version != command.expected_version:
+                raise DomainError(ErrorCode.VERSION_CONFLICT)
             self._require_active_terminal_session(resolved, now)
             self._authorize(resolved.account, IdentityAction.CHANGE_PASSWORD)
             if now - resolved.session.authenticated_at > RECENT_AUTHENTICATION:
