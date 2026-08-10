@@ -255,3 +255,129 @@ async def test_audit_proofs_are_append_only(
         with pytest.raises(DBAPIError, match="append-only"):
             await migration_session.execute(statement)
         await migration_session.rollback()
+
+
+async def test_runtime_cannot_execute_editorial_cycle_without_command_artifacts(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import (
+        content_approval_decisions,
+        content_revisions,
+        publication_manifests,
+        validation_reports,
+    )
+
+    await _insert_draft(migration_session)
+    await migration_session.commit()
+
+    with pytest.raises(DBAPIError, match="content command context required"):
+        await session.execute(
+            content_revisions.update()
+            .where(content_revisions.c.content_revision_id == IDS["revision"])
+            .values(status="validating")
+        )
+        await session.execute(
+            validation_reports.insert().values(
+                report_id=IDS["report"],
+                subject_revision_id=IDS["revision"],
+                validator_set_revision_id=IDS["validator_set"],
+                status="passed",
+                started_at=NOW,
+                completed_at=NOW,
+                summary_checksum="c" * 64,
+            )
+        )
+        await session.execute(
+            content_revisions.update()
+            .where(content_revisions.c.content_revision_id == IDS["revision"])
+            .values(status="validated", validated_at=NOW)
+        )
+        await session.execute(
+            content_approval_decisions.insert().values(
+                approval_decision_id=IDS["decision"],
+                content_revision_id=IDS["revision"],
+                author_id=IDS["author"],
+                reviewer_id=IDS["reviewer"],
+                decision="approved",
+                reason_code="sql.bypass",
+                decided_at=NOW,
+            )
+        )
+        await session.execute(
+            content_revisions.update()
+            .where(content_revisions.c.content_revision_id == IDS["revision"])
+            .values(
+                status="approved",
+                approved_by_actor_id=IDS["reviewer"],
+                approved_at=NOW,
+            )
+        )
+        await session.execute(
+            publication_manifests.insert().values(
+                publication_manifest_id=IDS["manifest"],
+                content_id=IDS["content"],
+                content_revision_id=IDS["revision"],
+                channel_code="stable",
+                compatibility_range=">=2.0.0,<2.1.0",
+                checksum="d" * 64,
+                provenance_id=IDS["provenance"],
+                published_at=NOW,
+                retired_at=None,
+            )
+        )
+        await session.execute(
+            content_revisions.update()
+            .where(content_revisions.c.content_revision_id == IDS["revision"])
+            .values(
+                status="published",
+                channel_code="stable",
+                compatibility_range=">=2.0.0,<2.1.0",
+                published_at=NOW,
+            )
+        )
+        await session.commit()
+    await session.rollback()
+
+
+@pytest.mark.parametrize("proof", ["finding", "manifest_entry"])
+async def test_runtime_cannot_extend_terminal_child_collections(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+    proof: str,
+) -> None:
+    from polyglot.modules.content.persistence import (
+        publication_manifest_entries,
+        validation_findings,
+    )
+
+    await _insert_complete_audit_chain(migration_session)
+    await migration_session.commit()
+
+    if proof == "finding":
+        statement = validation_findings.insert().values(
+            finding_id="019fe003-0000-7000-800b-000000000002",
+            report_id=IDS["report"],
+            ordinal=2,
+            validator_code="sql.late",
+            severity="blocking",
+            path="$.late",
+            message_code="sql.late",
+            redacted_value=None,
+            resolved_by_revision_id=None,
+        )
+    else:
+        statement = publication_manifest_entries.insert().values(
+            publication_manifest_id=IDS["manifest"],
+            ordinal=2,
+            referenced_revision_id=IDS["replacement"],
+            reference_kind="skill_revision",
+            reference_checksum="f" * 64,
+            reference_provenance_id=IDS["provenance"],
+            reference_rights_ref="CC-BY-4.0",
+            reference_status="published",
+        )
+
+    with pytest.raises(DBAPIError, match="terminal proof cannot be extended"):
+        await session.execute(statement)
+    await session.rollback()
