@@ -24,9 +24,9 @@ from polyglot.platform.json_types import JsonValue
 SESSION_COOKIE = "__Host-polyglot_session"
 
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
-OriginHeader = Annotated[str | None, Header(alias="Origin")]
-CsrfHeader = Annotated[str | None, Header(alias="X-CSRF-Token")]
-IfMatchHeader = Annotated[str | None, Header(alias="If-Match")]
+OriginHeader = Annotated[str, Header(alias="Origin")]
+CsrfHeader = Annotated[str, Header(alias="X-CSRF-Token")]
+IfMatchHeader = Annotated[str, Header(alias="If-Match")]
 _session_cookie_security = APIKeyCookie(
     name=SESSION_COOKIE,
     scheme_name="SessionCookie",
@@ -163,19 +163,17 @@ def _context(request: Request) -> RequestContext:
     )
 
 
-def _require_origin(origin: str | None, allowed_origin: str) -> None:
+def _require_origin(origin: str, allowed_origin: str) -> None:
     if origin != allowed_origin:
         raise DomainError(ErrorCode.FORBIDDEN)
 
 
 def _session_credentials(
     session_token: str | None,
-    csrf_token: str | None,
+    csrf_token: str,
 ) -> tuple[str, str]:
     if not session_token:
         raise DomainError(ErrorCode.UNAUTHENTICATED)
-    if not csrf_token:
-        raise DomainError(ErrorCode.FORBIDDEN)
     return session_token, csrf_token
 
 
@@ -185,8 +183,8 @@ def _session_token(token: str | None) -> str:
     return token
 
 
-def _expected_version(value: str | None) -> int:
-    if value is None or len(value) < 3 or not value.startswith('"') or not value.endswith('"'):
+def _expected_version(value: str) -> int:
+    if len(value) < 3 or not value.startswith('"') or not value.endswith('"'):
         raise DomainError(ErrorCode.VALIDATION_FAILED)
     raw = value[1:-1]
     if not raw.isdigit():
@@ -274,7 +272,7 @@ def identity_router(
         payload: CredentialsRequest,
         request: Request,
         idempotency_key: IdempotencyKey,
-        origin: OriginHeader = None,
+        origin: OriginHeader,
     ) -> AccountResponse:
         _require_origin(origin, allowed_origin)
         identifier, password, authorization_code = _credential_values(payload)
@@ -302,7 +300,7 @@ def identity_router(
         request: Request,
         response: Response,
         idempotency_key: IdempotencyKey,
-        origin: OriginHeader = None,
+        origin: OriginHeader,
     ) -> SessionResponse:
         _require_origin(origin, allowed_origin)
         identifier, password, authorization_code = _credential_values(payload)
@@ -361,9 +359,9 @@ def identity_router(
     )
     async def revoke_session(
         request: Request,
+        origin: OriginHeader,
+        csrf_token: CsrfHeader,
         session_token: SessionCookieToken = None,
-        csrf_token: CsrfHeader = None,
-        origin: OriginHeader = None,
         idempotency_key: Annotated[
             str | None,
             Header(alias="Idempotency-Key", max_length=255),
@@ -394,10 +392,10 @@ def identity_router(
         request: Request,
         response: Response,
         idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf_token: CsrfHeader,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
-        csrf_token: CsrfHeader = None,
-        origin: OriginHeader = None,
-        if_match: IfMatchHeader = None,
     ) -> AccountResponse:
         _require_origin(origin, allowed_origin)
         session_token, csrf_token = _session_credentials(session_token, csrf_token)
@@ -425,10 +423,10 @@ def identity_router(
         payload: PreferencesRequest,
         request: Request,
         response: Response,
+        origin: OriginHeader,
+        csrf_token: CsrfHeader,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
-        csrf_token: CsrfHeader = None,
-        origin: OriginHeader = None,
-        if_match: IfMatchHeader = None,
         idempotency_key: Annotated[
             str | None,
             Header(alias="Idempotency-Key", max_length=255),
@@ -465,10 +463,10 @@ def identity_router(
         request: Request,
         response: Response,
         idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf_token: CsrfHeader,
+        if_match: IfMatchHeader,
         session_token: SessionCookieToken = None,
-        csrf_token: CsrfHeader = None,
-        origin: OriginHeader = None,
-        if_match: IfMatchHeader = None,
     ) -> ConsentResponse:
         _require_origin(origin, allowed_origin)
         session_token, csrf_token = _session_credentials(session_token, csrf_token)

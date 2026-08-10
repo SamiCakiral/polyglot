@@ -50,6 +50,7 @@ AUTHENTICATED_W02_OPERATIONS = frozenset(
         ("put", "/api/v1/consents/{purpose}"),
     }
 )
+MANDATORY_W02_HEADERS = frozenset({"Origin", "X-CSRF-Token", "If-Match"})
 
 
 def _operation_id(command_name: str) -> str:
@@ -59,6 +60,14 @@ def _operation_id(command_name: str) -> str:
 def _parameter_names(operation: dict[str, Any]) -> set[str]:
     return {
         parameter["name"]
+        for parameter in operation.get("parameters", [])
+        if isinstance(parameter, dict) and isinstance(parameter.get("name"), str)
+    }
+
+
+def _parameters_by_name(operation: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {
+        parameter["name"]: parameter
         for parameter in operation.get("parameters", [])
         if isinstance(parameter, dict) and isinstance(parameter.get("name"), str)
     }
@@ -121,6 +130,12 @@ def validate_registry_compatibility(
         required_headers = REQUIRED_W02_HEADERS[(method, route)]
         if not required_headers <= _parameter_names(operation):
             raise ValueError(f"required W02 headers missing: {method} {route}")
+        parameters = _parameters_by_name(operation)
+        for header in required_headers & MANDATORY_W02_HEADERS:
+            if parameters[header].get("required") is not True:
+                raise ValueError(
+                    f"mandatory W02 header is optional: {header} on {method} {route}"
+                )
 
     session_query = document.get("paths", {}).get("/api/v1/session", {}).get("get")
     if session_query is None or session_query.get("operationId") != "get_current_session":
