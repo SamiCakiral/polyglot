@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import replace
 
 from polyglot.modules.curriculum import ArcType
-from polyglot.modules.curriculum.ports import ReferenceStatus, ResolvedReference
+from polyglot.modules.curriculum.ports import (
+    ReferenceExpectation,
+    ReferenceStatus,
+    ResolvedReference,
+)
 from polyglot.modules.curriculum.validation import (
     HumanGateStatus,
     MorphologyOracle,
@@ -32,9 +36,20 @@ def resolved(
 def base_input() -> ValidationInput:
     module = revision(days=(day(1), day(2, arc=ArcType.GUIDED_USE), day(3, arc=ArcType.TRANSFER)))
     refs = tuple(resolved(value) for value in module.all_reference_keys())
+    expectations = tuple(
+        ReferenceExpectation(
+            item.reference,
+            item.kind,
+            item.pack_revision_id,
+            item.variety_id,
+            item.checksum,
+        )
+        for item in refs
+    )
     return ValidationInput(
         module=module,
         resolved_references=refs,
+        reference_expectations=expectations,
         grammar_explanations=((1, "identity"), (2, "polite-request")),
         grammar_practices=((1, "identity", "GYM-01"), (2, "polite-request", "GYM-08")),
         morphology_oracles=(

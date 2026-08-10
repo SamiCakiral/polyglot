@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import cast
 
 from .domain import ArcType, LearningModuleRevision
-from .ports import ReferenceStatus, ResolvedReference
+from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
 
 
 class FindingSeverity(StrEnum):
@@ -78,6 +78,7 @@ class PronunciationOracle:
 class ValidationInput:
     module: LearningModuleRevision
     resolved_references: tuple[ResolvedReference, ...]
+    reference_expectations: tuple[ReferenceExpectation, ...]
     grammar_explanations: tuple[tuple[int, str], ...]
     grammar_practices: tuple[tuple[int, str, str], ...]
     morphology_oracles: tuple[MorphologyOracle, ...]
@@ -89,6 +90,7 @@ class ValidationInput:
     def __post_init__(self) -> None:
         for field in (
             "resolved_references",
+            "reference_expectations",
             "grammar_explanations",
             "grammar_practices",
             "morphology_oracles",
@@ -127,10 +129,15 @@ def _finding(
 def _reference_findings(data: ValidationInput) -> list[ValidationFinding]:
     expected = set(data.module.all_reference_keys())
     resolved = {item.reference: item for item in data.resolved_references}
+    expectations = {item.reference: item for item in data.reference_expectations}
     findings: list[ValidationFinding] = []
     for reference in sorted(expected):
         item = resolved.get(reference)
+        expectation = expectations.get(reference)
         path = f"references.{reference}"
+        if expectation is None:
+            findings.append(_finding("module_target_unresolved", path, reference))
+            continue
         if item is None or item.status in {ReferenceStatus.MISSING, ReferenceStatus.FORBIDDEN}:
             findings.append(_finding("module_target_unresolved", path, reference))
             continue
@@ -142,6 +149,16 @@ def _reference_findings(data: ValidationInput) -> list[ValidationFinding]:
             findings.append(_finding("module_provenance_missing", path, reference))
         if not item.rights_refs:
             findings.append(_finding("module_rights_missing", path, reference))
+        if item.kind != expectation.kind:
+            findings.append(_finding("module_reference_kind_mismatch", path, reference))
+        if item.pack_revision_id != expectation.pack_revision_id:
+            findings.append(_finding("module_reference_pack_mismatch", path, reference))
+        if item.variety_id != expectation.variety_id:
+            findings.append(_finding("module_reference_variety_mismatch", path, reference))
+        if item.checksum != expectation.checksum:
+            findings.append(_finding("module_reference_checksum_mismatch", path, reference))
+    if len(expectations) != len(data.reference_expectations) or set(expectations) != expected:
+        findings.append(_finding("module_target_unresolved", "reference_expectations"))
     return findings
 
 

@@ -25,5 +25,14 @@ class ResolvedReference:
     rights_refs: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class ReferenceExpectation:
+    reference: str
+    kind: str
+    pack_revision_id: str
+    variety_id: str
+    checksum: str
+
+
 class CurriculumReferencePort(Protocol):
     def resolve(self, references: tuple[str, ...]) -> tuple[ResolvedReference, ...]: ...
