@@ -1,3 +1,5 @@
+"""Catalogue domain contracts."""
+
 from datetime import UTC, datetime
 from uuid import UUID
 

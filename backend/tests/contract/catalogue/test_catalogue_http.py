@@ -1,3 +1,5 @@
+"""Catalogue HTTP contracts."""
+
 from uuid import UUID
 
 from fastapi.testclient import TestClient
