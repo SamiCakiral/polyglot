@@ -1,8 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from polyglot.platform.security_checks import _patch_content, scan_git_repository
-from polyglot.platform.security_checks import _find_secrets
+from polyglot.platform.security_checks import _find_secrets, _patch_content, scan_git_repository
 
 
 def _git(repository: Path, *arguments: str) -> None:
@@ -121,6 +120,8 @@ def test_split_task_report_source_is_not_a_secret_but_real_assignments_are() -> 
     secret_value = "".join(("s", "k", "-", "a" * 24))
     sensitive_name = "".join(("OPENAI", "_API_KEY"))
     real_assignment = f'{sensitive_name} = "{secret_value}"'
+    report_shaped_assignment = f'{sensitive_name} = "{report_fragment}"'
 
     assert _find_secrets(source_reference, "fixture") == []
     assert _find_secrets(real_assignment, "fixture") == ["fixture:openai_api_key"]
+    assert _find_secrets(report_shaped_assignment, "fixture") == ["fixture:openai_api_key"]

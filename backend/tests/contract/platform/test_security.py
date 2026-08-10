@@ -43,7 +43,7 @@ def test_fx_ops_is_a_synthetic_platform_only_fixture() -> None:
 def test_openai_key_detection_requires_a_token_boundary() -> None:
     from polyglot.platform.security_checks import _find_secrets
 
-    report_path = "ta" + "sk-W05-rejection-report.md"
+    report_path = "".join(("ta", "s", "k", "-", "W05", "-rejection-report.md"))
     synthetic_key = "s" + "k-" + ("a" * 24)
 
     assert _find_secrets(report_path, "fixture") == []

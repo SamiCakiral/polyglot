@@ -9,7 +9,7 @@ _SECRET_PATTERNS = (
     ("google_api_key", re.compile("AI" + r"za[0-9A-Za-z_-]{30,}")),
     (
         "openai_api_key",
-        re.compile(r"(?<![A-Za-z0-9_-])" + "sk" + r"-[A-Za-z0-9_-]{20,}"),
+        re.compile(r"(?<![A-Za-z0-9-])" + "sk" + r"-[A-Za-z0-9_-]{20,}"),
     ),
     (
         "private_key",
@@ -17,9 +17,29 @@ _SECRET_PATTERNS = (
     ),
 )
 
+_SPLIT_TASK_REPORT_SOURCE = re.compile(
+    r'''["']ta["']\s*\+\s*["']'''
+    r"(?P<fragment>sk-W\d{2}(?:-[A-Za-z0-9]+)+-report)"
+    r'''(?:\.md)?["']'''
+)
+
+
+def _is_split_task_report_source(content: str, match: re.Match[str]) -> bool:
+    return any(
+        candidate.span("fragment") == match.span()
+        for candidate in _SPLIT_TASK_REPORT_SOURCE.finditer(content)
+    )
+
 
 def _find_secrets(content: str, scope: str) -> list[str]:
-    return [f"{scope}:{label}" for label, pattern in _SECRET_PATTERNS if pattern.search(content)]
+    findings: list[str] = []
+    for label, pattern in _SECRET_PATTERNS:
+        for match in pattern.finditer(content):
+            if label == "openai_api_key" and _is_split_task_report_source(content, match):
+                continue
+            findings.append(f"{scope}:{label}")
+            break
+    return findings
 
 
 def _patch_content(patch: str) -> str:
