@@ -146,6 +146,7 @@ validation_reports = Table(
         nullable=False,
     ),
     Column("validator_set_revision_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("command_id", PG_UUID(as_uuid=True)),
     Column("status", String(24), nullable=False),
     Column("started_at", DateTime(timezone=True), nullable=False),
     Column("completed_at", DateTime(timezone=True)),
@@ -222,6 +223,7 @@ content_approval_decisions = Table(
     ),
     Column("author_id", PG_UUID(as_uuid=True), nullable=False),
     Column("reviewer_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("command_id", PG_UUID(as_uuid=True)),
     Column("decision", String(16), nullable=False),
     Column("reason_code", String(120)),
     Column("decided_at", DateTime(timezone=True), nullable=False),
@@ -264,6 +266,7 @@ publication_manifests = Table(
         ForeignKey("platform.provenance_records.provenance_id", ondelete="RESTRICT"),
         nullable=False,
     ),
+    Column("command_id", PG_UUID(as_uuid=True)),
     Column("published_at", DateTime(timezone=True), nullable=False),
     Column("retired_at", DateTime(timezone=True)),
     CheckConstraint("checksum ~ '^[0-9a-f]{64}$'", name="ck_content_publication_manifest_checksum"),
@@ -406,6 +409,12 @@ def _stored_revision(row: RowMapping) -> StoredContentRevision:
 class SqlContentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def begin_command(self, command_id: UUID) -> None:
+        await self._session.execute(
+            text("SELECT content.begin_command(:command_id)"),
+            {"command_id": command_id},
+        )
 
     async def create_item_and_draft(
         self,
@@ -579,6 +588,7 @@ class SqlContentRepository:
         *,
         content_revision_id: UUID,
         report_id: UUID,
+        command_id: UUID,
         validator_set_revision_id: UUID,
         status: str,
         summary_checksum: str,
@@ -590,6 +600,7 @@ class SqlContentRepository:
                 report_id=report_id,
                 subject_revision_id=content_revision_id,
                 validator_set_revision_id=validator_set_revision_id,
+                command_id=command_id,
                 status=status,
                 started_at=now,
                 completed_at=now,
@@ -620,6 +631,7 @@ class SqlContentRepository:
         *,
         content_revision_id: UUID,
         decision_id: UUID,
+        command_id: UUID,
         author_id: UUID,
         reviewer_id: UUID,
         reason_code: str,
@@ -631,6 +643,7 @@ class SqlContentRepository:
                 content_revision_id=content_revision_id,
                 author_id=author_id,
                 reviewer_id=reviewer_id,
+                command_id=command_id,
                 decision="approved",
                 reason_code=reason_code,
                 decided_at=now,
@@ -729,6 +742,7 @@ class SqlContentRepository:
         content_id: UUID,
         content_revision_id: UUID,
         manifest_id: UUID,
+        command_id: UUID,
         publication_provenance_id: UUID,
         channel_code: str,
         compatibility_range: str,
@@ -790,6 +804,7 @@ class SqlContentRepository:
                 compatibility_range=compatibility_range,
                 checksum=manifest_checksum,
                 provenance_id=publication_provenance_id,
+                command_id=command_id,
                 published_at=now,
                 retired_at=None,
             )

@@ -342,6 +342,7 @@ class ContentApplicationService:
 
             savepoint = await session.begin_nested()
             try:
+                await repository.begin_command(reservation.receipt.command_id)
                 result = await action(repository, reservation.receipt, now)
                 await self._failure_injector.checkpoint("after_event")
                 await store.complete(
@@ -606,6 +607,7 @@ class ContentApplicationService:
             updated = await repository.complete_validation(
                 content_revision_id=command.revision_id,
                 report_id=report_id,
+                command_id=receipt.command_id,
                 validator_set_revision_id=command.validator_set_revision_id,
                 status=validation.status,
                 summary_checksum=summary_checksum,
@@ -664,6 +666,7 @@ class ContentApplicationService:
             updated = await repository.approve(
                 content_revision_id=command.revision_id,
                 decision_id=self._id_generator.new(),
+                command_id=receipt.command_id,
                 author_id=revision.created_by_actor_id,
                 reviewer_id=command.actor.actor_id,
                 reason_code=command.reason_code,
@@ -751,6 +754,7 @@ class ContentApplicationService:
                 content_id=item.content_id,
                 content_revision_id=command.revision_id,
                 manifest_id=manifest_id,
+                command_id=receipt.command_id,
                 publication_provenance_id=command.publication_provenance_id,
                 channel_code=command.channel_code,
                 compatibility_range=command.compatibility_range,
