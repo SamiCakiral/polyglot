@@ -69,7 +69,11 @@ def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_cred
         attempt_no=1,
         clock=FrozenClock(NOW),
         ids=FixedIds(ATTEMPT_ID),
-    ).reveal(reason="user_requested", clock=FrozenClock(NOW))
+    ).reveal(
+        reason="user_requested",
+        clock=FrozenClock(NOW),
+        idempotency_key="hint-reveal-1",
+    )
     corrected = (
         attempt.submit(answer=answer, idempotency_key="submit-1")
         .start_correction()
@@ -77,6 +81,7 @@ def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_cred
             correction_id=CORRECTION_ID,
             result=CorrectionResult.correct(confidence=1.0),
             clock=FrozenClock(NOW),
+            idempotency_key="correct-1",
         )
     )
     ambiguous = (
@@ -86,6 +91,7 @@ def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_cred
             correction_id=CORRECTION_ID,
             result=CorrectionResult.ambiguous("multiple readings"),
             clock=FrozenClock(NOW),
+            idempotency_key="correct-2",
         )
     )
     unavailable = (
@@ -95,6 +101,7 @@ def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_cred
             correction_id=CORRECTION_ID,
             result=CorrectionResult.not_evaluable("timeout"),
             clock=FrozenClock(NOW),
+            idempotency_key="correct-3",
         )
     )
 
@@ -142,9 +149,11 @@ def test_block_lifecycle_models_skip_abandon_unavailability_and_forced_submissio
     available = ExerciseBlockRun.create(
         block_id=UUID("019fe009-0000-7000-8000-000000000011")
     ).make_available()
-    skipped = available.skip(reason="learner_choice")
-    abandoned = available.start().abandon()
-    unavailable = available.mark_unavailable(reason="media_missing")
+    skipped = available.skip(reason="learner_choice", idempotency_key="skip-1")
+    abandoned = available.start().abandon(idempotency_key="abandon-1")
+    unavailable = available.mark_unavailable(
+        reason="media_missing", idempotency_key="unavailable-1"
+    )
     forced = Attempt.start(
         instance=instance(),
         profile_id=PROFILE_ID,

@@ -84,3 +84,89 @@ def test_same_submission_key_is_idempotent_for_every_answer_value(values: list[s
 
     submitted = attempt.submit(answer=answer, idempotency_key="same-key")
     assert submitted.submit(answer=answer, idempotency_key="same-key") == submitted
+
+
+@given(st.lists(st.sampled_from(("cued", "contrast", "repair")), min_size=1, max_size=8))
+def test_definition_modes_are_deeply_immutable_for_every_caller_list(modes: list[str]) -> None:
+    from polyglot.modules.exercises.core.domain import AnswerKind, ExerciseDefinition
+
+    original = tuple(modes)
+    definition = ExerciseDefinition.published(
+        definition_id=UUID("019fe009-2000-7000-8000-000000000001"),
+        revision_id=UUID("019fe009-2000-7000-8000-000000000002"),
+        revision_no=1,
+        primitive_id="EX-RECALL-03",
+        response_kinds=[AnswerKind.SHORT_TEXT],
+        language_certification_ids=[UUID("019fe009-2000-7000-8000-000000000003")],
+        modes=modes,
+        target_weights=[["skill:recall", 0.55]],
+        correction_policy_id="policy:exact:v1",
+        hint_policy_id="policy:hints:v1",
+        observation_policy_id="policy:observation:v1",
+        accessibility_features=["keyboard", "screen_reader", "untimed"],
+    )
+
+    modes.clear()
+
+    assert definition.modes == original
+
+
+@given(st.text(min_size=1, max_size=40))
+def test_submission_replay_is_stable_after_correction_for_every_answer(value: str) -> None:
+    from polyglot.modules.exercises.core.domain import (
+        Answer,
+        AnswerKind,
+        Attempt,
+        CorrectionResult,
+        ExerciseDefinition,
+        ExerciseInstance,
+    )
+
+    definition = ExerciseDefinition.published(
+        definition_id=UUID("019fe009-3000-7000-8000-000000000001"),
+        revision_id=UUID("019fe009-3000-7000-8000-000000000002"),
+        revision_no=1,
+        primitive_id="EX-RECALL-03",
+        response_kinds=(AnswerKind.SHORT_TEXT,),
+        language_certification_ids=(UUID("019fe009-3000-7000-8000-000000000003"),),
+        modes=("cued",),
+        target_weights=(("skill:recall", 0.55),),
+        correction_policy_id="policy:exact:v1",
+        hint_policy_id="policy:hints:v1",
+        observation_policy_id="policy:observation:v1",
+        accessibility_features=("keyboard", "screen_reader", "untimed"),
+    )
+    exercise = ExerciseInstance.create(
+        instance_id=UUID("019fe009-3000-7000-8000-000000000004"),
+        definition=definition,
+        language_pack_revision_id=UUID("019fe009-3000-7000-8000-000000000005"),
+        seed=9,
+        stimulus_revision_ids=(definition.revision_id,),
+    )
+    answer = Answer.create(
+        kind=AnswerKind.SHORT_TEXT,
+        raw_value=value,
+        input_method="keyboard",
+        submitted_at=NOW,
+    )
+    attempt = Attempt.start(
+        instance=exercise,
+        profile_id=UUID("019fe009-3000-7000-8000-000000000006"),
+        attempt_no=1,
+        clock=FrozenClock(NOW),
+        ids=type(
+            "Ids",
+            (),
+            {"new": lambda self: UUID("019fe009-3000-7000-8000-000000000007")},
+        )(),
+    )
+    submitted = attempt.submit(answer=answer, idempotency_key="property-submit")
+    corrected = submitted.start_correction().complete_correction(
+        correction_id=UUID("019fe009-3000-7000-8000-000000000008"),
+        result=CorrectionResult.correct(confidence=1.0),
+        clock=FrozenClock(NOW),
+        idempotency_key="property-correction",
+    )
+
+    assert corrected.submit(answer=answer, idempotency_key="property-submit") == corrected
+    assert len(corrected.corrections) == 1
