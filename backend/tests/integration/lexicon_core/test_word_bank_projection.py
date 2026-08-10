@@ -122,6 +122,22 @@ async def test_reference_projection_rebuilds_from_facts_with_user_overrides(
     assert first.reference_total_count == 2
     assert first.items[0].familiarity_declaration == "known"
     assert first.items[0].learning_preference == "prioritize"
+    assert first.items[0].projection.algorithm_version == "lexicon-v1"
+    assert first.items[0].projection.modalities["reading"].observation_count == 0
+    assert first.items[0].projection.gap_reasons == ("absence_of_evidence",)
+    assert first.items[0].projection.plan.role == "new"
+    assert first.items[0].projection.plan.reason == "absence_of_evidence"
+    assert first.items[0].projection.sprint_snapshot_frozen is True
+    assert first.items[0].projection.debt is not None
+    assert first.items[0].projection.debt.resolved is False
+    assert first.items[0].projection.gym.structure is False
+    assert first.items[0].projection.gym.support_lexicon is False
+    assert first.items[0].projection.learning_targets == ()
+    assert first.items[0].projection.diagnostic_estimate is None
+    assert first.items[0].projection.assessment.modalities == ()
+    assert first.items[0].projection.recommendation is not None
+    assert first.items[0].projection.recommendation.target_id == uid(4001)
+    assert first.projection_contracts == tuple(f"WB-{number:02d}" for number in range(1, 13))
     assert tuple(item.mention_id for item in first.unresolved_mentions) == (uid(4021),)
     assert first.unresolved_mentions[0].exact_surface == "boh"
 
