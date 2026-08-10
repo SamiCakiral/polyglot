@@ -28,6 +28,7 @@ from polyglot.modules.language_profiles.diagnostic import (
 from polyglot.modules.language_profiles.domain import LanguageProfileStatus, LearnerLanguageProfile
 from polyglot.modules.language_profiles.foundations import (
     FoundationBlock,
+    FoundationCriterion,
     FoundationGate,
     FoundationMeasurement,
 )
@@ -1016,7 +1017,7 @@ class LanguageProfileApplicationService:
         *,
         run_id: UUID,
         account_id: UUID,
-        answers: tuple[tuple[UUID, dict[str, JsonValue], bool], ...],
+        answers: tuple[tuple[UUID, int, dict[str, JsonValue], bool], ...],
         expected_version: int,
         idempotency_key: str,
         context: RequestContext,
@@ -1056,10 +1057,26 @@ class LanguageProfileApplicationService:
                 for block in definition.blocks
                 for item in block.items
             }
-            submitted_ids = [item_id for item_id, _, _ in answers]
-            if len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != set(
-                published_items
-            ):
+            required_trials = {
+                item.item_revision_id: {
+                    "ITF-F1-01": 10,
+                    "ITF-F1-02": 10,
+                    "ITF-F5-02": 5,
+                }.get(item.item_code, 1)
+                for block in definition.blocks
+                for item in block.items
+            }
+            submitted_trials = [
+                (item_id, trial_ordinal) for item_id, trial_ordinal, _, _ in answers
+            ]
+            expected_trials = {
+                (item_id, trial_ordinal)
+                for item_id, total in required_trials.items()
+                for trial_ordinal in range(1, total + 1)
+            }
+            if len(submitted_trials) != len(set(submitted_trials)) or set(
+                submitted_trials
+            ) != expected_trials:
                 raise DomainError(ErrorCode.RESPONSE_CONFLICT)
 
             receipt = self._receipt(
@@ -1073,10 +1090,11 @@ class LanguageProfileApplicationService:
                         "answers": [
                             {
                                 "item_revision_id": str(item_id),
+                                "trial_ordinal": trial_ordinal,
                                 "answer": answer,
                                 "revealed": revealed,
                             }
-                            for item_id, answer, revealed in answers
+                            for item_id, trial_ordinal, answer, revealed in answers
                         ],
                     }
                 ),
@@ -1103,7 +1121,12 @@ class LanguageProfileApplicationService:
             if set(block_rows) != {item.block_revision_id for item in definition.blocks}:
                 raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
             session_id = self._id_generator.new()
-            for item_id, answer, revealed in answers:
+            criteria = {
+                "ITF-F1-01": FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
+                "ITF-F1-02": FoundationCriterion.TARGETED_READING,
+                "ITF-F5-02": FoundationCriterion.SURVIVAL_EXCHANGE,
+            }
+            for item_id, trial_ordinal, answer, revealed in answers:
                 block, item = published_items[item_id]
                 score, evaluable = self._score_item(item, answer)
                 await session.execute(
@@ -1115,6 +1138,8 @@ class LanguageProfileApplicationService:
                         ],
                         item_revision_id=item_id,
                         session_id=session_id,
+                        trial_ordinal=trial_ordinal,
+                        criterion=criteria.get(item.item_code),
                         answer=answer,
                         score=score,
                         evaluable=evaluable,
@@ -1128,6 +1153,7 @@ class LanguageProfileApplicationService:
                     select(
                         foundation_measurements.c.session_id,
                         foundation_measurements.c.item_revision_id,
+                        foundation_measurements.c.criterion,
                         foundation_measurements.c.score,
                         foundation_measurements.c.evaluable,
                         foundation_measurements.c.revealed,
@@ -1135,7 +1161,7 @@ class LanguageProfileApplicationService:
                     ).where(foundation_measurements.c.foundation_run_id == run_id)
                 )
             ).mappings().all()
-            grouped: dict[tuple[UUID, str], list[object]] = {}
+            grouped: dict[tuple[UUID, str, str | None], list[object]] = {}
             item_blocks = {
                 item.item_revision_id: block.block_code
                 for block in definition.blocks
@@ -1145,15 +1171,17 @@ class LanguageProfileApplicationService:
                 key = (
                     cast(UUID, measurement["session_id"]),
                     item_blocks[cast(UUID, measurement["item_revision_id"])],
+                    cast(str | None, measurement["criterion"]),
                 )
                 grouped.setdefault(key, []).append(measurement)
             gate_measurements: list[FoundationMeasurement] = []
-            for (persisted_session_id, block_code), items in grouped.items():
+            for (persisted_session_id, block_code, criterion), items in grouped.items():
                 values = [cast(dict[str, object], item) for item in items]
                 eligible = [item for item in values if cast(bool, item["evaluable"])]
                 gate_measurements.append(
                     FoundationMeasurement(
                         block=self._foundation_block(block_code),
+                        criterion=FoundationCriterion(criterion) if criterion is not None else None,
                         score=sum(int(cast(Decimal, item["score"])) for item in eligible),
                         maximum=max(1, len(eligible)),
                         session_id=persisted_session_id,
@@ -1165,8 +1193,12 @@ class LanguageProfileApplicationService:
             gate = FoundationGate(
                 gate_code=definition.gate.gate_code,
                 revision=1,
-                minimum_ratio=definition.gate.grapheme_sound_minimum
-                / definition.gate.grapheme_sound_total,
+                grapheme_sound_minimum=definition.gate.grapheme_sound_minimum,
+                grapheme_sound_total=definition.gate.grapheme_sound_total,
+                targeted_reading_minimum=definition.gate.targeted_reading_minimum,
+                targeted_reading_total=definition.gate.targeted_reading_total,
+                survival_exchange_minimum=definition.gate.survival_exchange_minimum,
+                survival_exchange_total=definition.gate.survival_exchange_total,
                 delayed_control_after=timedelta(hours=definition.gate.delayed_control_hours),
             )
             result = gate.evaluate(tuple(gate_measurements))

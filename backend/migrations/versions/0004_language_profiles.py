@@ -289,6 +289,8 @@ CREATE TABLE language_profiles.foundation_measurements (
         ON DELETE RESTRICT,
     item_revision_id uuid NOT NULL,
     session_id uuid NOT NULL,
+    trial_ordinal integer NOT NULL,
+    criterion varchar(48),
     answer jsonb NOT NULL,
     score numeric(5,4),
     evaluable boolean NOT NULL,
@@ -303,11 +305,15 @@ CREATE TABLE language_profiles.foundation_measurements (
     ),
     CONSTRAINT ck_foundation_measurement_shape CHECK (
         jsonb_typeof(answer) = 'object'
+        AND trial_ordinal >= 1
+        AND (criterion IS NULL OR criterion IN (
+            'grapheme_sound_discrimination', 'targeted_reading', 'survival_exchange'
+        ))
         AND (score IS NULL OR score IN (0, 1))
         AND (evaluable OR score IS NULL)
     ),
-    CONSTRAINT uq_foundation_measurement_session_item
-        UNIQUE(foundation_run_id, session_id, item_revision_id)
+    CONSTRAINT uq_foundation_measurement_session_item_trial
+        UNIQUE(foundation_run_id, session_id, item_revision_id, trial_ordinal)
 );
 CREATE INDEX ix_foundation_measurement_run_session
     ON language_profiles.foundation_measurements(foundation_run_id, measured_at, session_id);

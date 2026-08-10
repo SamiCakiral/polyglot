@@ -6,6 +6,7 @@ from hypothesis import strategies as st
 
 from polyglot.modules.language_profiles.foundations import (
     FoundationBlock,
+    FoundationCriterion,
     FoundationGate,
     FoundationMeasurement,
 )
@@ -20,8 +21,9 @@ def test_no_scores_can_bypass_the_twenty_four_hour_control(delay_seconds: int) -
     measurements = tuple(
         FoundationMeasurement(
             block=block,
-            score=10,
-            maximum=10,
+            criterion=criterion,
+            score=score,
+            maximum=maximum,
             session_id=session_id,
             at=at,
             revealed=False,
@@ -31,7 +33,18 @@ def test_no_scores_can_bypass_the_twenty_four_hour_control(delay_seconds: int) -
             (SESSION_1, started),
             (SESSION_2, started + timedelta(seconds=delay_seconds)),
         )
-        for block in FoundationBlock
+        for block, criterion, score, maximum in (
+            (
+                FoundationBlock.F1,
+                FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
+                10,
+                10,
+            ),
+            (FoundationBlock.F1, FoundationCriterion.TARGETED_READING, 10, 10),
+            (FoundationBlock.F3, None, 1, 1),
+            (FoundationBlock.F4, None, 1, 1),
+            (FoundationBlock.F5, FoundationCriterion.SURVIVAL_EXCHANGE, 5, 5),
+        )
     )
 
     result = FoundationGate.v0().evaluate(measurements)

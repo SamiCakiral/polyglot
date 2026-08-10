@@ -198,6 +198,8 @@ foundation_measurements = _table(
     ),
     Column("item_revision_id", PG_UUID(as_uuid=True), nullable=False),
     Column("session_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("trial_ordinal", Integer, nullable=False),
+    Column("criterion", String(48)),
     Column("answer", JSONB, nullable=False),
     Column("score", Numeric(5, 4)),
     Column("evaluable", Boolean, nullable=False),

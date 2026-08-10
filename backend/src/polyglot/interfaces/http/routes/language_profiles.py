@@ -79,6 +79,7 @@ class StartFoundationRunRequest(ClosedModel):
 
 class FoundationAnswerRequest(ClosedModel):
     item_revision_id: UUID
+    trial_ordinal: int = Field(ge=1, le=10)
     answer: dict[str, Any]
     revealed: bool = False
 
@@ -444,7 +445,8 @@ def language_profiles_router(
             run_id=run_id,
             account_id=account_id,
             answers=tuple(
-                (item.item_revision_id, item.answer, item.revealed) for item in payload.answers
+                (item.item_revision_id, item.trial_ordinal, item.answer, item.revealed)
+                for item in payload.answers
             ),
             expected_version=_required_version(if_match),
             idempotency_key=idempotency_key,
