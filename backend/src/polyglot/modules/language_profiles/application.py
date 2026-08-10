@@ -1099,6 +1099,34 @@ class LanguageProfileApplicationService:
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             profile = await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
+            receipt = self._receipt(
+                command_type="CompleteFoundationGate",
+                account_id=account_id,
+                aggregate_id=run_id,
+                idempotency_key=idempotency_key,
+                fingerprint=canonical_json_fingerprint(
+                    {
+                        "run_id": str(run_id),
+                        "answers": [
+                            {
+                                "item_revision_id": str(item_id),
+                                "answer": answer,
+                                "revealed": revealed,
+                            }
+                            for item_id, answer, revealed in answers
+                        ],
+                    }
+                ),
+                expected_version=expected_version,
+                now=now,
+            )
+            store = SqlCommandReceiptStore(session)
+            reservation = await store.reserve(receipt)
+            if not reservation.created:
+                self._replayed_error(reservation.receipt)
+                summary = await self._foundation_summary(session, dict(row))
+                await uow.commit()
+                return summary
             if cast(int, row["version"]) != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
             if row["status"] not in {"in_progress", "interrupted"}:
@@ -1126,34 +1154,6 @@ class LanguageProfileApplicationService:
                 published_items
             ):
                 raise DomainError(ErrorCode.RESPONSE_CONFLICT)
-
-            receipt = self._receipt(
-                command_type="CompleteFoundationGate",
-                account_id=account_id,
-                aggregate_id=run_id,
-                idempotency_key=idempotency_key,
-                fingerprint=canonical_json_fingerprint(
-                    {
-                        "run_id": str(run_id),
-                        "answers": [
-                            {
-                                "item_revision_id": str(item_id),
-                                "answer": answer,
-                                "revealed": revealed,
-                            }
-                            for item_id, answer, revealed in answers
-                        ],
-                    }
-                ),
-                expected_version=expected_version,
-                now=now,
-            )
-            store = SqlCommandReceiptStore(session)
-            reservation = await store.reserve(receipt)
-            if not reservation.created:
-                self._replayed_error(reservation.receipt)
-                await uow.commit()
-                return await self.get_foundation_run(run_id, account_id)
 
             block_rows = {
                 cast(UUID, item["block_revision_id"]): item
