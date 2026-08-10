@@ -62,9 +62,13 @@ def validate_revision_mapping(
     mapping: ModuleRevisionMapping,
 ) -> tuple[ValidationFinding, ...]:
     findings: list[ValidationFinding] = []
-    mapped = {(entry.source_day_ordinal, entry.source_target_ref) for entry in mapping.entries}
+    entries = tuple(mapping.entries)
+    mapped = {(entry.source_day_ordinal, entry.source_target_ref) for entry in entries}
     required = {
         (item.ordinal, reference) for item in source.days for reference in item.primary_target_refs
+    }
+    target_pairs = {
+        (item.ordinal, reference) for item in target.days for reference in item.primary_target_refs
     }
     if (
         mapping.source_revision_id != source.module_revision_id
@@ -79,6 +83,60 @@ def validate_revision_mapping(
                 "module_revision_mapping_incomplete",
             )
         )
+    if len(entries) != len(set(entries)):
+        findings.append(
+            ValidationFinding(
+                "W11-REVISION-V1",
+                FindingSeverity.BLOCKING,
+                "revision_mapping.entries",
+                "module_revision_mapping_duplicate",
+            )
+        )
+    destinations_by_source: dict[tuple[int, str], set[tuple[int, str]]] = {}
+    for entry in entries:
+        source_key = (entry.source_day_ordinal, entry.source_target_ref)
+        target_key = (entry.target_day_ordinal, entry.target_target_ref)
+        destinations_by_source.setdefault(source_key, set()).add(target_key)
+        if source_key not in required:
+            findings.append(
+                ValidationFinding(
+                    "W11-REVISION-V1",
+                    FindingSeverity.BLOCKING,
+                    "revision_mapping.entries",
+                    "module_revision_mapping_source_missing",
+                    (entry.source_target_ref,),
+                )
+            )
+        if target_key not in target_pairs:
+            findings.append(
+                ValidationFinding(
+                    "W11-REVISION-V1",
+                    FindingSeverity.BLOCKING,
+                    "revision_mapping.entries",
+                    "module_revision_mapping_target_missing",
+                    (entry.target_target_ref,),
+                )
+            )
+    if any(len(destinations) > 1 for destinations in destinations_by_source.values()):
+        findings.append(
+            ValidationFinding(
+                "W11-REVISION-V1",
+                FindingSeverity.BLOCKING,
+                "revision_mapping.entries",
+                "module_revision_mapping_conflict",
+            )
+        )
+    mapped_targets = {(entry.target_day_ordinal, entry.target_target_ref) for entry in entries}
+    for ordinal, reference in sorted(target_pairs - mapped_targets):
+        findings.append(
+            ValidationFinding(
+                "W11-REVISION-V1",
+                FindingSeverity.WARNING,
+                f"revision_mapping.target_days.{ordinal}",
+                "module_revision_mapping_target_added",
+                (reference,),
+            )
+        )
     if not mapping.enrollment_migration_consented:
         findings.append(
             ValidationFinding(
@@ -88,4 +146,4 @@ def validate_revision_mapping(
                 "module_enrollment_migration_not_consented",
             )
         )
-    return tuple(sorted(findings, key=lambda item: item.sort_key))
+    return tuple(sorted(set(findings), key=lambda item: item.sort_key))
