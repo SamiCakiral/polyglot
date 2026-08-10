@@ -110,9 +110,14 @@ async def _login(client: AsyncClient) -> str:
         },
     )
     assert registered.status_code == 201
+    return await _authenticate(client, "session-foundations")
+
+
+async def _authenticate(client: AsyncClient, idempotency_key: str) -> str:
+    identifier = "w03-foundations@example.test"
     authenticated = await client.post(
         "/api/v1/session",
-        headers={"Origin": ORIGIN, "Idempotency-Key": "session-foundations"},
+        headers={"Origin": ORIGIN, "Idempotency-Key": idempotency_key},
         json={
             "provider_type": "local_password",
             "identifier": identifier,
@@ -147,11 +152,37 @@ async def _profile_in_foundations(client: AsyncClient, csrf: str) -> tuple[str, 
         },
     )
     assert diagnostic.status_code == 201
+    selected = (
+        *CATALOGUE.definition.blocks[0].items,
+        *CATALOGUE.definition.blocks[2].items,
+        *CATALOGUE.definition.blocks[3].items,
+    )
+    values = (
+        "incorrect-1",
+        "incorrect-2",
+        selected[2].checker_values[0],
+        "incorrect-3",
+        "incorrect-4",
+        selected[5].checker_values[0],
+    )
+    diagnostic_version = 1
+    for ordinal, (item, value) in enumerate(zip(selected, values, strict=True), start=1):
+        submitted = await client.post(
+            f"/api/v1/diagnostics/{diagnostic.json()['diagnostic_run_id']}/responses",
+            headers=_headers(csrf, f"diagnostic-answer-{ordinal}", diagnostic_version),
+            json={
+                "item_revision_id": str(item.item_revision_id),
+                "ordinal": ordinal,
+                "answer": {"value": value},
+            },
+        )
+        assert submitted.status_code == 200, submitted.text
+        diagnostic_version += 1
     completed = await client.post(
         f"/api/v1/diagnostics/{diagnostic.json()['diagnostic_run_id']}:complete",
-        headers=_headers(csrf, "complete-foundation-diagnostic", 1),
+        headers=_headers(csrf, "complete-foundation-diagnostic", diagnostic_version),
     )
-    assert completed.status_code == 200
+    assert completed.status_code == 200, completed.text
     profile = await client.get(f"/api/v1/language-profiles/{profile_id}")
     assert profile.json()["status"] == "foundations"
     return profile_id, profile.json()["version"]
@@ -185,7 +216,7 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
                 "seed": "FX-IT-FOUND",
             },
         )
-        assert started.status_code == 201
+        assert started.status_code == 201, started.text
         assert started.headers["etag"] == '"1"'
         run_id = started.json()["foundation_run_id"]
 
@@ -201,6 +232,7 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
         assert "two_sessions_required" in first.json()["gate_reasons"]
 
         clock.advance(timedelta(hours=24))
+        csrf = await _authenticate(client, "session-foundations-day-2")
         second = await client.post(
             f"/api/v1/foundation-runs/{run_id}:complete",
             headers=_headers(csrf, "foundation-session-2", 2),

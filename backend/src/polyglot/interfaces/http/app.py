@@ -155,7 +155,9 @@ def create_runtime_app() -> FastAPI:
     )
     catalogue_service = CatalogueApplicationService(session_factory)
     content_service = ContentApplicationService(session_factory)
-    language_profile_service = LanguageProfileApplicationService(session_factory)
+    language_profile_service = LanguageProfileApplicationService(
+        session_factory, catalogue_reader=catalogue_service
+    )
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )

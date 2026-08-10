@@ -140,6 +140,7 @@ foundation_runs = _table(
     Column("status", String(24), nullable=False),
     Column("seed", String(255), nullable=False),
     Column("started_at", DateTime(timezone=True), nullable=False),
+    Column("expires_at", DateTime(timezone=True), nullable=False),
     Column("completed_at", DateTime(timezone=True)),
     Column("version", Integer, nullable=False),
 )
@@ -179,6 +180,29 @@ foundation_gate_results = _table(
     Column("waiver_reason", String(120)),
     Column("waiver_evidence_ids", ARRAY(PG_UUID(as_uuid=True)), nullable=False),
     Column("decided_at", DateTime(timezone=True), nullable=False),
+)
+foundation_measurements = _table(
+    "foundation_measurements",
+    Column("measurement_id", PG_UUID(as_uuid=True), primary_key=True),
+    Column(
+        "foundation_run_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("language_profiles.foundation_runs.foundation_run_id"),
+        nullable=False,
+    ),
+    Column(
+        "foundation_run_block_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("language_profiles.foundation_run_blocks.foundation_run_block_id"),
+        nullable=False,
+    ),
+    Column("item_revision_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("session_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("answer", JSONB, nullable=False),
+    Column("score", Numeric(5, 4)),
+    Column("evaluable", Boolean, nullable=False),
+    Column("revealed", Boolean, nullable=False),
+    Column("measured_at", DateTime(timezone=True), nullable=False),
 )
 
 

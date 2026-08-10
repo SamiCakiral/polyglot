@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Header, Request, Security, status
+from fastapi import APIRouter, Header, HTTPException, Request, Response, Security, status
 from fastapi.security import APIKeyCookie
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -29,7 +29,7 @@ from polyglot.platform.errors import DomainError, ErrorCode
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 OriginHeader = Annotated[str, Header(alias="Origin")]
 CsrfHeader = Annotated[str, Header(alias="X-CSRF-Token")]
-IfMatchHeader = Annotated[str, Header(alias="If-Match")]
+IfMatchHeader = Annotated[str | None, Header(alias="If-Match")]
 _session_cookie_security = APIKeyCookie(
     name=SESSION_COOKIE, scheme_name="SessionCookie", auto_error=False
 )
@@ -65,6 +65,16 @@ class StartFoundationRunRequest(ClosedModel):
     pack_revision_id: UUID
     foundation_revision_id: UUID
     seed: str = Field(min_length=1, max_length=255)
+
+
+class FoundationAnswerRequest(ClosedModel):
+    item_revision_id: UUID
+    answer: dict[str, Any]
+    revealed: bool = False
+
+
+class CompleteFoundationGateRequest(ClosedModel):
+    answers: list[FoundationAnswerRequest] = Field(min_length=1, max_length=32)
 
 
 class ProfileResponse(ClosedModel):
@@ -110,8 +120,12 @@ class FoundationResponse(ClosedModel):
     pack_revision_id: UUID
     foundation_revision_id: UUID
     started_at: datetime
+    expires_at: datetime
     version: int
     completed_at: datetime | None
+    session_count: int
+    gate_passed: bool | None
+    gate_reasons: list[str]
 
 
 def _profile_response(profile: LearnerLanguageProfile) -> ProfileResponse:
@@ -138,7 +152,19 @@ def _diagnostic_response(summary: DiagnosticRunSummary) -> DiagnosticResponse:
 
 
 def _foundation_response(summary: FoundationRunSummary) -> FoundationResponse:
-    return FoundationResponse(**asdict(summary))
+    payload = asdict(summary)
+    payload["gate_reasons"] = list(summary.gate_reasons)
+    return FoundationResponse(**payload)
+
+
+def _required_version(if_match: str | None) -> int:
+    if if_match is None:
+        raise HTTPException(status_code=428, detail="If-Match is required")
+    return _expected_version(if_match)
+
+
+def _etag(response: Response, version: int) -> None:
+    response.headers["ETag"] = f'"{version}"'
 
 
 def language_profiles_router(
@@ -194,6 +220,7 @@ def language_profiles_router(
     async def create_language_profile(
         payload: CreateProfileRequest,
         request: Request,
+        response: Response,
         idempotency_key: IdempotencyKey,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
@@ -207,6 +234,7 @@ def language_profiles_router(
             idempotency_key=idempotency_key,
             context=_context(request),
         )
+        _etag(response, result.profile.version)
         return _profile_response(result.profile)
 
     @router.get(
@@ -216,10 +244,12 @@ def language_profiles_router(
         responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def get_language_profile(
-        id: UUID, request: Request, session_token: SessionCookieToken = None
+        id: UUID, request: Request, response: Response, session_token: SessionCookieToken = None
     ) -> ProfileResponse:
         account_id = await account_for(request, session_token)
-        return _profile_response(await application_service().get_profile(id, account_id))
+        profile = await application_service().get_profile(id, account_id)
+        _etag(response, profile.version)
+        return _profile_response(profile)
 
     @router.patch(
         "/api/v1/language-profiles/{profile_id}/goals",
@@ -231,10 +261,11 @@ def language_profiles_router(
         profile_id: UUID,
         payload: UpdateGoalsRequest,
         request: Request,
+        response: Response,
         idempotency_key: IdempotencyKey,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
-        if_match: IfMatchHeader,
+        if_match: IfMatchHeader = None,
         session_token: SessionCookieToken = None,
     ) -> ProfileResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -242,10 +273,11 @@ def language_profiles_router(
             profile_id=profile_id,
             account_id=account_id,
             goals=tuple(payload.goals),
-            expected_version=_expected_version(if_match),
+            expected_version=_required_version(if_match),
             idempotency_key=idempotency_key,
             context=_context(request),
         )
+        _etag(response, result.profile.version)
         return _profile_response(result.profile)
 
     @router.post(
@@ -259,25 +291,26 @@ def language_profiles_router(
         profile_id: UUID,
         payload: StartDiagnosticRequest,
         request: Request,
+        response: Response,
         idempotency_key: IdempotencyKey,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
-        if_match: IfMatchHeader,
+        if_match: IfMatchHeader = None,
         session_token: SessionCookieToken = None,
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
-        return _diagnostic_response(
-            await application_service().start_diagnostic(
+        summary = await application_service().start_diagnostic(
                 profile_id=profile_id,
                 account_id=account_id,
                 policy_revision_id=payload.policy_revision_id,
                 pack_revision_id=payload.pack_revision_id,
                 seed=payload.seed,
-                expected_version=_expected_version(if_match),
+                expected_version=_required_version(if_match),
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )
-        )
+        _etag(response, summary.version)
+        return _diagnostic_response(summary)
 
     @router.get(
         "/api/v1/diagnostics/{id}",
@@ -286,10 +319,12 @@ def language_profiles_router(
         responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def get_diagnostic(
-        id: UUID, request: Request, session_token: SessionCookieToken = None
+        id: UUID, request: Request, response: Response, session_token: SessionCookieToken = None
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token)
-        return _diagnostic_response(await application_service().get_diagnostic(id, account_id))
+        summary = await application_service().get_diagnostic(id, account_id)
+        _etag(response, summary.version)
+        return _diagnostic_response(summary)
 
     @router.post(
         "/api/v1/diagnostics/{run_id}/responses",
@@ -300,10 +335,11 @@ def language_profiles_router(
         run_id: UUID,
         payload: SubmitDiagnosticResponseRequest,
         request: Request,
+        response: Response,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader,
+        if_match: IfMatchHeader = None,
         session_token: SessionCookieToken = None,
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -313,10 +349,11 @@ def language_profiles_router(
             item_revision_id=payload.item_revision_id,
             ordinal=payload.ordinal,
             answer=payload.answer,
-            expected_version=_expected_version(if_match),
+            expected_version=_required_version(if_match),
             idempotency_key=idempotency_key,
             context=_context(request),
         )
+        _etag(response, summary.version)
         return _diagnostic_response(summary)
 
     @router.post(
@@ -327,44 +364,39 @@ def language_profiles_router(
     async def complete_diagnostic(
         run_id: UUID,
         request: Request,
+        response: Response,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader,
+        if_match: IfMatchHeader = None,
         session_token: SessionCookieToken = None,
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
         summary = await application_service().complete_diagnostic(
             run_id=run_id,
             account_id=account_id,
-            expected_version=_expected_version(if_match),
+            expected_version=_required_version(if_match),
             idempotency_key=idempotency_key,
             context=_context(request),
         )
+        _etag(response, summary.version)
         return _diagnostic_response(summary)
-
-    async def unavailable_command(
-        request: Request,
-        origin: OriginHeader,
-        csrf_token: CsrfHeader,
-        session_token: str | None,
-    ) -> None:
-        await account_for(request, session_token, csrf_token, origin)
-        raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
 
     @router.post(
         "/api/v1/language-profiles/{profile_id}/foundation-runs",
         operation_id="start_foundation_run",
+        status_code=status.HTTP_201_CREATED,
         responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def start_foundation_run(
         profile_id: UUID,
         payload: StartFoundationRunRequest,
         request: Request,
+        response: Response,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
-        if_match: IfMatchHeader,
+        if_match: IfMatchHeader = None,
         session_token: SessionCookieToken = None,
     ) -> FoundationResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
@@ -374,10 +406,11 @@ def language_profiles_router(
             pack_revision_id=payload.pack_revision_id,
             foundation_revision_id=payload.foundation_revision_id,
             seed=payload.seed,
-            expected_version=_expected_version(if_match),
+            expected_version=_required_version(if_match),
             idempotency_key=idempotency_key,
             context=_context(request),
         )
+        _etag(response, summary.version)
         return _foundation_response(summary)
 
     @router.post(
@@ -387,14 +420,28 @@ def language_profiles_router(
     )
     async def complete_foundation_gate(
         run_id: UUID,
+        payload: CompleteFoundationGateRequest,
         request: Request,
+        response: Response,
         origin: OriginHeader,
         csrf_token: CsrfHeader,
         idempotency_key: IdempotencyKey,
+        if_match: IfMatchHeader = None,
         session_token: SessionCookieToken = None,
-    ) -> None:
-        del run_id, idempotency_key
-        await unavailable_command(request, origin, csrf_token, session_token)
+    ) -> FoundationResponse:
+        account_id = await account_for(request, session_token, csrf_token, origin)
+        summary = await application_service().complete_foundation_gate(
+            run_id=run_id,
+            account_id=account_id,
+            answers=tuple(
+                (item.item_revision_id, item.answer, item.revealed) for item in payload.answers
+            ),
+            expected_version=_required_version(if_match),
+            idempotency_key=idempotency_key,
+            context=_context(request),
+        )
+        _etag(response, summary.version)
+        return _foundation_response(summary)
 
     def transition_route(
         *, command_type: str, event_type: str, profile_status: LanguageProfileStatus
@@ -405,7 +452,7 @@ def language_profiles_router(
             idempotency_key: IdempotencyKey,
             origin: OriginHeader,
             csrf_token: CsrfHeader,
-            if_match: IfMatchHeader,
+            if_match: IfMatchHeader = None,
             session_token: SessionCookieToken = None,
         ) -> ProfileResponse:
             account_id = await account_for(request, session_token, csrf_token, origin)
@@ -415,7 +462,7 @@ def language_profiles_router(
                 status=profile_status,
                 command_type=command_type,
                 event_type=event_type,
-                expected_version=_expected_version(if_match),
+                expected_version=_required_version(if_match),
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )
@@ -477,10 +524,11 @@ def language_profiles_router(
         responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def get_foundation_run(
-        id: UUID, request: Request, session_token: SessionCookieToken = None
+        id: UUID, request: Request, response: Response, session_token: SessionCookieToken = None
     ) -> FoundationResponse:
         account_id = await account_for(request, session_token)
         summary = await application_service().get_foundation_run(id, account_id)
+        _etag(response, summary.version)
         return _foundation_response(summary)
 
     return router

@@ -202,6 +202,7 @@ CREATE TABLE language_profiles.foundation_runs (
     status varchar(24) NOT NULL,
     seed varchar(255) NOT NULL,
     started_at timestamptz NOT NULL,
+    expires_at timestamptz NOT NULL,
     completed_at timestamptz,
     version integer NOT NULL,
     CONSTRAINT ck_foundation_run_uuid7 CHECK (
@@ -214,12 +215,15 @@ CREATE TABLE language_profiles.foundation_runs (
         status IN ('prepared', 'in_progress', 'interrupted', 'completed', 'expired', 'cancelled')
     ),
     CONSTRAINT ck_foundation_run_shape CHECK (
-        seed <> '' AND version >= 1 AND (status = 'completed') = (completed_at IS NOT NULL)
+        seed <> '' AND version >= 1 AND expires_at = started_at + interval '7 days'
+        AND (status = 'completed') = (completed_at IS NOT NULL)
     )
 );
 CREATE UNIQUE INDEX uq_foundation_run_open_per_profile
     ON language_profiles.foundation_runs(profile_id)
     WHERE status IN ('prepared', 'in_progress', 'interrupted');
+CREATE INDEX ix_foundation_run_resume
+    ON language_profiles.foundation_runs(profile_id, status, expires_at);
 
 CREATE TABLE language_profiles.foundation_run_blocks (
     foundation_run_block_id uuid PRIMARY KEY,
@@ -243,7 +247,7 @@ CREATE TABLE language_profiles.foundation_run_blocks (
         status IN ('pending', 'available', 'in_progress', 'completed', 'failed', 'waived')
     ),
     CONSTRAINT ck_foundation_run_block_shape CHECK (
-        ordinal >= 1 AND block_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
+        ordinal >= 1 AND block_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{1,119}$'
         AND (result IS NULL OR jsonb_typeof(result) = 'object')
         AND (completed_at IS NULL OR started_at IS NOT NULL)
     ),
@@ -275,8 +279,38 @@ CREATE TABLE language_profiles.foundation_gate_results (
         jsonb_typeof(reasons) = 'array' AND jsonb_typeof(details) = 'object'
     )
 );
-CREATE UNIQUE INDEX uq_foundation_gate_result_per_run
-    ON language_profiles.foundation_gate_results(foundation_run_id);
+
+CREATE TABLE language_profiles.foundation_measurements (
+    measurement_id uuid PRIMARY KEY,
+    foundation_run_id uuid NOT NULL REFERENCES language_profiles.foundation_runs(foundation_run_id)
+        ON DELETE RESTRICT,
+    foundation_run_block_id uuid NOT NULL
+        REFERENCES language_profiles.foundation_run_blocks(foundation_run_block_id)
+        ON DELETE RESTRICT,
+    item_revision_id uuid NOT NULL,
+    session_id uuid NOT NULL,
+    answer jsonb NOT NULL,
+    score numeric(5,4),
+    evaluable boolean NOT NULL,
+    revealed boolean NOT NULL,
+    measured_at timestamptz NOT NULL,
+    CONSTRAINT ck_foundation_measurement_uuid7 CHECK (
+        language_profiles.is_uuid7(measurement_id)
+        AND language_profiles.is_uuid7(foundation_run_id)
+        AND language_profiles.is_uuid7(foundation_run_block_id)
+        AND language_profiles.is_uuid7(item_revision_id)
+        AND language_profiles.is_uuid7(session_id)
+    ),
+    CONSTRAINT ck_foundation_measurement_shape CHECK (
+        jsonb_typeof(answer) = 'object'
+        AND (score IS NULL OR score IN (0, 1))
+        AND (evaluable OR score IS NULL)
+    ),
+    CONSTRAINT uq_foundation_measurement_session_item
+        UNIQUE(foundation_run_id, session_id, item_revision_id)
+);
+CREATE INDEX ix_foundation_measurement_run_session
+    ON language_profiles.foundation_measurements(foundation_run_id, measured_at, session_id);
 
 CREATE FUNCTION language_profiles.reject_append_only_mutation() RETURNS trigger
 LANGUAGE plpgsql AS $function$
@@ -290,6 +324,9 @@ FOR EACH ROW EXECUTE FUNCTION language_profiles.reject_append_only_mutation();
 CREATE TRIGGER guard_foundation_gate_result_append_only
 BEFORE UPDATE OR DELETE ON language_profiles.foundation_gate_results
 FOR EACH ROW EXECUTE FUNCTION language_profiles.reject_append_only_mutation();
+CREATE TRIGGER guard_foundation_measurement_append_only
+BEFORE UPDATE OR DELETE ON language_profiles.foundation_measurements
+FOR EACH ROW EXECUTE FUNCTION language_profiles.reject_append_only_mutation();
 
 ALTER TABLE language_profiles.learner_language_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE language_profiles.support_language_authorizations ENABLE ROW LEVEL SECURITY;
@@ -298,6 +335,7 @@ ALTER TABLE language_profiles.diagnostic_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE language_profiles.diagnostic_responses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE language_profiles.foundation_runs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE language_profiles.foundation_run_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE language_profiles.foundation_measurements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE language_profiles.foundation_gate_results ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY learner_language_profile_owner ON language_profiles.learner_language_profiles
@@ -348,6 +386,15 @@ CREATE POLICY foundation_run_block_owner ON language_profiles.foundation_run_blo
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
         WHERE run.foundation_run_id = language_profiles.foundation_run_blocks.foundation_run_id
+        AND item.account_id = language_profiles.current_user_id()));
+CREATE POLICY foundation_measurement_owner ON language_profiles.foundation_measurements
+    USING (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
+        JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
+        WHERE run.foundation_run_id = language_profiles.foundation_measurements.foundation_run_id
+        AND item.account_id = language_profiles.current_user_id()))
+    WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
+        JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
+        WHERE run.foundation_run_id = language_profiles.foundation_measurements.foundation_run_id
         AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY foundation_gate_result_owner ON language_profiles.foundation_gate_results
     USING (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
