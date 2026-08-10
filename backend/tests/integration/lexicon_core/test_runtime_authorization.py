@@ -209,4 +209,4 @@ async def test_capture_gap_rejects_unowned_or_unauthorized_attempt(
             )
     finally:
         await engine.dispose()
-    assert error.value.code is ErrorCode.NOT_FOUND
+    assert error.value.code is ErrorCode.SUPPORT_LANGUAGE_NOT_ALLOWED

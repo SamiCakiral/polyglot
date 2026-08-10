@@ -11,7 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, Security
 from fastapi.security import APIKeyCookie
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import text
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.interfaces.http.routes.identity import (
@@ -22,7 +22,12 @@ from polyglot.interfaces.http.routes.identity import (
     _require_origin,
     _session_token,
 )
-from polyglot.modules.identity.application import IdentityApplicationService
+from polyglot.modules.identity.application import (
+    RECENT_AUTHENTICATION,
+    CurrentSessionResult,
+    IdentityApplicationService,
+)
+from polyglot.modules.identity.persistence import auth_sessions
 from polyglot.modules.lexicon.core.queries import (
     GraphEdge,
     WordBankItem,
@@ -134,6 +139,7 @@ class WordBankService(Protocol):
         idempotency_key: str,
         expected_version: int | None,
         profile_id: UUID | None = None,
+        session_id: UUID | None = None,
     ) -> MutationResult: ...
 
     async def get_sense(
@@ -203,12 +209,12 @@ def word_bank_router(
             raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         return service
 
-    async def account_for(
+    async def session_for(
         request: Request,
         session_token: str | None,
         csrf_token: str | None = None,
         origin: str | None = None,
-    ) -> UUID:
+    ) -> CurrentSessionResult:
         if identity_service is None:
             raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         if origin is not None:
@@ -218,7 +224,15 @@ def word_bank_router(
         )
         if csrf_token is not None and csrf_token != current.csrf_token:
             raise DomainError(ErrorCode.FORBIDDEN)
-        return current.account_id
+        return current
+
+    async def account_for(
+        request: Request,
+        session_token: str | None,
+        csrf_token: str | None = None,
+        origin: str | None = None,
+    ) -> UUID:
+        return (await session_for(request, session_token, csrf_token, origin)).account_id
 
     def mutation_route(
         method: str,
@@ -239,7 +253,7 @@ def word_bank_router(
             if_match: str | None,
             session_token: str | None,
         ) -> MutationResponse:
-            account_id = await account_for(request, session_token, csrf_token, origin)
+            current = await session_for(request, session_token, csrf_token, origin)
             expected_version = _required_version(if_match) if versioned else None
             raw_resource_id = (
                 request.path_params.get("sense_id")
@@ -254,7 +268,7 @@ def word_bank_router(
                 raise DomainError(ErrorCode.VALIDATION_FAILED)
             result = await application_service().execute(
                 command_name=command_name,
-                account_id=account_id,
+                account_id=current.account_id,
                 resource_id=UUID(str(raw_resource_id)),
                 payload={} if payload is None else payload.data,
                 idempotency_key=idempotency_key,
@@ -264,6 +278,7 @@ def word_bank_router(
                     if "profile_id" in request.path_params
                     else None
                 ),
+                session_id=current.session_id,
             )
             response.headers["ETag"] = f'"{result.version}"'
             return MutationResponse(
@@ -436,6 +451,94 @@ _EVENT_BY_COMMAND = {
 }
 
 
+class RecentReauthenticationVerifier(Protocol):
+    async def __call__(
+        self,
+        session: AsyncSession,
+        account_id: UUID,
+        session_id: UUID,
+        now: datetime,
+    ) -> bool: ...
+
+
+class SqlRecentReauthenticationVerifier:
+    async def __call__(
+        self,
+        session: AsyncSession,
+        account_id: UUID,
+        session_id: UUID,
+        now: datetime,
+    ) -> bool:
+        authenticated_at = await session.scalar(
+            select(auth_sessions.c.authenticated_at).where(
+                auth_sessions.c.session_id == session_id,
+                auth_sessions.c.account_id == account_id,
+                auth_sessions.c.revoked_at.is_(None),
+            )
+        )
+        return (
+            authenticated_at is not None
+            and timedelta(0) <= now - authenticated_at <= RECENT_AUTHENTICATION
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AttemptAuthorization:
+    attempt_allowed: bool
+    support_language_allowed: bool
+
+
+class AttemptLexicalGapAuthorizer(Protocol):
+    async def __call__(
+        self,
+        session: AsyncSession,
+        account_id: UUID,
+        profile_id: UUID,
+        attempt_id: UUID,
+        support_language_tag: str,
+    ) -> AttemptAuthorization: ...
+
+
+class SqlAttemptLexicalGapAuthorizer:
+    _ALLOWED_EVENTS = (
+        "exercise_attempt_opened",
+        "attempt_draft_saved",
+        "exercise_hint_used",
+        "exercise_attempt_corrected",
+    )
+
+    async def __call__(
+        self,
+        session: AsyncSession,
+        account_id: UUID,
+        profile_id: UUID,
+        attempt_id: UUID,
+        support_language_tag: str,
+    ) -> AttemptAuthorization:
+        latest_event = await session.scalar(
+            text(
+                "SELECT event_type FROM platform.domain_events "
+                "WHERE aggregate_type='exercise_attempt' AND aggregate_id=:attempt "
+                "AND actor_id=:account AND profile_id=:profile "
+                "ORDER BY aggregate_version DESC,recorded_at DESC,event_id DESC LIMIT 1"
+            ),
+            {"attempt": attempt_id, "account": account_id, "profile": profile_id},
+        )
+        if latest_event not in self._ALLOWED_EVENTS:
+            return AttemptAuthorization(False, False)
+        support_allowed = await session.scalar(
+            text(
+                "SELECT EXISTS (SELECT 1 FROM catalogue.language_varieties variety "
+                "JOIN language_profiles.support_language_authorizations authorization "
+                "ON authorization.variety_id=variety.variety_id "
+                "WHERE authorization.profile_id=:profile AND authorization.revoked_at IS NULL "
+                "AND variety.language_tag=:language_tag)"
+            ),
+            {"profile": profile_id, "language_tag": support_language_tag},
+        )
+        return AttemptAuthorization(True, support_allowed is True)
+
+
 class SqlWordBankService:
     """Transactional W06 adapter; it never writes mastery, debt, card, or list state."""
 
@@ -444,13 +547,15 @@ class SqlWordBankService:
         session_factory: async_sessionmaker[AsyncSession],
         *,
         ids: IdGenerator | None = None,
-        attempt_authorizer: Callable[[UUID, UUID, UUID, str], Awaitable[bool]] | None = None,
-        recent_reauth_verifier: Callable[[UUID], Awaitable[bool]] | None = None,
+        attempt_authorizer: AttemptLexicalGapAuthorizer | None = None,
+        recent_reauth_verifier: RecentReauthenticationVerifier | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
-        self._attempt_authorizer = attempt_authorizer
-        self._recent_reauth_verifier = recent_reauth_verifier
+        self._attempt_authorizer = attempt_authorizer or SqlAttemptLexicalGapAuthorizer()
+        self._recent_reauth_verifier = (
+            recent_reauth_verifier or SqlRecentReauthenticationVerifier()
+        )
 
     async def _set_actor(self, session: AsyncSession, account_id: UUID) -> None:
         await session.execute(
@@ -530,6 +635,7 @@ class SqlWordBankService:
         idempotency_key: str,
         expected_version: int | None,
         profile_id: UUID | None = None,
+        session_id: UUID | None = None,
     ) -> MutationResult:
         if command_name not in _EVENT_BY_COMMAND:
             raise DomainError(ErrorCode.VALIDATION_FAILED)
@@ -548,20 +654,21 @@ class SqlWordBankService:
                 session, command_name, resource_id, payload, profile_id
             )
             await self._assert_owner(session, account_id, profile_id)
+            now = datetime.now(UTC)
             if command_name == "DeletePrivateContext":
-                if self._recent_reauth_verifier is None:
-                    raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
-                if not await self._recent_reauth_verifier(account_id):
-                    raise DomainError(ErrorCode.FORBIDDEN)
+                if session_id is None or not await self._recent_reauth_verifier(
+                    session, account_id, session_id, now
+                ):
+                    raise DomainError(ErrorCode.UNAUTHENTICATED)
             if command_name == "CaptureLexicalGap":
                 support_language = str(payload.get("support_language_tag", ""))
-                if self._attempt_authorizer is None:
-                    raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
-                if not await self._attempt_authorizer(
-                    account_id, profile_id, resource_id, support_language
-                ):
+                authorization = await self._attempt_authorizer(
+                    session, account_id, profile_id, resource_id, support_language
+                )
+                if not authorization.attempt_allowed:
                     raise DomainError(ErrorCode.NOT_FOUND)
-            now = datetime.now(UTC)
+                if not authorization.support_language_allowed:
+                    raise DomainError(ErrorCode.SUPPORT_LANGUAGE_NOT_ALLOWED)
             command_id = self._ids.new()
             reservation = await SqlCommandReceiptStore(session).reserve(
                 CommandReceipt(

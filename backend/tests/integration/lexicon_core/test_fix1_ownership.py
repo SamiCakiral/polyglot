@@ -142,7 +142,7 @@ async def test_delete_private_context_requires_server_verified_recent_reauth(
             idempotency_key="delete-without-reauth",
             expected_version=None,
         )
-    assert error.value.code in {ErrorCode.FORBIDDEN, ErrorCode.DEPENDENCY_UNAVAILABLE}
+    assert error.value.code is ErrorCode.UNAUTHENTICATED
 
 
 async def test_capture_gap_requires_owned_open_attempt_and_allowed_support_language(
