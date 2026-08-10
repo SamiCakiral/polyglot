@@ -4,7 +4,7 @@
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Protocol
 from uuid import UUID
 
@@ -33,6 +33,11 @@ from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 from polyglot.platform.json_types import JsonValue
+from polyglot.platform.persistence.records import CommandReceipt, DomainEvent
+from polyglot.platform.persistence.repositories import (
+    SqlCommandReceiptStore,
+    SqlEventOutboxRepository,
+)
 
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
 OriginHeader = Annotated[str, Header(alias="Origin")]
@@ -126,6 +131,7 @@ class WordBankService(Protocol):
         self,
         *,
         account_id: UUID,
+        profile_id: UUID,
         sense_id: UUID,
         depth: int,
         edge_types: tuple[str, ...],
@@ -324,6 +330,7 @@ def word_bank_router(
         sense_id: UUID,
         request: Request,
         response: Response,
+        profile_id: Annotated[UUID, Query()],
         edge_types: Annotated[list[str], Query(min_length=1)],
         depth: Annotated[int, Query(ge=1, le=2)] = 1,
         max_nodes: Annotated[int, Query(ge=1, le=500)] = 100,
@@ -332,6 +339,7 @@ def word_bank_router(
         account_id = await account_for(request, session_token)
         result = await application_service().get_sense(
             account_id=account_id,
+            profile_id=profile_id,
             sense_id=sense_id,
             depth=depth,
             edge_types=tuple(edge_types),
@@ -506,27 +514,31 @@ class SqlWordBankService:
                 session, command_name, resource_id, payload
             )
             await self._assert_owner(session, account_id, profile_id)
-            receipt = (
-                await session.execute(
-                    text(
-                        "SELECT request_fingerprint,resource_id,result_payload "
-                        "FROM lexicon.lexicon_command_receipts "
-                        "WHERE profile_id=:profile AND command_name=:command "
-                        "AND idempotency_key=:key"
-                    ),
-                    {
-                        "profile": profile_id,
-                        "command": command_name,
-                        "key": idempotency_key,
-                    },
+            now = datetime.now(UTC)
+            command_id = self._ids.new()
+            reservation = await SqlCommandReceiptStore(session).reserve(
+                CommandReceipt(
+                    command_id=command_id,
+                    command_type=command_name,
+                    actor_id=account_id,
+                    aggregate_type="language_profile",
+                    aggregate_id=profile_id,
+                    idempotency_key=idempotency_key,
+                    request_fingerprint=fingerprint,
+                    expected_version=expected_version,
+                    received_at=now,
+                    result_ref=None,
+                    result_payload=None,
+                    status="started",
+                    expires_at=now + timedelta(days=30),
                 )
-            ).mappings().one_or_none()
-            if receipt is not None:
-                if receipt["request_fingerprint"] != fingerprint:
+            )
+            if not reservation.created:
+                stored = reservation.receipt.result_payload
+                if reservation.receipt.status != "succeeded" or stored is None:
                     raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
-                stored = receipt["result_payload"]
                 return MutationResult(
-                    UUID(str(receipt["resource_id"])),
+                    UUID(str(stored["resource_id"])),
                     int(stored["version"]),
                     _EVENT_BY_COMMAND[command_name],
                 )
@@ -541,24 +553,41 @@ class SqlWordBankService:
                 idempotency_key=idempotency_key,
                 fingerprint=fingerprint,
             )
-            await session.execute(
-                text(
-                    "INSERT INTO lexicon.lexicon_command_receipts "
-                    "(receipt_id,profile_id,command_name,idempotency_key,request_fingerprint,"
-                    "resource_id,result_payload,created_at) VALUES "
-                    "(:receipt,:profile,:command,:key,:fingerprint,:resource,"
-                    "jsonb_build_object('version',CAST(:version AS integer)),:now)"
+            result_payload: dict[str, JsonValue] = {
+                "resource_id": str(result_id),
+                "version": version,
+            }
+            await SqlCommandReceiptStore(session).complete(
+                command_id=command_id,
+                status="succeeded",
+                result_ref=result_id,
+                result_payload=result_payload,
+            )
+            recorded_at = datetime.now(UTC)
+            await SqlEventOutboxRepository(session, self._ids).add(
+                DomainEvent(
+                    event_id=self._ids.new(),
+                    event_type=_EVENT_BY_COMMAND[command_name],
+                    schema_version=1,
+                    aggregate_type="lexicon_resource",
+                    aggregate_id=result_id,
+                    aggregate_version=version,
+                    actor_type="account",
+                    actor_id=account_id,
+                    profile_id=profile_id,
+                    occurred_at=recorded_at,
+                    recorded_at=recorded_at,
+                    correlation_id=self._ids.new(),
+                    causation_id=None,
+                    command_id=command_id,
+                    privacy_class="personal",
+                    policy_versions={"lexicon": "w06-v1"},
+                    payload={"resource_id": str(result_id), "version": version},
+                    expires_at=recorded_at + timedelta(days=3650),
+                    subject_type="profile",
+                    subject_id=profile_id,
                 ),
-                {
-                    "receipt": self._ids.new(),
-                    "profile": profile_id,
-                    "command": command_name,
-                    "key": idempotency_key,
-                    "fingerprint": fingerprint,
-                    "resource": result_id,
-                    "version": version,
-                    "now": datetime.now(UTC),
-                },
+                destinations=("learning.projections",),
             )
             await session.commit()
             return MutationResult(result_id, version, _EVENT_BY_COMMAND[command_name])
@@ -632,6 +661,27 @@ class SqlWordBankService:
                     "created": occurred_at,
                 },
             )
+            for raw_candidate in payload.get("candidates", []):
+                if not isinstance(raw_candidate, dict):
+                    raise DomainError(ErrorCode.VALIDATION_FAILED)
+                await session.execute(
+                    text(
+                        "INSERT INTO lexicon.mention_candidates "
+                        "(candidate_id,profile_id,mention_id,sense_id,sense_scope,confidence,"
+                        "source,created_at) VALUES "
+                        "(:candidate,:profile,:mention,:sense,:scope,:confidence,:source,:created)"
+                    ),
+                    {
+                        "candidate": self._uuid(raw_candidate, "candidate_id"),
+                        "profile": profile_id,
+                        "mention": mention_id,
+                        "sense": self._uuid(raw_candidate, "sense_id"),
+                        "scope": str(raw_candidate.get("sense_scope", "shared")),
+                        "confidence": float(raw_candidate.get("confidence", 0.0)),
+                        "source": str(raw_candidate.get("source", "unknown")),
+                        "created": occurred_at,
+                    },
+                )
             return encounter_id, 1
         if command_name == "ResolveMention":
             candidate_id = self._uuid(payload, "candidate_id")
@@ -905,9 +955,10 @@ class SqlWordBankService:
             unresolved = int(await session.scalar(text("SELECT count(*) FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r WHERE r.mention_id=m.mention_id)"), {"profile": profile_id}) or 0)
             return WordBankOverviewResponse(items=items, next_cursor=page.next_cursor, encountered_sense_count=len(rows), unresolved_mention_count=unresolved, reference_set_code=None, reference_revision=None, reference_coverage_count=None, reference_total_count=None)
 
-    async def get_sense(self, *, account_id: UUID, sense_id: UUID, depth: int, edge_types: tuple[str, ...], max_nodes: int) -> SenseNeighborhoodResponse:
+    async def get_sense(self, *, account_id: UUID, profile_id: UUID, sense_id: UUID, depth: int, edge_types: tuple[str, ...], max_nodes: int) -> SenseNeighborhoodResponse:
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
+            await self._assert_owner(session, account_id, profile_id)
             row = (
                 await session.execute(text("SELECT sense.sense_id,revision.definition,unit_revision.lemma FROM catalogue.lexical_senses sense JOIN catalogue.lexical_sense_revisions revision ON revision.sense_id=sense.sense_id JOIN catalogue.lexical_unit_revisions unit_revision ON unit_revision.lexical_unit_id=sense.lexical_unit_id WHERE sense.sense_id=:sense ORDER BY revision.revision_no DESC,unit_revision.revision_no DESC LIMIT 1"), {"sense": sense_id})
             ).mappings().one_or_none()
@@ -918,7 +969,7 @@ class SqlWordBankService:
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             edge_rows = (
-                await session.execute(text("SELECT source_sense_id,target_sense_id,relation_type FROM lexicon.personal_lexical_relations relation WHERE relation_type=ANY(:types) AND NOT EXISTS (SELECT 1 FROM lexicon.lexical_relation_retractions retraction WHERE retraction.relation_id=relation.relation_id)"), {"types": list(edge_types)})
+                await session.execute(text("SELECT source_sense_id,target_sense_id,relation_type FROM lexicon.personal_lexical_relations relation WHERE profile_id=:profile AND relation_type=ANY(:types) AND NOT EXISTS (SELECT 1 FROM lexicon.lexical_relation_retractions retraction WHERE retraction.profile_id=:profile AND retraction.relation_id=relation.relation_id)"), {"profile": profile_id, "types": list(edge_types)})
             ).all()
             graph = tuple(GraphEdge(UUID(str(item.source_sense_id)), UUID(str(item.target_sense_id)), str(item.relation_type)) for item in edge_rows)
             neighborhood = bounded_neighborhood(sense_id, graph, depth=depth, edge_types=frozenset(edge_types), max_nodes=max_nodes)

@@ -22,6 +22,9 @@ async def clean_lexicon_database() -> AsyncIterator[None]:
             await connection.execute(
                 text("TRUNCATE TABLE lexicon.lexicon_command_receipts CASCADE")
             )
+        await connection.execute(text("TRUNCATE TABLE platform.domain_events CASCADE"))
+        await connection.execute(text("TRUNCATE TABLE platform.command_receipts CASCADE"))
+        await connection.execute(text("TRUNCATE TABLE platform.outbox_messages CASCADE"))
         await connection.execute(
             text("TRUNCATE TABLE language_profiles.learner_language_profiles CASCADE")
         )

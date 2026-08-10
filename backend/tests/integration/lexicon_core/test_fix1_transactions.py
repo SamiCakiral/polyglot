@@ -1,6 +1,5 @@
 import asyncio
 from datetime import UTC, datetime
-from uuid import UUID
 
 import pytest
 from sqlalchemy import text
@@ -231,7 +230,24 @@ async def test_neighborhood_is_explicitly_scoped_to_one_owned_profile(service_fa
                     "target": uid(target_id),
                     "now": NOW,
                 },
-            )
+                )
+        await session.execute(
+            text(
+                "INSERT INTO lexicon.private_lexical_units "
+                "(lexical_unit_id,profile_id,variety_id,unit_type,lemma,normalization_key,"
+                "components,provenance_ref,version,created_at) VALUES "
+                "(:unit,:profile,:variety,'word','piano','piano','{}','test',1,:now)"
+            ),
+            {"unit": uid(1298), "profile": uid(11), "variety": uid(101), "now": NOW},
+        )
+        await session.execute(
+            text(
+                "INSERT INTO lexicon.private_lexical_senses "
+                "(sense_id,profile_id,lexical_unit_id,sense_code,definition,provenance_ref,"
+                "created_at) VALUES (:sense,:profile,:unit,'piano.1','doucement','test',:now)"
+            ),
+            {"sense": uid(1003), "profile": uid(11), "unit": uid(1298), "now": NOW},
+        )
         await session.commit()
 
     result = await service.get_sense(
