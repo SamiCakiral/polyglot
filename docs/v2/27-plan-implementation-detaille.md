@@ -722,15 +722,18 @@ rejeu, saut, abandon et indisponibilite par primitive core.
 
 **Etapes TDD :**
 
-- [ ] Ecrire le contrat executable d'une primitive minimale et son echec initial.
-- [ ] Implementer le cycle canonique `ExerciseDefinition`/`Attempt`.
-- [ ] Ajouter les strategies de correction et leurs sorties non ambigues.
-- [ ] Tester aide, revelation, saut, abandon et soumission forcee sans credit
+- [x] Ecrire le contrat executable d'une primitive minimale et son echec initial.
+- [x] Implementer le cycle canonique `ExerciseDefinition`/`Attempt`.
+- [x] Ajouter les strategies de correction et leurs sorties non ambigues.
+- [x] Tester aide, revelation, saut, abandon et soumission forcee sans credit
   indu.
-- [ ] Ecrire les tests PostgreSQL, puis ajouter `0009_exercises`.
-- [ ] Brancher handlers/routes avec idempotence et concurrence optimiste.
-- [ ] Certifier chaque primitive core sur cas positif, erreur et indisponibilite.
-- [ ] Publier `FX-PRIMITIVES` et ses oracles de correction.
+- [x] Ecrire les tests PostgreSQL, puis ajouter `0009_exercises`.
+- [x] Brancher handlers/routes avec idempotence et concurrence optimiste.
+- [x] Certifier chaque primitive core sur cas positif, erreur et indisponibilite.
+- [x] Publier `FX-PRIMITIVES` et ses oracles de correction.
+
+La preuve technique est consignée dans `docs/evidence/W09/technical-verification.md`.
+Le gate `P-LING` reste explicitement en attente d'une revue linguistique humaine.
 
 **Preuves cibles :** `uv run pytest tests/unit/exercises_core
 tests/property/exercises_core tests/integration/exercises_core
