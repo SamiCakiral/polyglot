@@ -1,0 +1,30 @@
+{
+  "database": [
+    {
+      "name": "active_account_present",
+      "query": "SELECT count(*) FROM identity.accounts WHERE account_id = '019bc186-de00-7101-8101-010101010101' AND status = 'active' AND deleted_at IS NULL",
+      "expected": "1"
+    },
+    {
+      "name": "pending_outbox_present",
+      "query": "SELECT count(*) FROM platform.outbox_messages WHERE destination = 'fx-ops-local' AND published_at IS NULL AND attempt_count = 0",
+      "expected": "1"
+    },
+    {
+      "name": "logical_tombstone_present",
+      "query": "SELECT count(*) FROM platform.deletion_tombstones WHERE subject_type = 'account' AND subject_fingerprint = 'a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'",
+      "expected": "1"
+    },
+    {
+      "name": "tombstoned_account_not_resurrected",
+      "query": "SELECT count(*) FROM identity.accounts WHERE account_id = '019bc186-de00-7202-8202-020202020202'",
+      "expected": "0"
+    }
+  ],
+  "objects": [
+    {
+      "path": "private/fx-ops-private-object.txt",
+      "sha256": "f588e721030a213d56e5b95bf71a8b4029acb972361d292882c02c8e3546fda8"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "checks": [
+    {
+      "detail": "fixture oracle matched",
+      "name": "tombstoned_account_not_resurrected",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "example": true,
+  "fixture": "FX-OPS",
+  "limitations": [
+    "Synthetic schema example only; not execution evidence.",
+    "Local W19L evidence only; it is not W19C cloud, PITR, canary, or release proof."
+  ],
+  "revision": "example-only",
+  "schema_version": 1,
+  "source": "postgresql://127.0.0.1:55441/polyglot_source",
+  "status": "PASS",
+  "target": "postgresql://127.0.0.1:55442/polyglot_target",
+  "tool_versions": {
+    "pg_dump": "PostgreSQL example",
+    "pg_restore": "PostgreSQL example",
+    "psql": "PostgreSQL example"
+  },
+  "utc": "2026-08-10T00:00:00Z",
+  "workstream": "W19L-A"
+}

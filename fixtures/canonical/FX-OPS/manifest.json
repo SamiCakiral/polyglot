@@ -1,0 +1,13 @@
+{
+  "id": "FX-OPS",
+  "schema_version": 1,
+  "synthetic": true,
+  "expected_migration_head": "0005_content",
+  "expected_status": "PASS",
+  "contents": [
+    "one_active_account",
+    "one_pending_outbox_message",
+    "one_logical_tombstone",
+    "one_fictitious_private_object"
+  ]
+}
