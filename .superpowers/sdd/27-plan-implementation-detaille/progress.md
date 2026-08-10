@@ -17,4 +17,4 @@ Task global-matrix: complete - commits 6c0860c..cae8d69 - acceptance review PASS
 Task W06: complete - commits ae6f6dd..c4394c4 - final review PASS after fix round 2 - P-LING pending_human
 Task W10-phaseA: complete - commits 4ccd483..ade0492 - technical rereview PASS - P-LING pending_human
 Task W11-phaseA: complete - commits 27b434e..dc17dfb - local final review PASS after two adversarial fix rounds - P-LING and P-PED pending_human
-Task W07: T01-T03 complete through 97bf185; T03 local technical review PASS with 83 tests, PostgreSQL migration cycle, RLS, atomicity and rebuild proofs; T04 next - human pedagogy/data gates pending
+Task W07: complete through 89a84fb; local final technical review PASS with 102 targeted tests and 749-test global segmented matrix - human pedagogy/data gates pending
