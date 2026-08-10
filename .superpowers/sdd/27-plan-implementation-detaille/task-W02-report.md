@@ -126,16 +126,16 @@ PostgreSQL 17 container with independent migration/runtime/retention logins.
 - Locked environment: `uv sync --locked`, 43 packages resolved and 42 audited.
 - Ruff: all checks passed for `src` and `tests`.
 - Strict Mypy: no issues in 35 source files.
-- Unit/property matrix: `39 passed`.
+- Final committed-HEAD unit/property rerun: `39 passed in 5.98s`.
 - Exact W02 target matrix: `47 passed`.
 - Empty migration: base -> `0001_platform` -> `0002_identity` passed.
 - Full rollback/re-upgrade: `0002_identity` -> base -> head passed.
 - Prior-revision migration: `0002_identity` -> `0001_platform` -> head passed.
 - Alembic: exactly one head, current at `0002_identity`, no metadata drift.
 - Installed wheel: contains both migrations and its own round trip passed (`1
-  passed`).
+  passed in 0.75s` on the final committed-HEAD rerun).
 - Integration/contract matrix excluding the separately executed wheel test: `117
-  passed`.
+  passed in 8.88s` on the final clean serial rerun.
 - Deterministic OpenAPI check: passed.
 - Repository plus full Git history secret scan: clean.
 - `pip-audit 2.9.0` over the frozen hashed production export: no known
@@ -145,6 +145,13 @@ PostgreSQL 17 container with independent migration/runtime/retention logins.
   The existing digest-scoped `gosu` CVE-2025-68121 exception is the only
   suppressed finding.
 - `git diff --check`: passed before this report update.
+
+One attempted final rerun overlapped a still-finishing all-suite invocation and
+produced six PostgreSQL deadlocks between test cleanup `TRUNCATE` locks and test
+writes. No assertion or product behavior failed. Process inspection confirmed no
+remaining test process, and the same integration/contract command then passed
+all 117 tests serially in 8.88s. The green serial result above is the acceptance
+evidence.
 
 ## Write-Set Notes
 
