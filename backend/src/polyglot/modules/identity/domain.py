@@ -285,6 +285,7 @@ class AuthSession:
     absolute_expires_at: datetime
     revoked_at: datetime | None = None
     revoke_reason: str | None = None
+    replaced_by_session_id: UUID | None = None
 
     @classmethod
     def issue(
@@ -323,6 +324,42 @@ class AuthSession:
             absolute_expires_at=now + ABSOLUTE_SESSION_TIMEOUT,
         )
 
+    def rotate(
+        self,
+        *,
+        session_id: UUID,
+        session_fingerprint: str,
+        csrf_secret_hash: str,
+        roles: frozenset[AccountRole],
+        account_session_version: int,
+        now: datetime,
+    ) -> "AuthSession":
+        if now >= self.absolute_expires_at:
+            raise IdentityValidationError("absolute session lifetime has expired")
+        _require_uuid7(session_id, "session_id")
+        _require_sha256(session_fingerprint, "session_fingerprint")
+        _require_sha256(csrf_secret_hash, "csrf_secret_hash")
+        _require_aware(now, "now")
+        if not roles or AccountRole.WORKER in roles or account_session_version < 1:
+            raise IdentityValidationError("interactive session roles are invalid")
+        idle_timeout = (
+            AUTHORING_IDLE_TIMEOUT if roles & _AUTHORING_ROLES else LEARNER_IDLE_TIMEOUT
+        )
+        return AuthSession(
+            session_id=session_id,
+            account_id=self.account_id,
+            session_fingerprint=session_fingerprint,
+            csrf_secret_hash=csrf_secret_hash,
+            roles=roles,
+            account_session_version=account_session_version,
+            created_at=now,
+            authenticated_at=self.authenticated_at,
+            last_seen_at=now,
+            rotated_at=now,
+            idle_expires_at=min(now + idle_timeout, self.absolute_expires_at),
+            absolute_expires_at=self.absolute_expires_at,
+        )
+
     def is_active(self, now: datetime, current_session_version: int) -> bool:
         return (
             self.revoked_at is None
@@ -347,12 +384,25 @@ class AuthSession:
             idle_expires_at=min(now + idle_timeout, self.absolute_expires_at),
         )
 
-    def revoke(self, now: datetime, reason: str) -> "AuthSession":
+    def revoke(
+        self,
+        now: datetime,
+        reason: str,
+        *,
+        replaced_by_session_id: UUID | None = None,
+    ) -> "AuthSession":
         if self.revoked_at is not None:
             return self
         if not reason.strip():
             raise IdentityValidationError("revoke reason is required")
-        return replace(self, revoked_at=now, revoke_reason=reason.strip())
+        if replaced_by_session_id is not None:
+            _require_uuid7(replaced_by_session_id, "replaced_by_session_id")
+        return replace(
+            self,
+            revoked_at=now,
+            revoke_reason=reason.strip(),
+            replaced_by_session_id=replaced_by_session_id,
+        )
 
 
 @dataclass(frozen=True, slots=True)

@@ -186,6 +186,16 @@ auth_sessions = Table(
     Column("absolute_expires_at", DateTime(timezone=True), nullable=False),
     Column("revoked_at", DateTime(timezone=True)),
     Column("revoke_reason", String(120)),
+    Column(
+        "replaced_by_session_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey(
+            "identity.auth_sessions.session_id",
+            name="fk_session_replacement",
+            deferrable=True,
+            initially="DEFERRED",
+        ),
+    ),
     CheckConstraint(
         "identity.is_uuid7(session_id) AND identity.is_uuid7(account_id)",
         name="ck_session_uuid7",
@@ -204,10 +214,10 @@ auth_sessions = Table(
     ),
     CheckConstraint("account_session_version >= 1", name="ck_session_version"),
     CheckConstraint(
-        "created_at <= authenticated_at AND authenticated_at <= last_seen_at "
+        "authenticated_at <= created_at AND created_at <= last_seen_at "
         "AND created_at <= rotated_at AND last_seen_at < idle_expires_at "
         "AND idle_expires_at <= absolute_expires_at "
-        "AND absolute_expires_at <= created_at + interval '7 days'",
+        "AND absolute_expires_at = authenticated_at + interval '7 days'",
         name="ck_session_expiry_order",
     ),
     CheckConstraint(
@@ -215,6 +225,13 @@ auth_sessions = Table(
         "OR (revoked_at IS NOT NULL AND revoke_reason IS NOT NULL)",
         name="ck_session_revoke_shape",
     ),
+    CheckConstraint(
+        "replaced_by_session_id IS NULL OR (revoked_at IS NOT NULL "
+        "AND revoke_reason IN ('role_changed', 'periodic_rotation') "
+        "AND identity.is_uuid7(replaced_by_session_id))",
+        name="ck_session_replacement_shape",
+    ),
+    UniqueConstraint("replaced_by_session_id", name="uq_session_replacement"),
     schema="identity",
 )
 Index("ix_auth_sessions_account_id", auth_sessions.c.account_id)
@@ -631,6 +648,7 @@ class SqlIdentityRepository:
                 absolute_expires_at=session.absolute_expires_at,
                 revoked_at=session.revoked_at,
                 revoke_reason=session.revoke_reason,
+                replaced_by_session_id=session.replaced_by_session_id,
             )
         )
 
@@ -663,8 +681,22 @@ class SqlIdentityRepository:
             absolute_expires_at=row["absolute_expires_at"],
             revoked_at=row["revoked_at"],
             revoke_reason=row["revoke_reason"],
+            replaced_by_session_id=row["replaced_by_session_id"],
         )
         return SessionAuthentication(account=account, session=session)
+
+    async def lock_session(self, fingerprint: str) -> bool:
+        acquired = await self._session.scalar(
+            text("SELECT pg_try_advisory_xact_lock(hashtextextended(:fingerprint, 0))"),
+            {"fingerprint": fingerprint},
+        )
+        if acquired is True:
+            return True
+        await self._session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:fingerprint, 0))"),
+            {"fingerprint": fingerprint},
+        )
+        return False
 
     async def touch_session(self, session: AuthSession) -> None:
         await self._session.execute(
@@ -771,6 +803,7 @@ class SqlIdentityRepository:
         *,
         revoked_at: datetime,
         reason: str,
+        replaced_by_session_id: UUID | None = None,
     ) -> bool:
         updated = await self._session.scalar(
             auth_sessions.update()
@@ -778,7 +811,11 @@ class SqlIdentityRepository:
                 auth_sessions.c.session_id == session_id,
                 auth_sessions.c.revoked_at.is_(None),
             )
-            .values(revoked_at=revoked_at, revoke_reason=reason)
+            .values(
+                revoked_at=revoked_at,
+                revoke_reason=reason,
+                replaced_by_session_id=replaced_by_session_id,
+            )
             .returning(auth_sessions.c.session_id)
         )
         return updated is not None

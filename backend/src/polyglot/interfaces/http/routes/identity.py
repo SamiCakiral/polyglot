@@ -12,6 +12,7 @@ from polyglot.modules.identity.application import (
     RegisterAccount,
     RequestContext,
     RevokeSession,
+    SessionContinuation,
     UpdateConsent,
     UpdateUserPreferences,
 )
@@ -175,6 +176,15 @@ def _clear_session_cookie(response: Response) -> None:
     )
 
 
+def _apply_session_continuation(
+    response: Response,
+    continuation: SessionContinuation,
+) -> None:
+    if continuation.rotated:
+        _set_session_cookie(response, continuation.session_token)
+        response.headers["X-CSRF-Token"] = continuation.csrf_token
+
+
 def _preferences_response(preferences: UserPreferences) -> PreferencesResponse:
     return PreferencesResponse(
         account_id=preferences.account_id,
@@ -285,7 +295,10 @@ def identity_router(
         response_model=CurrentSessionResponse,
     )
     async def get_current_session(request: Request, response: Response) -> CurrentSessionResponse:
-        current = await application_service().get_current_session(_session_token(request))
+        current = await application_service().get_current_session(
+            _session_token(request),
+            _context(request),
+        )
         _set_session_cookie(response, current.session_token)
         return CurrentSessionResponse(
             session_id=current.session_id,
@@ -358,6 +371,7 @@ def identity_router(
     async def update_user_preferences(
         payload: PreferencesRequest,
         request: Request,
+        response: Response,
         idempotency_key: Annotated[
             str | None,
             Header(alias="Idempotency-Key", max_length=255),
@@ -365,7 +379,7 @@ def identity_router(
     ) -> PreferencesResponse:
         _require_origin(request, allowed_origin)
         session_token, csrf_token = _session_credentials(request)
-        preferences = await application_service().update_preferences(
+        result = await application_service().update_preferences(
             UpdateUserPreferences(
                 session_token=session_token,
                 csrf_token=csrf_token,
@@ -379,7 +393,8 @@ def identity_router(
                 media_preferences=payload.media_preferences,
             )
         )
-        return _preferences_response(preferences)
+        _apply_session_continuation(response, result.continuation)
+        return _preferences_response(result.preferences)
 
     @router.put(
         "/api/v1/consents/{purpose}",
@@ -390,11 +405,12 @@ def identity_router(
         purpose: str,
         payload: ConsentRequest,
         request: Request,
+        response: Response,
         idempotency_key: IdempotencyKey,
     ) -> ConsentResponse:
         _require_origin(request, allowed_origin)
         session_token, csrf_token = _session_credentials(request)
-        consent = await application_service().update_consent(
+        result = await application_service().update_consent(
             UpdateConsent(
                 session_token=session_token,
                 csrf_token=csrf_token,
@@ -406,6 +422,7 @@ def identity_router(
                 context=_context(request),
             )
         )
-        return _consent_response(consent)
+        _apply_session_continuation(response, result.continuation)
+        return _consent_response(result.consent)
 
     return router

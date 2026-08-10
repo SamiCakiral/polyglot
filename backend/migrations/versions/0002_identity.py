@@ -130,6 +130,7 @@ CREATE TABLE identity.auth_sessions (
     absolute_expires_at timestamptz NOT NULL,
     revoked_at timestamptz,
     revoke_reason varchar(120),
+    replaced_by_session_id uuid,
     CONSTRAINT ck_session_uuid7 CHECK (
         identity.is_uuid7(session_id) AND identity.is_uuid7(account_id)
     ),
@@ -146,17 +147,28 @@ CREATE TABLE identity.auth_sessions (
     ),
     CONSTRAINT ck_session_version CHECK (account_session_version >= 1),
     CONSTRAINT ck_session_expiry_order CHECK (
-        created_at <= authenticated_at
-        AND authenticated_at <= last_seen_at
+        authenticated_at <= created_at
+        AND created_at <= last_seen_at
         AND created_at <= rotated_at
         AND last_seen_at < idle_expires_at
         AND idle_expires_at <= absolute_expires_at
-        AND absolute_expires_at <= created_at + interval '7 days'
+        AND absolute_expires_at = authenticated_at + interval '7 days'
     ),
     CONSTRAINT ck_session_revoke_shape CHECK (
         (revoked_at IS NULL AND revoke_reason IS NULL)
         OR (revoked_at IS NOT NULL AND revoke_reason IS NOT NULL)
-    )
+    ),
+    CONSTRAINT ck_session_replacement_shape CHECK (
+        replaced_by_session_id IS NULL OR (
+            revoked_at IS NOT NULL
+            AND revoke_reason IN ('role_changed', 'periodic_rotation')
+            AND identity.is_uuid7(replaced_by_session_id)
+        )
+    ),
+    CONSTRAINT uq_session_replacement UNIQUE (replaced_by_session_id),
+    CONSTRAINT fk_session_replacement FOREIGN KEY (replaced_by_session_id)
+        REFERENCES identity.auth_sessions(session_id)
+        DEFERRABLE INITIALLY DEFERRED
 );
 CREATE INDEX ix_auth_sessions_account_id ON identity.auth_sessions (account_id);
 CREATE INDEX ix_auth_sessions_idle_expires_at ON identity.auth_sessions (idle_expires_at);
@@ -341,6 +353,7 @@ RETURNS TABLE (
     absolute_expires_at timestamptz,
     revoked_at timestamptz,
     revoke_reason varchar,
+    replaced_by_session_id uuid,
     account_status varchar,
     current_security_version integer,
     current_session_version integer,
@@ -358,7 +371,8 @@ AS $function$
            active.account_session_version, active.created_at,
            active.authenticated_at, active.last_seen_at, active.rotated_at,
            active.idle_expires_at, active.absolute_expires_at,
-           active.revoked_at, active.revoke_reason, account.status,
+           active.revoked_at, active.revoke_reason, active.replaced_by_session_id,
+           account.status,
            account.security_version, account.session_version, account.version,
            account.created_at, account.security_last_activity_at, account.deleted_at,
            ARRAY(

@@ -155,6 +155,25 @@ class CurrentSessionResult:
     consents: tuple[ConsentDecision, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class SessionContinuation:
+    session_token: str
+    csrf_token: str
+    rotated: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PreferencesMutationResult:
+    preferences: UserPreferences
+    continuation: SessionContinuation
+
+
+@dataclass(frozen=True, slots=True)
+class ConsentMutationResult:
+    consent: ConsentDecision
+    continuation: SessionContinuation
+
+
 def _fingerprint_session_token(token: str) -> str:
     return hashlib.sha256(token.encode("ascii", errors="ignore")).hexdigest()
 
@@ -668,14 +687,93 @@ class IdentityApplicationService:
             )
         raise RuntimeError("identity operation was unexpectedly suppressed")
 
+    def _rotation_context(self, context: RequestContext | None) -> RequestContext:
+        if context is not None:
+            return context
+        return RequestContext(
+            request_id=self._id_generator.new(),
+            correlation_id=self._id_generator.new(),
+            truncated_ip="unknown",
+        )
+
+    async def _append_rotation_facts(
+        self,
+        session: AsyncSession,
+        *,
+        predecessor: AuthSession,
+        replacement: AuthSession,
+        account: Account,
+        reason: str,
+        context: RequestContext,
+        now: datetime,
+    ) -> None:
+        await self._append_event(
+            session,
+            event_type="session_revoked",
+            aggregate_type="auth_session",
+            aggregate_id=predecessor.session_id,
+            aggregate_version=2,
+            actor_id=account.account_id,
+            command_id=context.request_id,
+            context=context,
+            now=now,
+            payload={
+                "reason": reason,
+                "replacement_session_id": str(replacement.session_id),
+            },
+        )
+        await self._append_event(
+            session,
+            event_type="session_authenticated",
+            aggregate_type="auth_session",
+            aggregate_id=replacement.session_id,
+            aggregate_version=1,
+            actor_id=account.account_id,
+            command_id=context.request_id,
+            context=context,
+            now=now,
+            payload={
+                "session_id": str(replacement.session_id),
+                "predecessor_session_id": str(predecessor.session_id),
+                "reason": reason,
+            },
+        )
+        await self._append_audit(
+            session,
+            actor_id=account.account_id,
+            action="identity.revoke_session",
+            resource_type="auth_session",
+            resource_id=predecessor.session_id,
+            result="succeeded",
+            reason=reason,
+            context=context,
+            now=now,
+            session_fingerprint=predecessor.session_fingerprint,
+        )
+        await self._append_audit(
+            session,
+            actor_id=account.account_id,
+            action="identity.authenticate",
+            resource_type="auth_session",
+            resource_id=replacement.session_id,
+            result="succeeded",
+            reason="session_rotated",
+            context=context,
+            now=now,
+            session_fingerprint=replacement.session_fingerprint,
+        )
+
     async def _resolve_session(
         self,
+        session: AsyncSession,
         repository: SqlIdentityRepository,
         token: str,
         *,
         csrf_token: str | None = None,
-    ) -> tuple[SessionAuthentication, str, str]:
+        context: RequestContext | None = None,
+    ) -> tuple[SessionAuthentication, SessionContinuation]:
         fingerprint = _fingerprint_session_token(token)
+        acquired_immediately = await repository.lock_session(fingerprint)
         resolved = await repository.find_session_for_authentication(fingerprint)
         if resolved is None:
             raise DomainError(ErrorCode.UNAUTHENTICATED)
@@ -686,52 +784,86 @@ class IdentityApplicationService:
             raise DomainError(ErrorCode.ACCOUNT_LOCKED)
         if account.status is not AccountStatus.ACTIVE:
             raise DomainError(ErrorCode.UNAUTHENTICATED)
-        if (
-            active.revoked_at is not None
-            or now >= active.idle_expires_at
-            or now >= active.absolute_expires_at
-        ):
-            raise DomainError(ErrorCode.UNAUTHENTICATED)
         if csrf_token is not None and not verify_session_csrf(
             active.session_fingerprint,
             csrf_token,
             active.csrf_secret_hash,
         ):
             raise DomainError(ErrorCode.FORBIDDEN)
+        if active.revoked_at is not None:
+            if not acquired_immediately and active.replaced_by_session_id is not None:
+                replacement_secrets = self._session_secrets.issue(
+                    active.replaced_by_session_id
+                )
+                successor = await repository.find_session_for_authentication(
+                    replacement_secrets.session_fingerprint
+                )
+                if successor is not None and successor.session.is_active(
+                    now,
+                    successor.account.session_version,
+                ):
+                    return successor, SessionContinuation(
+                        session_token=replacement_secrets.session_token,
+                        csrf_token=replacement_secrets.csrf_token,
+                        rotated=True,
+                    )
+            raise DomainError(ErrorCode.UNAUTHENTICATED)
+        if now >= active.idle_expires_at or now >= active.absolute_expires_at:
+            raise DomainError(ErrorCode.UNAUTHENTICATED)
 
         if active.requires_rotation(now, account.session_version):
             replacement_id = self._id_generator.new()
             secrets = self._session_secrets.issue(replacement_id)
-            replacement = AuthSession.issue(
-                session_id=replacement_id,
-                account_id=account.account_id,
-                session_fingerprint=secrets.session_fingerprint,
-                csrf_secret_hash=secrets.csrf_secret_hash,
-                roles=account.roles,
-                account_session_version=account.session_version,
-                now=now,
-            )
+            try:
+                replacement = active.rotate(
+                    session_id=replacement_id,
+                    session_fingerprint=secrets.session_fingerprint,
+                    csrf_secret_hash=secrets.csrf_secret_hash,
+                    roles=account.roles,
+                    account_session_version=account.session_version,
+                    now=now,
+                )
+            except IdentityValidationError as error:
+                raise DomainError(ErrorCode.UNAUTHENTICATED) from error
             reason = (
                 "role_changed"
                 if active.account_session_version != account.session_version
                 else "periodic_rotation"
             )
-            await repository.revoke_session(
+            revoked = await repository.revoke_session(
                 active.session_id,
                 revoked_at=now,
                 reason=reason,
+                replaced_by_session_id=replacement.session_id,
             )
+            if not revoked:
+                raise DomainError(ErrorCode.UNAUTHENTICATED)
             await repository.add_session(replacement)
-            return (
-                SessionAuthentication(account=account, session=replacement),
-                secrets.session_token,
-                secrets.csrf_token,
+            await self._append_rotation_facts(
+                session,
+                predecessor=active,
+                replacement=replacement,
+                account=account,
+                reason=reason,
+                context=self._rotation_context(context),
+                now=now,
+            )
+            return SessionAuthentication(
+                account=account,
+                session=replacement,
+            ), SessionContinuation(
+                session_token=secrets.session_token,
+                csrf_token=secrets.csrf_token,
+                rotated=True,
             )
 
         touched = active.touch(now)
         await repository.touch_session(touched)
         csrf = self._session_secrets.issue(active.session_id).csrf_token
-        return SessionAuthentication(account=account, session=touched), token, csrf
+        return SessionAuthentication(
+            account=account,
+            session=touched,
+        ), SessionContinuation(session_token=token, csrf_token=csrf, rotated=False)
 
     def _authorize(
         self,
@@ -748,12 +880,19 @@ class IdentityApplicationService:
         if not allowed:
             raise DomainError(ErrorCode.FORBIDDEN)
 
-    async def get_current_session(self, session_token: str) -> CurrentSessionResult:
+    async def get_current_session(
+        self,
+        session_token: str,
+        context: RequestContext | None = None,
+    ) -> CurrentSessionResult:
         async with self._unit_of_work() as uow:
-            repository = SqlIdentityRepository(self._session(uow), self._id_generator)
-            resolved, active_token, csrf_token = await self._resolve_session(
+            session = self._session(uow)
+            repository = SqlIdentityRepository(session, self._id_generator)
+            resolved, continuation = await self._resolve_session(
+                session,
                 repository,
                 session_token,
+                context=context,
             )
             self._authorize(resolved.account, IdentityAction.READ_SESSION)
             preferences = await repository.get_preferences(resolved.account.account_id)
@@ -765,8 +904,8 @@ class IdentityApplicationService:
                 session_id=resolved.session.session_id,
                 account_id=resolved.account.account_id,
                 roles=tuple(sorted(role.value for role in resolved.account.roles)),
-                session_token=active_token,
-                csrf_token=csrf_token,
+                session_token=continuation.session_token,
+                csrf_token=continuation.csrf_token,
                 idle_expires_at=resolved.session.idle_expires_at,
                 absolute_expires_at=resolved.session.absolute_expires_at,
                 preferences=preferences,
@@ -777,15 +916,17 @@ class IdentityApplicationService:
     async def update_preferences(
         self,
         command: UpdateUserPreferences,
-    ) -> UserPreferences:
+    ) -> PreferencesMutationResult:
         now = self._clock.now()
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            resolved, _, _ = await self._resolve_session(
+            resolved, continuation = await self._resolve_session(
+                session,
                 repository,
                 command.session_token,
                 csrf_token=command.csrf_token,
+                context=command.context,
             )
             self._authorize(resolved.account, IdentityAction.UPDATE_PREFERENCES)
             current = await repository.get_preferences(resolved.account.account_id)
@@ -818,7 +959,7 @@ class IdentityApplicationService:
                 if replay is None:
                     raise DomainError(ErrorCode.INTERNAL_ERROR)
                 await uow.commit()
-                return replay
+                return PreferencesMutationResult(replay, continuation)
             try:
                 updated = current.update(
                     interface_locale=command.interface_locale,
@@ -853,10 +994,10 @@ class IdentityApplicationService:
                 version=updated.version,
             )
             await uow.commit()
-            return updated
+            return PreferencesMutationResult(updated, continuation)
         raise RuntimeError("identity operation was unexpectedly suppressed")
 
-    async def update_consent(self, command: UpdateConsent) -> ConsentDecision:
+    async def update_consent(self, command: UpdateConsent) -> ConsentMutationResult:
         now = self._clock.now()
         try:
             status = ConsentStatus(command.status)
@@ -865,10 +1006,12 @@ class IdentityApplicationService:
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            resolved, _, _ = await self._resolve_session(
+            resolved, continuation = await self._resolve_session(
+                session,
                 repository,
                 command.session_token,
                 csrf_token=command.csrf_token,
+                context=command.context,
             )
             self._authorize(resolved.account, IdentityAction.UPDATE_CONSENT)
             fingerprint = canonical_json_fingerprint(
@@ -898,7 +1041,7 @@ class IdentityApplicationService:
                 if replay is None:
                     raise DomainError(ErrorCode.INTERNAL_ERROR)
                 await uow.commit()
-                return replay
+                return ConsentMutationResult(replay, continuation)
             try:
                 decision = ConsentDecision.decide(
                     consent_id=self._id_generator.new(),
@@ -947,7 +1090,7 @@ class IdentityApplicationService:
                 version=decision.version,
             )
             await uow.commit()
-            return decision
+            return ConsentMutationResult(decision, continuation)
         raise RuntimeError("identity operation was unexpectedly suppressed")
 
     async def change_password(self, command: ChangePassword) -> ResourceResult:
@@ -955,10 +1098,12 @@ class IdentityApplicationService:
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            resolved, _, _ = await self._resolve_session(
+            resolved, _ = await self._resolve_session(
+                session,
                 repository,
                 command.session_token,
                 csrf_token=command.csrf_token,
+                context=command.context,
             )
             self._authorize(resolved.account, IdentityAction.CHANGE_PASSWORD)
             if now - resolved.session.authenticated_at > RECENT_AUTHENTICATION:
@@ -1060,10 +1205,12 @@ class IdentityApplicationService:
         async with self._unit_of_work() as uow:
             session = self._session(uow)
             repository = SqlIdentityRepository(session, self._id_generator)
-            resolved, _, _ = await self._resolve_session(
+            resolved, _ = await self._resolve_session(
+                session,
                 repository,
                 command.session_token,
                 csrf_token=command.csrf_token,
+                context=command.context,
             )
             self._authorize(resolved.account, IdentityAction.REVOKE_SESSION)
             fingerprint = canonical_json_fingerprint(
