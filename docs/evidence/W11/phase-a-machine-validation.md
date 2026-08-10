@@ -5,7 +5,7 @@
 - Fixture status: `pending_human`.
 - Network dependencies: none.
 - Test environment: Python 3.13.11 from `/tmp/polyglot-global-matrix-src/backend/.venv`.
-- Targeted tests: 19 passed.
+- Expanded W11 phase A tests: 39 passed.
 - Ruff: passed.
 - mypy strict: passed on 7 curriculum source files.
 
