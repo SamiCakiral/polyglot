@@ -631,7 +631,8 @@
       "method": "POST",
       "route": "/api/v1/authoring/drafts/{draft_id}:approve",
       "events": [
-        "content_approved"
+        "content_approved",
+        "content_rejected"
       ],
       "errors": [
         "self_approval_forbidden"

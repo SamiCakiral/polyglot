@@ -188,7 +188,7 @@ maîtrise supplémentaires.
 | `CreateContentDraft` | `POST /api/v1/authoring/drafts` | `author`, portée pack | `content_draft_created` | - | required |
 | `ReviseContentDraft` | `PATCH /api/v1/authoring/drafts/{draft_id}` | auteur assigné, version | `content_draft_revised` | - | supported |
 | `ValidateContentRevision` | `POST /api/v1/authoring/drafts/{draft_id}:validate` | draft | `content_validated` ou `content_validation_failed` | `validator_unavailable` | required |
-| `ApproveContentRevision` | `POST /api/v1/authoring/drafts/{draft_id}:approve` | reviewer distinct, validated | `content_approved` | `self_approval_forbidden` | required |
+| `ApproveContentRevision` | `POST /api/v1/authoring/drafts/{draft_id}:approve` | reviewer distinct, validated | `content_approved` ou `content_rejected` | `self_approval_forbidden` | required |
 | `PublishContentRevision` | `POST /api/v1/authoring/drafts/{draft_id}:publish` | approved, réauth récente | `content_published` | `reference_not_publishable` | required |
 | `RetireContentRevision` | `POST /api/v1/content/{content_id}/revisions/{revision_id}:retire` | reviewer/admin | `content_retired` | `historical_rights_conflict` | required |
 | `CreateLearningModule` | `POST /api/v1/authoring/modules` | author, pack | `learning_module_created` | - | required |

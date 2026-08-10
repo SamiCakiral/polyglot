@@ -266,7 +266,7 @@ commandes internes y sont cataloguées séparément sans route publique.
 | `CreateContentDraft` | crée identité et brouillon | `ContentDraftCreated` |
 | `ReviseContentDraft` | ajoute nouvelle révision | `ContentDraftRevised` |
 | `ValidateContentRevision` | exécute validateurs | `ContentValidated` ou `ContentValidationFailed` |
-| `ApproveContentRevision` | approuve | `ContentApproved` |
+| `ApproveContentRevision` | approuve ou rejette | `ContentApproved` ou `ContentRejected` |
 | `PublishContentRevision` | publie atomiquement | `ContentPublished` |
 | `RetireContentRevision` | retire | `ContentRetired` |
 | `CreateLearningModule` | crée module brouillon | `LearningModuleCreated` |
