@@ -4,6 +4,7 @@ from pathlib import Path
 from polyglot.modules.media.ports import (
     DeterministicSttPort,
     DeterministicTtsPort,
+    FakeObjectStorage,
     MacOSTtsPort,
     TtsAvailability,
     TtsRequest,
@@ -61,7 +62,10 @@ class RecordingRunner:
 
     def run(self, command: tuple[str, ...]) -> None:
         self.calls.append(command)
-        Path(command[-1]).write_bytes(b"simulated-mp3")
+        if command[0] == "say":
+            Path(command[command.index("-o") + 1]).write_bytes(b"simulated-aiff")
+        else:
+            Path(command[-1]).write_bytes(b"simulated-mp3")
 
 
 def test_macos_adapter_is_injectable_and_does_not_need_macos(tmp_path: Path) -> None:
@@ -78,3 +82,13 @@ def test_macos_adapter_is_injectable_and_does_not_need_macos(tmp_path: Path) -> 
     assert len(runner.calls) == 2
     assert runner.calls[0][0] == "say"
     assert runner.calls[1][0] == "ffmpeg"
+
+
+def test_object_storage_fake_exposes_private_bytes_only() -> None:
+    storage = FakeObjectStorage()
+
+    storage.write_private("media/opaque-key", b"audio")
+
+    assert storage.read_private("media/opaque-key") == b"audio"
+    assert storage.list_private("media/") == ("media/opaque-key",)
+    assert not hasattr(storage, "public_url")

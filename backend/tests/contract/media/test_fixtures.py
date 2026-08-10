@@ -5,7 +5,13 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID
 
-from polyglot.modules.media.domain import MediaAsset, MediaKind, MediaRights, MediaStatus, UploadInspection
+from polyglot.modules.media.domain import (
+    MediaAsset,
+    MediaKind,
+    MediaRights,
+    MediaStatus,
+    UploadInspection,
+)
 from polyglot.modules.media.ports import DeterministicTtsPort, TtsAvailability, TtsRequest, TtsVoice
 from polyglot.modules.media.shadowing import ShadowingAvailability, ShadowingPrompt
 
@@ -21,7 +27,10 @@ def test_fx_media_is_local_complete_and_exercises_explicit_degradation() -> None
     assert payload["voice_removed"]["availability"] == "retired"
     assert payload["media_absent"]["expected_shadowing_state"] == "alternative_available"
 
-    absent = ShadowingPrompt.from_fixture(audio=None, transcript=payload["media_absent"]["transcript"])
+    absent = ShadowingPrompt.from_fixture(
+        audio=None,
+        transcript=payload["media_absent"]["transcript"],
+    )
     assert absent.availability is ShadowingAvailability.ALTERNATIVE_AVAILABLE
 
     port = DeterministicTtsPort(
@@ -32,7 +41,7 @@ def test_fx_media_is_local_complete_and_exercises_explicit_degradation() -> None
     assert retired.voice_id == "alice-it"
 
 
-def test_fx_media_rejects_deceptive_mime_hostile_archive_expired_rights_and_false_checksum() -> None:
+def test_fx_media_rejects_deceptive_mime_and_false_checksum() -> None:
     payload = json.loads(FIXTURE.read_text())
     audio = payload["audio"]
     asset = MediaAsset.reserve_upload(

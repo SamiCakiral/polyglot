@@ -9,6 +9,7 @@ from polyglot.modules.media.domain import (
     MediaRights,
     MediaStatus,
     QuarantineReason,
+    TranscriptSegment,
     UploadInspection,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -77,6 +78,27 @@ def test_asset_moves_from_private_upload_to_ready_then_deleted() -> None:
     asset = asset.remove_variant("normalized")
     asset = asset.complete_deletion(existing_object_keys=())
     assert asset.status is MediaStatus.DELETED
+
+
+def test_asset_keeps_a_versioned_revision_with_ordered_transcript_segments() -> None:
+    asset = MediaAsset.reserve_upload(
+        asset_id=ASSET_ID,
+        revision_id=REVISION_ID,
+        upload_id=UPLOAD_ID,
+        kind=MediaKind.AUDIO,
+        declared_mime="audio/mpeg",
+        expected_checksum_sha256=CHECKSUM,
+        rights=rights(),
+        transcript="Ciao, come stai?",
+        segments=(
+            TranscriptSegment(0, 400, "Ciao,"),
+            TranscriptSegment(400, 1200, "come stai?"),
+        ),
+        now=NOW,
+    )
+
+    assert asset.revision.revision_no == 1
+    assert tuple(segment.text for segment in asset.revision.segments) == ("Ciao,", "come stai?")
 
 
 def test_deceptive_mime_and_checksum_failure_stay_quarantined() -> None:

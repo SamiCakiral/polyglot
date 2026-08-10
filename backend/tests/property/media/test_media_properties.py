@@ -35,7 +35,11 @@ def asset() -> MediaAsset:
     )
 
 
-@given(actual=st.text(alphabet="0123456789abcdef", min_size=64, max_size=64).filter(lambda v: v != CHECKSUM))
+@given(
+    actual=st.text(alphabet="0123456789abcdef", min_size=64, max_size=64).filter(
+        lambda value: value != CHECKSUM
+    )
+)
 def test_nonmatching_checksum_can_never_reach_processing(actual: str) -> None:
     inspected = (
         asset()
