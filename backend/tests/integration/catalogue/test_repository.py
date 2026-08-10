@@ -58,7 +58,10 @@ async def test_lexicon_search_preserves_diacritics_analyses_senses_and_multiword
         "accepted_reference": False
     }
     assert [item.surface for item in accented.items] == ["può"]
-    assert accented.items[0].analysis.form_analysis_id != unaccented.items[0].analysis.form_analysis_id
+    assert (
+        accented.items[0].analysis.form_analysis_id
+        != unaccented.items[0].analysis.form_analysis_id
+    )
     assert [sense.sense_code for sense in polysemous.items[0].senses] == ["floor", "slowly"]
     assert multiword.items[0].analysis.unit_type == "multiword_expression"
 

@@ -93,7 +93,7 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
 async def test_database_rejects_published_rewrite_duplicate_publication_and_required_cycle(
     migration_session: AsyncSession,
 ) -> None:
-    await seed_catalogue(migration_session)
+    await seed_catalogue(migration_session, publish_skills=False)
 
     with pytest.raises(DBAPIError, match="published revision is immutable"):
         await migration_session.execute(
@@ -122,13 +122,6 @@ async def test_database_rejects_published_rewrite_duplicate_publication_and_requ
         )
     await migration_session.rollback()
 
-    await migration_session.execute(
-        text(
-            "UPDATE catalogue.skill_revisions SET status = 'approved' "
-            "WHERE pack_revision_id = :pack_revision"
-        ),
-        {"pack_revision": IDS["pack_revision"]},
-    )
     with pytest.raises(DBAPIError, match="prerequisite_cycle"):
         await migration_session.execute(
             text(

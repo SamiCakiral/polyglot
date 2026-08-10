@@ -8,9 +8,11 @@ from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from polyglot.bootstrap.database import migration_database_url_from_environment
+from polyglot.modules.catalogue.core import persistence as catalogue_persistence
 from polyglot.modules.identity import persistence as identity_persistence
 from polyglot.platform.persistence.models import metadata
 
+del catalogue_persistence
 del identity_persistence
 
 config = context.config

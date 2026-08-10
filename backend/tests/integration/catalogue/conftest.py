@@ -112,7 +112,7 @@ async def clean_catalogue_tables(migration_database_url: str) -> AsyncIterator[N
     yield
 
 
-async def seed_catalogue(session: AsyncSession) -> None:
+async def seed_catalogue(session: AsyncSession, *, publish_skills: bool = True) -> None:
     await session.execute(
         text(
             "INSERT INTO platform.provenance_records "
@@ -148,7 +148,7 @@ async def seed_catalogue(session: AsyncSession) -> None:
             "license_refs, provenance_id, published_at) VALUES "
             "(:revision, :pack, 1, :target, 'approved', '2.0.0', '2.0.x', "
             "'{\"schema_version\": 1, \"capabilities\": [\"catalogue\", \"lexicon\"]}'::jsonb, "
-            "'{\"catalogue.json\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}'::jsonb, "
+            "jsonb_build_object('catalogue.json', repeat('a', 64)), "
             "ARRAY['CC-BY-4.0'], :provenance, NULL)"
         ),
         {
@@ -185,7 +185,8 @@ async def seed_catalogue(session: AsyncSession) -> None:
                 "status, provenance_id) VALUES (:revision, :skill, :pack_revision, 1, "
                 "'communicative_function', 'speaking', :operation, :target_ref, "
                 "'{\"language_tag\": \"it-IT\"}'::jsonb, ARRAY[]::uuid[], "
-                "jsonb_build_object('complexity', :complexity), 'approved', :provenance)"
+                "jsonb_build_object('complexity', CAST(:complexity AS integer)), "
+                "'approved', :provenance)"
             ),
             {
                 "revision": IDS[revision_name],
@@ -296,7 +297,8 @@ async def seed_catalogue(session: AsyncSession) -> None:
                 "(form_analysis_id, unit_revision_id, surface, morphological_features, "
                 "pronunciation_refs, normalization_key) VALUES "
                 "(:analysis, :unit_revision, :surface, "
-                "jsonb_build_object('accepted_reference', :accepted), ARRAY[]::uuid[], :key)"
+                "jsonb_build_object('accepted_reference', CAST(:accepted AS boolean)), "
+                "ARRAY[]::uuid[], :key)"
             ),
             {
                 "analysis": IDS[f"form_{key}"],
@@ -327,7 +329,8 @@ async def seed_catalogue(session: AsyncSession) -> None:
                 "sense_revision": IDS[f"sense_revision_{sense_key}"],
             },
         )
-    await session.execute(text("UPDATE catalogue.skill_revisions SET status = 'published'"))
+    if publish_skills:
+        await session.execute(text("UPDATE catalogue.skill_revisions SET status = 'published'"))
     await session.execute(text("UPDATE catalogue.lexical_unit_revisions SET status = 'published'"))
     await session.execute(text("UPDATE catalogue.lexical_sense_revisions SET status = 'published'"))
     await session.execute(
