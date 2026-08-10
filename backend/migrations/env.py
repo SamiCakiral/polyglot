@@ -12,12 +12,14 @@ from polyglot.modules.catalogue.core import persistence as catalogue_persistence
 from polyglot.modules.content import persistence as content_persistence
 from polyglot.modules.identity import persistence as identity_persistence
 from polyglot.modules.language_profiles import persistence as language_profiles_persistence
+from polyglot.modules.lexicon.core import persistence as lexicon_persistence
 from polyglot.platform.persistence.models import metadata
 
 del catalogue_persistence
 del content_persistence
 del identity_persistence
 del language_profiles_persistence
+del lexicon_persistence
 
 config = context.config
 if config.config_file_name is not None:
@@ -35,7 +37,7 @@ def include_object(
 ) -> bool:
     """W03 uses audited SQL DDL for RLS policies/triggers outside Alembic metadata."""
     del name, type_, reflected, compare_to
-    return getattr(object_, "schema", None) != "language_profiles"
+    return getattr(object_, "schema", None) not in {"language_profiles", "lexicon"}
 
 
 def database_url() -> str:
