@@ -21,7 +21,7 @@ def _uuid7_from(parts: tuple[object, ...]) -> UUID:
 
 def _seed_from(seed: int, case_id: str) -> int:
     digest = hashlib.sha256(f"gym:{seed}:{case_id}".encode()).digest()
-    return int.from_bytes(digest[:8], "big", signed=False)
+    return int.from_bytes(digest[:8], "big", signed=False) & (2**63 - 1)
 
 
 def _order_key(seed: int, case: TransformationCase) -> bytes:
@@ -37,12 +37,18 @@ def _require_uuid7(value: UUID, field: str) -> None:
 class GymStep:
     ordinal: int
     case_id: str
+    case_revision_id: str
     operation_id: str
     instance_seed: int
     instance: ExerciseInstance
 
     def __post_init__(self) -> None:
-        if self.ordinal < 1 or self.instance_seed < 0:
+        if (
+            self.ordinal < 1
+            or not self.case_id
+            or not self.case_revision_id
+            or self.instance_seed < 0
+        ):
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="Gym step is invalid")
         if self.instance.seed != self.instance_seed:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="Gym step seed is not pinned")
@@ -75,7 +81,7 @@ class GymPlan:
             "lexical_support_snapshot_id",
         ):
             _require_uuid7(getattr(self, field), field)
-        if self.seed < 0 or not self.invariants or not self.exit_evidence_spec:
+        if not 0 <= self.seed <= 2**63 - 1 or not self.invariants or not self.exit_evidence_spec:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="Gym plan is incomplete")
         if not 1 <= len(self.steps) <= 3:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="Gym plan requires 1 to 3 steps")
@@ -138,6 +144,7 @@ def compose_gym_plan(
         GymStep(
             ordinal=ordinal,
             case_id=case.case_id,
+            case_revision_id=case.revision_id,
             operation_id=case.operation_id,
             instance_seed=_seed_from(seed, case.case_id),
             instance=ExerciseInstance.create(

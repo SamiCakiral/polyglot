@@ -767,15 +767,16 @@ rejeu deterministe. Ils referencent definitions W09 et cibles W04 deja presentes
 
 **Etapes TDD :**
 
-- [ ] Ecrire les tests des transformations pures et calques interdits.
-- [ ] Implementer preconditions, invariants et registre GYM-01..15.
-- [ ] Ajouter les proprietes de generation deterministe par graine.
-- [ ] Ecrire les correcteurs et prouver que le lexique support n'est pas credite.
-- [ ] Ecrire les tests PostgreSQL puis ajouter `0010_gym`, `gym_plan` et
+- [x] Ecrire les tests des transformations pures et calques interdits.
+- [x] Implementer preconditions, invariants et registre GYM-01..15.
+- [x] Ajouter les proprietes de generation deterministe par graine.
+- [x] Ecrire les correcteurs et prouver que le lexique support n'est pas credite.
+- [x] Ecrire les tests PostgreSQL puis ajouter `0010_gym`, `gym_plan` et
   `gym_step` avec ordre unique et references versionnees.
-- [ ] Integrer le Gym aux ports catalogue/exercices sans lecture de tables tierces.
-- [ ] Tester G0-G4 avec horloge injectee, J+1 et transfert.
-- [ ] Publier `FX-GYM-IT`, puis soumettre les sorties a la revue linguistique.
+- [x] Integrer le Gym aux ports catalogue/exercices sans lecture de tables tierces.
+- [x] Tester G0-G4 avec horloge injectee, J+1 et transfert.
+- [x] Publier `FX-GYM-IT` comme fixture canonique hors reseau.
+- [ ] Obtenir la signature humaine `P-LING` sur les sorties italiennes.
 
 **Preuves cibles :** `uv run pytest tests/unit/gym tests/property/gym
 tests/integration/gym -q`; `P-LING` reste a signer par le linguiste.

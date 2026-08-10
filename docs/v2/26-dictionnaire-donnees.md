@@ -497,6 +497,11 @@ bloquent les nouveaux usages sans casser les références historiques.
 | `GymPlan` | `gym_plan_id`, `profile_id`, `grammar_target_revision_id`, `policy_revision_id`, `seed` | références/entier | oui | non | Séquence versionnée. |
 | `GymPlan` | `lexical_support_snapshot_id`, `invariants`, `exit_evidence_spec` | références/structures | oui | non | Support non crédité automatiquement. |
 | `GymStep` | `gym_step_id`, `gym_plan_id`, `ordinal`, `gym_operation`, `instance_id` | références/entier/enum | oui | non | Opérations `GYM-01..15`. |
+| `GymCycle` | `gym_cycle_id`, `profile_id`, `gym_plan_revision_id`, `grammar_target_revision_id` | références | oui | non | Cycle personnel épinglé sur le plan et la structure. |
+| `GymCycle` | `stage`, `completed`, `started_at`, `completed_at`, `version` | enum/booléen/instants/entier | oui | conditionnel | Agrégat reprenable ; terminé uniquement en `G4`. |
+| `GymCycleRequirement` | `requirement_id`, `requirement_kind`, `definition_revision_id` | texte/enum/référence | oui | non | Une production guidée et une à trois transformations pour `G1`. |
+| `GymCycleRecord` | `stage`, `verdict`, `hint_level`, `context_id`, `scene_id`, `structure_cued` | enums/références/booléen | oui | non | Fait immuable utilisé pour reconstruire le cycle. |
+| `GymCycleRecord` | `credit`, `is_evidence`, `g1_requirement_id`, `attempt_id` | nombre/booléen/références | oui | oui/conditionnel | `G0`, révélation et indisponibilité ne créent aucun crédit. |
 
 ### 11.2 Sprint, blocs et tentatives
 

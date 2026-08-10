@@ -123,6 +123,7 @@ def test_same_inputs_and_seed_always_produce_the_same_pinned_plan(seed: int) -> 
     assert tuple(step.ordinal for step in first.steps) == (1, 2, 3)
     assert len({step.case_id for step in first.steps}) == 3
     assert all(step.instance.seed == step.instance_seed for step in first.steps)
+    assert all(0 <= step.instance_seed <= 2**63 - 1 for step in first.steps)
     assert all(step.instance.definition.primitive_id == "EX-TRANSFORM-01" for step in first.steps)
 
 

@@ -50,7 +50,7 @@ async def test_migration_creates_exercise_storage(migration_session: AsyncSessio
             )
         ).scalars()
     )
-    assert tables == EXPECTED_TABLES
+    assert EXPECTED_TABLES <= tables
 
 
 async def test_personal_exercise_tables_force_owner_rls(

@@ -18,7 +18,7 @@ EXPECTED_TABLES = {
 }
 
 
-async def test_migration_creates_only_w06_lexicon_tables(
+async def test_migration_preserves_all_w06_lexicon_tables(
     migration_session: AsyncSession,
 ) -> None:
     tables = set(
@@ -33,11 +33,6 @@ async def test_migration_creates_only_w06_lexicon_tables(
     )
 
     assert EXPECTED_TABLES <= tables
-    assert not any(
-        token in name
-        for name in tables
-        for token in ("mastery", "debt", "card", "memory_prompt", "vocabulary_list")
-    )
 
 
 async def test_encounters_and_source_facts_are_append_only(

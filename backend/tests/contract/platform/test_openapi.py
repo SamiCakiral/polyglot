@@ -35,7 +35,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w09_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -44,8 +44,14 @@ def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
     assert set(document["paths"]) == {
         "/api/v1/account/password",
         "/api/v1/account/preferences",
-        "/api/v1/accounts",
-        "/api/v1/attempts/{attempt_id}/lexical-gaps",
+            "/api/v1/accounts",
+            "/api/v1/attempts/{attempt_id}/correction-case",
+            "/api/v1/attempts/{attempt_id}/draft",
+            "/api/v1/attempts/{attempt_id}/hints",
+            "/api/v1/attempts/{attempt_id}/lexical-gaps",
+            "/api/v1/attempts/{attempt_id}:mark-correction-read",
+            "/api/v1/attempts/{attempt_id}:submit",
+            "/api/v1/attempts/{id}",
         "/api/v1/authoring/content/{id}/history",
         "/api/v1/authoring/drafts",
         "/api/v1/authoring/drafts/{draft_id}",
@@ -53,7 +59,9 @@ def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
         "/api/v1/authoring/drafts/{draft_id}:publish",
         "/api/v1/authoring/drafts/{draft_id}:validate",
         "/api/v1/consents/{purpose}",
-        "/api/v1/content/{content_id}/revisions/{revision_id}:retire",
+            "/api/v1/content/{content_id}/revisions/{revision_id}:retire",
+            "/api/v1/correction-cases/{case_id}:resolve",
+            "/api/v1/correction-cases/{id}",
         "/api/v1/catalogue/targets",
         "/api/v1/health/live",
         "/api/v1/health/ready",
@@ -81,7 +89,9 @@ def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
         "/api/v1/language-profiles/{profile_id}:restore",
         "/api/v1/diagnostics/{id}",
         "/api/v1/diagnostics/{run_id}/responses",
-        "/api/v1/diagnostics/{run_id}:complete",
+            "/api/v1/diagnostics/{run_id}:complete",
+            "/api/v1/exercise-instances/{id}",
+            "/api/v1/exercise-instances/{instance_id}/attempts",
         "/api/v1/foundation-runs/{id}",
         "/api/v1/foundation-runs/{run_id}:complete",
         "/api/v1/lexical-annotations/{annotation_id}",
@@ -101,7 +111,8 @@ def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
             "/api/v1/memory-prompts/{prompt_id}:resume",
         "/api/v1/memory-prompts/{prompt_id}:suspend",
         "/api/v1/imports/{id}",
-        "/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve",
+            "/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve",
+            "/api/v1/imports/{import_id}/preview",
         "/api/v1/imports/{import_id}:commit",
         "/api/v1/imports/{import_id}:revert",
         "/api/v1/personal-lexical-relations/{relation_id}:retract",
@@ -114,7 +125,8 @@ def test_openapi_exports_the_implemented_w01_through_w08_surface() -> None:
         "/api/v1/vocabulary-lists",
         "/api/v1/vocabulary-lists/{id}",
         "/api/v1/vocabulary-lists/{list_id}",
-        "/api/v1/vocabulary-lists/{list_id}/members:batch",
+            "/api/v1/vocabulary-lists/{list_id}/members:batch",
+            "/api/v1/vocabulary-lists/{list_id}/preview",
         "/api/v1/vocabulary-lists/{list_id}/snapshots/{snapshot_id}:publish",
         "/api/v1/vocabulary-lists/{list_id}:clone",
         "/api/v1/vocabulary-lists/{list_id}:snapshot",
