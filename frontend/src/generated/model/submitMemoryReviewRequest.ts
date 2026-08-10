@@ -4,8 +4,8 @@
  * Polyglot V2 API
  * OpenAPI spec version: 0.1.0
  */
-import type { HintLevel } from "./hintLevel";
 import type { MemoryRating } from "./memoryRating";
+import type { PolyglotModulesLexiconMemoryPolicyHintLevel } from "./polyglotModulesLexiconMemoryPolicyHintLevel";
 import type { ReviewVerdict } from "./reviewVerdict";
 
 export interface SubmitMemoryReviewRequest {
@@ -37,7 +37,7 @@ export interface SubmitMemoryReviewRequest {
   certified_target_revision_id: string;
   correction_ref?: string | null;
   exposure_only?: boolean;
-  highest_hint: HintLevel;
+  highest_hint: PolyglotModulesLexiconMemoryPolicyHintLevel;
   incidental_production?: boolean;
   opportunity_id: string;
   rating: MemoryRating;

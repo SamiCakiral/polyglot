@@ -8,7 +8,10 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from polyglot.bootstrap.database import migration_database_url_from_environment
+from polyglot.bootstrap.database import (
+    database_url_from_environment,
+    migration_database_url_from_environment,
+)
 
 NOW = datetime(2026, 8, 10, 15, 0, tzinfo=UTC)
 
@@ -144,6 +147,9 @@ async def clean_exercise_database() -> AsyncIterator[None]:
         if tables:
             qualified = ",".join(f'exercises."{table}"' for table in tables)
             await connection.execute(text(f"TRUNCATE {qualified} CASCADE"))
+        await connection.execute(text("TRUNCATE platform.outbox_messages CASCADE"))
+        await connection.execute(text("TRUNCATE platform.domain_events CASCADE"))
+        await connection.execute(text("TRUNCATE platform.command_receipts CASCADE"))
         await connection.execute(
             text("TRUNCATE language_profiles.learner_language_profiles CASCADE")
         )
@@ -159,4 +165,12 @@ async def migration_session() -> AsyncIterator[AsyncSession]:
     async with factory() as session:
         yield session
         await session.rollback()
+    await engine.dispose()
+
+
+@pytest.fixture
+async def runtime_factory() -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    engine = create_async_engine(database_url_from_environment())
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    yield factory
     await engine.dispose()

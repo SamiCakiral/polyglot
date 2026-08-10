@@ -7,16 +7,20 @@
  */
 import { faker } from "@faker-js/faker";
 
+import { AnswerKind } from "../model";
 import type {
   AccountResponse,
+  AttemptResponse,
   CatalogueTargetPageResponse,
   ConsentResponse,
   ContentRevisionPageResponse,
   ContentRevisionResponse,
+  CorrectionCaseResponse,
   CurrentSessionResponse,
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  ExerciseInstanceResponse,
   FoundationResponse,
   GetExport200,
   GetSharedVocabularyList200,
@@ -95,11 +99,265 @@ export const getRegisterAccountResponseMock = (
   ...overrideResponse,
 });
 
+export const getContestCorrectionResponseMock = (
+  overrideResponse: Partial<Extract<CorrectionCaseResponse, object>> = {},
+): CorrectionCaseResponse => ({
+  attempt_id: faker.string.uuid(),
+  case_id: faker.string.uuid(),
+  opened_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  resolution_correction_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  resolved_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  user_comment: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSaveAttemptDraftResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getUseExerciseHintResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getCaptureLexicalGapResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
 ): MutationResponse => ({
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getReviewCorrectionResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSubmitExerciseAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -846,6 +1104,54 @@ export const getRetireContentRevisionResponseMock = (
   ...overrideResponse,
 });
 
+export const getReviewCorrectionCaseResponseMock = (
+  overrideResponse: Partial<Extract<CorrectionCaseResponse, object>> = {},
+): CorrectionCaseResponse => ({
+  attempt_id: faker.string.uuid(),
+  case_id: faker.string.uuid(),
+  opened_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  resolution_correction_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  resolved_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  user_comment: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetCorrectionResponseMock = (
+  overrideResponse: Partial<Extract<CorrectionCaseResponse, object>> = {},
+): CorrectionCaseResponse => ({
+  attempt_id: faker.string.uuid(),
+  case_id: faker.string.uuid(),
+  opened_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  resolution_correction_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  resolved_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  user_comment: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getGetDiagnosticSummaryResponseMock = (
   overrideResponse: Partial<Extract<DiagnosticResponse, object>> = {},
 ): DiagnosticResponse => ({
@@ -932,6 +1238,113 @@ export const getCompleteDiagnosticResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetExerciseInstanceResponseMock = (
+  overrideResponse: Partial<Extract<ExerciseInstanceResponse, object>> = {},
+): ExerciseInstanceResponse => ({
+  definition_revision_id: faker.string.uuid(),
+  grammar_bindings: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() =>
+    faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  ),
+  instance_id: faker.string.uuid(),
+  language_pack_revision_id: faker.string.uuid(),
+  lexical_bindings: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() =>
+    faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  ),
+  primitive_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  response_kinds: faker.helpers.arrayElements(Object.values(AnswerKind)),
+  seed: faker.number.int(),
+  stimulus_revision_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  target_bindings: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() =>
+    faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  ),
+  ...overrideResponse,
+});
+
+export const getOpenExerciseAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });

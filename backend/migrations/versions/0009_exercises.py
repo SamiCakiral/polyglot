@@ -35,6 +35,15 @@ SET search_path=pg_catalog,language_profiles,exercises AS $function$
       AND profile.status <> 'deleted'
   )
 $function$;
+CREATE FUNCTION exercises.has_role(roles text[]) RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path=pg_catalog,identity,exercises AS $function$
+  SELECT EXISTS (
+    SELECT 1 FROM identity.account_roles role_grant
+    WHERE role_grant.account_id=exercises.current_user_id()
+      AND role_grant.role=ANY(roles) AND role_grant.revoked_at IS NULL
+  )
+$function$;
 CREATE FUNCTION exercises.guard_append_only() RETURNS trigger
 LANGUAGE plpgsql AS $function$
 BEGIN
@@ -211,7 +220,7 @@ CREATE TABLE exercises.exercise_instances (
 
 CREATE TABLE exercises.exercise_attempts (
   attempt_id uuid PRIMARY KEY,
-  profile_id uuid NOT NULL,
+  profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
   instance_id uuid NOT NULL REFERENCES exercises.exercise_instances(instance_id) ON DELETE RESTRICT,
   attempt_no integer NOT NULL,
   status varchar(24) NOT NULL,
@@ -242,6 +251,11 @@ CREATE TABLE exercises.exercise_attempts (
   CONSTRAINT ck_exercise_attempt_shape CHECK (
     attempt_no >= 1 AND version >= 1 AND active_duration_ms >= 0 AND updated_at >= started_at
     AND status IN ('draft','submitted','correcting','corrected','not_evaluable')
+    AND (answer_kind IS NULL OR answer_kind IN (
+      'acknowledgement','single_choice','graded_choice','selection','pairing','grouping',
+      'ordered_items','cells','spans','tokens','text','short_text','audio_ref','self_grade',
+      'self_assessment','no_answer'
+    ))
     AND terminal_reason IN ('none','correction_unavailable','correction_ambiguous','answer_invalid','user_cancelled')
     AND ((status='not_evaluable') = (terminal_reason <> 'none'))
     AND (request_fingerprint IS NULL OR request_fingerprint ~ '^[0-9a-f]{64}$')
@@ -448,6 +462,31 @@ CREATE TABLE exercises.exercise_block_runs (
   )
 );
 
+CREATE TABLE exercises.exercise_command_receipts (
+  receipt_id uuid PRIMARY KEY,
+  profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
+  actor_id uuid NOT NULL,
+  command_type varchar(120) NOT NULL,
+  idempotency_key varchar(255) NOT NULL,
+  request_fingerprint char(64) NOT NULL,
+  result_type varchar(40) NOT NULL,
+  result_id uuid NOT NULL,
+  result_version integer NOT NULL,
+  result_payload jsonb NOT NULL,
+  created_at timestamptz NOT NULL,
+  CONSTRAINT uq_exercise_command_receipt UNIQUE (actor_id,command_type,idempotency_key),
+  CONSTRAINT ck_exercise_command_receipt_uuid7 CHECK (
+    exercises.is_uuid7(receipt_id) AND exercises.is_uuid7(profile_id)
+    AND exercises.is_uuid7(actor_id) AND exercises.is_uuid7(result_id)
+  ),
+  CONSTRAINT ck_exercise_command_receipt_shape CHECK (
+    request_fingerprint ~ '^[0-9a-f]{64}$' AND result_version >= 1
+    AND result_type IN ('attempt','correction_case','exercise_block')
+    AND jsonb_typeof(result_payload)='object'
+    AND octet_length(result_payload::text) <= 65536
+  )
+);
+
 CREATE INDEX ix_exercise_attempt_profile ON exercises.exercise_attempts(profile_id,status,updated_at,attempt_id);
 CREATE INDEX ix_exercise_instance_standalone_profile
   ON exercises.exercise_instances(standalone_profile_id,created_at,instance_id)
@@ -460,7 +499,7 @@ BEGIN
   FOREACH table_name IN ARRAY ARRAY[
     'exercise_definition_revisions','exercise_language_certifications',
     'exercise_instances','exercise_hint_uses','attempt_media_events',
-    'correction_case_reviews'
+    'correction_case_reviews','exercise_command_receipts'
   ] LOOP
     EXECUTE format(
       'CREATE TRIGGER %I BEFORE UPDATE OR DELETE ON exercises.%I FOR EACH ROW EXECUTE FUNCTION exercises.guard_append_only()',
@@ -483,6 +522,7 @@ ALTER TABLE exercises.exercise_instances FORCE ROW LEVEL SECURITY;
 CREATE POLICY exercise_instances_read ON exercises.exercise_instances
   FOR SELECT USING (
     standalone_profile_id IS NULL OR exercises.owns_profile(standalone_profile_id)
+    OR exercises.has_role(ARRAY['worker','reviewer','admin'])
   );
 CREATE POLICY exercise_instances_write ON exercises.exercise_instances
   FOR INSERT WITH CHECK (
@@ -494,7 +534,8 @@ DECLARE table_name text;
 BEGIN
   FOREACH table_name IN ARRAY ARRAY[
     'exercise_attempts','attempt_drafts','exercise_hint_uses','attempt_media_events',
-    'exercise_corrections','correction_cases','correction_case_reviews','exercise_block_runs'
+    'exercise_corrections','correction_cases','correction_case_reviews','exercise_block_runs',
+    'exercise_command_receipts'
   ] LOOP
     EXECUTE format('ALTER TABLE exercises.%I ENABLE ROW LEVEL SECURITY',table_name);
     EXECUTE format('ALTER TABLE exercises.%I FORCE ROW LEVEL SECURITY',table_name);
@@ -506,6 +547,22 @@ BEGIN
 END
 $rls$;
 
+CREATE POLICY exercise_attempts_operator ON exercises.exercise_attempts
+  FOR ALL USING (exercises.has_role(ARRAY['worker','reviewer','admin']))
+  WITH CHECK (exercises.has_role(ARRAY['worker','reviewer','admin']));
+CREATE POLICY exercise_corrections_operator ON exercises.exercise_corrections
+  FOR ALL USING (exercises.has_role(ARRAY['worker','reviewer','admin']))
+  WITH CHECK (exercises.has_role(ARRAY['worker','reviewer','admin']));
+CREATE POLICY correction_cases_reviewer ON exercises.correction_cases
+  FOR ALL USING (exercises.has_role(ARRAY['reviewer','admin']))
+  WITH CHECK (exercises.has_role(ARRAY['reviewer','admin']));
+CREATE POLICY correction_case_reviews_reviewer ON exercises.correction_case_reviews
+  FOR ALL USING (exercises.has_role(ARRAY['reviewer','admin']))
+  WITH CHECK (exercises.has_role(ARRAY['reviewer','admin']));
+CREATE POLICY exercise_command_receipts_operator ON exercises.exercise_command_receipts
+  FOR ALL USING (exercises.has_role(ARRAY['worker','reviewer','admin']))
+  WITH CHECK (exercises.has_role(ARRAY['worker','reviewer','admin']));
+
 GRANT USAGE ON SCHEMA exercises TO polyglot_runtime;
 GRANT SELECT ON exercises.exercise_definitions,exercises.exercise_definition_revisions,
   exercises.exercise_language_certifications TO polyglot_runtime;
@@ -515,6 +572,7 @@ GRANT SELECT,INSERT ON exercises.exercise_instances,exercises.exercise_hint_uses
 GRANT UPDATE(is_current) ON exercises.exercise_corrections TO polyglot_runtime;
 GRANT SELECT,INSERT,UPDATE ON exercises.exercise_attempts,exercises.attempt_drafts,
   exercises.correction_cases,exercises.exercise_block_runs TO polyglot_runtime;
+GRANT SELECT,INSERT ON exercises.exercise_command_receipts TO polyglot_runtime;
 GRANT USAGE,CREATE ON SCHEMA exercises TO polyglot_migration;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA exercises TO polyglot_migration;
 REVOKE ALL ON SCHEMA exercises FROM PUBLIC;
@@ -528,6 +586,7 @@ END $owners$;
 ALTER FUNCTION exercises.is_uuid7(uuid) OWNER TO polyglot_migration;
 ALTER FUNCTION exercises.current_user_id() OWNER TO polyglot_migration;
 ALTER FUNCTION exercises.owns_profile(uuid) OWNER TO polyglot_migration;
+ALTER FUNCTION exercises.has_role(text[]) OWNER TO polyglot_migration;
 ALTER FUNCTION exercises.guard_append_only() OWNER TO polyglot_migration;
 ALTER FUNCTION exercises.guard_attempt_answer() OWNER TO polyglot_migration;
 ALTER FUNCTION exercises.guard_correction_current() OWNER TO polyglot_migration;

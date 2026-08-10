@@ -10,16 +10,20 @@ import { faker } from "@faker-js/faker";
 import { HttpResponse, delay, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
+import { AnswerKind } from "../model";
 import type {
   AccountResponse,
+  AttemptResponse,
   CatalogueTargetPageResponse,
   ConsentResponse,
   ContentRevisionPageResponse,
   ContentRevisionResponse,
+  CorrectionCaseResponse,
   CurrentSessionResponse,
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  ExerciseInstanceResponse,
   FoundationResponse,
   GetExport200,
   GetSharedVocabularyList200,
@@ -98,11 +102,265 @@ export const getRegisterAccountResponseMock = (
   ...overrideResponse,
 });
 
+export const getContestCorrectionResponseMock = (
+  overrideResponse: Partial<Extract<CorrectionCaseResponse, object>> = {},
+): CorrectionCaseResponse => ({
+  attempt_id: faker.string.uuid(),
+  case_id: faker.string.uuid(),
+  opened_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  resolution_correction_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  resolved_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  user_comment: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSaveAttemptDraftResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getUseExerciseHintResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getCaptureLexicalGapResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
 ): MutationResponse => ({
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getReviewCorrectionResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSubmitExerciseAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -849,6 +1107,54 @@ export const getRetireContentRevisionResponseMock = (
   ...overrideResponse,
 });
 
+export const getReviewCorrectionCaseResponseMock = (
+  overrideResponse: Partial<Extract<CorrectionCaseResponse, object>> = {},
+): CorrectionCaseResponse => ({
+  attempt_id: faker.string.uuid(),
+  case_id: faker.string.uuid(),
+  opened_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  resolution_correction_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  resolved_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  user_comment: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetCorrectionResponseMock = (
+  overrideResponse: Partial<Extract<CorrectionCaseResponse, object>> = {},
+): CorrectionCaseResponse => ({
+  attempt_id: faker.string.uuid(),
+  case_id: faker.string.uuid(),
+  opened_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  resolution_correction_id: faker.helpers.arrayElement([
+    faker.string.uuid(),
+    null,
+  ]),
+  resolved_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  user_comment: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getGetDiagnosticSummaryResponseMock = (
   overrideResponse: Partial<Extract<DiagnosticResponse, object>> = {},
 ): DiagnosticResponse => ({
@@ -935,6 +1241,113 @@ export const getCompleteDiagnosticResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetExerciseInstanceResponseMock = (
+  overrideResponse: Partial<Extract<ExerciseInstanceResponse, object>> = {},
+): ExerciseInstanceResponse => ({
+  definition_revision_id: faker.string.uuid(),
+  grammar_bindings: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() =>
+    faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  ),
+  instance_id: faker.string.uuid(),
+  language_pack_revision_id: faker.string.uuid(),
+  lexical_bindings: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() =>
+    faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  ),
+  primitive_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  response_kinds: faker.helpers.arrayElements(Object.values(AnswerKind)),
+  seed: faker.number.int(),
+  stimulus_revision_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  target_bindings: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() =>
+    faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  ),
+  ...overrideResponse,
+});
+
+export const getOpenExerciseAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -2642,6 +3055,84 @@ export const getRegisterAccountMockHandler = (
   );
 };
 
+export const getContestCorrectionMockHandler = (
+  overrideResponse?:
+    | CorrectionCaseResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<CorrectionCaseResponse> | CorrectionCaseResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/attempts/:attemptId/correction-case",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getContestCorrectionResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSaveAttemptDraftMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.patch(
+    "*/api/v1/attempts/:attemptId/draft",
+    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSaveAttemptDraftResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getUseExerciseHintMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/attempts/:attemptId/hints",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getUseExerciseHintResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getCaptureLexicalGapMockHandler = (
   overrideResponse?:
     | MutationResponse
@@ -2661,6 +3152,84 @@ export const getCaptureLexicalGapMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getCaptureLexicalGapResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getReviewCorrectionMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/attempts/:attemptId\\:mark-correction-read",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getReviewCorrectionResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSubmitExerciseAttemptMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/attempts/:attemptId\\:submit",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSubmitExerciseAttemptResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetAttemptMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/attempts/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetAttemptResponseMock(),
         { status: 200 },
       );
     },
@@ -2954,6 +3523,58 @@ export const getRetireContentRevisionMockHandler = (
   );
 };
 
+export const getReviewCorrectionCaseMockHandler = (
+  overrideResponse?:
+    | CorrectionCaseResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<CorrectionCaseResponse> | CorrectionCaseResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/correction-cases/:caseId\\:resolve",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getReviewCorrectionCaseResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetCorrectionMockHandler = (
+  overrideResponse?:
+    | CorrectionCaseResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<CorrectionCaseResponse> | CorrectionCaseResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/correction-cases/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetCorrectionResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getGetDiagnosticSummaryMockHandler = (
   overrideResponse?:
     | DiagnosticResponse
@@ -3026,6 +3647,58 @@ export const getCompleteDiagnosticMockHandler = (
             : overrideResponse
           : getCompleteDiagnosticResponseMock(),
         { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetExerciseInstanceMockHandler = (
+  overrideResponse?:
+    | ExerciseInstanceResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ExerciseInstanceResponse> | ExerciseInstanceResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/exercise-instances/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetExerciseInstanceResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getOpenExerciseAttemptMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/exercise-instances/:instanceId/attempts",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getOpenExerciseAttemptResponseMock(),
+        { status: 201 },
       );
     },
     options,
@@ -4779,7 +5452,13 @@ export const getPolyglotV2APIMock = () => [
   getChangePasswordMockHandler(),
   getUpdateUserPreferencesMockHandler(),
   getRegisterAccountMockHandler(),
+  getContestCorrectionMockHandler(),
+  getSaveAttemptDraftMockHandler(),
+  getUseExerciseHintMockHandler(),
   getCaptureLexicalGapMockHandler(),
+  getReviewCorrectionMockHandler(),
+  getSubmitExerciseAttemptMockHandler(),
+  getGetAttemptMockHandler(),
   getGetContentHistoryMockHandler(),
   getListContentDraftsMockHandler(),
   getCreateContentDraftMockHandler(),
@@ -4791,9 +5470,13 @@ export const getPolyglotV2APIMock = () => [
   getListCatalogueTargetsMockHandler(),
   getUpdateConsentMockHandler(),
   getRetireContentRevisionMockHandler(),
+  getReviewCorrectionCaseMockHandler(),
+  getGetCorrectionMockHandler(),
   getGetDiagnosticSummaryMockHandler(),
   getSubmitDiagnosticResponseMockHandler(),
   getCompleteDiagnosticMockHandler(),
+  getGetExerciseInstanceMockHandler(),
+  getOpenExerciseAttemptMockHandler(),
   getGetExportMockHandler(),
   getGetFoundationRunMockHandler(),
   getCompleteFoundationGateMockHandler(),

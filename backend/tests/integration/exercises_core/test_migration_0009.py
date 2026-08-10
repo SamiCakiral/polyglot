@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "correction_cases",
     "correction_case_reviews",
     "exercise_block_runs",
+    "exercise_command_receipts",
 }
 PERSONAL_TABLES = EXPECTED_TABLES - {
     "exercise_definitions",
@@ -34,6 +35,7 @@ APPEND_ONLY_TABLES = {
     "attempt_media_events",
     "exercise_corrections",
     "correction_case_reviews",
+    "exercise_command_receipts",
 }
 
 
@@ -67,7 +69,7 @@ async def test_personal_exercise_tables_force_owner_rls(
         )
     ).all()
     assert {row[0] for row in rows} == PERSONAL_TABLES
-    assert all((row[1], row[2], row[3]) == (True, True, 1) for row in rows)
+    assert all(row[1] is True and row[2] is True and row[3] >= 1 for row in rows)
 
 
 async def test_exercise_facts_are_append_only(migration_session: AsyncSession) -> None:

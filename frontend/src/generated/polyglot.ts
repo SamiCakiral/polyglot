@@ -24,6 +24,7 @@ import type {
   AccountResponse,
   ApproveContentRevisionRequest,
   AtRequest,
+  AttemptResponse,
   CatalogueTargetPageResponse,
   ChangeListMembersRequest,
   ChangePasswordRequest,
@@ -35,6 +36,8 @@ import type {
   ConsentResponse,
   ContentRevisionPageResponse,
   ContentRevisionResponse,
+  ContestCorrectionRequest,
+  CorrectionCaseResponse,
   CreateContentDraftRequest,
   CreateImportRequest,
   CreateMemoryPromptRequest,
@@ -45,6 +48,7 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  ExerciseInstanceResponse,
   FoundationResponse,
   GetContentHistoryParams,
   GetExport200,
@@ -67,11 +71,13 @@ import type {
   ListVocabularyListsParams,
   LiveStatus,
   LocalCredentialsRequest,
+  MarkCorrectionReadRequest,
   MemoryPromptResponse,
   MergeMemoryPromptsRequest,
   MergeVocabularyListsRequest,
   MutationResponse,
   OidcCredentialsRequest,
+  OpenAttemptRequest,
   PreferencesRequest,
   PreferencesResponse,
   PreviewDynamicListParams,
@@ -83,6 +89,7 @@ import type {
   ReadyStatus,
   RequestExportRequest,
   ResetMemoryPromptRequest,
+  ResolveCorrectionCaseRequest,
   ResolveImportConflictRequest,
   ResourceMutationResponse,
   ResourcePageResponse,
@@ -90,14 +97,17 @@ import type {
   ResumeMemoryPromptRequest,
   ReviseContentDraftRequest,
   ReviseVocabularyListRequest,
+  SaveDraftRequest,
   SearchLexiconParams,
   SenseNeighborhoodResponse,
   SessionResponse,
   StartDiagnosticRequest,
   StartFoundationRunRequest,
+  SubmitAttemptRequest,
   SubmitDiagnosticResponseRequest,
   SubmitMemoryReviewRequest,
   UpdateGoalsRequest,
+  UseHintRequest,
   ValidateContentRevisionRequest,
   ValidationReportResponse,
   VocabularyListResponse,
@@ -721,6 +731,639 @@ export const useRegisterAccount = <
   return useMutation(getRegisterAccountMutationOptions(options), queryClient);
 };
 
+export type contestCorrectionResponse201 = {
+  data: CorrectionCaseResponse;
+  status: 201;
+};
+
+export type contestCorrectionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type contestCorrectionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type contestCorrectionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type contestCorrectionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type contestCorrectionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type contestCorrectionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type contestCorrectionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type contestCorrectionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type contestCorrectionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type contestCorrectionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type contestCorrectionResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type contestCorrectionResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type contestCorrectionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type contestCorrectionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type contestCorrectionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type contestCorrectionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type contestCorrectionResponseSuccess = contestCorrectionResponse201 & {
+  headers: Headers;
+};
+export type contestCorrectionResponseError = (
+  | contestCorrectionResponse401ApplicationJson
+  | contestCorrectionResponse401ApplicationProblemJson
+  | contestCorrectionResponse403ApplicationJson
+  | contestCorrectionResponse403ApplicationProblemJson
+  | contestCorrectionResponse409ApplicationJson
+  | contestCorrectionResponse409ApplicationProblemJson
+  | contestCorrectionResponse422ApplicationJson
+  | contestCorrectionResponse422ApplicationProblemJson
+  | contestCorrectionResponse423ApplicationJson
+  | contestCorrectionResponse423ApplicationProblemJson
+  | contestCorrectionResponse428ApplicationJson
+  | contestCorrectionResponse428ApplicationProblemJson
+  | contestCorrectionResponse429ApplicationJson
+  | contestCorrectionResponse429ApplicationProblemJson
+  | contestCorrectionResponse503ApplicationJson
+  | contestCorrectionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type contestCorrectionResponse =
+  contestCorrectionResponseSuccess | contestCorrectionResponseError;
+
+export const getContestCorrectionUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}/correction-case`;
+};
+
+/**
+ * @summary Contest Exercise Correction
+ */
+export const contestCorrection = async (
+  attemptId: string,
+  contestCorrectionRequest: ContestCorrectionRequest,
+  options?: RequestInit,
+): Promise<contestCorrectionResponse> => {
+  const res = await fetch(getContestCorrectionUrl(attemptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(contestCorrectionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: contestCorrectionResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as contestCorrectionResponse;
+};
+
+export const getContestCorrectionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof contestCorrection>>,
+    TError,
+    { attemptId: string; data: ContestCorrectionRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof contestCorrection>>,
+  TError,
+  { attemptId: string; data: ContestCorrectionRequest },
+  TContext
+> => {
+  const mutationKey = ["contestCorrection"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof contestCorrection>>,
+    { attemptId: string; data: ContestCorrectionRequest }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return contestCorrection(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ContestCorrectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof contestCorrection>>
+>;
+export type ContestCorrectionMutationBody = ContestCorrectionRequest;
+export type ContestCorrectionMutationError = ProblemResponse;
+
+/**
+ * @summary Contest Exercise Correction
+ */
+export const useContestCorrection = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof contestCorrection>>,
+      TError,
+      { attemptId: string; data: ContestCorrectionRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof contestCorrection>>,
+  TError,
+  { attemptId: string; data: ContestCorrectionRequest },
+  TContext
+> => {
+  return useMutation(getContestCorrectionMutationOptions(options), queryClient);
+};
+
+export type saveAttemptDraftResponse200 = {
+  data: AttemptResponse;
+  status: 200;
+};
+
+export type saveAttemptDraftResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type saveAttemptDraftResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type saveAttemptDraftResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type saveAttemptDraftResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type saveAttemptDraftResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type saveAttemptDraftResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type saveAttemptDraftResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type saveAttemptDraftResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type saveAttemptDraftResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type saveAttemptDraftResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type saveAttemptDraftResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type saveAttemptDraftResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type saveAttemptDraftResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type saveAttemptDraftResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type saveAttemptDraftResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type saveAttemptDraftResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type saveAttemptDraftResponseSuccess = saveAttemptDraftResponse200 & {
+  headers: Headers;
+};
+export type saveAttemptDraftResponseError = (
+  | saveAttemptDraftResponse401ApplicationJson
+  | saveAttemptDraftResponse401ApplicationProblemJson
+  | saveAttemptDraftResponse403ApplicationJson
+  | saveAttemptDraftResponse403ApplicationProblemJson
+  | saveAttemptDraftResponse409ApplicationJson
+  | saveAttemptDraftResponse409ApplicationProblemJson
+  | saveAttemptDraftResponse422ApplicationJson
+  | saveAttemptDraftResponse422ApplicationProblemJson
+  | saveAttemptDraftResponse423ApplicationJson
+  | saveAttemptDraftResponse423ApplicationProblemJson
+  | saveAttemptDraftResponse428ApplicationJson
+  | saveAttemptDraftResponse428ApplicationProblemJson
+  | saveAttemptDraftResponse429ApplicationJson
+  | saveAttemptDraftResponse429ApplicationProblemJson
+  | saveAttemptDraftResponse503ApplicationJson
+  | saveAttemptDraftResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type saveAttemptDraftResponse =
+  saveAttemptDraftResponseSuccess | saveAttemptDraftResponseError;
+
+export const getSaveAttemptDraftUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}/draft`;
+};
+
+/**
+ * @summary Save Attempt Draft
+ */
+export const saveAttemptDraft = async (
+  attemptId: string,
+  saveDraftRequest: SaveDraftRequest,
+  options?: RequestInit,
+): Promise<saveAttemptDraftResponse> => {
+  const res = await fetch(getSaveAttemptDraftUrl(attemptId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(saveDraftRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: saveAttemptDraftResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as saveAttemptDraftResponse;
+};
+
+export const getSaveAttemptDraftMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveAttemptDraft>>,
+    TError,
+    { attemptId: string; data: SaveDraftRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveAttemptDraft>>,
+  TError,
+  { attemptId: string; data: SaveDraftRequest },
+  TContext
+> => {
+  const mutationKey = ["saveAttemptDraft"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveAttemptDraft>>,
+    { attemptId: string; data: SaveDraftRequest }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return saveAttemptDraft(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveAttemptDraftMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveAttemptDraft>>
+>;
+export type SaveAttemptDraftMutationBody = SaveDraftRequest;
+export type SaveAttemptDraftMutationError = ProblemResponse;
+
+/**
+ * @summary Save Attempt Draft
+ */
+export const useSaveAttemptDraft = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof saveAttemptDraft>>,
+      TError,
+      { attemptId: string; data: SaveDraftRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof saveAttemptDraft>>,
+  TError,
+  { attemptId: string; data: SaveDraftRequest },
+  TContext
+> => {
+  return useMutation(getSaveAttemptDraftMutationOptions(options), queryClient);
+};
+
+export type useExerciseHintResponse200 = {
+  data: AttemptResponse;
+  status: 200;
+};
+
+export type useExerciseHintResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type useExerciseHintResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type useExerciseHintResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type useExerciseHintResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type useExerciseHintResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type useExerciseHintResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type useExerciseHintResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type useExerciseHintResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type useExerciseHintResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type useExerciseHintResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type useExerciseHintResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type useExerciseHintResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type useExerciseHintResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type useExerciseHintResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type useExerciseHintResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type useExerciseHintResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type useExerciseHintResponseSuccess = useExerciseHintResponse200 & {
+  headers: Headers;
+};
+export type useExerciseHintResponseError = (
+  | useExerciseHintResponse401ApplicationJson
+  | useExerciseHintResponse401ApplicationProblemJson
+  | useExerciseHintResponse403ApplicationJson
+  | useExerciseHintResponse403ApplicationProblemJson
+  | useExerciseHintResponse409ApplicationJson
+  | useExerciseHintResponse409ApplicationProblemJson
+  | useExerciseHintResponse422ApplicationJson
+  | useExerciseHintResponse422ApplicationProblemJson
+  | useExerciseHintResponse423ApplicationJson
+  | useExerciseHintResponse423ApplicationProblemJson
+  | useExerciseHintResponse428ApplicationJson
+  | useExerciseHintResponse428ApplicationProblemJson
+  | useExerciseHintResponse429ApplicationJson
+  | useExerciseHintResponse429ApplicationProblemJson
+  | useExerciseHintResponse503ApplicationJson
+  | useExerciseHintResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type useExerciseHintResponse =
+  useExerciseHintResponseSuccess | useExerciseHintResponseError;
+
+export const getUseExerciseHintUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}/hints`;
+};
+
+/**
+ * @summary Use Exercise Hint
+ */
+export const useExerciseHint = async (
+  attemptId: string,
+  useHintRequest: UseHintRequest,
+  options?: RequestInit,
+): Promise<useExerciseHintResponse> => {
+  const res = await fetch(getUseExerciseHintUrl(attemptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(useHintRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: useExerciseHintResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as useExerciseHintResponse;
+};
+
+export const getUseExerciseHintMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof useExerciseHint>>,
+    TError,
+    { attemptId: string; data: UseHintRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof useExerciseHint>>,
+  TError,
+  { attemptId: string; data: UseHintRequest },
+  TContext
+> => {
+  const mutationKey = ["useExerciseHint"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof useExerciseHint>>,
+    { attemptId: string; data: UseHintRequest }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return useExerciseHint(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UseExerciseHintMutationResult = NonNullable<
+  Awaited<ReturnType<typeof useExerciseHint>>
+>;
+export type UseExerciseHintMutationBody = UseHintRequest;
+export type UseExerciseHintMutationError = ProblemResponse;
+
+/**
+ * @summary Use Exercise Hint
+ */
+export const useUseExerciseHint = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof useExerciseHint>>,
+      TError,
+      { attemptId: string; data: UseHintRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof useExerciseHint>>,
+  TError,
+  { attemptId: string; data: UseHintRequest },
+  TContext
+> => {
+  return useMutation(getUseExerciseHintMutationOptions(options), queryClient);
+};
+
 export type captureLexicalGapResponse200 = {
   data: MutationResponse;
   status: 200;
@@ -931,6 +1574,703 @@ export const useCaptureLexicalGap = <
 > => {
   return useMutation(getCaptureLexicalGapMutationOptions(options), queryClient);
 };
+
+export type reviewCorrectionResponse200 = {
+  data: AttemptResponse;
+  status: 200;
+};
+
+export type reviewCorrectionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviewCorrectionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviewCorrectionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviewCorrectionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviewCorrectionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviewCorrectionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviewCorrectionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviewCorrectionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviewCorrectionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviewCorrectionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviewCorrectionResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type reviewCorrectionResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type reviewCorrectionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviewCorrectionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviewCorrectionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviewCorrectionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviewCorrectionResponseSuccess = reviewCorrectionResponse200 & {
+  headers: Headers;
+};
+export type reviewCorrectionResponseError = (
+  | reviewCorrectionResponse401ApplicationJson
+  | reviewCorrectionResponse401ApplicationProblemJson
+  | reviewCorrectionResponse403ApplicationJson
+  | reviewCorrectionResponse403ApplicationProblemJson
+  | reviewCorrectionResponse409ApplicationJson
+  | reviewCorrectionResponse409ApplicationProblemJson
+  | reviewCorrectionResponse422ApplicationJson
+  | reviewCorrectionResponse422ApplicationProblemJson
+  | reviewCorrectionResponse423ApplicationJson
+  | reviewCorrectionResponse423ApplicationProblemJson
+  | reviewCorrectionResponse428ApplicationJson
+  | reviewCorrectionResponse428ApplicationProblemJson
+  | reviewCorrectionResponse429ApplicationJson
+  | reviewCorrectionResponse429ApplicationProblemJson
+  | reviewCorrectionResponse503ApplicationJson
+  | reviewCorrectionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type reviewCorrectionResponse =
+  reviewCorrectionResponseSuccess | reviewCorrectionResponseError;
+
+export const getReviewCorrectionUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}:mark-correction-read`;
+};
+
+/**
+ * @summary Mark Exercise Correction Read
+ */
+export const reviewCorrection = async (
+  attemptId: string,
+  markCorrectionReadRequest: MarkCorrectionReadRequest,
+  options?: RequestInit,
+): Promise<reviewCorrectionResponse> => {
+  const res = await fetch(getReviewCorrectionUrl(attemptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(markCorrectionReadRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: reviewCorrectionResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as reviewCorrectionResponse;
+};
+
+export const getReviewCorrectionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewCorrection>>,
+    TError,
+    { attemptId: string; data: MarkCorrectionReadRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewCorrection>>,
+  TError,
+  { attemptId: string; data: MarkCorrectionReadRequest },
+  TContext
+> => {
+  const mutationKey = ["reviewCorrection"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewCorrection>>,
+    { attemptId: string; data: MarkCorrectionReadRequest }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return reviewCorrection(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewCorrectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewCorrection>>
+>;
+export type ReviewCorrectionMutationBody = MarkCorrectionReadRequest;
+export type ReviewCorrectionMutationError = ProblemResponse;
+
+/**
+ * @summary Mark Exercise Correction Read
+ */
+export const useReviewCorrection = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reviewCorrection>>,
+      TError,
+      { attemptId: string; data: MarkCorrectionReadRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reviewCorrection>>,
+  TError,
+  { attemptId: string; data: MarkCorrectionReadRequest },
+  TContext
+> => {
+  return useMutation(getReviewCorrectionMutationOptions(options), queryClient);
+};
+
+export type submitExerciseAttemptResponse200 = {
+  data: AttemptResponse;
+  status: 200;
+};
+
+export type submitExerciseAttemptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitExerciseAttemptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitExerciseAttemptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitExerciseAttemptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitExerciseAttemptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitExerciseAttemptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitExerciseAttemptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitExerciseAttemptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitExerciseAttemptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitExerciseAttemptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitExerciseAttemptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitExerciseAttemptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type submitExerciseAttemptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitExerciseAttemptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitExerciseAttemptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitExerciseAttemptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitExerciseAttemptResponseSuccess =
+  submitExerciseAttemptResponse200 & {
+    headers: Headers;
+  };
+export type submitExerciseAttemptResponseError = (
+  | submitExerciseAttemptResponse401ApplicationJson
+  | submitExerciseAttemptResponse401ApplicationProblemJson
+  | submitExerciseAttemptResponse403ApplicationJson
+  | submitExerciseAttemptResponse403ApplicationProblemJson
+  | submitExerciseAttemptResponse409ApplicationJson
+  | submitExerciseAttemptResponse409ApplicationProblemJson
+  | submitExerciseAttemptResponse422ApplicationJson
+  | submitExerciseAttemptResponse422ApplicationProblemJson
+  | submitExerciseAttemptResponse423ApplicationJson
+  | submitExerciseAttemptResponse423ApplicationProblemJson
+  | submitExerciseAttemptResponse428ApplicationJson
+  | submitExerciseAttemptResponse428ApplicationProblemJson
+  | submitExerciseAttemptResponse429ApplicationJson
+  | submitExerciseAttemptResponse429ApplicationProblemJson
+  | submitExerciseAttemptResponse503ApplicationJson
+  | submitExerciseAttemptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type submitExerciseAttemptResponse =
+  submitExerciseAttemptResponseSuccess | submitExerciseAttemptResponseError;
+
+export const getSubmitExerciseAttemptUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}:submit`;
+};
+
+/**
+ * @summary Submit Exercise Attempt
+ */
+export const submitExerciseAttempt = async (
+  attemptId: string,
+  submitAttemptRequest: SubmitAttemptRequest,
+  options?: RequestInit,
+): Promise<submitExerciseAttemptResponse> => {
+  const res = await fetch(getSubmitExerciseAttemptUrl(attemptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitAttemptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: submitExerciseAttemptResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as submitExerciseAttemptResponse;
+};
+
+export const getSubmitExerciseAttemptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitExerciseAttempt>>,
+    TError,
+    { attemptId: string; data: SubmitAttemptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitExerciseAttempt>>,
+  TError,
+  { attemptId: string; data: SubmitAttemptRequest },
+  TContext
+> => {
+  const mutationKey = ["submitExerciseAttempt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitExerciseAttempt>>,
+    { attemptId: string; data: SubmitAttemptRequest }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return submitExerciseAttempt(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitExerciseAttemptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitExerciseAttempt>>
+>;
+export type SubmitExerciseAttemptMutationBody = SubmitAttemptRequest;
+export type SubmitExerciseAttemptMutationError = ProblemResponse;
+
+/**
+ * @summary Submit Exercise Attempt
+ */
+export const useSubmitExerciseAttempt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof submitExerciseAttempt>>,
+      TError,
+      { attemptId: string; data: SubmitAttemptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof submitExerciseAttempt>>,
+  TError,
+  { attemptId: string; data: SubmitAttemptRequest },
+  TContext
+> => {
+  return useMutation(
+    getSubmitExerciseAttemptMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getAttemptResponse200 = {
+  data: AttemptResponse;
+  status: 200;
+};
+
+export type getAttemptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getAttemptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getAttemptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getAttemptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getAttemptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getAttemptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getAttemptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getAttemptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getAttemptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getAttemptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getAttemptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getAttemptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getAttemptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getAttemptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getAttemptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getAttemptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getAttemptResponseSuccess = getAttemptResponse200 & {
+  headers: Headers;
+};
+export type getAttemptResponseError = (
+  | getAttemptResponse401ApplicationJson
+  | getAttemptResponse401ApplicationProblemJson
+  | getAttemptResponse403ApplicationJson
+  | getAttemptResponse403ApplicationProblemJson
+  | getAttemptResponse409ApplicationJson
+  | getAttemptResponse409ApplicationProblemJson
+  | getAttemptResponse422ApplicationJson
+  | getAttemptResponse422ApplicationProblemJson
+  | getAttemptResponse423ApplicationJson
+  | getAttemptResponse423ApplicationProblemJson
+  | getAttemptResponse428ApplicationJson
+  | getAttemptResponse428ApplicationProblemJson
+  | getAttemptResponse429ApplicationJson
+  | getAttemptResponse429ApplicationProblemJson
+  | getAttemptResponse503ApplicationJson
+  | getAttemptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getAttemptResponse =
+  getAttemptResponseSuccess | getAttemptResponseError;
+
+export const getGetAttemptUrl = (id: string) => {
+  return `/api/v1/attempts/${id}`;
+};
+
+/**
+ * @summary Get Exercise Attempt
+ */
+export const getAttempt = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getAttemptResponse> => {
+  const res = await fetch(getGetAttemptUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getAttemptResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getAttemptResponse;
+};
+
+export const getGetAttemptQueryKey = (id: string) => {
+  return [`/api/v1/attempts/${id}`] as const;
+};
+
+export const getGetAttemptQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAttempt>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAttempt>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAttemptQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAttempt>>> = ({
+    signal,
+  }) => getAttempt(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAttempt>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAttemptQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAttempt>>
+>;
+export type GetAttemptQueryError = ProblemResponse;
+
+export function useGetAttempt<
+  TData = Awaited<ReturnType<typeof getAttempt>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAttempt>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAttempt>>,
+          TError,
+          Awaited<ReturnType<typeof getAttempt>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAttempt<
+  TData = Awaited<ReturnType<typeof getAttempt>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAttempt>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAttempt>>,
+          TError,
+          Awaited<ReturnType<typeof getAttempt>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAttempt<
+  TData = Awaited<ReturnType<typeof getAttempt>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAttempt>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Exercise Attempt
+ */
+
+export function useGetAttempt<
+  TData = Awaited<ReturnType<typeof getAttempt>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getAttempt>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetAttemptQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type getContentHistoryResponse200 = {
   data: ContentRevisionPageResponse;
@@ -3470,6 +4810,492 @@ export const useRetireContentRevision = <
   );
 };
 
+export type reviewCorrectionCaseResponse200 = {
+  data: CorrectionCaseResponse;
+  status: 200;
+};
+
+export type reviewCorrectionCaseResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviewCorrectionCaseResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviewCorrectionCaseResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviewCorrectionCaseResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviewCorrectionCaseResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviewCorrectionCaseResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviewCorrectionCaseResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviewCorrectionCaseResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviewCorrectionCaseResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviewCorrectionCaseResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviewCorrectionCaseResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type reviewCorrectionCaseResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type reviewCorrectionCaseResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviewCorrectionCaseResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviewCorrectionCaseResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviewCorrectionCaseResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviewCorrectionCaseResponseSuccess =
+  reviewCorrectionCaseResponse200 & {
+    headers: Headers;
+  };
+export type reviewCorrectionCaseResponseError = (
+  | reviewCorrectionCaseResponse401ApplicationJson
+  | reviewCorrectionCaseResponse401ApplicationProblemJson
+  | reviewCorrectionCaseResponse403ApplicationJson
+  | reviewCorrectionCaseResponse403ApplicationProblemJson
+  | reviewCorrectionCaseResponse409ApplicationJson
+  | reviewCorrectionCaseResponse409ApplicationProblemJson
+  | reviewCorrectionCaseResponse422ApplicationJson
+  | reviewCorrectionCaseResponse422ApplicationProblemJson
+  | reviewCorrectionCaseResponse423ApplicationJson
+  | reviewCorrectionCaseResponse423ApplicationProblemJson
+  | reviewCorrectionCaseResponse428ApplicationJson
+  | reviewCorrectionCaseResponse428ApplicationProblemJson
+  | reviewCorrectionCaseResponse429ApplicationJson
+  | reviewCorrectionCaseResponse429ApplicationProblemJson
+  | reviewCorrectionCaseResponse503ApplicationJson
+  | reviewCorrectionCaseResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type reviewCorrectionCaseResponse =
+  reviewCorrectionCaseResponseSuccess | reviewCorrectionCaseResponseError;
+
+export const getReviewCorrectionCaseUrl = (caseId: string) => {
+  return `/api/v1/correction-cases/${caseId}:resolve`;
+};
+
+/**
+ * @summary Resolve Exercise Correction Case
+ */
+export const reviewCorrectionCase = async (
+  caseId: string,
+  resolveCorrectionCaseRequest: ResolveCorrectionCaseRequest,
+  options?: RequestInit,
+): Promise<reviewCorrectionCaseResponse> => {
+  const res = await fetch(getReviewCorrectionCaseUrl(caseId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(resolveCorrectionCaseRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: reviewCorrectionCaseResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as reviewCorrectionCaseResponse;
+};
+
+export const getReviewCorrectionCaseMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewCorrectionCase>>,
+    TError,
+    { caseId: string; data: ResolveCorrectionCaseRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewCorrectionCase>>,
+  TError,
+  { caseId: string; data: ResolveCorrectionCaseRequest },
+  TContext
+> => {
+  const mutationKey = ["reviewCorrectionCase"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewCorrectionCase>>,
+    { caseId: string; data: ResolveCorrectionCaseRequest }
+  > = (props) => {
+    const { caseId, data } = props ?? {};
+
+    return reviewCorrectionCase(caseId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewCorrectionCaseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewCorrectionCase>>
+>;
+export type ReviewCorrectionCaseMutationBody = ResolveCorrectionCaseRequest;
+export type ReviewCorrectionCaseMutationError = ProblemResponse;
+
+/**
+ * @summary Resolve Exercise Correction Case
+ */
+export const useReviewCorrectionCase = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reviewCorrectionCase>>,
+      TError,
+      { caseId: string; data: ResolveCorrectionCaseRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reviewCorrectionCase>>,
+  TError,
+  { caseId: string; data: ResolveCorrectionCaseRequest },
+  TContext
+> => {
+  return useMutation(
+    getReviewCorrectionCaseMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getCorrectionResponse200 = {
+  data: CorrectionCaseResponse;
+  status: 200;
+};
+
+export type getCorrectionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getCorrectionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getCorrectionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getCorrectionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getCorrectionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getCorrectionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getCorrectionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getCorrectionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getCorrectionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getCorrectionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getCorrectionResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getCorrectionResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getCorrectionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getCorrectionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getCorrectionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getCorrectionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getCorrectionResponseSuccess = getCorrectionResponse200 & {
+  headers: Headers;
+};
+export type getCorrectionResponseError = (
+  | getCorrectionResponse401ApplicationJson
+  | getCorrectionResponse401ApplicationProblemJson
+  | getCorrectionResponse403ApplicationJson
+  | getCorrectionResponse403ApplicationProblemJson
+  | getCorrectionResponse409ApplicationJson
+  | getCorrectionResponse409ApplicationProblemJson
+  | getCorrectionResponse422ApplicationJson
+  | getCorrectionResponse422ApplicationProblemJson
+  | getCorrectionResponse423ApplicationJson
+  | getCorrectionResponse423ApplicationProblemJson
+  | getCorrectionResponse428ApplicationJson
+  | getCorrectionResponse428ApplicationProblemJson
+  | getCorrectionResponse429ApplicationJson
+  | getCorrectionResponse429ApplicationProblemJson
+  | getCorrectionResponse503ApplicationJson
+  | getCorrectionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getCorrectionResponse =
+  getCorrectionResponseSuccess | getCorrectionResponseError;
+
+export const getGetCorrectionUrl = (id: string) => {
+  return `/api/v1/correction-cases/${id}`;
+};
+
+/**
+ * @summary Get Exercise Correction
+ */
+export const getCorrection = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getCorrectionResponse> => {
+  const res = await fetch(getGetCorrectionUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getCorrectionResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getCorrectionResponse;
+};
+
+export const getGetCorrectionQueryKey = (id: string) => {
+  return [`/api/v1/correction-cases/${id}`] as const;
+};
+
+export const getGetCorrectionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCorrection>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCorrection>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCorrectionQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCorrection>>> = ({
+    signal,
+  }) => getCorrection(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCorrection>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetCorrectionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCorrection>>
+>;
+export type GetCorrectionQueryError = ProblemResponse;
+
+export function useGetCorrection<
+  TData = Awaited<ReturnType<typeof getCorrection>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCorrection>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCorrection>>,
+          TError,
+          Awaited<ReturnType<typeof getCorrection>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetCorrection<
+  TData = Awaited<ReturnType<typeof getCorrection>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCorrection>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCorrection>>,
+          TError,
+          Awaited<ReturnType<typeof getCorrection>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetCorrection<
+  TData = Awaited<ReturnType<typeof getCorrection>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCorrection>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Exercise Correction
+ */
+
+export function useGetCorrection<
+  TData = Awaited<ReturnType<typeof getCorrection>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getCorrection>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetCorrectionQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export type getDiagnosticSummaryResponse200 = {
   data: DiagnosticResponse;
   status: 200;
@@ -4190,6 +6016,515 @@ export const useCompleteDiagnostic = <
 > => {
   return useMutation(
     getCompleteDiagnosticMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getExerciseInstanceResponse200 = {
+  data: ExerciseInstanceResponse;
+  status: 200;
+};
+
+export type getExerciseInstanceResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getExerciseInstanceResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getExerciseInstanceResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getExerciseInstanceResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getExerciseInstanceResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getExerciseInstanceResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getExerciseInstanceResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getExerciseInstanceResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getExerciseInstanceResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getExerciseInstanceResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getExerciseInstanceResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getExerciseInstanceResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getExerciseInstanceResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getExerciseInstanceResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getExerciseInstanceResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getExerciseInstanceResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getExerciseInstanceResponseSuccess =
+  getExerciseInstanceResponse200 & {
+    headers: Headers;
+  };
+export type getExerciseInstanceResponseError = (
+  | getExerciseInstanceResponse401ApplicationJson
+  | getExerciseInstanceResponse401ApplicationProblemJson
+  | getExerciseInstanceResponse403ApplicationJson
+  | getExerciseInstanceResponse403ApplicationProblemJson
+  | getExerciseInstanceResponse409ApplicationJson
+  | getExerciseInstanceResponse409ApplicationProblemJson
+  | getExerciseInstanceResponse422ApplicationJson
+  | getExerciseInstanceResponse422ApplicationProblemJson
+  | getExerciseInstanceResponse423ApplicationJson
+  | getExerciseInstanceResponse423ApplicationProblemJson
+  | getExerciseInstanceResponse428ApplicationJson
+  | getExerciseInstanceResponse428ApplicationProblemJson
+  | getExerciseInstanceResponse429ApplicationJson
+  | getExerciseInstanceResponse429ApplicationProblemJson
+  | getExerciseInstanceResponse503ApplicationJson
+  | getExerciseInstanceResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getExerciseInstanceResponse =
+  getExerciseInstanceResponseSuccess | getExerciseInstanceResponseError;
+
+export const getGetExerciseInstanceUrl = (id: string) => {
+  return `/api/v1/exercise-instances/${id}`;
+};
+
+/**
+ * @summary Get Exercise Instance
+ */
+export const getExerciseInstance = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getExerciseInstanceResponse> => {
+  const res = await fetch(getGetExerciseInstanceUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getExerciseInstanceResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getExerciseInstanceResponse;
+};
+
+export const getGetExerciseInstanceQueryKey = (id: string) => {
+  return [`/api/v1/exercise-instances/${id}`] as const;
+};
+
+export const getGetExerciseInstanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof getExerciseInstance>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getExerciseInstance>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetExerciseInstanceQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getExerciseInstance>>
+  > = ({ signal }) => getExerciseInstance(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getExerciseInstance>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetExerciseInstanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getExerciseInstance>>
+>;
+export type GetExerciseInstanceQueryError = ProblemResponse;
+
+export function useGetExerciseInstance<
+  TData = Awaited<ReturnType<typeof getExerciseInstance>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getExerciseInstance>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExerciseInstance>>,
+          TError,
+          Awaited<ReturnType<typeof getExerciseInstance>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetExerciseInstance<
+  TData = Awaited<ReturnType<typeof getExerciseInstance>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getExerciseInstance>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExerciseInstance>>,
+          TError,
+          Awaited<ReturnType<typeof getExerciseInstance>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetExerciseInstance<
+  TData = Awaited<ReturnType<typeof getExerciseInstance>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getExerciseInstance>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Exercise Instance
+ */
+
+export function useGetExerciseInstance<
+  TData = Awaited<ReturnType<typeof getExerciseInstance>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getExerciseInstance>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetExerciseInstanceQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type openExerciseAttemptResponse201 = {
+  data: AttemptResponse;
+  status: 201;
+};
+
+export type openExerciseAttemptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type openExerciseAttemptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type openExerciseAttemptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type openExerciseAttemptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type openExerciseAttemptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type openExerciseAttemptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type openExerciseAttemptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type openExerciseAttemptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type openExerciseAttemptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type openExerciseAttemptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type openExerciseAttemptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type openExerciseAttemptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type openExerciseAttemptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type openExerciseAttemptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type openExerciseAttemptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type openExerciseAttemptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type openExerciseAttemptResponseSuccess =
+  openExerciseAttemptResponse201 & {
+    headers: Headers;
+  };
+export type openExerciseAttemptResponseError = (
+  | openExerciseAttemptResponse401ApplicationJson
+  | openExerciseAttemptResponse401ApplicationProblemJson
+  | openExerciseAttemptResponse403ApplicationJson
+  | openExerciseAttemptResponse403ApplicationProblemJson
+  | openExerciseAttemptResponse409ApplicationJson
+  | openExerciseAttemptResponse409ApplicationProblemJson
+  | openExerciseAttemptResponse422ApplicationJson
+  | openExerciseAttemptResponse422ApplicationProblemJson
+  | openExerciseAttemptResponse423ApplicationJson
+  | openExerciseAttemptResponse423ApplicationProblemJson
+  | openExerciseAttemptResponse428ApplicationJson
+  | openExerciseAttemptResponse428ApplicationProblemJson
+  | openExerciseAttemptResponse429ApplicationJson
+  | openExerciseAttemptResponse429ApplicationProblemJson
+  | openExerciseAttemptResponse503ApplicationJson
+  | openExerciseAttemptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type openExerciseAttemptResponse =
+  openExerciseAttemptResponseSuccess | openExerciseAttemptResponseError;
+
+export const getOpenExerciseAttemptUrl = (instanceId: string) => {
+  return `/api/v1/exercise-instances/${instanceId}/attempts`;
+};
+
+/**
+ * @summary Open Exercise Attempt
+ */
+export const openExerciseAttempt = async (
+  instanceId: string,
+  openAttemptRequest: OpenAttemptRequest,
+  options?: RequestInit,
+): Promise<openExerciseAttemptResponse> => {
+  const res = await fetch(getOpenExerciseAttemptUrl(instanceId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(openAttemptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: openExerciseAttemptResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as openExerciseAttemptResponse;
+};
+
+export const getOpenExerciseAttemptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof openExerciseAttempt>>,
+    TError,
+    { instanceId: string; data: OpenAttemptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof openExerciseAttempt>>,
+  TError,
+  { instanceId: string; data: OpenAttemptRequest },
+  TContext
+> => {
+  const mutationKey = ["openExerciseAttempt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof openExerciseAttempt>>,
+    { instanceId: string; data: OpenAttemptRequest }
+  > = (props) => {
+    const { instanceId, data } = props ?? {};
+
+    return openExerciseAttempt(instanceId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type OpenExerciseAttemptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof openExerciseAttempt>>
+>;
+export type OpenExerciseAttemptMutationBody = OpenAttemptRequest;
+export type OpenExerciseAttemptMutationError = ProblemResponse;
+
+/**
+ * @summary Open Exercise Attempt
+ */
+export const useOpenExerciseAttempt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof openExerciseAttempt>>,
+      TError,
+      { instanceId: string; data: OpenAttemptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof openExerciseAttempt>>,
+  TError,
+  { instanceId: string; data: OpenAttemptRequest },
+  TContext
+> => {
+  return useMutation(
+    getOpenExerciseAttemptMutationOptions(options),
     queryClient,
   );
 };
