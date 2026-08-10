@@ -464,6 +464,12 @@ class LanguageProfileApplicationService:
     ) -> DiagnosticRunSummary:
         if not seed:
             raise DomainError(ErrorCode.VALIDATION_FAILED)
+        try:
+            await self._published_foundations(pack_revision_id)
+        except DomainError as error:
+            if error.code is ErrorCode.FOUNDATION_PACK_MISSING:
+                raise DomainError(ErrorCode.DIAGNOSTIC_UNAVAILABLE) from error
+            raise
         now = self._clock.now()
         async with self._uow() as uow:
             session = self._session(uow)

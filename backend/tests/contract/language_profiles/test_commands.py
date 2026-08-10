@@ -1,6 +1,8 @@
 """W03 HTTP contracts: an authenticated learner owns every profile operation."""
 
 from datetime import UTC, datetime
+from pathlib import Path
+from uuid import UUID
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -11,6 +13,8 @@ from polyglot.bootstrap.database import (
     database_url_from_environment,
     migration_database_url_from_environment,
 )
+from polyglot.modules.catalogue.core.domain import PublishedFoundationCatalogue
+from polyglot.modules.catalogue.core.fixtures import load_catalogue_fixture
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.platform.clock import FrozenClock
@@ -18,6 +22,18 @@ from polyglot.platform.clock import FrozenClock
 ORIGIN = "https://polyglot.test"
 TARGET = "019fe900-5000-7000-8001-000000000001"
 NATIVE = "019fe900-5000-7000-8001-000000000002"
+CATALOGUE = load_catalogue_fixture(
+    Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
+).foundations
+
+
+class StaticCatalogueReader:
+    async def read_foundations(
+        self, *, pack_revision_id: UUID
+    ) -> PublishedFoundationCatalogue | None:
+        if CATALOGUE.definition.pack_revision_id != pack_revision_id:
+            return None
+        return CATALOGUE
 
 
 @pytest.fixture
@@ -33,7 +49,9 @@ async def services() -> tuple[IdentityApplicationService, object]:
         session_secrets=SessionSecrets.from_key(b"w03-contract-session-secret-at-least-32b"),
         oidc_provider=FakeOidcProvider({}),
     )
-    yield identity, LanguageProfileApplicationService(factory, clock=clock)
+    yield identity, LanguageProfileApplicationService(
+        factory, clock=clock, catalogue_reader=StaticCatalogueReader()
+    )
     await engine.dispose()
 
 
@@ -178,7 +196,7 @@ async def test_diagnostic_is_resumable_for_exactly_twenty_four_hours_without_cre
             },
             json={
                 "policy_revision_id": "019fe900-5000-7000-8001-000000000003",
-                "pack_revision_id": "019fe900-5000-7000-8001-000000000004",
+                "pack_revision_id": str(CATALOGUE.definition.pack_revision_id),
                 "seed": "offline-fixture",
             },
         )
@@ -211,7 +229,7 @@ async def test_client_cannot_submit_normative_diagnostic_scores_or_force_active(
             },
             json={
                 "policy_revision_id": "019fe900-5000-7000-8001-000000000003",
-                "pack_revision_id": "019fe900-5000-7000-8001-000000000004",
+                "pack_revision_id": str(CATALOGUE.definition.pack_revision_id),
                 "seed": "offline-fixture",
             },
         )
