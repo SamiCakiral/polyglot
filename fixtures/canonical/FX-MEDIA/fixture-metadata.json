@@ -1,7 +1,19 @@
 {
-  "fixture_id": "FX-MEDIA",
+  "schema_version": 1,
   "synthetic": true,
-  "provider_required": false,
-  "network": "disabled",
-  "review_status": "phase_a_domain_ports"
+  "seed": 5015,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "media.json": "sha256:e6683119209de64b5e4c4924aeff8914c5eeacd63ab090da68b28ab13afbdf11"
+  },
+  "oracles": [
+    "fixed_audio_checksum_matches",
+    "retired_voice_has_no_fallback",
+    "missing_audio_uses_transcript_alternative",
+    "deceptive_mime_quarantined",
+    "hostile_archive_quarantined",
+    "expired_rights_quarantined",
+    "false_checksum_quarantined"
+  ],
+  "network_dependencies": []
 }

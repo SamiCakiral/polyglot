@@ -36,12 +36,16 @@
   "hostile_archive": {
     "declared_mime": "application/zip",
     "detected_mime": "application/zip",
-    "archive_safe": false
+    "archive_safe": false,
+    "expected_status": "quarantined",
+    "expected_reason": "hostile_archive"
   },
   "rights_expired": {
     "license_ref": "rights:fixture:expired",
     "provenance_ref": "FX-MEDIA/expired",
-    "expires_at": "2026-08-09T12:00:00+00:00"
+    "expires_at": "2026-08-09T12:00:00+00:00",
+    "expected_status": "quarantined",
+    "expected_reason": "rights_expired"
   },
   "checksum_false": {
     "expected_checksum_sha256": "b42889b8ad8c42faf5fcf7eaf1753381801a92cee18fa7e4297030e5fab93eb2",

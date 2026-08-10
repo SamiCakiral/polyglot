@@ -1,7 +1,5 @@
 {
   "id": "FX-MEDIA",
-  "kind": "canonical",
-  "schema_version": 1,
-  "network": "disabled",
-  "expected_status": "ready_or_explicitly_unavailable"
+  "kind": "positive",
+  "expected_status": "accepted"
 }
