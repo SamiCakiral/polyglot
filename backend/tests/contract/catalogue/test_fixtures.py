@@ -286,13 +286,13 @@ def test_fixture_rejects_validly_shaped_but_non_contractual_gate_values(
 
 def test_fixture_revision_checksums_are_content_bound_and_detect_tampering(tmp_path: Path) -> None:
     loaded = load_catalogue_fixture(FIXTURE).foundations.definition
-    checksums = {
+    revision_checksums = (
         loaded.checksum,
         loaded.gate.checksum,
         *(block.checksum for block in loaded.blocks),
         *(item.checksum for block in loaded.blocks for item in block.items),
-    }
-    assert len(checksums) == 17
+    )
+    assert len(set(revision_checksums)) == len(revision_checksums)
 
     fixture = _fixture_with_payload(
         tmp_path,
