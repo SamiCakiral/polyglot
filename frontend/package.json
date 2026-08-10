@@ -9,9 +9,9 @@
     "pnpm": "11.16.0"
   },
   "scripts": {
-    "build": "pnpm run generate:api && tsc -b --pretty false && vite build",
-    "dev": "pnpm run generate:api && vite",
-    "dev:mock": "pnpm run generate:api && VITE_ENABLE_API_MOCKS=true vite",
+    "build": "orval --config orval.config.ts && tsc -b --pretty false && vite build",
+    "dev": "orval --config orval.config.ts && vite",
+    "dev:mock": "orval --config orval.config.ts && VITE_ENABLE_API_MOCKS=true vite",
     "generate:api": "orval --config orval.config.ts",
     "lint": "eslint . --max-warnings 0",
     "preview": "vite preview",

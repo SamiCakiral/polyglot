@@ -15,11 +15,13 @@ describe("W17 frontend baseline", () => {
     ) as {
       engines: { node: string; pnpm?: string };
       packageManager: string;
+      scripts: { build: string };
     };
 
     expect(readFileSync(nodeVersionPath, "utf8").trim()).toBe("22.18.0");
     expect(packageJson.engines).toEqual({ node: "22.18.0", pnpm: "11.16.0" });
     expect(packageJson.packageManager).toBe("pnpm@11.16.0");
+    expect(packageJson.scripts.build).not.toContain("pnpm run");
   });
 
   it("runs the locked frontend quality and generated-client gates in CI", () => {
@@ -43,5 +45,13 @@ describe("W17 frontend baseline", () => {
     );
 
     expect(accessibilityTest).not.toContain('"color-contrast": { enabled: false }');
+  });
+
+  it("keeps Playwright specifications outside Vitest collection", () => {
+    const viteConfig = readFileSync(resolve(frontendRoot, "vite.config.ts"), "utf8");
+
+    expect(viteConfig).toContain(
+      'exclude: [...configDefaults.exclude, "tests/e2e/**"]',
+    );
   });
 });
