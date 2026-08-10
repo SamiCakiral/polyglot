@@ -125,6 +125,7 @@ class WordBankService(Protocol):
         payload: dict[str, Any],
         idempotency_key: str,
         expected_version: int | None,
+        profile_id: UUID | None = None,
     ) -> MutationResult: ...
 
     async def get_sense(
@@ -232,7 +233,17 @@ def word_bank_router(
         ) -> MutationResponse:
             account_id = await account_for(request, session_token, csrf_token, origin)
             expected_version = _required_version(if_match) if versioned else None
-            raw_resource_id = next(iter(request.path_params.values()))
+            raw_resource_id = (
+                request.path_params.get("sense_id")
+                or request.path_params.get("mention_id")
+                or request.path_params.get("relation_id")
+                or request.path_params.get("encounter_id")
+                or request.path_params.get("attempt_id")
+                or request.path_params.get("annotation_id")
+                or request.path_params.get("profile_id")
+            )
+            if raw_resource_id is None:
+                raise DomainError(ErrorCode.VALIDATION_FAILED)
             result = await application_service().execute(
                 command_name=command_name,
                 account_id=account_id,
@@ -240,6 +251,11 @@ def word_bank_router(
                 payload={} if payload is None else payload.data,
                 idempotency_key=idempotency_key,
                 expected_version=expected_version,
+                profile_id=(
+                    UUID(str(request.path_params["profile_id"]))
+                    if "profile_id" in request.path_params
+                    else None
+                ),
             )
             response.headers["ETag"] = f'"{result.version}"'
             return MutationResponse(
@@ -420,9 +436,13 @@ class SqlWordBankService:
         session_factory: async_sessionmaker[AsyncSession],
         *,
         ids: IdGenerator | None = None,
+        attempt_authorizer: Callable[[UUID, UUID, UUID, str], Awaitable[bool]] | None = None,
+        recent_reauth_verifier: Callable[[UUID], Awaitable[bool]] | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
+        self._attempt_authorizer = attempt_authorizer
+        self._recent_reauth_verifier = recent_reauth_verifier
 
     async def _set_actor(self, session: AsyncSession, account_id: UUID) -> None:
         await session.execute(
@@ -456,7 +476,10 @@ class SqlWordBankService:
         command_name: str,
         resource_id: UUID,
         payload: dict[str, Any],
+        explicit_profile_id: UUID | None,
     ) -> UUID:
+        if explicit_profile_id is not None:
+            return explicit_profile_id
         if command_name in {
             "RecordLexicalEncounter",
             "AddPrivateLexicalUnit",
@@ -498,6 +521,7 @@ class SqlWordBankService:
         payload: dict[str, Any],
         idempotency_key: str,
         expected_version: int | None,
+        profile_id: UUID | None = None,
     ) -> MutationResult:
         if command_name not in _EVENT_BY_COMMAND:
             raise DomainError(ErrorCode.VALIDATION_FAILED)
@@ -506,14 +530,29 @@ class SqlWordBankService:
             "resource_id": str(resource_id),
             "payload": payload,
             "expected_version": expected_version,
+            "profile_id": None if profile_id is None else str(profile_id),
         }
         fingerprint = canonical_json_fingerprint(fingerprint_payload)
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
+            explicit_profile_id = profile_id
             profile_id = await self._profile_for_command(
-                session, command_name, resource_id, payload
+                session, command_name, resource_id, payload, profile_id
             )
             await self._assert_owner(session, account_id, profile_id)
+            if command_name == "DeletePrivateContext":
+                if self._recent_reauth_verifier is None:
+                    raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+                if not await self._recent_reauth_verifier(account_id):
+                    raise DomainError(ErrorCode.FORBIDDEN)
+            if command_name == "CaptureLexicalGap":
+                support_language = str(payload.get("support_language_tag", ""))
+                if self._attempt_authorizer is None:
+                    raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+                if not await self._attempt_authorizer(
+                    account_id, profile_id, resource_id, support_language
+                ):
+                    raise DomainError(ErrorCode.NOT_FOUND)
             now = datetime.now(UTC)
             command_id = self._ids.new()
             reservation = await SqlCommandReceiptStore(session).reserve(
@@ -552,6 +591,7 @@ class SqlWordBankService:
                 expected_version=expected_version,
                 idempotency_key=idempotency_key,
                 fingerprint=fingerprint,
+                resource_is_path_target=explicit_profile_id is not None,
             )
             result_payload: dict[str, JsonValue] = {
                 "resource_id": str(result_id),
@@ -603,6 +643,7 @@ class SqlWordBankService:
         expected_version: int | None,
         idempotency_key: str,
         fingerprint: str,
+        resource_is_path_target: bool,
     ) -> tuple[UUID, int]:
         now = datetime.now(UTC)
         if command_name == "RecordLexicalEncounter":
@@ -721,6 +762,9 @@ class SqlWordBankService:
             return result_id, 1
         if command_name == "AssertLexicalRelation":
             result_id = self._uuid(payload, "relation_id") if "relation_id" in payload else self._ids.new()
+            target_sense_id = self._uuid(payload, "target_sense_id")
+            await self._assert_sense_visible(session, profile_id, resource_id)
+            await self._assert_sense_visible(session, profile_id, target_sense_id)
             await session.execute(
                 text(
                     "INSERT INTO lexicon.personal_lexical_relations "
@@ -728,7 +772,7 @@ class SqlWordBankService:
                     "direction,provenance_ref,confidence,created_at,version) VALUES "
                     "(:id,:profile,:source,:target,:type,:direction,'user',:confidence,:now,1)"
                 ),
-                {"id": result_id, "profile": profile_id, "source": resource_id, "target": self._uuid(payload, "target_sense_id"), "type": str(payload.get("relation_type", "association")), "direction": str(payload.get("direction", "directed")), "confidence": float(payload.get("confidence", 1.0)), "now": now},
+                {"id": result_id, "profile": profile_id, "source": resource_id, "target": target_sense_id, "type": str(payload.get("relation_type", "association")), "direction": str(payload.get("direction", "directed")), "confidence": float(payload.get("confidence", 1.0)), "now": now},
             )
             return result_id, 1
         if command_name == "RetractLexicalRelation":
@@ -863,6 +907,12 @@ class SqlWordBankService:
             return encounter_id, 1
         if command_name == "DeclareLexicalFamiliarity":
             result_id = self._ids.new()
+            sense_id = (
+                resource_id
+                if resource_is_path_target
+                else self._uuid(payload, "sense_id")
+            )
+            await self._assert_sense_visible(session, profile_id, sense_id)
             await session.execute(
                 text(
                     "INSERT INTO lexicon.lexical_declarations "
@@ -870,11 +920,16 @@ class SqlWordBankService:
                     "supersedes_declaration_id,idempotency_key,request_fingerprint) "
                     "VALUES (:id,:profile,:sense,:value,:now,NULL,:key,:fp)"
                 ),
-                {"id": result_id, "profile": profile_id, "sense": self._uuid(payload, "sense_id"), "value": str(payload.get("familiarity", "seen")), "now": now, "key": idempotency_key, "fp": fingerprint},
+                {"id": result_id, "profile": profile_id, "sense": sense_id, "value": str(payload.get("familiarity", "seen")), "now": now, "key": idempotency_key, "fp": fingerprint},
             )
             return result_id, 1
         if command_name == "SetLexicalLearningPreference":
-            sense_id = self._uuid(payload, "sense_id")
+            sense_id = (
+                resource_id
+                if resource_is_path_target
+                else self._uuid(payload, "sense_id")
+            )
+            await self._assert_sense_visible(session, profile_id, sense_id)
             current = await session.scalar(
                 text("SELECT version FROM lexicon.lexical_preferences WHERE profile_id=:profile AND sense_id=:sense FOR UPDATE"),
                 {"profile": profile_id, "sense": sense_id},
@@ -897,7 +952,13 @@ class SqlWordBankService:
             )
             return result_id, version
         if command_name == "UpsertLexicalAnnotation":
-            return await self._upsert_annotation(session, profile_id, payload, expected_version, idempotency_key, fingerprint, now)
+            adapted = (
+                {**payload, "sense_id": str(resource_id)}
+                if resource_is_path_target
+                else payload
+            )
+            await self._assert_sense_visible(session, profile_id, self._uuid(adapted, "sense_id"))
+            return await self._upsert_annotation(session, profile_id, adapted, expected_version, idempotency_key, fingerprint, now)
         if command_name == "DeleteLexicalAnnotation":
             current = await session.scalar(text("SELECT version FROM lexicon.lexical_annotations WHERE annotation_id=:id AND profile_id=:profile FOR UPDATE"), {"id": resource_id, "profile": profile_id})
             if current is None:
@@ -908,6 +969,21 @@ class SqlWordBankService:
             await session.execute(text("UPDATE lexicon.lexical_annotations SET version=:version,updated_at=:now,deleted_at=:now WHERE annotation_id=:id"), {"version": version, "now": now, "id": resource_id})
             return resource_id, version
         raise DomainError(ErrorCode.VALIDATION_FAILED, detail=f"{command_name} payload adapter pending")
+
+    async def _assert_sense_visible(
+        self, session: AsyncSession, profile_id: UUID, sense_id: UUID
+    ) -> None:
+        visible = await session.scalar(
+            text(
+                "SELECT EXISTS ("
+                "SELECT 1 FROM catalogue.lexical_senses WHERE sense_id=:sense "
+                "UNION ALL SELECT 1 FROM lexicon.private_lexical_senses "
+                "WHERE sense_id=:sense AND profile_id=:profile)"
+            ),
+            {"sense": sense_id, "profile": profile_id},
+        )
+        if visible is not True:
+            raise DomainError(ErrorCode.NOT_FOUND)
 
     async def _upsert_annotation(self, session: AsyncSession, profile_id: UUID, payload: dict[str, Any], expected_version: int | None, idempotency_key: str, fingerprint: str, now: datetime) -> tuple[UUID, int]:
         sense_id = self._uuid(payload, "sense_id")

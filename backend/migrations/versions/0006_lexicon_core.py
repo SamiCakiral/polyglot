@@ -62,7 +62,10 @@ CREATE TABLE lexicon.private_lexical_units (
       AND ((unit_type = 'multiword_expression' AND cardinality(components) >= 2)
         OR (unit_type <> 'multiword_expression' AND cardinality(components) = 0))
       AND version >= 1
-    )
+    ),
+    CONSTRAINT uq_private_unit_profile UNIQUE (profile_id, lexical_unit_id),
+    CONSTRAINT fk_private_unit_merge_profile FOREIGN KEY (profile_id, merged_into_unit_id)
+      REFERENCES lexicon.private_lexical_units(profile_id, lexical_unit_id) ON DELETE RESTRICT
 );
 CREATE INDEX ix_lexicon_private_unit_search
   ON lexicon.private_lexical_units(profile_id, normalization_key, lexical_unit_id);
@@ -70,7 +73,7 @@ CREATE INDEX ix_lexicon_private_unit_search
 CREATE TABLE lexicon.private_lexical_senses (
     sense_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
-    lexical_unit_id uuid NOT NULL REFERENCES lexicon.private_lexical_units(lexical_unit_id) ON DELETE RESTRICT,
+    lexical_unit_id uuid NOT NULL,
     sense_code varchar(120) NOT NULL,
     definition text NOT NULL,
     support_language_tag varchar(35),
@@ -81,7 +84,10 @@ CREATE TABLE lexicon.private_lexical_senses (
       lexicon.is_uuid7(sense_id) AND lexicon.is_uuid7(profile_id)
       AND lexicon.is_uuid7(lexical_unit_id)
     ),
-    CONSTRAINT uq_private_sense_code UNIQUE (lexical_unit_id, sense_code)
+    CONSTRAINT uq_private_sense_code UNIQUE (lexical_unit_id, sense_code),
+    CONSTRAINT uq_private_sense_profile UNIQUE (profile_id, sense_id),
+    CONSTRAINT fk_private_sense_unit_profile FOREIGN KEY (profile_id, lexical_unit_id)
+      REFERENCES lexicon.private_lexical_units(profile_id, lexical_unit_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE lexicon.lexical_encounters (
@@ -111,7 +117,8 @@ CREATE TABLE lexicon.lexical_encounters (
     CONSTRAINT ck_encounter_context_delete CHECK (
       (context_deleted_at IS NULL) OR (context_deleted_at >= occurred_at AND context_private IS NULL)
     ),
-    CONSTRAINT uq_encounter_idempotency UNIQUE (profile_id, idempotency_key)
+    CONSTRAINT uq_encounter_idempotency UNIQUE (profile_id, idempotency_key),
+    CONSTRAINT uq_encounter_profile UNIQUE (profile_id, encounter_id)
 );
 CREATE INDEX ix_lexicon_encounters_profile_time
   ON lexicon.lexical_encounters(profile_id, occurred_at DESC, encounter_id DESC);
@@ -121,7 +128,7 @@ CREATE INDEX ix_lexicon_encounters_surface
 CREATE TABLE lexicon.lexical_mentions (
     mention_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
-    encounter_id uuid NOT NULL REFERENCES lexicon.lexical_encounters(encounter_id) ON DELETE RESTRICT,
+    encounter_id uuid NOT NULL,
     exact_surface text NOT NULL,
     form_analysis_id uuid,
     analysis_revision_ref text NOT NULL,
@@ -132,7 +139,10 @@ CREATE TABLE lexicon.lexical_mentions (
       AND lexicon.is_uuid7(encounter_id) AND (form_analysis_id IS NULL OR lexicon.is_uuid7(form_analysis_id))
     ),
     CONSTRAINT ck_mention_ordinal CHECK (ordinal >= 1),
-    CONSTRAINT uq_mention_encounter_ordinal UNIQUE (encounter_id, ordinal)
+    CONSTRAINT uq_mention_encounter_ordinal UNIQUE (encounter_id, ordinal),
+    CONSTRAINT uq_mention_profile UNIQUE (profile_id, mention_id),
+    CONSTRAINT fk_mention_encounter_profile FOREIGN KEY (profile_id, encounter_id)
+      REFERENCES lexicon.lexical_encounters(profile_id, encounter_id) ON DELETE RESTRICT
 );
 CREATE INDEX ix_lexicon_mentions_unresolved
   ON lexicon.lexical_mentions(profile_id, mention_id);
@@ -140,7 +150,7 @@ CREATE INDEX ix_lexicon_mentions_unresolved
 CREATE TABLE lexicon.mention_candidates (
     candidate_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
-    mention_id uuid NOT NULL REFERENCES lexicon.lexical_mentions(mention_id) ON DELETE RESTRICT,
+    mention_id uuid NOT NULL,
     sense_id uuid NOT NULL,
     sense_scope varchar(16) NOT NULL,
     confidence numeric(5,4) NOT NULL,
@@ -152,18 +162,21 @@ CREATE TABLE lexicon.mention_candidates (
     ),
     CONSTRAINT ck_candidate_scope CHECK (sense_scope IN ('shared','private')),
     CONSTRAINT ck_candidate_confidence CHECK (confidence BETWEEN 0 AND 1),
-    CONSTRAINT uq_candidate_mention_sense UNIQUE (mention_id, sense_id)
+    CONSTRAINT uq_candidate_mention_sense UNIQUE (mention_id, sense_id),
+    CONSTRAINT uq_candidate_profile UNIQUE (profile_id, candidate_id),
+    CONSTRAINT fk_candidate_mention_profile FOREIGN KEY (profile_id, mention_id)
+      REFERENCES lexicon.lexical_mentions(profile_id, mention_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE lexicon.mention_resolutions (
     resolution_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
-    mention_id uuid NOT NULL REFERENCES lexicon.lexical_mentions(mention_id) ON DELETE RESTRICT,
-    candidate_id uuid NOT NULL REFERENCES lexicon.mention_candidates(candidate_id) ON DELETE RESTRICT,
+    mention_id uuid NOT NULL,
+    candidate_id uuid NOT NULL,
     sense_id uuid NOT NULL,
     resolver_type varchar(32) NOT NULL,
     confidence numeric(5,4) NOT NULL,
-    supersedes_resolution_id uuid REFERENCES lexicon.mention_resolutions(resolution_id) ON DELETE RESTRICT,
+    supersedes_resolution_id uuid,
     created_at timestamptz NOT NULL,
     idempotency_key varchar(255) NOT NULL,
     request_fingerprint char(64) NOT NULL,
@@ -173,7 +186,14 @@ CREATE TABLE lexicon.mention_resolutions (
       AND lexicon.is_uuid7(sense_id)
     ),
     CONSTRAINT ck_resolution_confidence CHECK (confidence BETWEEN 0 AND 1),
-    CONSTRAINT uq_resolution_idempotency UNIQUE (profile_id, idempotency_key)
+    CONSTRAINT uq_resolution_idempotency UNIQUE (profile_id, idempotency_key),
+    CONSTRAINT uq_resolution_profile UNIQUE (profile_id, resolution_id),
+    CONSTRAINT fk_resolution_mention_profile FOREIGN KEY (profile_id, mention_id)
+      REFERENCES lexicon.lexical_mentions(profile_id, mention_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_resolution_candidate_profile FOREIGN KEY (profile_id, candidate_id)
+      REFERENCES lexicon.mention_candidates(profile_id, candidate_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_resolution_supersedes_profile FOREIGN KEY (profile_id, supersedes_resolution_id)
+      REFERENCES lexicon.mention_resolutions(profile_id, resolution_id) ON DELETE RESTRICT
 );
 CREATE INDEX ix_lexicon_resolution_current
   ON lexicon.mention_resolutions(profile_id, mention_id, created_at DESC, resolution_id DESC);
@@ -196,7 +216,8 @@ CREATE TABLE lexicon.personal_lexical_relations (
     CONSTRAINT ck_relation_shape CHECK (
       source_sense_id <> target_sense_id AND direction IN ('directed','bidirectional')
       AND confidence BETWEEN 0 AND 1 AND version >= 1
-    )
+    ),
+    CONSTRAINT uq_relation_profile UNIQUE (profile_id, relation_id)
 );
 CREATE INDEX ix_lexicon_relations_source
   ON lexicon.personal_lexical_relations(profile_id, source_sense_id, relation_type, relation_id);
@@ -206,7 +227,7 @@ CREATE INDEX ix_lexicon_relations_target
 CREATE TABLE lexicon.lexical_relation_retractions (
     retraction_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
-    relation_id uuid NOT NULL REFERENCES lexicon.personal_lexical_relations(relation_id) ON DELETE RESTRICT,
+    relation_id uuid NOT NULL,
     reason text NOT NULL,
     retracted_at timestamptz NOT NULL,
     idempotency_key varchar(255) NOT NULL,
@@ -215,7 +236,9 @@ CREATE TABLE lexicon.lexical_relation_retractions (
       lexicon.is_uuid7(retraction_id) AND lexicon.is_uuid7(profile_id) AND lexicon.is_uuid7(relation_id)
     ),
     CONSTRAINT uq_retraction_relation UNIQUE (relation_id),
-    CONSTRAINT uq_retraction_idempotency UNIQUE (profile_id, idempotency_key)
+    CONSTRAINT uq_retraction_idempotency UNIQUE (profile_id, idempotency_key),
+    CONSTRAINT fk_retraction_relation_profile FOREIGN KEY (profile_id, relation_id)
+      REFERENCES lexicon.personal_lexical_relations(profile_id, relation_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE lexicon.lexical_declarations (
@@ -224,13 +247,16 @@ CREATE TABLE lexicon.lexical_declarations (
     sense_id uuid NOT NULL,
     familiarity varchar(32) NOT NULL,
     declared_at timestamptz NOT NULL,
-    supersedes_declaration_id uuid REFERENCES lexicon.lexical_declarations(declaration_id) ON DELETE RESTRICT,
+    supersedes_declaration_id uuid,
     idempotency_key varchar(255) NOT NULL,
     request_fingerprint char(64) NOT NULL,
     CONSTRAINT ck_declaration_uuid7 CHECK (
       lexicon.is_uuid7(declaration_id) AND lexicon.is_uuid7(profile_id) AND lexicon.is_uuid7(sense_id)
     ),
-    CONSTRAINT uq_declaration_idempotency UNIQUE (profile_id, idempotency_key)
+    CONSTRAINT uq_declaration_idempotency UNIQUE (profile_id, idempotency_key),
+    CONSTRAINT uq_declaration_profile UNIQUE (profile_id, declaration_id),
+    CONSTRAINT fk_declaration_supersedes_profile FOREIGN KEY (profile_id, supersedes_declaration_id)
+      REFERENCES lexicon.lexical_declarations(profile_id, declaration_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE lexicon.lexical_preferences (
@@ -262,7 +288,8 @@ CREATE TABLE lexicon.lexical_annotations (
       lexicon.is_uuid7(annotation_id) AND lexicon.is_uuid7(profile_id) AND lexicon.is_uuid7(sense_id)
     ),
     CONSTRAINT ck_annotation_version CHECK (version >= 1 AND updated_at >= created_at),
-    CONSTRAINT uq_annotation_profile_sense UNIQUE (profile_id, sense_id)
+    CONSTRAINT uq_annotation_profile_sense UNIQUE (profile_id, sense_id),
+    CONSTRAINT uq_annotation_profile UNIQUE (profile_id, annotation_id)
 );
 CREATE INDEX ix_lexicon_annotations_profile_sense
   ON lexicon.lexical_annotations(profile_id, sense_id, annotation_id);
@@ -270,7 +297,7 @@ CREATE INDEX ix_lexicon_annotations_profile_sense
 CREATE TABLE lexicon.lexical_annotation_revisions (
     annotation_revision_id uuid PRIMARY KEY,
     profile_id uuid NOT NULL REFERENCES language_profiles.learner_language_profiles(profile_id) ON DELETE RESTRICT,
-    annotation_id uuid NOT NULL REFERENCES lexicon.lexical_annotations(annotation_id) ON DELETE RESTRICT,
+    annotation_id uuid NOT NULL,
     version integer NOT NULL,
     body text NOT NULL,
     created_at timestamptz NOT NULL,
@@ -282,7 +309,9 @@ CREATE TABLE lexicon.lexical_annotation_revisions (
     ),
     CONSTRAINT ck_annotation_revision_version CHECK (version >= 1),
     CONSTRAINT uq_annotation_revision UNIQUE (annotation_id, version),
-    CONSTRAINT uq_annotation_revision_idempotency UNIQUE (profile_id, idempotency_key)
+    CONSTRAINT uq_annotation_revision_idempotency UNIQUE (profile_id, idempotency_key),
+    CONSTRAINT fk_annotation_revision_profile FOREIGN KEY (profile_id, annotation_id)
+      REFERENCES lexicon.lexical_annotations(profile_id, annotation_id) ON DELETE RESTRICT
 );
 
 CREATE TABLE lexicon.lexicon_command_receipts (
