@@ -16,7 +16,10 @@ from polyglot.modules.lexicon.exchange.application import (
 )
 from polyglot.modules.lexicon.exchange.domain import ImportStrategy
 from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
-from polyglot.modules.lexicon.exchange.ports import StoredPrivateArtifact
+from polyglot.modules.lexicon.exchange.ports import (
+    ResolvedLexicalCandidate,
+    StoredPrivateArtifact,
+)
 from polyglot.platform.errors import DomainError, ErrorCode
 
 from .conftest import ACCOUNT_A, ACCOUNT_B, NOW, PROFILE_A, TARGET_VARIETY, set_actor, uid
@@ -95,6 +98,16 @@ class PrivateArtifactRecorder:
             encryption_scheme=self.encryption_scheme,
             checksum_sha256="e" * 64,
         )
+
+
+class LexicalReferenceRecorder:
+    def __init__(self, candidates: tuple[ResolvedLexicalCandidate, ...] = ()) -> None:
+        self.candidates = candidates
+        self.calls = []
+
+    async def list_import_candidates(self, profile_id, *, session):
+        self.calls.append(profile_id)
+        return self.candidates
 
 
 async def test_list_revisions_and_snapshots_are_immutable_and_idempotent(
@@ -299,6 +312,46 @@ async def test_import_preview_does_not_call_lexical_mutation_port(runtime_factor
     )
 
     assert mutations.calls == []
+
+
+async def test_import_preview_reads_candidates_through_lexical_reference_port(
+    runtime_factory,
+) -> None:
+    references = LexicalReferenceRecorder()
+    service = SqlExchangeService(runtime_factory, lexical_references=references)
+    payload = json.dumps(
+        {
+            "format": "polyglot.lexicon.bundle/v1",
+            "schema_version": 1,
+            "entries": [
+                {
+                    "source_key": "binario",
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": "binario",
+                    "semantic_key": "transport.platform",
+                    "visibility": "private",
+                }
+            ],
+        }
+    ).encode()
+
+    await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id="polyglot.lexicon.bundle/v1",
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key="import-reference-port",
+    )
+
+    assert references.calls == [PROFILE_A]
 
 
 async def test_import_preview_lines_are_paginated_and_owner_scoped(runtime_factory) -> None:

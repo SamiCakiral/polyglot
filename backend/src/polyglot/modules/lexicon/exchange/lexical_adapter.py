@@ -1,10 +1,16 @@
+from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.lexicon.core.commands import (
     CreateImportedPrivateLexicalEntry,
     LexiconCommandService,
 )
-from polyglot.modules.lexicon.exchange.ports import CreateImportedLexicalEntry
+from polyglot.modules.lexicon.core.persistence import LexiconRepository
+from polyglot.modules.lexicon.exchange.ports import (
+    CreateImportedLexicalEntry,
+    ResolvedLexicalCandidate,
+)
 from polyglot.platform.ids import IdGenerator
 
 
@@ -35,3 +41,24 @@ class SqlLexicalMutationAdapter:
             )
         )
         return f"lexical_unit:{unit_id}", f"lexical_sense:{sense_id}"
+
+
+class SqlLexicalReferenceAdapter:
+    async def list_import_candidates(
+        self,
+        profile_id: UUID,
+        *,
+        session: AsyncSession,
+    ) -> tuple[ResolvedLexicalCandidate, ...]:
+        records = await LexiconRepository(session).list_private_import_candidates(profile_id)
+        return tuple(
+            ResolvedLexicalCandidate(
+                entity_ref=f"lexical_sense:{record.sense_id}",
+                variety_id=record.variety_id,
+                unit_type=record.unit_type,
+                normalized_form=record.normalization_key,
+                semantic_key=record.sense_code,
+                visibility="private",
+            )
+            for record in records
+        )

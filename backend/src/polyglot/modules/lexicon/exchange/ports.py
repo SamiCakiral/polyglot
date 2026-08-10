@@ -28,6 +28,25 @@ class DynamicListQueryPort(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
+class ResolvedLexicalCandidate:
+    entity_ref: str
+    variety_id: UUID
+    unit_type: str
+    normalized_form: str
+    semantic_key: str | None
+    visibility: str
+
+
+class LexicalReferencePort(Protocol):
+    async def list_import_candidates(
+        self,
+        profile_id: UUID,
+        *,
+        session: AsyncSession,
+    ) -> tuple[ResolvedLexicalCandidate, ...]: ...
+
+
+@dataclass(frozen=True, slots=True)
 class CreateImportedLexicalEntry:
     profile_id: UUID
     variety_id: UUID

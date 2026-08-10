@@ -31,7 +31,10 @@ from polyglot.modules.lexicon.exchange.exports import (
     require_encrypted_artifact,
     validate_export_scope,
 )
-from polyglot.modules.lexicon.exchange.lexical_adapter import SqlLexicalMutationAdapter
+from polyglot.modules.lexicon.exchange.lexical_adapter import (
+    SqlLexicalMutationAdapter,
+    SqlLexicalReferenceAdapter,
+)
 from polyglot.modules.lexicon.exchange.lists import ListAssociation, ListDefinition
 from polyglot.modules.lexicon.exchange.parsing import ParseLimits, parse_import
 from polyglot.modules.lexicon.exchange.ports import (
@@ -39,6 +42,7 @@ from polyglot.modules.lexicon.exchange.ports import (
     CreateImportedLexicalEntry,
     DynamicListQueryPort,
     LexicalMutationPort,
+    LexicalReferencePort,
     PrivateArtifactPort,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -57,6 +61,7 @@ class SqlExchangeService:
         dynamic_lists: DynamicListQueryPort | None = None,
         lexical_mutations: LexicalMutationPort | None = None,
         private_artifacts: PrivateArtifactPort | None = None,
+        lexical_references: LexicalReferencePort | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
@@ -65,6 +70,7 @@ class SqlExchangeService:
         self._dynamic_lists = dynamic_lists
         self._lexical_mutations = lexical_mutations or SqlLexicalMutationAdapter(self._ids)
         self._private_artifacts = private_artifacts
+        self._lexical_references = lexical_references or SqlLexicalReferenceAdapter()
 
     async def _set_actor(self, session: AsyncSession, actor_id: UUID) -> None:
         await session.execute(
@@ -1351,30 +1357,21 @@ class SqlExchangeService:
         session: AsyncSession,
         profile_id: UUID,
     ) -> tuple[ExistingLexicalCandidate, ...]:
-        rows = (
-            await session.execute(
-                text(
-                    "SELECT sense.sense_id,unit.variety_id,unit.unit_type,unit.normalization_key,"
-                    "sense.sense_code FROM lexicon.private_lexical_senses sense "
-                    "JOIN lexicon.private_lexical_units unit "
-                    "ON unit.lexical_unit_id=sense.lexical_unit_id "
-                    "AND unit.profile_id=sense.profile_id "
-                    "WHERE sense.profile_id=:profile AND unit.merged_into_unit_id IS NULL"
-                ),
-                {"profile": profile_id},
-            )
-        ).mappings()
+        rows = await self._lexical_references.list_import_candidates(
+            profile_id,
+            session=session,
+        )
         return tuple(
             ExistingLexicalCandidate(
-                entity_ref=f"lexical_sense:{row['sense_id']}",
-                variety_id=row["variety_id"],
-                unit_type=row["unit_type"],
-                normalized_form=row["normalization_key"],
-                semantic_key=row["sense_code"],
+                entity_ref=row.entity_ref,
+                variety_id=row.variety_id,
+                unit_type=row.unit_type,
+                normalized_form=row.normalized_form,
+                semantic_key=row.semantic_key,
                 prompt_key=None,
                 external_identity=None,
                 external_revision=None,
-                visibility="private",
+                visibility=row.visibility,
                 payload_checksum="0" * 64,
             )
             for row in rows

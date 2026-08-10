@@ -3,7 +3,19 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Column, DateTime, Numeric, String, Table, Text, and_, insert, select, update
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Numeric,
+    String,
+    Table,
+    Text,
+    and_,
+    insert,
+    select,
+    text,
+    update,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -119,6 +131,15 @@ class CommandReceipt:
     created_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class LexicalImportCandidateRecord:
+    sense_id: UUID
+    variety_id: UUID
+    unit_type: str
+    normalization_key: str
+    sense_code: str
+
+
 class LexiconRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -157,17 +178,41 @@ class LexiconRepository:
         idempotency_key: str,
     ) -> CommandReceipt | None:
         row = (
-            await self._session.execute(
-                select(command_receipts).where(
-                    and_(
-                        command_receipts.c.profile_id == profile_id,
-                        command_receipts.c.command_name == command_name,
-                        command_receipts.c.idempotency_key == idempotency_key,
+            (
+                await self._session.execute(
+                    select(command_receipts).where(
+                        and_(
+                            command_receipts.c.profile_id == profile_id,
+                            command_receipts.c.command_name == command_name,
+                            command_receipts.c.idempotency_key == idempotency_key,
+                        )
                     )
                 )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         return None if row is None else CommandReceipt(**dict(row))
 
     async def save_command_receipt(self, receipt: CommandReceipt) -> None:
         await self._session.execute(insert(command_receipts).values(**asdict(receipt)))
+
+    async def list_private_import_candidates(
+        self,
+        profile_id: UUID,
+    ) -> tuple[LexicalImportCandidateRecord, ...]:
+        rows = (
+            await self._session.execute(
+                text(
+                    "SELECT sense.sense_id,unit.variety_id,unit.unit_type,"
+                    "unit.normalization_key,sense.sense_code "
+                    "FROM lexicon.private_lexical_senses sense "
+                    "JOIN lexicon.private_lexical_units unit "
+                    "ON unit.lexical_unit_id=sense.lexical_unit_id "
+                    "AND unit.profile_id=sense.profile_id "
+                    "WHERE sense.profile_id=:profile AND unit.merged_into_unit_id IS NULL"
+                ),
+                {"profile": profile_id},
+            )
+        ).mappings()
+        return tuple(LexicalImportCandidateRecord(**dict(row)) for row in rows)
