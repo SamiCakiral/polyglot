@@ -4,11 +4,11 @@
   "seed": 9009,
   "clock": "2026-08-10T12:00:00+00:00",
   "payloads": {
-    "primitives.json": "sha256:936d77e37ca84dc6b488338af3b07b412f07258f6e1906a4317a5f5957a6de18"
+    "primitives.json": "sha256:d2f4c8eaa4f92f5e0889a5646f6d780fe189be0e95685fba0af46c407240803e"
   },
   "oracles": [
-    "all_core_primitives_closed_contract",
-    "positive_negative_ambiguous_not_evaluable_per_primitive",
+    "seed_propagated_to_instances_and_replay_order",
+    "sample_typed_positive_negative_ambiguous_not_evaluable_per_primitive",
     "hint_h0_h4_credit_bounds",
     "a11y_keyboard_screen_reader_untimed",
     "idempotent_replay_single_effect",
