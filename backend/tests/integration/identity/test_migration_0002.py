@@ -211,7 +211,7 @@ def test_0002_destructive_downgrade_requires_explicit_disposable_opt_in(
     monkeypatch.setattr(migration.op, "execute", executed.append)
     monkeypatch.delenv("POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE", raising=False)
 
-    with pytest.raises(RuntimeError, match="disposable.*data loss"):
+    with pytest.raises(RuntimeError, match=r"disposable.*data loss"):
         migration.downgrade()
 
     monkeypatch.setenv("POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE", "true")

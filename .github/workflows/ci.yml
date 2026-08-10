@@ -125,6 +125,8 @@ jobs:
         run: uv run alembic upgrade head
       - name: Verify downgrade and clean re-upgrade
         working-directory: backend
+        env:
+          POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE: true
         run: |
           uv run alembic downgrade base
           uv run alembic upgrade head

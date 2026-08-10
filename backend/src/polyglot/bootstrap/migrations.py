@@ -1,4 +1,5 @@
 import argparse
+import os
 from pathlib import Path
 
 from alembic import command
@@ -22,7 +23,16 @@ def migration_config() -> Config:
 
 def round_trip() -> None:
     config = migration_config()
-    command.downgrade(config, "base")
+    variable = "POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE"
+    previous = os.environ.get(variable)
+    os.environ[variable] = "true"
+    try:
+        command.downgrade(config, "base")
+    finally:
+        if previous is None:
+            os.environ.pop(variable, None)
+        else:
+            os.environ[variable] = previous
     command.upgrade(config, "head")
 
 

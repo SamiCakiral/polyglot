@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Header, Request, Response, status
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from fastapi import APIRouter, Header, Request, Response, Security, status
+from fastapi.security import APIKeyCookie
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from polyglot.modules.identity.application import (
     AuthenticateSession,
@@ -23,34 +24,36 @@ from polyglot.platform.json_types import JsonValue
 SESSION_COOKIE = "__Host-polyglot_session"
 
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
+OriginHeader = Annotated[str | None, Header(alias="Origin")]
+CsrfHeader = Annotated[str | None, Header(alias="X-CSRF-Token")]
+IfMatchHeader = Annotated[str | None, Header(alias="If-Match")]
+_session_cookie_security = APIKeyCookie(
+    name=SESSION_COOKIE,
+    scheme_name="SessionCookie",
+    auto_error=False,
+)
+SessionCookieToken = Annotated[str | None, Security(_session_cookie_security)]
 
 
 class ClosedModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class CredentialsRequest(ClosedModel):
-    provider_type: Literal["local_password", "oidc"]
-    identifier: str | None = Field(default=None, max_length=320)
-    password: SecretStr | None = None
-    authorization_code: SecretStr | None = None
+class LocalCredentialsRequest(ClosedModel):
+    provider_type: Literal["local_password"]
+    identifier: str = Field(max_length=320)
+    password: SecretStr
 
-    @model_validator(mode="after")
-    def validate_provider_shape(self) -> "CredentialsRequest":
-        if self.provider_type == "local_password":
-            if (
-                self.identifier is None
-                or self.password is None
-                or self.authorization_code is not None
-            ):
-                raise ValueError("local credentials are incomplete")
-        elif (
-            self.authorization_code is None
-            or self.identifier is not None
-            or self.password is not None
-        ):
-            raise ValueError("OIDC credentials are incomplete")
-        return self
+
+class OidcCredentialsRequest(ClosedModel):
+    provider_type: Literal["oidc"]
+    authorization_code: SecretStr
+
+
+CredentialsRequest = Annotated[
+    LocalCredentialsRequest | OidcCredentialsRequest,
+    Field(discriminator="provider_type"),
+]
 
 
 class ChangePasswordRequest(ClosedModel):
@@ -113,6 +116,42 @@ class CurrentSessionResponse(SessionResponse):
     consents: list[ConsentResponse]
 
 
+class ProblemResponse(ClosedModel):
+    type: str
+    title: str
+    status: int
+    detail: str
+    instance: str
+    code: str
+    message_key: str
+    request_id: str
+    correlation_id: str
+    retryable: bool
+    details: dict[str, JsonValue] | None = None
+    field_errors: list[dict[str, JsonValue]] | None = None
+
+
+IDENTITY_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
+    problem_status: {
+        "model": ProblemResponse,
+        "content": {
+            "application/problem+json": {
+                "schema": {"$ref": "#/components/schemas/ProblemResponse"}
+            }
+        },
+    }
+    for problem_status in (401, 403, 409, 422, 423, 429, 503)
+}
+
+
+def _credential_values(
+    payload: CredentialsRequest,
+) -> tuple[str | None, str | None, str | None]:
+    if isinstance(payload, LocalCredentialsRequest):
+        return payload.identifier, payload.password.get_secret_value(), None
+    return None, None, payload.authorization_code.get_secret_value()
+
+
 def _context(request: Request) -> RequestContext:
     client_host = request.client.host if request.client is not None else "unknown"
     truncated_ip = client_host if ":" in client_host else ".".join(client_host.split(".")[:3])
@@ -124,14 +163,15 @@ def _context(request: Request) -> RequestContext:
     )
 
 
-def _require_origin(request: Request, allowed_origin: str) -> None:
-    if request.headers.get("Origin") != allowed_origin:
+def _require_origin(origin: str | None, allowed_origin: str) -> None:
+    if origin != allowed_origin:
         raise DomainError(ErrorCode.FORBIDDEN)
 
 
-def _session_credentials(request: Request) -> tuple[str, str]:
-    session_token = request.cookies.get(SESSION_COOKIE)
-    csrf_token = request.headers.get("X-CSRF-Token")
+def _session_credentials(
+    session_token: str | None,
+    csrf_token: str | None,
+) -> tuple[str, str]:
     if not session_token:
         raise DomainError(ErrorCode.UNAUTHENTICATED)
     if not csrf_token:
@@ -139,15 +179,13 @@ def _session_credentials(request: Request) -> tuple[str, str]:
     return session_token, csrf_token
 
 
-def _session_token(request: Request) -> str:
-    token = request.cookies.get(SESSION_COOKIE)
+def _session_token(token: str | None) -> str:
     if not token:
         raise DomainError(ErrorCode.UNAUTHENTICATED)
     return token
 
 
-def _expected_version(request: Request) -> int:
-    value = request.headers.get("If-Match")
+def _expected_version(value: str | None) -> int:
     if value is None or len(value) < 3 or not value.startswith('"') or not value.endswith('"'):
         raise DomainError(ErrorCode.VALIDATION_FAILED)
     raw = value[1:-1]
@@ -230,23 +268,22 @@ def identity_router(
         operation_id="register_account",
         response_model=AccountResponse,
         status_code=status.HTTP_201_CREATED,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def register_account(
         payload: CredentialsRequest,
         request: Request,
         idempotency_key: IdempotencyKey,
+        origin: OriginHeader = None,
     ) -> AccountResponse:
-        _require_origin(request, allowed_origin)
+        _require_origin(origin, allowed_origin)
+        identifier, password, authorization_code = _credential_values(payload)
         result = await application_service().register_account(
             RegisterAccount(
                 provider_type=payload.provider_type,
-                identifier=payload.identifier,
-                password=payload.password.get_secret_value() if payload.password else None,
-                authorization_code=(
-                    payload.authorization_code.get_secret_value()
-                    if payload.authorization_code
-                    else None
-                ),
+                identifier=identifier,
+                password=password,
+                authorization_code=authorization_code,
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )
@@ -258,24 +295,23 @@ def identity_router(
         operation_id="authenticate_session",
         response_model=SessionResponse,
         status_code=status.HTTP_201_CREATED,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def authenticate_session(
         payload: CredentialsRequest,
         request: Request,
         response: Response,
         idempotency_key: IdempotencyKey,
+        origin: OriginHeader = None,
     ) -> SessionResponse:
-        _require_origin(request, allowed_origin)
+        _require_origin(origin, allowed_origin)
+        identifier, password, authorization_code = _credential_values(payload)
         result = await application_service().authenticate_session(
             AuthenticateSession(
                 provider_type=payload.provider_type,
-                identifier=payload.identifier,
-                password=payload.password.get_secret_value() if payload.password else None,
-                authorization_code=(
-                    payload.authorization_code.get_secret_value()
-                    if payload.authorization_code
-                    else None
-                ),
+                identifier=identifier,
+                password=password,
+                authorization_code=authorization_code,
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )
@@ -294,10 +330,15 @@ def identity_router(
         "/api/v1/session",
         operation_id="get_current_session",
         response_model=CurrentSessionResponse,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
-    async def get_current_session(request: Request, response: Response) -> CurrentSessionResponse:
+    async def get_current_session(
+        request: Request,
+        response: Response,
+        session_token: SessionCookieToken = None,
+    ) -> CurrentSessionResponse:
         current = await application_service().get_current_session(
-            _session_token(request),
+            _session_token(session_token),
             _context(request),
         )
         _set_session_cookie(response, current.session_token)
@@ -316,16 +357,20 @@ def identity_router(
         "/api/v1/session",
         operation_id="revoke_session",
         status_code=status.HTTP_204_NO_CONTENT,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def revoke_session(
         request: Request,
+        session_token: SessionCookieToken = None,
+        csrf_token: CsrfHeader = None,
+        origin: OriginHeader = None,
         idempotency_key: Annotated[
             str | None,
             Header(alias="Idempotency-Key", max_length=255),
         ] = None,
     ) -> Response:
-        _require_origin(request, allowed_origin)
-        session_token, csrf_token = _session_credentials(request)
+        _require_origin(origin, allowed_origin)
+        session_token, csrf_token = _session_credentials(session_token, csrf_token)
         await application_service().revoke_session(
             RevokeSession(
                 session_token=session_token,
@@ -342,22 +387,27 @@ def identity_router(
         "/api/v1/account/password",
         operation_id="change_password",
         response_model=AccountResponse,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def change_password(
         payload: ChangePasswordRequest,
         request: Request,
         response: Response,
         idempotency_key: IdempotencyKey,
+        session_token: SessionCookieToken = None,
+        csrf_token: CsrfHeader = None,
+        origin: OriginHeader = None,
+        if_match: IfMatchHeader = None,
     ) -> AccountResponse:
-        _require_origin(request, allowed_origin)
-        session_token, csrf_token = _session_credentials(request)
+        _require_origin(origin, allowed_origin)
+        session_token, csrf_token = _session_credentials(session_token, csrf_token)
         result = await application_service().change_password(
             ChangePassword(
                 session_token=session_token,
                 csrf_token=csrf_token,
                 current_password=payload.current_password.get_secret_value(),
                 new_password=payload.new_password.get_secret_value(),
-                expected_version=_expected_version(request),
+                expected_version=_expected_version(if_match),
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )
@@ -369,23 +419,28 @@ def identity_router(
         "/api/v1/account/preferences",
         operation_id="update_user_preferences",
         response_model=PreferencesResponse,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def update_user_preferences(
         payload: PreferencesRequest,
         request: Request,
         response: Response,
+        session_token: SessionCookieToken = None,
+        csrf_token: CsrfHeader = None,
+        origin: OriginHeader = None,
+        if_match: IfMatchHeader = None,
         idempotency_key: Annotated[
             str | None,
             Header(alias="Idempotency-Key", max_length=255),
         ] = None,
     ) -> PreferencesResponse:
-        _require_origin(request, allowed_origin)
-        session_token, csrf_token = _session_credentials(request)
+        _require_origin(origin, allowed_origin)
+        session_token, csrf_token = _session_credentials(session_token, csrf_token)
         result = await application_service().update_preferences(
             UpdateUserPreferences(
                 session_token=session_token,
                 csrf_token=csrf_token,
-                expected_version=_expected_version(request),
+                expected_version=_expected_version(if_match),
                 idempotency_key=idempotency_key,
                 context=_context(request),
                 interface_locale=payload.interface_locale,
@@ -402,6 +457,7 @@ def identity_router(
         "/api/v1/consents/{purpose}",
         operation_id="update_consent",
         response_model=ConsentResponse,
+        responses=IDENTITY_PROBLEM_RESPONSES,
     )
     async def update_consent(
         purpose: str,
@@ -409,9 +465,13 @@ def identity_router(
         request: Request,
         response: Response,
         idempotency_key: IdempotencyKey,
+        session_token: SessionCookieToken = None,
+        csrf_token: CsrfHeader = None,
+        origin: OriginHeader = None,
+        if_match: IfMatchHeader = None,
     ) -> ConsentResponse:
-        _require_origin(request, allowed_origin)
-        session_token, csrf_token = _session_credentials(request)
+        _require_origin(origin, allowed_origin)
+        session_token, csrf_token = _session_credentials(session_token, csrf_token)
         result = await application_service().update_consent(
             UpdateConsent(
                 session_token=session_token,
@@ -419,7 +479,7 @@ def identity_router(
                 purpose_code=purpose,
                 status=payload.status,
                 policy_revision_id=payload.policy_revision_id,
-                expected_version=_expected_version(request),
+                expected_version=_expected_version(if_match),
                 idempotency_key=idempotency_key,
                 context=_context(request),
             )

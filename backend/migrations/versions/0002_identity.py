@@ -1,8 +1,13 @@
 """Create identity, session, preference, and consent persistence.
 
+Downgrade is disposable-environment-only because it permanently deletes all
+identity, consent, preference, and session data.
+
 Revision ID: 0002_identity
 Revises: 0001_platform
 """
+
+import os
 
 from alembic import op
 from asyncpg import Connection
@@ -465,4 +470,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    if os.environ.get("POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE") != "true":
+        raise RuntimeError(
+            "0002 downgrade is disposable-environment-only and causes permanent data loss"
+        )
     op.execute("DROP SCHEMA identity CASCADE")

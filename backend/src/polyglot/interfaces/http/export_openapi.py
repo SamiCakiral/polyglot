@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -7,6 +8,60 @@ from typing import Any
 from polyglot.interfaces.http.app import create_app
 
 HTTP_METHODS = frozenset({"get", "post", "put", "patch", "delete"})
+REQUIRED_W02_COMMANDS = frozenset(
+    {
+        "RegisterAccount",
+        "AuthenticateSession",
+        "RevokeSession",
+        "ChangePassword",
+        "UpdateUserPreferences",
+        "UpdateConsent",
+    }
+)
+REQUIRED_W02_HEADERS = {
+    ("post", "/api/v1/accounts"): {"Origin", "Idempotency-Key"},
+    ("post", "/api/v1/session"): {"Origin", "Idempotency-Key"},
+    ("delete", "/api/v1/session"): {"Origin", "X-CSRF-Token", "Idempotency-Key"},
+    ("put", "/api/v1/account/password"): {
+        "Origin",
+        "X-CSRF-Token",
+        "If-Match",
+        "Idempotency-Key",
+    },
+    ("patch", "/api/v1/account/preferences"): {
+        "Origin",
+        "X-CSRF-Token",
+        "If-Match",
+        "Idempotency-Key",
+    },
+    ("put", "/api/v1/consents/{purpose}"): {
+        "Origin",
+        "X-CSRF-Token",
+        "If-Match",
+        "Idempotency-Key",
+    },
+}
+AUTHENTICATED_W02_OPERATIONS = frozenset(
+    {
+        ("get", "/api/v1/session"),
+        ("delete", "/api/v1/session"),
+        ("put", "/api/v1/account/password"),
+        ("patch", "/api/v1/account/preferences"),
+        ("put", "/api/v1/consents/{purpose}"),
+    }
+)
+
+
+def _operation_id(command_name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", command_name).lower()
+
+
+def _parameter_names(operation: dict[str, Any]) -> set[str]:
+    return {
+        parameter["name"]
+        for parameter in operation.get("parameters", [])
+        if isinstance(parameter, dict) and isinstance(parameter.get("name"), str)
+    }
 
 
 def canonical_openapi() -> str:
@@ -50,6 +105,52 @@ def validate_registry_compatibility(
                 continue
             if (method, route) not in registered:
                 raise ValueError(f"OpenAPI operation missing from W00 registry: {method} {route}")
+
+    commands_by_name = {command["name"]: command for command in commands}
+    for command_name in REQUIRED_W02_COMMANDS:
+        command = commands_by_name.get(command_name)
+        if command is None:
+            raise ValueError(f"required W02 command missing from W00 registry: {command_name}")
+        method = command["method"].lower()
+        route = command["route"]
+        operation = document.get("paths", {}).get(route, {}).get(method)
+        if operation is None:
+            raise ValueError(f"required W02 operation missing: {method} {route}")
+        if operation.get("operationId") != _operation_id(command_name):
+            raise ValueError(f"noncanonical W02 operationId: {method} {route}")
+        required_headers = REQUIRED_W02_HEADERS[(method, route)]
+        if not required_headers <= _parameter_names(operation):
+            raise ValueError(f"required W02 headers missing: {method} {route}")
+
+    session_query = document.get("paths", {}).get("/api/v1/session", {}).get("get")
+    if session_query is None or session_query.get("operationId") != "get_current_session":
+        raise ValueError("required W02 session query is missing or noncanonical")
+
+    schemes = document.get("components", {}).get("securitySchemes", {})
+    if schemes.get("SessionCookie") != {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-polyglot_session",
+    }:
+        raise ValueError("required W02 session cookie security scheme is missing")
+    for method, route in AUTHENTICATED_W02_OPERATIONS:
+        operation = document["paths"][route][method]
+        if operation.get("security") != [{"SessionCookie": []}]:
+            raise ValueError(f"required W02 cookie security is missing: {method} {route}")
+        for status in ("401", "403", "409", "423", "429"):
+            content = operation.get("responses", {}).get(status, {}).get("content", {})
+            problem = content.get("application/problem+json", {}).get("schema", {})
+            if problem.get("$ref") != "#/components/schemas/ProblemResponse":
+                raise ValueError(f"required W02 problem response is missing: {method} {route}")
+
+    credentials = document["paths"]["/api/v1/session"]["post"]["requestBody"]["content"][
+        "application/json"
+    ]["schema"]
+    if (
+        len(credentials.get("oneOf", ())) != 2
+        or credentials.get("discriminator", {}).get("propertyName") != "provider_type"
+    ):
+        raise ValueError("required W02 credential union is missing")
 
 
 def main(argv: list[str] | None = None) -> int:

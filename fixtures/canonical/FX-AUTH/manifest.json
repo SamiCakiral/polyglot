@@ -1,16 +1,5 @@
 {
-  "fixture_code": "FX-AUTH",
-  "schema_version": 1,
-  "synthetic": true,
-  "seed": 2003,
-  "clock": "2026-01-15T12:00:00+00:00",
-  "payloads": {
-    "auth.json": "sha256:6738b6c4d587027caf29a64176027c4bef521e70cb48ff0f41e71dce414b343b"
-  },
-  "oracles": [
-    "expired_session_rejected",
-    "invalid_csrf_rejected",
-    "fake_oidc_accepted",
-    "role_change_rotates_session"
-  ]
+  "id": "FX-AUTH",
+  "kind": "positive",
+  "expected_status": "accepted"
 }
