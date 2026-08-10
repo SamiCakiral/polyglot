@@ -24,7 +24,12 @@ from .bindings import (
 )
 from .domain import ArcType, LearningModuleRevision, ModuleDay, ModuleStatus
 from .italian_pilot_catalog import NORMATIVE_CHECKSUMS
-from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
+from .ports import (
+    ReferenceExpectation,
+    ReferenceManifest,
+    ReferenceStatus,
+    ResolvedReference,
+)
 from .revisioning import (
     ModuleRevisionMapping,
     RevisionMappingEntry,
@@ -666,10 +671,17 @@ def _production_validation_input(
         )
         for item in resolved
     )
+    manifest = ReferenceManifest("FX-MODULE-IT:REFERENCE-CATALOGUE-V1", expectations)
+    module = replace(
+        module,
+        reference_manifest_checksum=manifest.checksum,
+        payload_checksum="",
+    )
     return ValidationInput(
         module=module,
         resolved_references=resolved,
         reference_expectations=expectations,
+        reference_manifest=manifest,
         grammar_explanations=tuple(
             (int(item["ordinal"]), family)
             for item in days_payload

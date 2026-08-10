@@ -10,7 +10,7 @@ from uuid import UUID
 
 from .bindings import _require_uuid7
 from .domain import ArcType, LearningModuleRevision
-from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
+from .ports import ReferenceExpectation, ReferenceManifest, ReferenceStatus, ResolvedReference
 
 
 class FindingSeverity(StrEnum):
@@ -143,6 +143,7 @@ class ValidationInput:
     module: LearningModuleRevision
     resolved_references: tuple[ResolvedReference, ...]
     reference_expectations: tuple[ReferenceExpectation, ...]
+    reference_manifest: ReferenceManifest
     grammar_explanations: tuple[tuple[int, str], ...]
     grammar_practices: tuple[tuple[int, str, str], ...]
     morphology_oracles: tuple[MorphologyOracle, ...]
@@ -196,8 +197,11 @@ def _finding(
 def _reference_findings(data: ValidationInput) -> list[ValidationFinding]:
     expected = set(data.module.all_reference_keys())
     resolved = {item.reference: item for item in data.resolved_references}
-    expectations = {item.reference: item for item in data.reference_expectations}
+    expectations = {item.reference: item for item in data.reference_manifest.entries}
     findings: list[ValidationFinding] = []
+    manifest_mismatch = (
+        data.reference_manifest.checksum != data.module.reference_manifest_checksum
+    )
     for reference in sorted(expected):
         item = resolved.get(reference)
         expectation = expectations.get(reference)
@@ -217,15 +221,24 @@ def _reference_findings(data: ValidationInput) -> list[ValidationFinding]:
         if not item.rights_refs:
             findings.append(_finding("module_rights_missing", path, reference))
         if item.kind != expectation.kind:
+            manifest_mismatch = True
             findings.append(_finding("module_reference_kind_mismatch", path, reference))
         if item.pack_revision_id != expectation.pack_revision_id:
+            manifest_mismatch = True
             findings.append(_finding("module_reference_pack_mismatch", path, reference))
         if item.variety_id != expectation.variety_id:
+            manifest_mismatch = True
             findings.append(_finding("module_reference_variety_mismatch", path, reference))
         if item.checksum != expectation.checksum:
+            manifest_mismatch = True
             findings.append(_finding("module_reference_checksum_mismatch", path, reference))
-    if len(expectations) != len(data.reference_expectations) or set(expectations) != expected:
+    if len(expectations) != len(data.reference_manifest.entries) or set(expectations) != expected:
         findings.append(_finding("module_target_unresolved", "reference_expectations"))
+        manifest_mismatch = True
+    if manifest_mismatch:
+        findings.append(
+            _finding("module_reference_manifest_mismatch", "reference_manifest")
+        )
     return findings
 
 

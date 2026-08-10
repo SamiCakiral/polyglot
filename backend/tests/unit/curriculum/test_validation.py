@@ -5,6 +5,7 @@ from dataclasses import replace
 from polyglot.modules.curriculum import ArcType
 from polyglot.modules.curriculum.ports import (
     ReferenceExpectation,
+    ReferenceManifest,
     ReferenceStatus,
     ResolvedReference,
 )
@@ -46,10 +47,17 @@ def base_input() -> ValidationInput:
         )
         for item in refs
     )
+    manifest = ReferenceManifest("test-reference-catalogue-v1", expectations)
+    module = replace(
+        module,
+        reference_manifest_checksum=manifest.checksum,
+        payload_checksum="",
+    )
     return ValidationInput(
         module=module,
         resolved_references=refs,
         reference_expectations=expectations,
+        reference_manifest=manifest,
         grammar_explanations=((1, "identity"), (2, "polite-request")),
         grammar_practices=((1, "identity", "GYM-01"), (2, "polite-request", "GYM-08")),
         morphology_oracles=(

@@ -172,6 +172,7 @@ class LearningModuleRevision:
     schema_version: int
     compatibility_range: str
     days: tuple[ModuleDay, ...]
+    reference_manifest_checksum: str = ""
     supersedes_revision_id: UUID | None = None
     payload_checksum: str = ""
 
@@ -245,6 +246,7 @@ class LearningModuleRevision:
             "validator_set_revision_id": str(self.validator_set_revision_id),
             "schema_version": self.schema_version,
             "compatibility_range": self.compatibility_range,
+            "reference_manifest_checksum": self.reference_manifest_checksum,
             "supersedes_revision_id": str(self.supersedes_revision_id)
             if self.supersedes_revision_id
             else None,
