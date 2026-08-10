@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from datetime import datetime
 from enum import StrEnum
-from typing import cast
+from typing import Protocol, cast
+from uuid import UUID
 
+from .bindings import _require_uuid7
 from .domain import ArcType, LearningModuleRevision
 from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
 
@@ -19,22 +23,81 @@ class HumanGateStatus(StrEnum):
     APPROVED = "approved"
 
 
+class ApprovalDecision(StrEnum):
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class ReviewerRole(StrEnum):
+    LINGUIST = "linguist"
+    PEDAGOGUE = "pedagogue"
+
+
 @dataclass(frozen=True, slots=True)
 class HumanApprovalEvidence:
-    review_id: str
-    reviewer_id: str
+    review_id: UUID
+    gate_code: str
+    reviewer_id: UUID
+    reviewer_role: ReviewerRole
+    author_id: UUID
+    decision: ApprovalDecision
     subject_checksum: str
-    signed_at: str
-    source: str
+    fixture_fingerprint: str
+    signed_at: datetime
+    key_id: str
+    signature: bytes
 
-    def valid_for(self, checksum: str) -> bool:
+    def __post_init__(self) -> None:
+        for field in ("review_id", "reviewer_id", "author_id"):
+            _require_uuid7(getattr(self, field), field)
+
+    def signature_payload(self) -> bytes:
+        payload = {
+            "author_id": str(self.author_id),
+            "decision": self.decision.value,
+            "fixture_fingerprint": self.fixture_fingerprint,
+            "gate_code": self.gate_code,
+            "review_id": str(self.review_id),
+            "reviewer_id": str(self.reviewer_id),
+            "reviewer_role": self.reviewer_role.value,
+            "signed_at": self.signed_at.isoformat()
+            if isinstance(self.signed_at, datetime)
+            else "invalid",
+            "subject_checksum": self.subject_checksum,
+        }
+        return json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+
+    def coherent_for(
+        self,
+        *,
+        gate_code: str,
+        checksum: str,
+        fixture_fingerprint: str,
+        author_id: UUID,
+    ) -> bool:
+        required_role = {
+            "P-LING": ReviewerRole.LINGUIST,
+            "P-PED": ReviewerRole.PEDAGOGUE,
+        }.get(gate_code)
         return (
-            bool(self.review_id)
-            and bool(self.reviewer_id)
-            and bool(self.signed_at)
-            and self.source == "human"
+            self.gate_code == gate_code
+            and self.reviewer_role is required_role
+            and self.decision is ApprovalDecision.APPROVED
             and self.subject_checksum == checksum
+            and self.fixture_fingerprint == fixture_fingerprint
+            and self.author_id == author_id
+            and self.reviewer_id != author_id
+            and isinstance(self.signed_at, datetime)
+            and self.signed_at.tzinfo is not None
+            and self.signed_at.utcoffset() is not None
+            and self.signed_at.isoformat() != ""
+            and self.key_id != ""
+            and self.signature != b""
         )
+
+
+class HumanApprovalVerifier(Protocol):
+    def verify(self, evidence: HumanApprovalEvidence) -> bool: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,6 +149,9 @@ class ValidationInput:
     profile_novelty_limits: tuple[tuple[str, float], ...]
     day_novelty_points: tuple[tuple[int, float], ...]
     human_gates: tuple[HumanReviewGate | tuple[str, HumanGateStatus], ...]
+    module_author_id: UUID | None = None
+    fixture_fingerprint: str = ""
+    approval_verifier: HumanApprovalVerifier | None = None
 
     def __post_init__(self) -> None:
         for field in (
@@ -322,9 +388,22 @@ def validate_curriculum(data: ValidationInput) -> ValidationReport:
         if gate.gate_code not in required_gate_codes:
             continue
         evidence = gate.approval_evidence
-        if gate.status is HumanGateStatus.APPROVED and (
-            evidence is None or not evidence.valid_for(data.module.payload_checksum)
-        ):
+        evidence_valid = (
+            gate.status is HumanGateStatus.APPROVED
+            and evidence is not None
+            and data.module_author_id is not None
+            and data.fixture_fingerprint.startswith("sha256:")
+            and len(data.fixture_fingerprint) == 71
+            and data.approval_verifier is not None
+            and evidence.coherent_for(
+                gate_code=gate.gate_code,
+                checksum=data.module.payload_checksum,
+                fixture_fingerprint=data.fixture_fingerprint,
+                author_id=data.module_author_id,
+            )
+            and data.approval_verifier.verify(evidence)
+        )
+        if gate.status is HumanGateStatus.APPROVED and not evidence_valid:
             findings.append(
                 _finding(
                     "module_human_approval_evidence_invalid",
@@ -332,7 +411,7 @@ def validate_curriculum(data: ValidationInput) -> ValidationReport:
                     gate.gate_code,
                 )
             )
-        if gate.status is not HumanGateStatus.APPROVED or evidence is None:
+        if not evidence_valid:
             findings.append(
                 _finding(
                     "module_human_review_required",
