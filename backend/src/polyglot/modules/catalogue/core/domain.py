@@ -3,6 +3,7 @@ from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from enum import StrEnum
 from hashlib import sha256
+from json import dumps
 from re import fullmatch
 from typing import Any
 from uuid import UUID
@@ -429,20 +430,34 @@ def _require_checksum(value: str, field: str) -> None:
         raise _invalid(f"{field} must be a lowercase SHA-256 checksum")
 
 
-def _foundation_checksum_part(value: object) -> str:
+def _foundation_checksum_part(value: object) -> list[object]:
     if isinstance(value, StrEnum):
-        return value.value
+        return ["string", value.value]
+    if isinstance(value, UUID):
+        return ["uuid", str(value)]
     if isinstance(value, bool):
-        return "true" if value else "false"
+        return ["boolean", value]
+    if isinstance(value, int):
+        return ["integer", str(value)]
     if isinstance(value, float):
-        return format(value, ".15g")
+        return ["decimal", format(value, ".15g")]
     if isinstance(value, (tuple, list)):
-        return "\x1e".join(_foundation_checksum_part(item) for item in value)
-    return str(value)
+        return ["array", [_foundation_checksum_part(item) for item in value]]
+    if isinstance(value, str):
+        return ["string", value]
+    raise TypeError(f"unsupported foundation checksum value: {type(value).__name__}")
 
 
 def foundation_content_checksum(kind: str, *parts: object) -> str:
-    payload = "\x1f".join((kind, *(_foundation_checksum_part(part) for part in parts)))
+    payload = dumps(
+        [
+            "foundation-checksum-v2",
+            ["string", kind],
+            ["array", [_foundation_checksum_part(part) for part in parts]],
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     return sha256(payload.encode()).hexdigest()
 
 

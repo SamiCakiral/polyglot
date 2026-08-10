@@ -22,11 +22,56 @@ AS $function$
     SELECT value IS NOT NULL AND (get_byte(uuid_send(value), 6) >> 4) = 7
 $function$;
 
+CREATE FUNCTION catalogue.foundation_checksum_text(value text)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT '["string",' || to_json(value)::text || ']'
+$function$;
+
+CREATE FUNCTION catalogue.foundation_checksum_uuid(value uuid)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT '["uuid",' || to_json(value::text)::text || ']'
+$function$;
+
+CREATE FUNCTION catalogue.foundation_checksum_integer(value integer)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT '["integer",' || to_json(value::text)::text || ']'
+$function$;
+
+CREATE FUNCTION catalogue.foundation_checksum_decimal(value numeric)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT '["decimal",' || to_json(trim_scale(value)::text)::text || ']'
+$function$;
+
+CREATE FUNCTION catalogue.foundation_checksum_boolean(value boolean)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT '["boolean",' || lower(value::text) || ']'
+$function$;
+
+CREATE FUNCTION catalogue.foundation_checksum_text_array(values_ text[])
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT '["array",[' || COALESCE(
+        string_agg(catalogue.foundation_checksum_text(item), ',' ORDER BY ordinal),
+        ''
+    ) || ']]'
+    FROM unnest(values_) WITH ORDINALITY AS value(item, ordinal)
+$function$;
+
 CREATE FUNCTION catalogue.foundation_content_checksum(kind text, VARIADIC parts text[])
 RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
 AS $function$
     SELECT encode(
-        sha256(convert_to(array_to_string(ARRAY[kind] || parts, chr(31)), 'UTF8')),
+        sha256(convert_to(
+            '["foundation-checksum-v2",' ||
+            catalogue.foundation_checksum_text(kind) ||
+            ',["array",[' || array_to_string(parts, ',') || ']]]',
+            'UTF8'
+        )),
         'hex'
     )
 $function$;
@@ -628,49 +673,77 @@ BEGIN
             FROM catalogue.foundation_definitions AS foundation
             WHERE foundation.foundation_id = NEW.foundation_id;
             expected_checksum := catalogue.foundation_content_checksum(
-                'foundation_definition_v1', NEW.foundation_revision_id::text,
-                NEW.foundation_id::text, NEW.pack_revision_id::text, definition_code,
-                NEW.revision_no::text, NEW.status
+                'foundation_definition_v1',
+                catalogue.foundation_checksum_uuid(NEW.foundation_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.foundation_id),
+                catalogue.foundation_checksum_uuid(NEW.pack_revision_id),
+                catalogue.foundation_checksum_text(definition_code),
+                catalogue.foundation_checksum_integer(NEW.revision_no),
+                catalogue.foundation_checksum_text(NEW.status)
             );
         WHEN 'foundation_reference_revisions' THEN
             expected_checksum := catalogue.foundation_content_checksum(
-                'foundation_reference_v1', NEW.reference_revision_id::text,
-                NEW.pack_revision_id::text, NEW.reference_code, NEW.reference_kind, NEW.status
+                'foundation_reference_v1',
+                catalogue.foundation_checksum_uuid(NEW.reference_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.pack_revision_id),
+                catalogue.foundation_checksum_text(NEW.reference_code),
+                catalogue.foundation_checksum_text(NEW.reference_kind),
+                catalogue.foundation_checksum_text(NEW.status)
             );
         WHEN 'foundation_block_revisions' THEN
             expected_checksum := catalogue.foundation_content_checksum(
-                'foundation_block_v1', NEW.block_revision_id::text,
-                NEW.foundation_revision_id::text, NEW.pack_revision_id::text, NEW.block_code,
-                NEW.ordinal::text, NEW.component_type,
-                array_to_string(NEW.prerequisite_refs, chr(30)),
-                array_to_string(NEW.modalities, chr(30)),
-                array_to_string(NEW.backend_criteria, chr(30)),
-                NEW.waiver_policy_ref, NEW.status
+                'foundation_block_v1',
+                catalogue.foundation_checksum_uuid(NEW.block_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.foundation_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.pack_revision_id),
+                catalogue.foundation_checksum_text(NEW.block_code),
+                catalogue.foundation_checksum_integer(NEW.ordinal),
+                catalogue.foundation_checksum_text(NEW.component_type),
+                catalogue.foundation_checksum_text_array(NEW.prerequisite_refs),
+                catalogue.foundation_checksum_text_array(NEW.modalities),
+                catalogue.foundation_checksum_text_array(NEW.backend_criteria),
+                catalogue.foundation_checksum_text(NEW.waiver_policy_ref),
+                catalogue.foundation_checksum_text(NEW.status)
             );
         WHEN 'foundation_item_revisions' THEN
             expected_checksum := catalogue.foundation_content_checksum(
-                'foundation_item_v1', NEW.item_revision_id::text,
-                NEW.block_revision_id::text, NEW.pack_revision_id::text, NEW.item_code,
-                NEW.ordinal::text, array_to_string(NEW.target_refs, chr(30)),
-                NEW.response_kind, NEW.checker_kind,
-                array_to_string(NEW.checker_values, chr(30)),
-                array_to_string(NEW.modalities, chr(30)), NEW.status
+                'foundation_item_v1',
+                catalogue.foundation_checksum_uuid(NEW.item_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.block_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.pack_revision_id),
+                catalogue.foundation_checksum_text(NEW.item_code),
+                catalogue.foundation_checksum_integer(NEW.ordinal),
+                catalogue.foundation_checksum_text_array(NEW.target_refs),
+                catalogue.foundation_checksum_text(NEW.response_kind),
+                catalogue.foundation_checksum_text(NEW.checker_kind),
+                catalogue.foundation_checksum_text_array(NEW.checker_values),
+                catalogue.foundation_checksum_text_array(NEW.modalities),
+                catalogue.foundation_checksum_text(NEW.status)
             );
         WHEN 'foundation_gate_revisions' THEN
             expected_checksum := catalogue.foundation_content_checksum(
-                'foundation_gate_v1', NEW.gate_revision_id::text,
-                NEW.foundation_revision_id::text, NEW.pack_revision_id::text, NEW.gate_code,
-                array_to_string(NEW.blocking_target_refs, chr(30)),
-                array_to_string(NEW.blocking_facet_refs, chr(30)),
-                NEW.blocking_facet_minimum_status,
-                trim_scale(NEW.coverage_threshold)::text,
-                trim_scale(NEW.confidence_threshold)::text,
-                NEW.minimum_distinct_sessions::text, NEW.delayed_control_block_code,
-                NEW.delayed_control_hours::text, NEW.grapheme_sound_minimum::text,
-                NEW.grapheme_sound_total::text, NEW.targeted_reading_minimum::text,
-                NEW.targeted_reading_total::text, NEW.survival_exchange_minimum::text,
-                NEW.survival_exchange_total::text,
-                lower(NEW.survival_exchange_without_reveal::text), NEW.oral_policy, NEW.status
+                'foundation_gate_v1',
+                catalogue.foundation_checksum_uuid(NEW.gate_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.foundation_revision_id),
+                catalogue.foundation_checksum_uuid(NEW.pack_revision_id),
+                catalogue.foundation_checksum_text(NEW.gate_code),
+                catalogue.foundation_checksum_text_array(NEW.blocking_target_refs),
+                catalogue.foundation_checksum_text_array(NEW.blocking_facet_refs),
+                catalogue.foundation_checksum_text(NEW.blocking_facet_minimum_status),
+                catalogue.foundation_checksum_decimal(NEW.coverage_threshold),
+                catalogue.foundation_checksum_decimal(NEW.confidence_threshold),
+                catalogue.foundation_checksum_integer(NEW.minimum_distinct_sessions),
+                catalogue.foundation_checksum_text(NEW.delayed_control_block_code),
+                catalogue.foundation_checksum_integer(NEW.delayed_control_hours),
+                catalogue.foundation_checksum_integer(NEW.grapheme_sound_minimum),
+                catalogue.foundation_checksum_integer(NEW.grapheme_sound_total),
+                catalogue.foundation_checksum_integer(NEW.targeted_reading_minimum),
+                catalogue.foundation_checksum_integer(NEW.targeted_reading_total),
+                catalogue.foundation_checksum_integer(NEW.survival_exchange_minimum),
+                catalogue.foundation_checksum_integer(NEW.survival_exchange_total),
+                catalogue.foundation_checksum_boolean(NEW.survival_exchange_without_reveal),
+                catalogue.foundation_checksum_text(NEW.oral_policy),
+                catalogue.foundation_checksum_text(NEW.status)
             );
     END CASE;
     IF expected_checksum IS DISTINCT FROM NEW.checksum THEN
@@ -1253,6 +1326,12 @@ BEGIN
 END;
 $owners$;
 ALTER FUNCTION catalogue.is_uuid7(uuid) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_checksum_text(text) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_checksum_uuid(uuid) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_checksum_integer(integer) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_checksum_decimal(numeric) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_checksum_boolean(boolean) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_checksum_text_array(text[]) OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.foundation_content_checksum(text, text[]) OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.validate_foundation_checksum() OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.validate_foundation_references() OWNER TO polyglot_migration;

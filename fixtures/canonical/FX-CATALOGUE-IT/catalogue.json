@@ -375,28 +375,28 @@
     "foundation_code": "FOUNDATIONS_IT_V0",
     "revision_no": 1,
     "references": [
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000951", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-001", "reference_kind": "target", "status": "published", "checksum": "54507a696e6f7ab035efce401922e634b5226fce966c5b033f30718d0968f8ba"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000952", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-002", "reference_kind": "target", "status": "published", "checksum": "2d8a1f6ef158c51c32b59bbcd8943bf691e633879cfe300d088ae7f98842344f"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000953", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-003", "reference_kind": "target", "status": "published", "checksum": "933b24aae9bea5b348a1653f7e769b4bda0a61ebe4869bddc01e19defd0efdb2"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000954", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-004", "reference_kind": "target", "status": "published", "checksum": "f052a5620658acae0325fff8ac9ace21ba12d26d3d7f54581286d64e5e3a2406"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000955", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PRAG-001", "reference_kind": "target", "status": "published", "checksum": "e690a80b6170a08eeaf87d042f7d0af7688829779fbceaa46fb08271fae0de32"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000956", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PRAG-002", "reference_kind": "target", "status": "published", "checksum": "8267df3b974e5355fbf5b53ef10dc437e9284d3ec95bcd3e65b42a2015ab77f3"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000957", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-ID-001", "reference_kind": "target", "status": "published", "checksum": "bd0b6c37587627929f83c5ff100c827e6417cd86d188f9837e73caad996e2bee"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000958", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-002", "reference_kind": "target", "status": "published", "checksum": "c265062034bcbcd20fd2b48be2ab13989083b5341aeebb9ce63641ca80a0edb5"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000959", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-003", "reference_kind": "target", "status": "published", "checksum": "7ea47ede28e7fd9218cc33848b15ad61e1da9b414c1650567ef299204d1c4d8d"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000960", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-007", "reference_kind": "target", "status": "published", "checksum": "347925ddec8baf3dae780103e846ab45c4f1aabb0964c3ebccecefece7fd21d4"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000961", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-027", "reference_kind": "target", "status": "published", "checksum": "eeda9000046d2a0a2750b3fb1a93cc8f9bd878b27508a5ee9e85fce14973719e"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000962", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-POLITE-002", "reference_kind": "target", "status": "published", "checksum": "c2cf500fb295dbdd0de9d45b76ce7ae8f0959b108dc70f32380184072339f74b"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000963", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-REPAIR-001", "reference_kind": "target", "status": "published", "checksum": "0776801230e6c4b4b264a9701156365b17c1697cb3fa7a0bf72175c7cc50c6cc"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000964", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "grapheme_sound_discrimination", "reference_kind": "facet", "status": "published", "checksum": "d977bf6beeaf5c98ef42848ea8708e9af30f796165efdb81beda5223433b1fd1"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000965", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "controlled_reading", "reference_kind": "facet", "status": "published", "checksum": "e231bf3b784302b05030f4d3ffd9b4d71424473eff0353e7432533c49df267af"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000966", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "greeting_recognition", "reference_kind": "facet", "status": "published", "checksum": "ba8f8955b7d183f370756ea22ac93182fa29c65f88f6b807465a6fe329d60823"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000967", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "functional_frame_choice", "reference_kind": "facet", "status": "published", "checksum": "a21dbf0b12ba49ba9fddeaf45dbbf5c018440443c498fd324c8aaba105b41c7a"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000968", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "written_guided_repair", "reference_kind": "facet", "status": "published", "checksum": "233896f325413e58237257d42b4ef0c5e0c70ae97101382361bee1cc474979ab"},
-      {"reference_revision_id": "019b0000-0000-7000-8000-000000000969", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "DIAGNOSTIC_WAIVER_V0", "reference_kind": "waiver_policy", "status": "published", "checksum": "9c5618eb5313806b5c606698c1264a2cd1c03e254762fa727c672c2385e0ce71"}
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000951", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-001", "reference_kind": "target", "status": "published", "checksum": "e91399d54f66bb6fc70408e484c65b8cb02030f970c93bdfb9023f54ad2853f5"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000952", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-002", "reference_kind": "target", "status": "published", "checksum": "f70473d490c7eb12e434de2e9665f93abd44bea20ea5bf47ed28390d76473454"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000953", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-003", "reference_kind": "target", "status": "published", "checksum": "fc910537d6603e4fd308fff8da241dc553eee9b82d6bbbcd9a557d202690dd28"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000954", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PHON-004", "reference_kind": "target", "status": "published", "checksum": "08b63663b712289449adab88cd0cc692da3f5eb630f1294d143444b9a143a681"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000955", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PRAG-001", "reference_kind": "target", "status": "published", "checksum": "c54bc1a9c3590c7608e57598df555ce265ab28ee749ea324198701cf4f08cea8"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000956", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-PRAG-002", "reference_kind": "target", "status": "published", "checksum": "697b1945f986aa223c33b0c9028ee6584a8e8d4d5b9b91404e0b2ee4c2f8fb38"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000957", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-ID-001", "reference_kind": "target", "status": "published", "checksum": "372fd7637ef4e0fb1d41c8f16d7f797f0d78523e8c7e6a812bbedbd9c91b7d89"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000958", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-002", "reference_kind": "target", "status": "published", "checksum": "27375f13dc4551cede888b2e81d094bd76d22c11ecfff5b3ba7fb7417ff2ebca"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000959", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-003", "reference_kind": "target", "status": "published", "checksum": "2d639fca5d17bb0fe479a40d2da1c33c42a5fe1a6123a70ab5e5c0f35b2040b6"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000960", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-007", "reference_kind": "target", "status": "published", "checksum": "4c876b12daa5fce89b25b7356feee938ecf4fb18e7ad3ebe971e5c57a83469c4"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000961", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-GRAM-027", "reference_kind": "target", "status": "published", "checksum": "a5bfffccc94e84925f5a90990b2a3ed64b122171b29579ccdbbd43ab7bc5a196"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000962", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-POLITE-002", "reference_kind": "target", "status": "published", "checksum": "f6581a7e3c3d34bd52b91228bfa7c3a36fb3d00749ecfa957c2f153c70f895ab"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000963", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "IT-REPAIR-001", "reference_kind": "target", "status": "published", "checksum": "0053c4a9ca626987f1b33043b80cb4df9b7e733dd2cad9e02a853bca6dccf413"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000964", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "grapheme_sound_discrimination", "reference_kind": "facet", "status": "published", "checksum": "23307a55849ce61ba1e9ba7c1cd15355cc14952b04677d6629fe0f2bb55842f6"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000965", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "controlled_reading", "reference_kind": "facet", "status": "published", "checksum": "cbd2c75d3a05880a3be5314b913765a0d9defb00af1283259aa5749af41773f1"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000966", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "greeting_recognition", "reference_kind": "facet", "status": "published", "checksum": "6241de07a67d63a5905aca510fbaaa90f1a9092fe4acc2068056c7aeb860f3dc"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000967", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "functional_frame_choice", "reference_kind": "facet", "status": "published", "checksum": "faa4645c10d290e8d184e45efb07de6b0b8ad2df25d32095418499ca434c1ef0"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000968", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "written_guided_repair", "reference_kind": "facet", "status": "published", "checksum": "ce377ce091517c82ebe6863bc7780f52f109b0e7851a6fe44f244e7f20b3d6d1"},
+      {"reference_revision_id": "019b0000-0000-7000-8000-000000000969", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "reference_code": "DIAGNOSTIC_WAIVER_V0", "reference_kind": "waiver_policy", "status": "published", "checksum": "1429741338099ef01743da89ee1909fcba01042180b0088641a9144b6459dcea"}
     ],
     "status": "published",
-    "checksum": "3694627398f45574a446d0b4c5b79b6adc7259e79b24cc450fff6661c74db175",
+    "checksum": "c70d5cca8764f6fe0cdf1be146edaf255dc30e80f37e1b9a406ae9925f0b8da7",
     "blocks": [
       {
         "block_revision_id": "019b0000-0000-7000-8000-000000000911",
@@ -410,10 +410,10 @@
         "backend_criteria": ["deterministic"],
         "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
         "status": "published",
-        "checksum": "205a473db46eec21b25b6a268235a9c56d8fb2f41c2f07941005f455f6116803",
+        "checksum": "5572c4b82255aaa775a75755f0bc21acd92321f8d50f1eef9bc399d260271e0c",
         "items": [
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000921", "block_revision_id": "019b0000-0000-7000-8000-000000000911", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F1-01", "ordinal": 1, "target_refs": ["IT-PHON-001", "IT-PHON-003"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["c_g_contrast"], "modalities": ["listening"], "status": "published", "checksum": "120d31e5d9588d67107806f84baac531db8d3f49b21e1f10f1b2a54ef60b3e60"},
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000922", "block_revision_id": "019b0000-0000-7000-8000-000000000911", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F1-02", "ordinal": 2, "target_refs": ["IT-PHON-001", "IT-PHON-003"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["chi_gli"], "modalities": ["reading"], "status": "published", "checksum": "19762d1215900f121e3bae52d030c1583a20e321a5292d0395f13b637d1a8a98"}
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000921", "block_revision_id": "019b0000-0000-7000-8000-000000000911", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F1-01", "ordinal": 1, "target_refs": ["IT-PHON-001", "IT-PHON-003"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["c_g_contrast"], "modalities": ["listening"], "status": "published", "checksum": "35808199d3410ea4b5f35639d7d71e6d254f63b1f8728fec4a7a57234a640718"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000922", "block_revision_id": "019b0000-0000-7000-8000-000000000911", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F1-02", "ordinal": 2, "target_refs": ["IT-PHON-001", "IT-PHON-003"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["chi_gli"], "modalities": ["reading"], "status": "published", "checksum": "8a462b304abaec9ac9724870c4b3da0063452775be8e8c2adf901db8c357ca6a"}
         ]
       },
       {
@@ -428,10 +428,10 @@
         "backend_criteria": ["deterministic"],
         "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
         "status": "published",
-        "checksum": "55895f1bf97781f329cc9710098271c470a6d7f0550d9ba894f8eaabdb17c8f1",
+        "checksum": "2c50e1caa08a77d52fa84360d6411c4be8cf5cbce070808c3f5dc674d56a2c4e",
         "items": [
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000923", "block_revision_id": "019b0000-0000-7000-8000-000000000912", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F2-01", "ordinal": 1, "target_refs": ["IT-PHON-002"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["stress_marked"], "modalities": ["listening"], "status": "published", "checksum": "d55103525eca4fb3397be71c820584eea8c76a78120594f3aae06e3123937b2a"},
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000924", "block_revision_id": "019b0000-0000-7000-8000-000000000912", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F2-02", "ordinal": 2, "target_refs": ["IT-PHON-002", "IT-PHON-004"], "response_kind": "raw", "checker_kind": "not_evaluable", "checker_values": [], "modalities": ["speaking"], "status": "published", "checksum": "53c4bbfa42f337e16a198732ac9287d34d6f5adf3d380c4c8dee0416c9174957"}
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000923", "block_revision_id": "019b0000-0000-7000-8000-000000000912", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F2-01", "ordinal": 1, "target_refs": ["IT-PHON-002"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["stress_marked"], "modalities": ["listening"], "status": "published", "checksum": "67cabc37c77c0c157774857fd30565afcce39832c3ce7c3b3a6427ae98a8673a"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000924", "block_revision_id": "019b0000-0000-7000-8000-000000000912", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F2-02", "ordinal": 2, "target_refs": ["IT-PHON-002", "IT-PHON-004"], "response_kind": "raw", "checker_kind": "not_evaluable", "checker_values": [], "modalities": ["speaking"], "status": "published", "checksum": "f6d264efb9973bf14e0704e60c71129ecd3d27163c9796aaeeaa0d2b194ba213"}
         ]
       },
       {
@@ -446,10 +446,10 @@
         "backend_criteria": ["deterministic"],
         "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
         "status": "published",
-        "checksum": "ce41c80f062b10d55c1fbb4f733d33bbb4cd0e4acad5ea4440d1d0ab5c42b266",
+        "checksum": "00fba7f46823bee09195b554c84dce4a8151bd09e526afbf2e669dfa5e0ec108",
         "items": [
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000925", "block_revision_id": "019b0000-0000-7000-8000-000000000913", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F3-01", "ordinal": 1, "target_refs": ["IT-PRAG-001", "IT-PRAG-002"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["formal_greeting"], "modalities": ["reading"], "status": "published", "checksum": "97431b85306793005174f01ce824fe5c785102aa2dd43ea96f0d5826132f761f"},
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000926", "block_revision_id": "019b0000-0000-7000-8000-000000000913", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F3-02", "ordinal": 2, "target_refs": ["IT-PRAG-001", "IT-ID-001"], "response_kind": "raw", "checker_kind": "normalized_alternatives", "checker_values": ["buongiorno_sono_luca"], "modalities": ["writing"], "status": "published", "checksum": "f5e9738b3365543d74828f6dcb2fb45b9a071a490445971f8d229c1859fdf60b"}
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000925", "block_revision_id": "019b0000-0000-7000-8000-000000000913", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F3-01", "ordinal": 1, "target_refs": ["IT-PRAG-001", "IT-PRAG-002"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["formal_greeting"], "modalities": ["reading"], "status": "published", "checksum": "9fb71f54eb8bcc3c26f4b9b69567cb811985fb2788dc287cb6b9ed467e75acd1"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000926", "block_revision_id": "019b0000-0000-7000-8000-000000000913", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F3-02", "ordinal": 2, "target_refs": ["IT-PRAG-001", "IT-ID-001"], "response_kind": "raw", "checker_kind": "normalized_alternatives", "checker_values": ["buongiorno_sono_luca"], "modalities": ["writing"], "status": "published", "checksum": "dad15ec0ff7ffa3a3ac6ef6069ae2382e0a6bf698e21a643642bfbee08fc227d"}
         ]
       },
       {
@@ -464,10 +464,10 @@
         "backend_criteria": ["deterministic"],
         "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
         "status": "published",
-        "checksum": "35dd514916be55fe882785b8bcdf6faca5b16c9852c8cd5adcbd5dd61ad0c17b",
+        "checksum": "930311b8b302783e5d93780e2dc92fe11df68403a40cd373edb0a9eb40f92998",
         "items": [
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000927", "block_revision_id": "019b0000-0000-7000-8000-000000000914", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F4-01", "ordinal": 1, "target_refs": ["IT-GRAM-002", "IT-GRAM-003", "IT-GRAM-007", "IT-GRAM-027"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["ci_sono"], "modalities": ["reading"], "status": "published", "checksum": "294fdb99d0d2946afdeb7a3516e3552d8da0bafd9d2d72889cd7f25741f66f56"},
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000928", "block_revision_id": "019b0000-0000-7000-8000-000000000914", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F4-02", "ordinal": 2, "target_refs": ["IT-ID-001", "IT-GRAM-027"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["sono"], "modalities": ["writing"], "status": "published", "checksum": "1162d9bc537896c44f2a52f4b6d463af2fffd83545be70a5e1b9e63582817e93"}
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000927", "block_revision_id": "019b0000-0000-7000-8000-000000000914", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F4-01", "ordinal": 1, "target_refs": ["IT-GRAM-002", "IT-GRAM-003", "IT-GRAM-007", "IT-GRAM-027"], "response_kind": "raw", "checker_kind": "exact_choice", "checker_values": ["ci_sono"], "modalities": ["reading"], "status": "published", "checksum": "ed03dcb20cdcda47511152e46d97978cddd09acf2f5850a15cfe356fde178a85"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000928", "block_revision_id": "019b0000-0000-7000-8000-000000000914", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F4-02", "ordinal": 2, "target_refs": ["IT-ID-001", "IT-GRAM-027"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["sono"], "modalities": ["writing"], "status": "published", "checksum": "91f8da543d0010b95f93247bb05b4398a0305b4b20dbde9f88b458874568f05b"}
         ]
       },
       {
@@ -482,10 +482,10 @@
         "backend_criteria": ["deterministic"],
         "waiver_policy_ref": "DIAGNOSTIC_WAIVER_V0",
         "status": "published",
-        "checksum": "7be1c9ed83895be0ea488d680eee9f09354163414f6f3b6f248b8a70e50730a7",
+        "checksum": "0ca4c921e6349ecc8bc65c4b9d2ecafc94522f363c059244c7fc2d660671f6bb",
         "items": [
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000929", "block_revision_id": "019b0000-0000-7000-8000-000000000915", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F5-01", "ordinal": 1, "target_refs": ["IT-POLITE-002"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["puo_ripetere"], "modalities": ["writing"], "status": "published", "checksum": "41aa559a81a835319fefcb86f8beb5567dc3e894a0bd29e857da4f04edaf006a"},
-          {"item_revision_id": "019b0000-0000-7000-8000-000000000930", "block_revision_id": "019b0000-0000-7000-8000-000000000915", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F5-02", "ordinal": 2, "target_refs": ["IT-REPAIR-001"], "response_kind": "raw", "checker_kind": "normalized_alternatives", "checker_values": ["non_capisco_puo_ripetere"], "modalities": ["writing"], "status": "published", "checksum": "dbb058cd43c2017d2579d50b4c97a560cce68adeca8fb34a9aee509a1e661ea4"}
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000929", "block_revision_id": "019b0000-0000-7000-8000-000000000915", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F5-01", "ordinal": 1, "target_refs": ["IT-POLITE-002"], "response_kind": "raw", "checker_kind": "exact_reconstruction", "checker_values": ["puo_ripetere"], "modalities": ["writing"], "status": "published", "checksum": "25b65d797c42e1e8b3153e2a77662a2e1fab6f2f336b9ac4d4ed8dcf9b051c9c"},
+          {"item_revision_id": "019b0000-0000-7000-8000-000000000930", "block_revision_id": "019b0000-0000-7000-8000-000000000915", "pack_revision_id": "019b0000-0000-7000-8000-000000000009", "item_code": "ITF-F5-02", "ordinal": 2, "target_refs": ["IT-REPAIR-001"], "response_kind": "raw", "checker_kind": "normalized_alternatives", "checker_values": ["non_capisco_puo_ripetere"], "modalities": ["writing"], "status": "published", "checksum": "fd1033d1644af92feec1952e9c3da850aa8a9065c3193d5c0c4a563547f0a0d4"}
         ]
       }
     ],
@@ -511,7 +511,7 @@
       "survival_exchange_without_reveal": true,
       "oral_policy": "not_evaluable_non_blocking",
       "status": "published",
-      "checksum": "a655dbabb1980664bb4f7c2d8b6e4f32416bbbf6d1860127b364353d750ee49b"
+      "checksum": "a06cdab8514690a8d65431bd62a04070d671ae8ac2025b62765a7ef3e6e461aa"
     }
   },
   "lexical_units": [
