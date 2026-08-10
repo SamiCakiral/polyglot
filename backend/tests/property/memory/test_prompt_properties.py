@@ -15,7 +15,6 @@ from polyglot.modules.lexicon.memory.ports import MemoryRating, MemoryState
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 from polyglot.modules.lexicon.memory.rebuild import rebuild_schedule
 
-
 NOW = datetime(2026, 1, 5, 9, tzinfo=UTC)
 
 

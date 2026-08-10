@@ -21,7 +21,6 @@ from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 from polyglot.modules.lexicon.memory.rebuild import rebuild_schedule
 from polyglot.platform.errors import DomainError, ErrorCode
 
-
 NOW = datetime(2026, 1, 5, 9, tzinfo=UTC)
 
 
@@ -276,7 +275,11 @@ def test_merge_deduplicates_causally_and_supersedes_sources_without_erasing_fact
 ) -> None:
     first = lifecycle.create(create_command(prompt_id=31), policy)
     second = lifecycle.create(create_command(prompt_id=32), policy)
-    first = lifecycle.submit_review(first, review_command(review_id=41, opportunity_id=51), policy).aggregate
+    first = lifecycle.submit_review(
+        first,
+        review_command(review_id=41, opportunity_id=51),
+        policy,
+    ).aggregate
     second = lifecycle.submit_review(
         second,
         review_command(
@@ -297,7 +300,10 @@ def test_merge_deduplicates_causally_and_supersedes_sources_without_erasing_fact
     assert len(result.canonical.lineages) == 2
     assert all(source.prompt.status is PromptStatus.SUPERSEDED for source in result.sources)
     assert all(len(source.reviews) == 1 for source in result.sources)
-    assert rebuild_schedule(result.canonical, FsrsV6Scheduler(), policy) == result.canonical.schedule
+    assert (
+        rebuild_schedule(result.canonical, FsrsV6Scheduler(), policy)
+        == result.canonical.schedule
+    )
 
 
 def test_incompatible_merge_has_no_partial_effect(
