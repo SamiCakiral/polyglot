@@ -12,7 +12,7 @@ from polyglot.modules.lexicon.core.persistence import (
     LexiconRepository,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
-from polyglot.platform.ids import Uuid7Generator
+from polyglot.platform.ids import IdGenerator, Uuid7Generator
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,16 +81,74 @@ class CaptureLexicalGapCommand:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="invalid gap metadata")
 
 
+@dataclass(frozen=True, slots=True)
+class CreateImportedPrivateLexicalEntry:
+    profile_id: UUID
+    variety_id: UUID
+    unit_type: str
+    normalized_form: str
+    semantic_key: str | None
+    provenance_ref: str
+    created_at: datetime
+
+    def __post_init__(self) -> None:
+        if not self.normalized_form.strip() or not self.provenance_ref.strip():
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+
+
 class LexiconCommandService:
     def __init__(
         self,
         session: AsyncSession,
         *,
-        ids: Uuid7Generator | None = None,
+        ids: IdGenerator | None = None,
     ) -> None:
         self._session = session
         self._repository = LexiconRepository(session)
         self._ids = ids or Uuid7Generator()
+
+    async def create_imported_private_entry(
+        self,
+        command: CreateImportedPrivateLexicalEntry,
+    ) -> tuple[UUID, UUID]:
+        unit_id = self._ids.new()
+        sense_id = self._ids.new()
+        await self._session.execute(
+            text(
+                "INSERT INTO lexicon.private_lexical_units "
+                "(lexical_unit_id,profile_id,variety_id,unit_type,lemma,normalization_key,"
+                "components,provenance_ref,version,created_at) VALUES "
+                "(:unit,:profile,:variety,:type,:lemma,:normalization,'{}',:provenance,1,:at)"
+            ),
+            {
+                "unit": unit_id,
+                "profile": command.profile_id,
+                "variety": command.variety_id,
+                "type": command.unit_type,
+                "lemma": command.normalized_form,
+                "normalization": command.normalized_form,
+                "provenance": command.provenance_ref,
+                "at": command.created_at,
+            },
+        )
+        await self._session.execute(
+            text(
+                "INSERT INTO lexicon.private_lexical_senses "
+                "(sense_id,profile_id,lexical_unit_id,sense_code,definition,provenance_ref,"
+                "created_at) VALUES "
+                "(:sense,:profile,:unit,:code,:definition,:provenance,:at)"
+            ),
+            {
+                "sense": sense_id,
+                "profile": command.profile_id,
+                "unit": unit_id,
+                "code": command.semantic_key or f"import-{sense_id}",
+                "definition": command.semantic_key or command.normalized_form,
+                "provenance": command.provenance_ref,
+                "at": command.created_at,
+            },
+        )
+        return unit_id, sense_id
 
     async def record_encounter(self, command: RecordLexicalEncounter) -> UUID:
         receipt = await self._repository.get_command_receipt(

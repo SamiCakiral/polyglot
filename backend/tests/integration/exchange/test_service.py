@@ -60,6 +60,21 @@ class DynamicListEvaluator:
         return self.members
 
 
+class LexicalMutationRecorder:
+    def __init__(self, *, fail: bool = False) -> None:
+        self.fail = fail
+        self.calls = []
+
+    async def create_imported_entry(self, command, *, session):
+        self.calls.append(command)
+        if self.fail:
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+        return (
+            f"lexical_unit:{uid(901)}",
+            f"lexical_sense:{uid(902)}",
+        )
+
+
 async def test_list_revisions_and_snapshots_are_immutable_and_idempotent(
     runtime_factory,
 ) -> None:
@@ -81,9 +96,7 @@ async def test_list_revisions_and_snapshots_are_immutable_and_idempotent(
     created = await service.create_list(
         ACCOUNT_A, PROFILE_A, command, idempotency_key="list-create"
     )
-    replay = await service.create_list(
-        ACCOUNT_A, PROFILE_A, command, idempotency_key="list-create"
-    )
+    replay = await service.create_list(ACCOUNT_A, PROFILE_A, command, idempotency_key="list-create")
     revised = await service.change_members(
         ACCOUNT_A,
         created.list_id,
@@ -165,10 +178,7 @@ async def test_exchange_command_records_event_and_outbox_atomically(
         expected_version=None,
     )
     clone_event = await migration_session.scalar(
-        text(
-            "SELECT event_type FROM platform.domain_events "
-            "WHERE aggregate_id=:aggregate"
-        ),
+        text("SELECT event_type FROM platform.domain_events WHERE aggregate_id=:aggregate"),
         {"aggregate": clone.resource_id},
     )
 
@@ -229,6 +239,159 @@ async def test_import_preview_commit_and_revert_are_atomic(runtime_factory) -> N
     assert committed.status == "committed"
     assert len(committed.created_refs) == 2
     assert reverted.status == "reverted"
+
+
+async def test_import_preview_does_not_call_lexical_mutation_port(runtime_factory) -> None:
+    mutations = LexicalMutationRecorder()
+    service = SqlExchangeService(runtime_factory, lexical_mutations=mutations)
+    payload = json.dumps(
+        {
+            "format": "polyglot.lexicon.bundle/v1",
+            "schema_version": 1,
+            "entries": [
+                {
+                    "source_key": "binario",
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": "binario",
+                    "semantic_key": "transport.platform",
+                    "visibility": "private",
+                }
+            ],
+        }
+    ).encode()
+
+    await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id="polyglot.lexicon.bundle/v1",
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key="import-preview-no-mutation",
+    )
+
+    assert mutations.calls == []
+
+
+async def test_import_commit_uses_lexical_mutation_port(runtime_factory) -> None:
+    mutations = LexicalMutationRecorder()
+    service = SqlExchangeService(runtime_factory, lexical_mutations=mutations)
+    payload = json.dumps(
+        {
+            "format": "polyglot.lexicon.bundle/v1",
+            "schema_version": 1,
+            "entries": [
+                {
+                    "source_key": "binario",
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": "binario",
+                    "semantic_key": "transport.platform",
+                    "visibility": "private",
+                }
+            ],
+        }
+    ).encode()
+    preview = await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id="polyglot.lexicon.bundle/v1",
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key="import-port-preview",
+    )
+
+    committed = await service.commit_import(
+        ACCOUNT_A,
+        preview.import_id,
+        preview_checksum=preview.preview_checksum,
+        current_catalogue_version="catalogue:17",
+        expected_version=1,
+        committed_at=NOW + timedelta(minutes=1),
+        idempotency_key="import-port-commit",
+    )
+
+    assert committed.created_refs == (
+        f"lexical_unit:{uid(901)}",
+        f"lexical_sense:{uid(902)}",
+    )
+    assert len(mutations.calls) == 1
+    assert mutations.calls[0].profile_id == PROFILE_A
+    assert mutations.calls[0].normalized_form == "binario"
+    assert mutations.calls[0].semantic_key == "transport.platform"
+
+
+async def test_lexical_mutation_failure_rolls_back_import_commit(
+    runtime_factory, migration_session
+) -> None:
+    mutations = LexicalMutationRecorder(fail=True)
+    service = SqlExchangeService(runtime_factory, lexical_mutations=mutations)
+    payload = json.dumps(
+        {
+            "format": "polyglot.lexicon.bundle/v1",
+            "schema_version": 1,
+            "entries": [
+                {
+                    "source_key": "binario",
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": "binario",
+                    "semantic_key": "transport.platform",
+                    "visibility": "private",
+                }
+            ],
+        }
+    ).encode()
+    preview = await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id="polyglot.lexicon.bundle/v1",
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key="import-port-failure-preview",
+    )
+
+    with pytest.raises(DomainError) as raised:
+        await service.commit_import(
+            ACCOUNT_A,
+            preview.import_id,
+            preview_checksum=preview.preview_checksum,
+            current_catalogue_version="catalogue:17",
+            expected_version=1,
+            committed_at=NOW + timedelta(minutes=1),
+            idempotency_key="import-port-failure-commit",
+        )
+
+    assert raised.value.code == ErrorCode.INVALID_TRANSITION
+    await set_actor(migration_session, ACCOUNT_A)
+    status = await migration_session.scalar(
+        text("SELECT status FROM exchange.import_runs WHERE import_id=:id"),
+        {"id": preview.import_id},
+    )
+    manifests = await migration_session.scalar(
+        text("SELECT count(*) FROM exchange.import_manifests WHERE import_id=:id"),
+        {"id": preview.import_id},
+    )
+    assert status == "preview_ready"
+    assert manifests == 0
 
 
 async def test_stale_preview_and_reused_resource_block_commit_or_revert(
@@ -578,9 +741,7 @@ async def test_published_snapshot_is_public_until_explicit_retirement(
         limit=10,
         cursor=None,
     )
-    assert tuple(item["publication_id"] for item in visible) == (
-        str(publication.resource_id),
-    )
+    assert tuple(item["publication_id"] for item in visible) == (str(publication.resource_id),)
 
     retired = await service.execute_command(
         command_name="RetireSharedVocabularyList",
@@ -899,9 +1060,7 @@ async def test_author_can_create_editorial_and_learner_can_create_dynamic_list(
 
     assert editorial.list_type == "editorial"
     assert dynamic.list_type == "dynamic"
-    assert dynamic.query_definition == {
-        "all": [{"tag_in": ["voyage"]}, {"has_due_prompt": True}]
-    }
+    assert dynamic.query_definition == {"all": [{"tag_in": ["voyage"]}, {"has_due_prompt": True}]}
     revised = await service.execute_command(
         command_name="ReviseVocabularyList",
         actor_id=ACCOUNT_A,

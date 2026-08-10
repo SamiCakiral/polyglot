@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 from uuid import UUID
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class AssociationTargetPort(Protocol):
@@ -22,3 +25,23 @@ class DynamicListQueryPort(Protocol):
         cutoff_at: datetime,
         limit: int,
     ) -> tuple[UUID, ...]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class CreateImportedLexicalEntry:
+    profile_id: UUID
+    variety_id: UUID
+    unit_type: str
+    normalized_form: str
+    semantic_key: str | None
+    provenance_ref: str
+    created_at: datetime
+
+
+class LexicalMutationPort(Protocol):
+    async def create_imported_entry(
+        self,
+        command: CreateImportedLexicalEntry,
+        *,
+        session: AsyncSession,
+    ) -> tuple[str, str]: ...

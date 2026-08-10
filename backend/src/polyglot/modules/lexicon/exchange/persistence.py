@@ -25,11 +25,14 @@ from polyglot.modules.lexicon.exchange.domain import (
     PreviewDecision,
     create_preview,
 )
+from polyglot.modules.lexicon.exchange.lexical_adapter import SqlLexicalMutationAdapter
 from polyglot.modules.lexicon.exchange.lists import ListAssociation, ListDefinition
 from polyglot.modules.lexicon.exchange.parsing import ParseLimits, parse_import
 from polyglot.modules.lexicon.exchange.ports import (
     AssociationTargetPort,
+    CreateImportedLexicalEntry,
     DynamicListQueryPort,
+    LexicalMutationPort,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
@@ -45,12 +48,14 @@ class SqlExchangeService:
         parse_limits: ParseLimits | None = None,
         association_targets: AssociationTargetPort | None = None,
         dynamic_lists: DynamicListQueryPort | None = None,
+        lexical_mutations: LexicalMutationPort | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
         self._parse_limits = parse_limits or ParseLimits()
         self._association_targets = association_targets
         self._dynamic_lists = dynamic_lists
+        self._lexical_mutations = lexical_mutations or SqlLexicalMutationAdapter(self._ids)
 
     async def _set_actor(self, session: AsyncSession, actor_id: UUID) -> None:
         await session.execute(
@@ -116,9 +121,7 @@ class SqlExchangeService:
         idempotency_key: str,
     ) -> None:
         await session.execute(
-            text(
-                "SELECT pg_advisory_xact_lock(hashtextextended(:scope,0))"
-            ),
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:scope,0))"),
             {"scope": f"{actor_id}:{command_type}:{idempotency_key}"},
         )
 
@@ -131,15 +134,19 @@ class SqlExchangeService:
         fingerprint: str,
     ) -> tuple[UUID, int] | None:
         row = (
-            await session.execute(
-                text(
-                    "SELECT request_fingerprint,status,result_ref,result_payload "
-                    "FROM platform.command_receipts WHERE actor_id=:actor "
-                    "AND command_type=:command AND idempotency_key=:key"
-                ),
-                {"actor": actor_id, "command": command_type, "key": idempotency_key},
+            (
+                await session.execute(
+                    text(
+                        "SELECT request_fingerprint,status,result_ref,result_payload "
+                        "FROM platform.command_receipts WHERE actor_id=:actor "
+                        "AND command_type=:command AND idempotency_key=:key"
+                    ),
+                    {"actor": actor_id, "command": command_type, "key": idempotency_key},
+                )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             return None
         if row["request_fingerprint"] != fingerprint or row["status"] != "succeeded":
@@ -237,18 +244,22 @@ class SqlExchangeService:
     ) -> VocabularyListView:
         suffix = " FOR UPDATE OF list_row" if for_update else ""
         row = (
-            await session.execute(
-                text(
-                    "SELECT list_row.*,revision.list_revision_id,revision.revision_no,"
-                    "revision.name,revision.purpose,revision.ordered,revision.color,revision.tags,"
-                    "revision.query_definition FROM lexicon.vocabulary_lists list_row "
-                    "JOIN lexicon.vocabulary_list_revisions revision "
-                    "ON revision.list_revision_id=list_row.current_revision_id "
-                    "WHERE list_row.list_id=:list_id" + suffix
-                ),
-                {"list_id": list_id},
+            (
+                await session.execute(
+                    text(
+                        "SELECT list_row.*,revision.list_revision_id,revision.revision_no,"
+                        "revision.name,revision.purpose,revision.ordered,revision.color,revision.tags,"
+                        "revision.query_definition FROM lexicon.vocabulary_lists list_row "
+                        "JOIN lexicon.vocabulary_list_revisions revision "
+                        "ON revision.list_revision_id=list_row.current_revision_id "
+                        "WHERE list_row.list_id=:list_id" + suffix
+                    ),
+                    {"list_id": list_id},
+                )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         members = tuple(
@@ -309,18 +320,14 @@ class SqlExchangeService:
                 "role": command.role,
                 "valid_from": command.valid_from.isoformat(),
                 "valid_until": (
-                    None
-                    if command.valid_until is None
-                    else command.valid_until.isoformat()
+                    None if command.valid_until is None else command.valid_until.isoformat()
                 ),
                 "expected_version": expected_version,
             }
         )
         async with self._session_factory() as session, session.begin():
             await self._set_actor(session, actor_id)
-            await self._lock_command(
-                session, actor_id, "AssociateVocabularyList", idempotency_key
-            )
+            await self._lock_command(session, actor_id, "AssociateVocabularyList", idempotency_key)
             replay = await self._replay(
                 session,
                 actor_id,
@@ -424,9 +431,7 @@ class SqlExchangeService:
                         )
                     ).scalars()
                 )
-                views = tuple(
-                    [await self._load_list(session, value) for value in ids[:limit]]
-                )
+                views = tuple([await self._load_list(session, value) for value in ids[:limit]])
                 items = tuple(
                     {
                         "list_id": str(view.list_id),
@@ -448,37 +453,39 @@ class SqlExchangeService:
             table_name, id_column = table
             if resource_id is not None:
                 rows = (
-                    await session.execute(
-                        text(f"SELECT * FROM {table_name} WHERE {id_column}=:id"),
-                        {"id": resource_id},
+                    (
+                        await session.execute(
+                            text(f"SELECT * FROM {table_name} WHERE {id_column}=:id"),
+                            {"id": resource_id},
+                        )
                     )
-                ).mappings().all()
+                    .mappings()
+                    .all()
+                )
             else:
                 rows = (
-                    await session.execute(
-                        text(
-                            f"SELECT * FROM {table_name} WHERE "
-                            f"(CAST(:cursor AS uuid) IS NULL OR {id_column}>:cursor) "
-                            f"ORDER BY {id_column} LIMIT :limit"
-                        ),
-                        {"cursor": cursor_id, "limit": limit + 1},
+                    (
+                        await session.execute(
+                            text(
+                                f"SELECT * FROM {table_name} WHERE "
+                                f"(CAST(:cursor AS uuid) IS NULL OR {id_column}>:cursor) "
+                                f"ORDER BY {id_column} LIMIT :limit"
+                            ),
+                            {"cursor": cursor_id, "limit": limit + 1},
+                        )
                     )
-                ).mappings().all()
+                    .mappings()
+                    .all()
+                )
             selected = rows[:limit]
             items = tuple(self._public_row(dict(row)) for row in selected)
-            next_cursor = (
-                str(selected[-1][id_column]) if len(rows) > limit and selected else None
-            )
+            next_cursor = str(selected[-1][id_column]) if len(rows) > limit and selected else None
             return items, next_cursor
 
     @staticmethod
     def _public_row(row: dict[str, Any]) -> dict[str, Any]:
         return {
-            key: (
-                str(value)
-                if isinstance(value, (UUID, datetime))
-                else value
-            )
+            key: (str(value) if isinstance(value, (UUID, datetime)) else value)
             for key, value in row.items()
             if key not in {"account_id", "manifest_checksum"}
         }
@@ -543,11 +550,7 @@ class SqlExchangeService:
                 members = tuple(value for value in sources[0].member_sense_ids if value in common)
             else:
                 members = tuple(
-                    dict.fromkeys(
-                        value
-                        for source in sources
-                        for value in source.member_sense_ids
-                    )
+                    dict.fromkeys(value for source in sources for value in source.member_sense_ids)
                 )
             created = await self.create_list(
                 actor_id,
@@ -737,15 +740,19 @@ class SqlExchangeService:
                 result_profile_id = snapshot.profile_id
             elif command_name == "RetireSharedVocabularyList":
                 row = (
-                    await session.execute(
-                        text(
-                            "SELECT version,status,profile_id "
-                            "FROM exchange.shared_list_publications "
-                            "WHERE publication_id=:id FOR UPDATE"
-                        ),
-                        {"id": resource_id},
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT version,status,profile_id "
+                                "FROM exchange.shared_list_publications "
+                                "WHERE publication_id=:id FOR UPDATE"
+                            ),
+                            {"id": resource_id},
+                        )
                     )
-                ).mappings().one_or_none()
+                    .mappings()
+                    .one_or_none()
+                )
                 if row is None:
                     raise DomainError(ErrorCode.NOT_FOUND)
                 if row["version"] != expected_version:
@@ -764,18 +771,23 @@ class SqlExchangeService:
                 result_profile_id = row["profile_id"]
             elif command_name == "ResolveImportConflict":
                 row = (
-                    await session.execute(
-                        text(
-                            "SELECT conflict.*,line.import_id,run.preview_checksum,run.version AS "
-                            "import_version FROM exchange.import_conflicts conflict "
-                            "JOIN exchange.import_lines line "
-                            "ON line.import_line_id=conflict.import_line_id "
-                            "JOIN exchange.import_runs run ON run.import_id=line.import_id "
-                            "WHERE conflict.conflict_id=:id FOR UPDATE OF conflict,run"
-                        ),
-                        {"id": resource_id},
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT conflict.*,line.import_id,run.preview_checksum,"
+                                "run.version AS "
+                                "import_version FROM exchange.import_conflicts conflict "
+                                "JOIN exchange.import_lines line "
+                                "ON line.import_line_id=conflict.import_line_id "
+                                "JOIN exchange.import_runs run ON run.import_id=line.import_id "
+                                "WHERE conflict.conflict_id=:id FOR UPDATE OF conflict,run"
+                            ),
+                            {"id": resource_id},
+                        )
                     )
-                ).mappings().one_or_none()
+                    .mappings()
+                    .one_or_none()
+                )
                 if row is None or row["import_id"] != UUID(str(payload["import_id"])):
                     raise DomainError(ErrorCode.NOT_FOUND)
                 if row["version"] != expected_version:
@@ -884,9 +896,7 @@ class SqlExchangeService:
                 command_type=command_name,
                 actor_id=actor_id,
                 aggregate_type=(
-                    "vocabulary_list"
-                    if command_name == "ReviseVocabularyList"
-                    else "exchange"
+                    "vocabulary_list" if command_name == "ReviseVocabularyList" else "exchange"
                 ),
                 aggregate_id=result_id,
                 idempotency_key=idempotency_key,
@@ -961,9 +971,7 @@ class SqlExchangeService:
                 {
                     "list": list_id,
                     "profile": profile_id,
-                    "editorial_owner": (
-                        actor_id if command.list_type == "editorial" else None
-                    ),
+                    "editorial_owner": (actor_id if command.list_type == "editorial" else None),
                     "variety": command.variety_id,
                     "type": command.list_type,
                     "at": command.created_at,
@@ -1261,11 +1269,15 @@ class SqlExchangeService:
         snapshot_id: UUID,
     ) -> ListSnapshotView:
         row = (
-            await session.execute(
-                text("SELECT * FROM lexicon.list_snapshots WHERE snapshot_id=:id"),
-                {"id": snapshot_id},
+            (
+                await session.execute(
+                    text("SELECT * FROM lexicon.list_snapshots WHERE snapshot_id=:id"),
+                    {"id": snapshot_id},
+                )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         members = tuple(
@@ -1379,9 +1391,7 @@ class SqlExchangeService:
                 command.catalogue_version,
             )
             import_id = self._ids.new()
-            unresolved = sum(
-                line.decision is PreviewDecision.CONFLICT for line in preview.lines
-            )
+            unresolved = sum(line.decision is PreviewDecision.CONFLICT for line in preview.lines)
             status = "awaiting_decision" if unresolved else "preview_ready"
             await session.execute(
                 text(
@@ -1428,9 +1438,7 @@ class SqlExchangeService:
                         "line": line.line_no,
                         "path": line.source_key,
                         "status": (
-                            "conflict"
-                            if line.decision is PreviewDecision.CONFLICT
-                            else "accepted"
+                            "conflict" if line.decision is PreviewDecision.CONFLICT else "accepted"
                         ),
                         "payload": json.dumps(intermediate),
                     },
@@ -1453,9 +1461,7 @@ class SqlExchangeService:
                             "candidates": json.dumps([line.candidate_ref]),
                             "actions": json.dumps(list(line.allowed_actions)),
                             "selected": (
-                                "reuse_exact"
-                                if line.decision is PreviewDecision.REUSE
-                                else None
+                                "reuse_exact" if line.decision is PreviewDecision.REUSE else None
                             ),
                             "decided_by": (
                                 actor_id if line.decision is PreviewDecision.REUSE else None
@@ -1493,11 +1499,15 @@ class SqlExchangeService:
     ) -> ImportRunView:
         suffix = " FOR UPDATE" if for_update else ""
         row = (
-            await session.execute(
-                text("SELECT * FROM exchange.import_runs WHERE import_id=:id" + suffix),
-                {"id": import_id},
+            (
+                await session.execute(
+                    text("SELECT * FROM exchange.import_runs WHERE import_id=:id" + suffix),
+                    {"id": import_id},
+                )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         unresolved = await session.scalar(
@@ -1509,14 +1519,18 @@ class SqlExchangeService:
             {"id": import_id},
         )
         manifest = (
-            await session.execute(
-                text(
-                    "SELECT created_refs,reused_refs FROM exchange.import_manifests "
-                    "WHERE import_id=:id"
-                ),
-                {"id": import_id},
+            (
+                await session.execute(
+                    text(
+                        "SELECT created_refs,reused_refs FROM exchange.import_manifests "
+                        "WHERE import_id=:id"
+                    ),
+                    {"id": import_id},
+                )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         return ImportRunView(
             import_id=row["import_id"],
             profile_id=row["profile_id"],
@@ -1624,44 +1638,20 @@ class SqlExchangeService:
                         {"refs": json.dumps(refs), "line": row["import_line_id"]},
                     )
                     continue
-                unit_id = self._ids.new()
-                sense_id = self._ids.new()
-                await session.execute(
-                    text(
-                        "INSERT INTO lexicon.private_lexical_units "
-                        "(lexical_unit_id,profile_id,variety_id,unit_type,lemma,normalization_key,"
-                        "components,provenance_ref,version,created_at) VALUES "
-                        "(:unit,:profile,:variety,:type,:lemma,:normalization,'{}',:provenance,1,:at)"
-                    ),
-                    {
-                        "unit": unit_id,
-                        "profile": run.profile_id,
-                        "variety": UUID(candidate["variety_id"]),
-                        "type": candidate["unit_type"],
-                        "lemma": candidate["normalized_form"],
-                        "normalization": candidate["normalized_form"],
-                        "provenance": f"import:{import_id}:line:{row['line_no']}",
-                        "at": committed_at,
-                    },
+                refs = list(
+                    await self._lexical_mutations.create_imported_entry(
+                        CreateImportedLexicalEntry(
+                            profile_id=run.profile_id,
+                            variety_id=UUID(candidate["variety_id"]),
+                            unit_type=candidate["unit_type"],
+                            normalized_form=candidate["normalized_form"],
+                            semantic_key=candidate["semantic_key"],
+                            provenance_ref=f"import:{import_id}:line:{row['line_no']}",
+                            created_at=committed_at,
+                        ),
+                        session=session,
+                    )
                 )
-                await session.execute(
-                    text(
-                        "INSERT INTO lexicon.private_lexical_senses "
-                        "(sense_id,profile_id,lexical_unit_id,sense_code,definition,provenance_ref,"
-                        "created_at) VALUES "
-                        "(:sense,:profile,:unit,:code,:definition,:provenance,:at)"
-                    ),
-                    {
-                        "sense": sense_id,
-                        "profile": run.profile_id,
-                        "unit": unit_id,
-                        "code": candidate["semantic_key"] or f"import-{row['line_no']}",
-                        "definition": candidate["semantic_key"] or candidate["normalized_form"],
-                        "provenance": f"import:{import_id}:line:{row['line_no']}",
-                        "at": committed_at,
-                    },
-                )
-                refs = [f"lexical_unit:{unit_id}", f"lexical_sense:{sense_id}"]
                 created_refs.extend(refs)
                 await session.execute(
                     text(
@@ -1696,10 +1686,7 @@ class SqlExchangeService:
                     "created": json.dumps(created_refs),
                     "reused": json.dumps(reused_refs),
                     "inverse": json.dumps(
-                        [
-                            {"operation": "delete_if_exclusive", "ref": ref}
-                            for ref in created_refs
-                        ]
+                        [{"operation": "delete_if_exclusive", "ref": ref} for ref in created_refs]
                     ),
                     "checksum": checksum,
                     "at": committed_at,
