@@ -27,6 +27,7 @@ from polyglot.interfaces.http.routes.exchange import ExchangeService, exchange_r
 from polyglot.interfaces.http.routes.exercises import exercises_router
 from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
+from polyglot.interfaces.http.routes.media import media_router
 from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
 from polyglot.interfaces.http.routes.progress import ProgressService, progress_router
 from polyglot.interfaces.http.routes.sprints import sprints_router
@@ -43,6 +44,7 @@ from polyglot.modules.exercises.core.application import ExerciseApplicationServi
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
+from polyglot.modules.media.application import MediaApplicationService
 from polyglot.modules.sprints.application import SprintApplicationService
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 
@@ -91,6 +93,7 @@ def create_app(
     sprint_service: SprintApplicationService | None = None,
     progress_service: ProgressService | None = None,
     assessment_service: AssessmentApplicationService | None = None,
+    media_service: MediaApplicationService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -171,6 +174,13 @@ def create_app(
             allowed_origin=allowed_origin,
         )
     )
+    app.include_router(
+        media_router(
+            media_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
 
     @app.middleware("http")
     async def request_context(
@@ -239,6 +249,9 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
+    from polyglot.modules.media.persistence import SqlMediaService
+    from polyglot.modules.media.ports import MacOSTtsPort, TtsAvailability, TtsVoice
+    from polyglot.modules.media.storage import FilesystemObjectStorage, LocalSignedUrlSigner
     from polyglot.modules.progress.application import SqlProgressQueryService
     from polyglot.modules.sprints.persistence import SqlSprintService
 
@@ -252,6 +265,15 @@ def create_runtime_app() -> FastAPI:
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
     object_storage.prepare()
+    media_service = SqlMediaService(
+        session_factory,
+        FilesystemObjectStorage(object_storage.path),
+        LocalSignedUrlSigner(os.environ["POLYGLOT_MEDIA_SIGNING_SECRET"].encode()),
+        MacOSTtsPort(
+            voices=(TtsVoice("Alice", "it-IT", TtsAvailability.AVAILABLE, "local-v1"),),
+            cache_dir=object_storage.path / "tts-cache",
+        ),
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -273,5 +295,6 @@ def create_runtime_app() -> FastAPI:
         sprint_service=sprint_service,
         progress_service=progress_service,
         assessment_service=assessment_service,
+        media_service=media_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

@@ -63,6 +63,7 @@ import type {
   GetLexicalSenseParams,
   GetProgressOverviewParams,
   GetSharedVocabularyList200,
+  GetTtsCapabilitiesParams,
   GetWordBankOverviewParams,
   ImportPreviewPageResponse,
   ImportRunResponse,
@@ -81,6 +82,7 @@ import type {
   LiveStatus,
   LocalCredentialsRequest,
   MarkCorrectionReadRequest,
+  MediaResponse,
   MemoryPromptResponse,
   MergeMemoryPromptsRequest,
   MergeVocabularyListsRequest,
@@ -99,10 +101,13 @@ import type {
   ProgressOverviewResponse,
   PublishContentRevisionRequest,
   PublishVocabularyListSnapshotRequest,
+  PutSignedMediaUploadParams,
+  ReadSignedMediaParams,
   ReadyStatus,
   ReasonRequest,
   RecommendationPageResponse,
   RequestExportRequest,
+  ReserveMediaUploadRequest,
   ResetMemoryPromptRequest,
   ResolveAssessmentReviewRequest,
   ResolveCorrectionCaseRequest,
@@ -126,6 +131,9 @@ import type {
   SubmitAttemptRequest,
   SubmitDiagnosticResponseRequest,
   SubmitMemoryReviewRequest,
+  SynthesizeSpeechRequest,
+  TtsCapabilitiesResponse,
+  TtsSynthesisResponse,
   UpdateGoalsRequest,
   UseHintRequest,
   ValidateContentRevisionRequest,
@@ -18861,6 +18869,1966 @@ export function useSearchLexicon<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getSearchLexiconQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getTtsCapabilitiesResponse200 = {
+  data: TtsCapabilitiesResponse;
+  status: 200;
+};
+
+export type getTtsCapabilitiesResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getTtsCapabilitiesResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getTtsCapabilitiesResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getTtsCapabilitiesResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getTtsCapabilitiesResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getTtsCapabilitiesResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getTtsCapabilitiesResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getTtsCapabilitiesResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getTtsCapabilitiesResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getTtsCapabilitiesResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getTtsCapabilitiesResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getTtsCapabilitiesResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getTtsCapabilitiesResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getTtsCapabilitiesResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getTtsCapabilitiesResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getTtsCapabilitiesResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getTtsCapabilitiesResponseSuccess =
+  getTtsCapabilitiesResponse200 & {
+    headers: Headers;
+  };
+export type getTtsCapabilitiesResponseError = (
+  | getTtsCapabilitiesResponse401ApplicationJson
+  | getTtsCapabilitiesResponse401ApplicationProblemJson
+  | getTtsCapabilitiesResponse403ApplicationJson
+  | getTtsCapabilitiesResponse403ApplicationProblemJson
+  | getTtsCapabilitiesResponse409ApplicationJson
+  | getTtsCapabilitiesResponse409ApplicationProblemJson
+  | getTtsCapabilitiesResponse422ApplicationJson
+  | getTtsCapabilitiesResponse422ApplicationProblemJson
+  | getTtsCapabilitiesResponse423ApplicationJson
+  | getTtsCapabilitiesResponse423ApplicationProblemJson
+  | getTtsCapabilitiesResponse428ApplicationJson
+  | getTtsCapabilitiesResponse428ApplicationProblemJson
+  | getTtsCapabilitiesResponse429ApplicationJson
+  | getTtsCapabilitiesResponse429ApplicationProblemJson
+  | getTtsCapabilitiesResponse503ApplicationJson
+  | getTtsCapabilitiesResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getTtsCapabilitiesResponse =
+  getTtsCapabilitiesResponseSuccess | getTtsCapabilitiesResponseError;
+
+export const getGetTtsCapabilitiesUrl = (params: GetTtsCapabilitiesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/media/tts/capabilities?${stringifiedParams}`
+    : `/api/v1/media/tts/capabilities`;
+};
+
+/**
+ * @summary Get Tts Capabilities
+ */
+export const getTtsCapabilities = async (
+  params: GetTtsCapabilitiesParams,
+  options?: RequestInit,
+): Promise<getTtsCapabilitiesResponse> => {
+  const res = await fetch(getGetTtsCapabilitiesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getTtsCapabilitiesResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getTtsCapabilitiesResponse;
+};
+
+export const getGetTtsCapabilitiesQueryKey = (
+  params?: GetTtsCapabilitiesParams,
+) => {
+  return [
+    `/api/v1/media/tts/capabilities`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetTtsCapabilitiesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTtsCapabilities>>,
+  TError = ProblemResponse,
+>(
+  params: GetTtsCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTtsCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTtsCapabilitiesQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTtsCapabilities>>
+  > = ({ signal }) => getTtsCapabilities(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTtsCapabilities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetTtsCapabilitiesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTtsCapabilities>>
+>;
+export type GetTtsCapabilitiesQueryError = ProblemResponse;
+
+export function useGetTtsCapabilities<
+  TData = Awaited<ReturnType<typeof getTtsCapabilities>>,
+  TError = ProblemResponse,
+>(
+  params: GetTtsCapabilitiesParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTtsCapabilities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTtsCapabilities>>,
+          TError,
+          Awaited<ReturnType<typeof getTtsCapabilities>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetTtsCapabilities<
+  TData = Awaited<ReturnType<typeof getTtsCapabilities>>,
+  TError = ProblemResponse,
+>(
+  params: GetTtsCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTtsCapabilities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTtsCapabilities>>,
+          TError,
+          Awaited<ReturnType<typeof getTtsCapabilities>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetTtsCapabilities<
+  TData = Awaited<ReturnType<typeof getTtsCapabilities>>,
+  TError = ProblemResponse,
+>(
+  params: GetTtsCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTtsCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Tts Capabilities
+ */
+
+export function useGetTtsCapabilities<
+  TData = Awaited<ReturnType<typeof getTtsCapabilities>>,
+  TError = ProblemResponse,
+>(
+  params: GetTtsCapabilitiesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTtsCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetTtsCapabilitiesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type synthesizeSpeechResponse200 = {
+  data: TtsSynthesisResponse;
+  status: 200;
+};
+
+export type synthesizeSpeechResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type synthesizeSpeechResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type synthesizeSpeechResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type synthesizeSpeechResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type synthesizeSpeechResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type synthesizeSpeechResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type synthesizeSpeechResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type synthesizeSpeechResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type synthesizeSpeechResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type synthesizeSpeechResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type synthesizeSpeechResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type synthesizeSpeechResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type synthesizeSpeechResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type synthesizeSpeechResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type synthesizeSpeechResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type synthesizeSpeechResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type synthesizeSpeechResponseSuccess = synthesizeSpeechResponse200 & {
+  headers: Headers;
+};
+export type synthesizeSpeechResponseError = (
+  | synthesizeSpeechResponse401ApplicationJson
+  | synthesizeSpeechResponse401ApplicationProblemJson
+  | synthesizeSpeechResponse403ApplicationJson
+  | synthesizeSpeechResponse403ApplicationProblemJson
+  | synthesizeSpeechResponse409ApplicationJson
+  | synthesizeSpeechResponse409ApplicationProblemJson
+  | synthesizeSpeechResponse422ApplicationJson
+  | synthesizeSpeechResponse422ApplicationProblemJson
+  | synthesizeSpeechResponse423ApplicationJson
+  | synthesizeSpeechResponse423ApplicationProblemJson
+  | synthesizeSpeechResponse428ApplicationJson
+  | synthesizeSpeechResponse428ApplicationProblemJson
+  | synthesizeSpeechResponse429ApplicationJson
+  | synthesizeSpeechResponse429ApplicationProblemJson
+  | synthesizeSpeechResponse503ApplicationJson
+  | synthesizeSpeechResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type synthesizeSpeechResponse =
+  synthesizeSpeechResponseSuccess | synthesizeSpeechResponseError;
+
+export const getSynthesizeSpeechUrl = () => {
+  return `/api/v1/media/tts/syntheses`;
+};
+
+/**
+ * @summary Synthesize Speech
+ */
+export const synthesizeSpeech = async (
+  synthesizeSpeechRequest: SynthesizeSpeechRequest,
+  options?: RequestInit,
+): Promise<synthesizeSpeechResponse> => {
+  const res = await fetch(getSynthesizeSpeechUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(synthesizeSpeechRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: synthesizeSpeechResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as synthesizeSpeechResponse;
+};
+
+export const getSynthesizeSpeechMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof synthesizeSpeech>>,
+    TError,
+    { data: SynthesizeSpeechRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof synthesizeSpeech>>,
+  TError,
+  { data: SynthesizeSpeechRequest },
+  TContext
+> => {
+  const mutationKey = ["synthesizeSpeech"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof synthesizeSpeech>>,
+    { data: SynthesizeSpeechRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return synthesizeSpeech(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SynthesizeSpeechMutationResult = NonNullable<
+  Awaited<ReturnType<typeof synthesizeSpeech>>
+>;
+export type SynthesizeSpeechMutationBody = SynthesizeSpeechRequest;
+export type SynthesizeSpeechMutationError = ProblemResponse;
+
+/**
+ * @summary Synthesize Speech
+ */
+export const useSynthesizeSpeech = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof synthesizeSpeech>>,
+      TError,
+      { data: SynthesizeSpeechRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof synthesizeSpeech>>,
+  TError,
+  { data: SynthesizeSpeechRequest },
+  TContext
+> => {
+  return useMutation(getSynthesizeSpeechMutationOptions(options), queryClient);
+};
+
+export type reserveMediaUploadResponse201 = {
+  data: MediaResponse;
+  status: 201;
+};
+
+export type reserveMediaUploadResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reserveMediaUploadResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reserveMediaUploadResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reserveMediaUploadResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reserveMediaUploadResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reserveMediaUploadResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reserveMediaUploadResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reserveMediaUploadResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reserveMediaUploadResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reserveMediaUploadResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reserveMediaUploadResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type reserveMediaUploadResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type reserveMediaUploadResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reserveMediaUploadResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reserveMediaUploadResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reserveMediaUploadResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reserveMediaUploadResponseSuccess =
+  reserveMediaUploadResponse201 & {
+    headers: Headers;
+  };
+export type reserveMediaUploadResponseError = (
+  | reserveMediaUploadResponse401ApplicationJson
+  | reserveMediaUploadResponse401ApplicationProblemJson
+  | reserveMediaUploadResponse403ApplicationJson
+  | reserveMediaUploadResponse403ApplicationProblemJson
+  | reserveMediaUploadResponse409ApplicationJson
+  | reserveMediaUploadResponse409ApplicationProblemJson
+  | reserveMediaUploadResponse422ApplicationJson
+  | reserveMediaUploadResponse422ApplicationProblemJson
+  | reserveMediaUploadResponse423ApplicationJson
+  | reserveMediaUploadResponse423ApplicationProblemJson
+  | reserveMediaUploadResponse428ApplicationJson
+  | reserveMediaUploadResponse428ApplicationProblemJson
+  | reserveMediaUploadResponse429ApplicationJson
+  | reserveMediaUploadResponse429ApplicationProblemJson
+  | reserveMediaUploadResponse503ApplicationJson
+  | reserveMediaUploadResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type reserveMediaUploadResponse =
+  reserveMediaUploadResponseSuccess | reserveMediaUploadResponseError;
+
+export const getReserveMediaUploadUrl = () => {
+  return `/api/v1/media/uploads`;
+};
+
+/**
+ * @summary Reserve Media Upload
+ */
+export const reserveMediaUpload = async (
+  reserveMediaUploadRequest: ReserveMediaUploadRequest,
+  options?: RequestInit,
+): Promise<reserveMediaUploadResponse> => {
+  const res = await fetch(getReserveMediaUploadUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reserveMediaUploadRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: reserveMediaUploadResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as reserveMediaUploadResponse;
+};
+
+export const getReserveMediaUploadMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reserveMediaUpload>>,
+    TError,
+    { data: ReserveMediaUploadRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reserveMediaUpload>>,
+  TError,
+  { data: ReserveMediaUploadRequest },
+  TContext
+> => {
+  const mutationKey = ["reserveMediaUpload"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reserveMediaUpload>>,
+    { data: ReserveMediaUploadRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return reserveMediaUpload(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReserveMediaUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reserveMediaUpload>>
+>;
+export type ReserveMediaUploadMutationBody = ReserveMediaUploadRequest;
+export type ReserveMediaUploadMutationError = ProblemResponse;
+
+/**
+ * @summary Reserve Media Upload
+ */
+export const useReserveMediaUpload = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reserveMediaUpload>>,
+      TError,
+      { data: ReserveMediaUploadRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reserveMediaUpload>>,
+  TError,
+  { data: ReserveMediaUploadRequest },
+  TContext
+> => {
+  return useMutation(
+    getReserveMediaUploadMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type putSignedMediaUploadResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type putSignedMediaUploadResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type putSignedMediaUploadResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type putSignedMediaUploadResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type putSignedMediaUploadResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type putSignedMediaUploadResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type putSignedMediaUploadResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type putSignedMediaUploadResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type putSignedMediaUploadResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type putSignedMediaUploadResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type putSignedMediaUploadResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type putSignedMediaUploadResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type putSignedMediaUploadResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type putSignedMediaUploadResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type putSignedMediaUploadResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type putSignedMediaUploadResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type putSignedMediaUploadResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type putSignedMediaUploadResponseSuccess =
+  putSignedMediaUploadResponse204 & {
+    headers: Headers;
+  };
+export type putSignedMediaUploadResponseError = (
+  | putSignedMediaUploadResponse401ApplicationJson
+  | putSignedMediaUploadResponse401ApplicationProblemJson
+  | putSignedMediaUploadResponse403ApplicationJson
+  | putSignedMediaUploadResponse403ApplicationProblemJson
+  | putSignedMediaUploadResponse409ApplicationJson
+  | putSignedMediaUploadResponse409ApplicationProblemJson
+  | putSignedMediaUploadResponse422ApplicationJson
+  | putSignedMediaUploadResponse422ApplicationProblemJson
+  | putSignedMediaUploadResponse423ApplicationJson
+  | putSignedMediaUploadResponse423ApplicationProblemJson
+  | putSignedMediaUploadResponse428ApplicationJson
+  | putSignedMediaUploadResponse428ApplicationProblemJson
+  | putSignedMediaUploadResponse429ApplicationJson
+  | putSignedMediaUploadResponse429ApplicationProblemJson
+  | putSignedMediaUploadResponse503ApplicationJson
+  | putSignedMediaUploadResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type putSignedMediaUploadResponse =
+  putSignedMediaUploadResponseSuccess | putSignedMediaUploadResponseError;
+
+export const getPutSignedMediaUploadUrl = (
+  uploadId: string,
+  params: PutSignedMediaUploadParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/media/uploads/${uploadId}/content?${stringifiedParams}`
+    : `/api/v1/media/uploads/${uploadId}/content`;
+};
+
+/**
+ * @summary Put Signed Media Upload
+ */
+export const putSignedMediaUpload = async (
+  uploadId: string,
+  params: PutSignedMediaUploadParams,
+  options?: RequestInit,
+): Promise<putSignedMediaUploadResponse> => {
+  const res = await fetch(getPutSignedMediaUploadUrl(uploadId, params), {
+    ...options,
+    method: "PUT",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: putSignedMediaUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : undefined;
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as putSignedMediaUploadResponse;
+};
+
+export const getPutSignedMediaUploadMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putSignedMediaUpload>>,
+    TError,
+    { uploadId: string; params: PutSignedMediaUploadParams },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putSignedMediaUpload>>,
+  TError,
+  { uploadId: string; params: PutSignedMediaUploadParams },
+  TContext
+> => {
+  const mutationKey = ["putSignedMediaUpload"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putSignedMediaUpload>>,
+    { uploadId: string; params: PutSignedMediaUploadParams }
+  > = (props) => {
+    const { uploadId, params } = props ?? {};
+
+    return putSignedMediaUpload(uploadId, params, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutSignedMediaUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putSignedMediaUpload>>
+>;
+
+export type PutSignedMediaUploadMutationError = ProblemResponse;
+
+/**
+ * @summary Put Signed Media Upload
+ */
+export const usePutSignedMediaUpload = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof putSignedMediaUpload>>,
+      TError,
+      { uploadId: string; params: PutSignedMediaUploadParams },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof putSignedMediaUpload>>,
+  TError,
+  { uploadId: string; params: PutSignedMediaUploadParams },
+  TContext
+> => {
+  return useMutation(
+    getPutSignedMediaUploadMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type completeMediaUploadResponse200 = {
+  data: MediaResponse;
+  status: 200;
+};
+
+export type completeMediaUploadResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeMediaUploadResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeMediaUploadResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeMediaUploadResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeMediaUploadResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeMediaUploadResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeMediaUploadResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeMediaUploadResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeMediaUploadResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeMediaUploadResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeMediaUploadResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeMediaUploadResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeMediaUploadResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeMediaUploadResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeMediaUploadResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeMediaUploadResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeMediaUploadResponseSuccess =
+  completeMediaUploadResponse200 & {
+    headers: Headers;
+  };
+export type completeMediaUploadResponseError = (
+  | completeMediaUploadResponse401ApplicationJson
+  | completeMediaUploadResponse401ApplicationProblemJson
+  | completeMediaUploadResponse403ApplicationJson
+  | completeMediaUploadResponse403ApplicationProblemJson
+  | completeMediaUploadResponse409ApplicationJson
+  | completeMediaUploadResponse409ApplicationProblemJson
+  | completeMediaUploadResponse422ApplicationJson
+  | completeMediaUploadResponse422ApplicationProblemJson
+  | completeMediaUploadResponse423ApplicationJson
+  | completeMediaUploadResponse423ApplicationProblemJson
+  | completeMediaUploadResponse428ApplicationJson
+  | completeMediaUploadResponse428ApplicationProblemJson
+  | completeMediaUploadResponse429ApplicationJson
+  | completeMediaUploadResponse429ApplicationProblemJson
+  | completeMediaUploadResponse503ApplicationJson
+  | completeMediaUploadResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type completeMediaUploadResponse =
+  completeMediaUploadResponseSuccess | completeMediaUploadResponseError;
+
+export const getCompleteMediaUploadUrl = (uploadId: string) => {
+  return `/api/v1/media/uploads/${uploadId}:complete`;
+};
+
+/**
+ * @summary Complete Media Upload
+ */
+export const completeMediaUpload = async (
+  uploadId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<completeMediaUploadResponse> => {
+  const res = await fetch(getCompleteMediaUploadUrl(uploadId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: completeMediaUploadResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as completeMediaUploadResponse;
+};
+
+export const getCompleteMediaUploadMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeMediaUpload>>,
+    TError,
+    { uploadId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeMediaUpload>>,
+  TError,
+  { uploadId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["completeMediaUpload"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeMediaUpload>>,
+    { uploadId: string; data: EmptyRequest }
+  > = (props) => {
+    const { uploadId, data } = props ?? {};
+
+    return completeMediaUpload(uploadId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteMediaUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeMediaUpload>>
+>;
+export type CompleteMediaUploadMutationBody = EmptyRequest;
+export type CompleteMediaUploadMutationError = ProblemResponse;
+
+/**
+ * @summary Complete Media Upload
+ */
+export const useCompleteMediaUpload = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeMediaUpload>>,
+      TError,
+      { uploadId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeMediaUpload>>,
+  TError,
+  { uploadId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(
+    getCompleteMediaUploadMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type deleteMediaResponse200 = {
+  data: MediaResponse;
+  status: 200;
+};
+
+export type deleteMediaResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteMediaResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type deleteMediaResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteMediaResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type deleteMediaResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteMediaResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type deleteMediaResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteMediaResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type deleteMediaResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteMediaResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type deleteMediaResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteMediaResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type deleteMediaResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteMediaResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type deleteMediaResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteMediaResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type deleteMediaResponseSuccess = deleteMediaResponse200 & {
+  headers: Headers;
+};
+export type deleteMediaResponseError = (
+  | deleteMediaResponse401ApplicationJson
+  | deleteMediaResponse401ApplicationProblemJson
+  | deleteMediaResponse403ApplicationJson
+  | deleteMediaResponse403ApplicationProblemJson
+  | deleteMediaResponse409ApplicationJson
+  | deleteMediaResponse409ApplicationProblemJson
+  | deleteMediaResponse422ApplicationJson
+  | deleteMediaResponse422ApplicationProblemJson
+  | deleteMediaResponse423ApplicationJson
+  | deleteMediaResponse423ApplicationProblemJson
+  | deleteMediaResponse428ApplicationJson
+  | deleteMediaResponse428ApplicationProblemJson
+  | deleteMediaResponse429ApplicationJson
+  | deleteMediaResponse429ApplicationProblemJson
+  | deleteMediaResponse503ApplicationJson
+  | deleteMediaResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type deleteMediaResponse =
+  deleteMediaResponseSuccess | deleteMediaResponseError;
+
+export const getDeleteMediaUrl = (mediaId: string) => {
+  return `/api/v1/media/${mediaId}`;
+};
+
+/**
+ * @summary Delete Media
+ */
+export const deleteMedia = async (
+  mediaId: string,
+  options?: RequestInit,
+): Promise<deleteMediaResponse> => {
+  const res = await fetch(getDeleteMediaUrl(mediaId), {
+    ...options,
+    method: "DELETE",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: deleteMediaResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as deleteMediaResponse;
+};
+
+export const getDeleteMediaMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMedia>>,
+    TError,
+    { mediaId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMedia>>,
+  TError,
+  { mediaId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteMedia"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMedia>>,
+    { mediaId: string }
+  > = (props) => {
+    const { mediaId } = props ?? {};
+
+    return deleteMedia(mediaId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMediaMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMedia>>
+>;
+
+export type DeleteMediaMutationError = ProblemResponse;
+
+/**
+ * @summary Delete Media
+ */
+export const useDeleteMedia = <TError = ProblemResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deleteMedia>>,
+      TError,
+      { mediaId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMedia>>,
+  TError,
+  { mediaId: string },
+  TContext
+> => {
+  return useMutation(getDeleteMediaMutationOptions(options), queryClient);
+};
+
+export type getMediaResponse200 = {
+  data: MediaResponse;
+  status: 200;
+};
+
+export type getMediaResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getMediaResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getMediaResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getMediaResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getMediaResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getMediaResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getMediaResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getMediaResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getMediaResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getMediaResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getMediaResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getMediaResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getMediaResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getMediaResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getMediaResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getMediaResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getMediaResponseSuccess = getMediaResponse200 & {
+  headers: Headers;
+};
+export type getMediaResponseError = (
+  | getMediaResponse401ApplicationJson
+  | getMediaResponse401ApplicationProblemJson
+  | getMediaResponse403ApplicationJson
+  | getMediaResponse403ApplicationProblemJson
+  | getMediaResponse409ApplicationJson
+  | getMediaResponse409ApplicationProblemJson
+  | getMediaResponse422ApplicationJson
+  | getMediaResponse422ApplicationProblemJson
+  | getMediaResponse423ApplicationJson
+  | getMediaResponse423ApplicationProblemJson
+  | getMediaResponse428ApplicationJson
+  | getMediaResponse428ApplicationProblemJson
+  | getMediaResponse429ApplicationJson
+  | getMediaResponse429ApplicationProblemJson
+  | getMediaResponse503ApplicationJson
+  | getMediaResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getMediaResponse = getMediaResponseSuccess | getMediaResponseError;
+
+export const getGetMediaUrl = (mediaId: string) => {
+  return `/api/v1/media/${mediaId}`;
+};
+
+/**
+ * @summary Get Media
+ */
+export const getMedia = async (
+  mediaId: string,
+  options?: RequestInit,
+): Promise<getMediaResponse> => {
+  const res = await fetch(getGetMediaUrl(mediaId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getMediaResponse["data"] = body ? JSON.parse(body) : {};
+  return { data, status: res.status, headers: res.headers } as getMediaResponse;
+};
+
+export const getGetMediaQueryKey = (mediaId: string) => {
+  return [`/api/v1/media/${mediaId}`] as const;
+};
+
+export const getGetMediaQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMedia>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMediaQueryKey(mediaId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMedia>>> = ({
+    signal,
+  }) => getMedia(mediaId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: mediaId !== null && mediaId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getMedia>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetMediaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMedia>>
+>;
+export type GetMediaQueryError = ProblemResponse;
+
+export function useGetMedia<
+  TData = Awaited<ReturnType<typeof getMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMedia>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMedia>>,
+          TError,
+          Awaited<ReturnType<typeof getMedia>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetMedia<
+  TData = Awaited<ReturnType<typeof getMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMedia>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMedia>>,
+          TError,
+          Awaited<ReturnType<typeof getMedia>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetMedia<
+  TData = Awaited<ReturnType<typeof getMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMedia>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Media
+ */
+
+export function useGetMedia<
+  TData = Awaited<ReturnType<typeof getMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getMedia>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetMediaQueryOptions(mediaId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type readSignedMediaResponse200 = {
+  data: void;
+  status: 200;
+};
+
+export type readSignedMediaResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type readSignedMediaResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type readSignedMediaResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type readSignedMediaResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type readSignedMediaResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type readSignedMediaResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type readSignedMediaResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type readSignedMediaResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type readSignedMediaResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type readSignedMediaResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type readSignedMediaResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type readSignedMediaResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type readSignedMediaResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type readSignedMediaResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type readSignedMediaResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type readSignedMediaResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type readSignedMediaResponseSuccess = readSignedMediaResponse200 & {
+  headers: Headers;
+};
+export type readSignedMediaResponseError = (
+  | readSignedMediaResponse401ApplicationJson
+  | readSignedMediaResponse401ApplicationProblemJson
+  | readSignedMediaResponse403ApplicationJson
+  | readSignedMediaResponse403ApplicationProblemJson
+  | readSignedMediaResponse409ApplicationJson
+  | readSignedMediaResponse409ApplicationProblemJson
+  | readSignedMediaResponse422ApplicationJson
+  | readSignedMediaResponse422ApplicationProblemJson
+  | readSignedMediaResponse423ApplicationJson
+  | readSignedMediaResponse423ApplicationProblemJson
+  | readSignedMediaResponse428ApplicationJson
+  | readSignedMediaResponse428ApplicationProblemJson
+  | readSignedMediaResponse429ApplicationJson
+  | readSignedMediaResponse429ApplicationProblemJson
+  | readSignedMediaResponse503ApplicationJson
+  | readSignedMediaResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type readSignedMediaResponse =
+  readSignedMediaResponseSuccess | readSignedMediaResponseError;
+
+export const getReadSignedMediaUrl = (
+  mediaId: string,
+  params: ReadSignedMediaParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/media/${mediaId}/content?${stringifiedParams}`
+    : `/api/v1/media/${mediaId}/content`;
+};
+
+/**
+ * @summary Read Signed Media
+ */
+export const readSignedMedia = async (
+  mediaId: string,
+  params: ReadSignedMediaParams,
+  options?: RequestInit,
+): Promise<readSignedMediaResponse> => {
+  const res = await fetch(getReadSignedMediaUrl(mediaId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: readSignedMediaResponse["data"] = body
+    ? JSON.parse(body)
+    : undefined;
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as readSignedMediaResponse;
+};
+
+export const getReadSignedMediaQueryKey = (
+  mediaId: string,
+  params?: ReadSignedMediaParams,
+) => {
+  return [
+    `/api/v1/media/${mediaId}/content`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getReadSignedMediaQueryOptions = <
+  TData = Awaited<ReturnType<typeof readSignedMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  params: ReadSignedMediaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof readSignedMedia>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getReadSignedMediaQueryKey(mediaId, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof readSignedMedia>>> = ({
+    signal,
+  }) => readSignedMedia(mediaId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: mediaId !== null && mediaId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof readSignedMedia>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ReadSignedMediaQueryResult = NonNullable<
+  Awaited<ReturnType<typeof readSignedMedia>>
+>;
+export type ReadSignedMediaQueryError = ProblemResponse;
+
+export function useReadSignedMedia<
+  TData = Awaited<ReturnType<typeof readSignedMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  params: ReadSignedMediaParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof readSignedMedia>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof readSignedMedia>>,
+          TError,
+          Awaited<ReturnType<typeof readSignedMedia>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useReadSignedMedia<
+  TData = Awaited<ReturnType<typeof readSignedMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  params: ReadSignedMediaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof readSignedMedia>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof readSignedMedia>>,
+          TError,
+          Awaited<ReturnType<typeof readSignedMedia>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useReadSignedMedia<
+  TData = Awaited<ReturnType<typeof readSignedMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  params: ReadSignedMediaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof readSignedMedia>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Read Signed Media
+ */
+
+export function useReadSignedMedia<
+  TData = Awaited<ReturnType<typeof readSignedMedia>>,
+  TError = ProblemResponse,
+>(
+  mediaId: string,
+  params: ReadSignedMediaParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof readSignedMedia>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getReadSignedMediaQueryOptions(mediaId, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

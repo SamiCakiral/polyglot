@@ -34,6 +34,9 @@ async def test_runtime_readiness_checks_postgres_and_filesystem(
     monkeypatch.setenv("POLYGLOT_DATABASE_URL", database_url)
     monkeypatch.setenv("POLYGLOT_OBJECT_STORAGE_PATH", str(object_storage_path))
     monkeypatch.setenv("POLYGLOT_SESSION_SECRET", "runtime-health-fixture-key-32-bytes")
+    monkeypatch.setenv(
+        "POLYGLOT_MEDIA_SIGNING_SECRET", "runtime-media-signing-fixture-key-32-bytes"
+    )
     monkeypatch.setenv("POLYGLOT_ALLOWED_ORIGIN", "https://polyglot.test")
     app: FastAPI = create_runtime_app()
 

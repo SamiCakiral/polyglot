@@ -36,6 +36,7 @@ import type {
   LexiconSearchPageResponse,
   ListSnapshotResponse,
   LiveStatus,
+  MediaResponse,
   MemoryPromptResponse,
   ModuleResponse,
   MutationResponse,
@@ -51,6 +52,8 @@ import type {
   SessionPlanResponse,
   SessionResponse,
   SprintRunResponse,
+  TtsCapabilitiesResponse,
+  TtsSynthesisResponse,
   ValidationReportResponse,
   VocabularyListResponse,
   WordBankOverviewResponse,
@@ -3638,6 +3641,263 @@ export const getSearchLexiconResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetTtsCapabilitiesResponseMock = (
+  overrideResponse: Partial<Extract<TtsCapabilitiesResponse, object>> = {},
+): TtsCapabilitiesResponse => ({
+  catalog_revision_id: faker.string.uuid(),
+  provider_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  provider_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  voices: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    availability: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    formats: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    language_tags: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    limits: {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    voice_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  ...overrideResponse,
+});
+
+export const getSynthesizeSpeechResponseMock = (
+  overrideResponse: Partial<Extract<TtsSynthesisResponse, object>> = {},
+): TtsSynthesisResponse => ({
+  availability: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  cache_key: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  media: faker.helpers.arrayElement([
+    {
+      checksum_sha256: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      declared_mime: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      detected_mime: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      media_id: faker.string.uuid(),
+      media_revision_id: faker.string.uuid(),
+      media_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      privacy_class: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      quarantine_reason: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      read_url: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      size_bytes: faker.helpers.arrayElement([faker.number.int(), null]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      transcript: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      upload_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+      upload_url: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      url_expires_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      version: faker.number.int(),
+    },
+    null,
+  ]),
+  voice_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  ...overrideResponse,
+});
+
+export const getReserveMediaUploadResponseMock = (
+  overrideResponse: Partial<Extract<MediaResponse, object>> = {},
+): MediaResponse => ({
+  checksum_sha256: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  declared_mime: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  detected_mime: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  media_id: faker.string.uuid(),
+  media_revision_id: faker.string.uuid(),
+  media_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  privacy_class: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  quarantine_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  read_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  size_bytes: faker.helpers.arrayElement([faker.number.int(), null]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  transcript: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  upload_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  upload_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  url_expires_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCompleteMediaUploadResponseMock = (
+  overrideResponse: Partial<Extract<MediaResponse, object>> = {},
+): MediaResponse => ({
+  checksum_sha256: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  declared_mime: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  detected_mime: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  media_id: faker.string.uuid(),
+  media_revision_id: faker.string.uuid(),
+  media_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  privacy_class: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  quarantine_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  read_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  size_bytes: faker.helpers.arrayElement([faker.number.int(), null]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  transcript: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  upload_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  upload_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  url_expires_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getDeleteMediaResponseMock = (
+  overrideResponse: Partial<Extract<MediaResponse, object>> = {},
+): MediaResponse => ({
+  checksum_sha256: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  declared_mime: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  detected_mime: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  media_id: faker.string.uuid(),
+  media_revision_id: faker.string.uuid(),
+  media_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  privacy_class: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  quarantine_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  read_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  size_bytes: faker.helpers.arrayElement([faker.number.int(), null]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  transcript: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  upload_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  upload_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  url_expires_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetMediaResponseMock = (
+  overrideResponse: Partial<Extract<MediaResponse, object>> = {},
+): MediaResponse => ({
+  checksum_sha256: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  declared_mime: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  detected_mime: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  media_id: faker.string.uuid(),
+  media_revision_id: faker.string.uuid(),
+  media_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  privacy_class: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  quarantine_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  read_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  size_bytes: faker.helpers.arrayElement([faker.number.int(), null]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  transcript: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  upload_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  upload_url: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  url_expires_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getListDueMemoryPromptsResponseMock = (
   overrideResponse: Partial<Extract<DueMemoryPromptPageResponse, object>> = {},
 ): DueMemoryPromptPageResponse => ({
@@ -7086,6 +7346,206 @@ export const getSearchLexiconMockHandler = (
   );
 };
 
+export const getGetTtsCapabilitiesMockHandler = (
+  overrideResponse?:
+    | TtsCapabilitiesResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<TtsCapabilitiesResponse> | TtsCapabilitiesResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/media/tts/capabilities",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetTtsCapabilitiesResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSynthesizeSpeechMockHandler = (
+  overrideResponse?:
+    | TtsSynthesisResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<TtsSynthesisResponse> | TtsSynthesisResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/media/tts/syntheses",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSynthesizeSpeechResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getReserveMediaUploadMockHandler = (
+  overrideResponse?:
+    | MediaResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<MediaResponse> | MediaResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/media/uploads",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getReserveMediaUploadResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getPutSignedMediaUploadMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.put>[1]>[0],
+      ) => Promise<void> | void),
+  options?: RequestHandlerOptions,
+) => {
+  return http.put(
+    "*/api/v1/media/uploads/:uploadId/content",
+    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+      await delay(0);
+      if (typeof overrideResponse === "function") {
+        await overrideResponse(info);
+      }
+
+      return new HttpResponse(null, { status: 204 });
+    },
+    options,
+  );
+};
+
+export const getCompleteMediaUploadMockHandler = (
+  overrideResponse?:
+    | MediaResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<MediaResponse> | MediaResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/media/uploads/:uploadId\\:complete",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCompleteMediaUploadResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getDeleteMediaMockHandler = (
+  overrideResponse?:
+    | MediaResponse
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<MediaResponse> | MediaResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.delete(
+    "*/api/v1/media/:mediaId",
+    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getDeleteMediaResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetMediaMockHandler = (
+  overrideResponse?:
+    | MediaResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<MediaResponse> | MediaResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/media/:mediaId",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetMediaResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getReadSignedMediaMockHandler = (
+  overrideResponse?:
+    | void
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<void> | void),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/media/:mediaId/content",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+      if (typeof overrideResponse === "function") {
+        await overrideResponse(info);
+      }
+
+      return new HttpResponse(null, { status: 200 });
+    },
+    options,
+  );
+};
+
 export const getListDueMemoryPromptsMockHandler = (
   overrideResponse?:
     | DueMemoryPromptPageResponse
@@ -8255,6 +8715,14 @@ export const getPolyglotV2APIMock = () => [
   getAssertLexicalRelationMockHandler(),
   getSplitLexicalSenseMockHandler(),
   getSearchLexiconMockHandler(),
+  getGetTtsCapabilitiesMockHandler(),
+  getSynthesizeSpeechMockHandler(),
+  getReserveMediaUploadMockHandler(),
+  getPutSignedMediaUploadMockHandler(),
+  getCompleteMediaUploadMockHandler(),
+  getDeleteMediaMockHandler(),
+  getGetMediaMockHandler(),
+  getReadSignedMediaMockHandler(),
   getListDueMemoryPromptsMockHandler(),
   getDeleteMemoryPromptMockHandler(),
   getSubmitMemoryReviewMockHandler(),

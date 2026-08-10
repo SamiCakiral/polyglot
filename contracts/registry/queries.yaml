@@ -162,7 +162,11 @@
     },
     {
       "method": "GET",
-      "route": "/media/{id}"
+      "route": "/media/{media_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/media/{media_id}/content"
     },
     {
       "method": "GET",

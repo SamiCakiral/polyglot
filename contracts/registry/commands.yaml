@@ -1074,6 +1074,16 @@
       "idempotency": "required"
     },
     {
+      "name": "PutMediaUploadContent",
+      "method": "PUT",
+      "route": "/api/v1/media/uploads/{upload_id}/content",
+      "events": [],
+      "errors": [
+        "media_quota_exceeded"
+      ],
+      "idempotency": "supported"
+    },
+    {
       "name": "CompleteMediaUpload",
       "method": "POST",
       "route": "/api/v1/media/uploads/{upload_id}:complete",
@@ -1094,6 +1104,16 @@
       ],
       "errors": [
         "media_still_required"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "SynthesizeSpeech",
+      "method": "POST",
+      "route": "/api/v1/media/tts/syntheses",
+      "events": [],
+      "errors": [
+        "dependency_unavailable"
       ],
       "idempotency": "required"
     },

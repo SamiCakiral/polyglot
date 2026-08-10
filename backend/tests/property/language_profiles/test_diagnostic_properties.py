@@ -25,6 +25,8 @@ def test_same_snapshot_and_responses_produce_the_same_summary(scores: list[float
             started_at=now,
         )
         for ordinal, score in enumerate(scores, start=1):
+            if run.stop_reason is not None:
+                break
             run = run.record(
                 DiagnosticResponse(
                     target=DiagnosticTarget.FOUNDATIONS,

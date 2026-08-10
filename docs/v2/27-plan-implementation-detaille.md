@@ -981,15 +981,15 @@ archive hostile, droits expires et checksum faux.
 
 **Etapes TDD :**
 
-- [ ] Ecrire les tests de machine media, limites, MIME et checksum.
-- [ ] Implementer reservations d'upload et politiques de quarantaine.
-- [ ] Ecrire les tests PostgreSQL, puis ajouter `0015_media`.
-- [ ] Integrer le stockage objet local et les URLs signees.
-- [ ] Definir les ports TTS/STT/media et leurs faux deterministes.
-- [ ] Tester catalogue de capacites et disparition d'une voix.
-- [ ] Tester suppression, derives, droits expires et objets orphelins.
-- [ ] Executer le shadowing hors fournisseur avec audio/transcript fixe.
-- [ ] Publier `FX-MEDIA`, y compris les fixtures hostiles.
+- [x] Ecrire les tests de machine media, limites, MIME et checksum.
+- [x] Implementer reservations d'upload et politiques de quarantaine.
+- [x] Ecrire les tests PostgreSQL, puis ajouter `0015_media`.
+- [x] Integrer le stockage objet local et les URLs signees.
+- [x] Definir les ports TTS/STT/media et leurs faux deterministes.
+- [x] Tester catalogue de capacites et disparition d'une voix.
+- [x] Tester suppression, derives, droits expires et objets orphelins.
+- [x] Executer le shadowing hors fournisseur avec audio/transcript fixe.
+- [x] Publier `FX-MEDIA`, y compris les fixtures hostiles.
 
 **Preuves cibles :** `uv run pytest tests/unit/media tests/property/media
 tests/integration/media tests/contract/media -q`, scan hostile et test sans reseau.
