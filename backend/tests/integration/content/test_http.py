@@ -218,3 +218,59 @@ async def test_http_draft_pagination_uses_a_stable_opaque_cursor(http_services) 
     assert page_one.json()["items"][0]["content_revision_id"] != page_two.json()["items"][0][
         "content_revision_id"
     ]
+
+
+async def test_http_rejection_is_closed_replayable_and_blocks_publication(http_services) -> None:
+    identity, service = http_services
+    async with await _client(identity, service) as client:
+        created = await client.post(
+            "/api/v1/authoring/drafts",
+            headers=_headers(key="http-reject-create"),
+            json=_create_payload(),
+        )
+        draft_id = created.json()["content_revision_id"]
+        validated = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:validate",
+            headers=_headers(key="http-reject-validate", version=1),
+            json={"validator_set_revision_id": str(IDS["validator_set"])},
+        )
+        identity.account_id = IDS["reviewer"]
+        identity.roles = ("reviewer",)
+        rejected = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:approve",
+            headers=_headers(key="http-reject-decision", version=2),
+            json={"decision": "rejected", "reason_code": "reviewed.incorrect"},
+        )
+        replayed = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:approve",
+            headers=_headers(key="http-reject-decision", version=2),
+            json={"decision": "rejected", "reason_code": "reviewed.incorrect"},
+        )
+        conflict = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:approve",
+            headers=_headers(key="http-reject-decision", version=2),
+            json={"decision": "approved", "reason_code": "reviewed.incorrect"},
+        )
+        publish = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:publish",
+            headers=_headers(key="http-reject-publish", version=3),
+            json={
+                "publication_provenance_id": str(IDS["publication_provenance"]),
+                "channel_code": "stable",
+                "compatibility_range": ">=2.0.0,<2.1.0",
+            },
+        )
+        invalid = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:approve",
+            headers=_headers(key="http-reject-invalid", version=3),
+            json={"decision": "maybe", "reason_code": "reviewed.unknown"},
+        )
+
+    assert validated.status_code == 200
+    assert rejected.status_code == 200 and rejected.json()["status"] == "rejected"
+    assert replayed.status_code == 200 and replayed.json() == rejected.json()
+    assert conflict.status_code == 409 and conflict.json()["code"] == "idempotency_conflict"
+    assert publish.status_code == 409 and publish.json()["code"] == "invalid_transition"
+    assert invalid.status_code == 422 and invalid.json()["code"] == "validation_failed"
+    for response in (conflict, publish, invalid):
+        assert response.headers["content-type"].startswith("application/problem+json")

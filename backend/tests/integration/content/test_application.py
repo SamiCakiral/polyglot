@@ -132,6 +132,22 @@ async def _approve(service, result, *, key: str, actor_id: UUID | None = None):
     )
 
 
+async def _decide(service, result, *, key: str, decision: str, actor_id: UUID | None = None):
+    from polyglot.modules.content.application import ApproveContentRevision
+
+    return await service.approve_revision(
+        ApproveContentRevision(
+            actor=_actor(actor_id or IDS["reviewer"], "reviewer"),
+            revision_id=result.revision.content_revision_id,
+            expected_version=result.version,
+            decision=decision,
+            reason_code=f"reviewed.{decision}",
+            idempotency_key=key,
+            context=_context(),
+        )
+    )
+
+
 async def _publish(service, result, *, key: str, expected_version: int | None = None):
     from polyglot.modules.content.application import PublishContentRevision
 
@@ -286,6 +302,88 @@ async def test_self_approval_human_required_rights_provenance_and_references_are
     with pytest.raises(DomainError) as invalid_reference:
         await _publish(service, missing_reference, key="bad-reference")
     assert invalid_reference.value.code is ErrorCode.REFERENCE_NOT_PUBLISHABLE
+
+
+async def test_rejection_is_terminal_idempotent_and_emits_exactly_one_event(factory) -> None:
+    from polyglot.modules.content.application import ReviseContentDraft
+    from polyglot.modules.content.persistence import content_approval_decisions
+    from polyglot.platform.persistence.models import domain_events, outbox_messages
+
+    service = _service(factory)
+    validated = await _validate(
+        service,
+        await _create(service, key="reject-create"),
+        key="reject-validate",
+    )
+    rejected = await _decide(
+        service, validated, key="reject-decision", decision="rejected"
+    )
+    replayed = await _decide(
+        service, validated, key="reject-decision", decision="rejected"
+    )
+
+    with pytest.raises(DomainError) as conflict:
+        await _decide(service, validated, key="reject-decision", decision="approved")
+    with pytest.raises(DomainError) as cannot_publish:
+        await _publish(service, rejected, key="reject-publish")
+    with pytest.raises(DomainError) as self_rejection:
+        other = await _validate(
+            service,
+            await _create(service, key="self-reject-create"),
+            key="self-reject-validate",
+        )
+        await _decide(
+            service,
+            other,
+            key="self-reject-decision",
+            decision="rejected",
+            actor_id=IDS["author"],
+        )
+
+    correction = await service.revise_draft(
+        ReviseContentDraft(
+            actor=_actor(IDS["author"], "author"),
+            revision_id=rejected.revision.content_revision_id,
+            payload={"schema_version": 1, "text": "Versione corretta."},
+            provenance_id=IDS["provenance"],
+            rights_ref="rights:fixture:content",
+            pinned_revision_refs=(_reference(),),
+            expected_version=rejected.version,
+            idempotency_key="reject-revise",
+            context=_context(),
+        )
+    )
+
+    assert rejected.revision.status == "rejected"
+    assert replayed.replayed and replayed.revision.status == "rejected"
+    assert conflict.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
+    assert cannot_publish.value.code is ErrorCode.INVALID_TRANSITION
+    assert self_rejection.value.code is ErrorCode.SELF_APPROVAL_FORBIDDEN
+    assert correction.revision.status == "draft"
+    assert correction.revision.supersedes_revision_id == rejected.revision.content_revision_id
+
+    async with factory() as session:
+        decisions = (
+            await session.execute(
+                select(content_approval_decisions.c.decision).where(
+                    content_approval_decisions.c.content_revision_id
+                    == rejected.revision.content_revision_id
+                )
+            )
+        ).scalars().all()
+        rejected_events = await session.scalar(
+            select(func.count())
+            .select_from(domain_events)
+            .where(domain_events.c.event_type == "content_rejected")
+        )
+        rejected_outbox = await session.scalar(
+            select(func.count())
+            .select_from(outbox_messages)
+            .join(domain_events, domain_events.c.event_id == outbox_messages.c.event_id)
+            .where(domain_events.c.event_type == "content_rejected")
+        )
+    assert decisions == ["rejected"]
+    assert rejected_events == rejected_outbox == 1
 
 
 async def test_failure_after_event_rolls_back_editorial_state_but_finishes_receipt(factory) -> None:

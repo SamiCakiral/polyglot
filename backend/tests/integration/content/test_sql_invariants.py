@@ -236,6 +236,76 @@ async def _insert_complete_audit_chain(session: AsyncSession) -> tuple[Table, ..
     )
 
 
+async def _insert_validated_revision(session: AsyncSession) -> None:
+    from polyglot.modules.content.persistence import content_revisions, validation_reports
+
+    await _insert_draft(session)
+    await session.execute(
+        content_revisions.update()
+        .where(content_revisions.c.content_revision_id == IDS["revision"])
+        .values(status="validating")
+    )
+    await session.execute(
+        validation_reports.insert().values(
+            report_id=IDS["report"],
+            subject_revision_id=IDS["revision"],
+            validator_set_revision_id=IDS["validator_set"],
+            status="passed",
+            started_at=NOW,
+            completed_at=NOW,
+            summary_checksum="c" * 64,
+        )
+    )
+    await session.execute(
+        content_revisions.update()
+        .where(content_revisions.c.content_revision_id == IDS["revision"])
+        .values(status="validated", validated_at=NOW)
+    )
+
+
+async def test_rejected_transition_requires_one_matching_append_only_decision(
+    migration_session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import (
+        content_approval_decisions,
+        content_revisions,
+    )
+
+    await _insert_validated_revision(migration_session)
+    with pytest.raises(DBAPIError, match="rejected revision requires decision"):
+        await migration_session.execute(
+            content_revisions.update()
+            .where(content_revisions.c.content_revision_id == IDS["revision"])
+            .values(status="rejected", retired_at=NOW)
+        )
+    await migration_session.rollback()
+
+    await _insert_validated_revision(migration_session)
+    await migration_session.execute(
+        content_approval_decisions.insert().values(
+            approval_decision_id=IDS["decision"],
+            content_revision_id=IDS["revision"],
+            author_id=IDS["author"],
+            reviewer_id=IDS["reviewer"],
+            decision="rejected",
+            reason_code="reviewed.incorrect",
+            decided_at=NOW,
+        )
+    )
+    with pytest.raises(DBAPIError):
+        await migration_session.execute(
+            content_approval_decisions.insert().values(
+                approval_decision_id="019fe003-0000-7000-800c-000000000002",
+                content_revision_id=IDS["revision"],
+                author_id=IDS["author"],
+                reviewer_id=IDS["reviewer"],
+                decision="approved",
+                reason_code="reviewed.conflict",
+                decided_at=NOW,
+            )
+        )
+
+
 @pytest.mark.parametrize("operation", ["update", "delete"])
 async def test_audit_proofs_are_append_only(
     migration_session: AsyncSession,

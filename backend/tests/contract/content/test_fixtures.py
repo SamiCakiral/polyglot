@@ -87,6 +87,11 @@ def test_fx_content_positive_fixture_covers_editorial_and_failure_oracles() -> N
         for revision in fixture.revisions
         if revision.status in {"published", "superseded", "retired"}
     }
+    assert {decision.decision for decision in fixture.review_decisions} == {
+        "approved",
+        "rejected",
+    }
+    assert all(decision.author_id != decision.reviewer_id for decision in fixture.review_decisions)
     assert all(item.source_ref.startswith("FX-CONTENT") for item in fixture.provenance)
 
 

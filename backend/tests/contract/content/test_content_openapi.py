@@ -87,4 +87,10 @@ def test_openapi_exposes_ten_authenticated_w05_routes_with_transport_contracts()
         "ValidationReportResponse",
     ):
         assert schemas[name]["additionalProperties"] is False
+    approval_schema = schemas["ApproveContentRevisionRequest"]
+    assert set(approval_schema["required"]) == {"decision", "reason_code"}
+    assert approval_schema["properties"]["decision"]["enum"] == [
+        "approved",
+        "rejected",
+    ]
     validate_registry_compatibility(document, ROOT / "contracts/registry")
