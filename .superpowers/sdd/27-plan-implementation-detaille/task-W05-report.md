@@ -2,10 +2,10 @@
 
 Date : 2026-08-10
 
-Statut : **FIX ROUND 2, T03 ET T04 TERMINÉS ; ACCEPTATION GLOBALE PARTIAL**.
+Statut : **IMPLÉMENTATION TECHNIQUE W05 TERMINÉE ; REVUE FINALE EN COURS**.
 
-Le détail exécutable et les preuves fraîches sont dans
-`task-W05-fix2-report.md`.
+Les preuves détaillées sont dans `task-W05-fix2-report.md` et
+`task-W05-rejection-report.md`.
 
 ## Livré
 
@@ -15,8 +15,11 @@ Le détail exécutable et les preuves fraîches sont dans
   outbox atomiques ;
 - défense PostgreSQL contre les mutations hors commande et ajouts tardifs ;
 - dix routes auteur/lecture sécurisées et OpenAPI déterministe ;
+- décision éditoriale fermée `approved|rejected`, événement
+  `content_rejected`, rejeu et conflit d'idempotence ;
 - `FX-CONTENT` positif/négatif, hors réseau, avec `P-LING pending_human` ;
-- parcours base vide jusqu'au remplacement, retrait et historique lisible.
+- parcours base vide incluant rejet, nouvelle révision, remplacement, retrait
+  et historique lisible.
 
 ## Commits TDD fix round 2
 
@@ -24,11 +27,12 @@ Le détail exécutable et les preuves fraîches sont dans
 - T03 RED/GREEN : `d333ed6`, `e17f059`, `ae0c8b7` ;
 - T04 RED/GREEN : `736d417`, `7774869` ;
 - cohérence Alembic GREEN : `3aca6c2`.
+- rejet éditorial RED/GREEN : `66a8cf5`, `8970f09`.
 
 ## Résultats
 
-Sur la base PostgreSQL isolée neuve `polyglot_w05_acceptance` : W05
-`36 passed`, cycle migration `0005 -> 0004 -> 0005` vert, `alembic check` vert,
+Sur la base PostgreSQL isolée neuve `polyglot_w05_rejection_final` : W05
+`39 passed`, cycle migration `0005 -> 0004 -> 0005` vert, `alembic check` vert,
 Ruff complet vert, mypy complet vert, OpenAPI vert et registre W00 vert.
 
 La matrice amont, rejouée par incrément sur bases isolées pour éviter les
@@ -37,8 +41,8 @@ W04F catalogue (`88`) et profils linguistiques (`20`).
 
 ## Restes explicites
 
-1. Ajouter au registre W00 un événement canonique de rejet avant d'exposer la
-   décision humaine `validated -> rejected` par le service et l'API.
-2. Obtenir la revue indépendante finale et la revue linguistique humaine.
+1. Étendre la revue indépendante finale, actuellement bornée à `5d129fd`, aux
+   commits de rejet `66a8cf5` et `8970f09`.
+2. Obtenir la revue linguistique humaine, maintenue hors acceptation technique.
 
 Aucun commit n'a été poussé.
