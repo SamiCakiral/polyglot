@@ -5,6 +5,38 @@
     {"ref": "grammar:polite-request", "family": "polite-request", "patterns": ["Vorrei + nome", "Posso + infinito", "Puo + infinito"], "role": "new"},
     {"ref": "grammar:existence", "family": "existence", "patterns": ["c'e + singolare", "ci sono + plurale"], "role": "target"}
   ],
+  "lexicon_sets": [
+    {"set_code": "IT-LEXSET-D1", "set_revision_id": "019fe113-0000-7000-8000-000000000201", "senses": [
+      {"ref": "sense:buongiorno", "sense_revision_id": "019fe113-0000-7000-8000-000000000211", "surface": "buongiorno"},
+      {"ref": "sense:buonasera", "sense_revision_id": "019fe113-0000-7000-8000-000000000212", "surface": "buonasera"},
+      {"ref": "sense:salve", "sense_revision_id": "019fe113-0000-7000-8000-000000000213", "surface": "salve"},
+      {"ref": "sense:piacere", "sense_revision_id": "019fe113-0000-7000-8000-000000000214", "surface": "piacere"},
+      {"ref": "sense:arrivederci", "sense_revision_id": "019fe113-0000-7000-8000-000000000215", "surface": "arrivederci"},
+      {"ref": "sense:grazie", "sense_revision_id": "019fe113-0000-7000-8000-000000000216", "surface": "grazie"},
+      {"ref": "sense:prego", "sense_revision_id": "019fe113-0000-7000-8000-000000000217", "surface": "prego"},
+      {"ref": "sense:scusi", "sense_revision_id": "019fe113-0000-7000-8000-000000000218", "surface": "scusi"}
+    ]},
+    {"set_code": "IT-LEXSET-D2", "set_revision_id": "019fe113-0000-7000-8000-000000000202", "senses": [
+      {"ref": "sense:caffe", "sense_revision_id": "019fe113-0000-7000-8000-000000000221", "surface": "caffè"},
+      {"ref": "sense:acqua", "sense_revision_id": "019fe113-0000-7000-8000-000000000222", "surface": "acqua"},
+      {"ref": "sense:conto", "sense_revision_id": "019fe113-0000-7000-8000-000000000223", "surface": "conto"},
+      {"ref": "sense:camera", "sense_revision_id": "019fe113-0000-7000-8000-000000000224", "surface": "camera"},
+      {"ref": "sense:bagno", "sense_revision_id": "019fe113-0000-7000-8000-000000000225", "surface": "bagno"},
+      {"ref": "sense:farmacia", "sense_revision_id": "019fe113-0000-7000-8000-000000000226", "surface": "farmacia"},
+      {"ref": "sense:autobus", "sense_revision_id": "019fe113-0000-7000-8000-000000000227", "surface": "autobus"},
+      {"ref": "sense:biglietto", "sense_revision_id": "019fe113-0000-7000-8000-000000000228", "surface": "biglietto"}
+    ]},
+    {"set_code": "IT-LEXSET-D3", "set_revision_id": "019fe113-0000-7000-8000-000000000203", "senses": [
+      {"ref": "sense:stazione", "sense_revision_id": "019fe113-0000-7000-8000-000000000231", "surface": "stazione"},
+      {"ref": "sense:centro", "sense_revision_id": "019fe113-0000-7000-8000-000000000232", "surface": "centro"},
+      {"ref": "sense:aiuto", "sense_revision_id": "019fe113-0000-7000-8000-000000000233", "surface": "aiuto"},
+      {"ref": "sense:qui", "sense_revision_id": "019fe113-0000-7000-8000-000000000234", "surface": "qui"},
+      {"ref": "sense:lentamente", "sense_revision_id": "019fe113-0000-7000-8000-000000000235", "surface": "lentamente"},
+      {"ref": "sense:diretto", "sense_revision_id": "019fe113-0000-7000-8000-000000000236", "surface": "diretto"},
+      {"ref": "sense:parlare", "sense_revision_id": "019fe113-0000-7000-8000-000000000237", "surface": "parlare"},
+      {"ref": "sense:ripetere", "sense_revision_id": "019fe113-0000-7000-8000-000000000238", "surface": "ripetere"}
+    ]}
+  ],
   "morphology": [
     {"ref": "form:sono", "surface": "sono", "features": {"lemma": "essere", "mood": "indicative", "tense": "present", "person": "1", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "sono", "rejected": "sei"},
     {"ref": "form:sei", "surface": "sei", "features": {"lemma": "essere", "mood": "indicative", "tense": "present", "person": "2", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "sei", "rejected": "sono"},

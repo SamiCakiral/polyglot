@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
+from uuid import UUID
 
 from polyglot.modules.exercises.core.domain import CORE_PRIMITIVE_IDS
 
@@ -42,6 +43,12 @@ class ItalianCurriculumFixtureReport:
     linguistic_review: str
     pedagogical_review: str
     fingerprint: str
+    lexicon_set_sizes: tuple[tuple[str, int], ...]
+    target_lexicon_count: int
+    exercise_count: int
+    pinned_exercise_revision_count: int
+    final_mission_criteria: tuple[str, ...]
+    budget_plan_keys: tuple[str, ...]
 
 
 def _error(code: str) -> CurriculumError:
@@ -214,6 +221,7 @@ def _validate_bindings(payload: dict[str, Any]) -> tuple[tuple[str, ...], tuple[
         (
             "schema_version",
             "grammar",
+            "lexicon_sets",
             "morphology",
             "pronunciation",
             "support_refs",
@@ -221,6 +229,26 @@ def _validate_bindings(payload: dict[str, Any]) -> tuple[tuple[str, ...], tuple[
         ),
         "bindings",
     )
+    lexicon_sets = cast(list[dict[str, Any]], payload["lexicon_sets"])
+    if [item.get("set_code") for item in lexicon_sets] != [
+        "IT-LEXSET-D1",
+        "IT-LEXSET-D2",
+        "IT-LEXSET-D3",
+    ]:
+        raise _error("module_target_unresolved")
+    sense_refs: set[str] = set()
+    for lexicon_set in lexicon_sets:
+        _expect_keys(lexicon_set, ("set_code", "set_revision_id", "senses"), "lexicon_set")
+        if UUID(str(lexicon_set["set_revision_id"])).version != 7:
+            raise _error("module_target_unresolved")
+        senses = cast(list[dict[str, str]], lexicon_set["senses"])
+        if len(senses) != 8:
+            raise _error("module_target_uncovered")
+        for sense in senses:
+            _expect_keys(sense, ("ref", "sense_revision_id", "surface"), "lexicon_sense")
+            if UUID(sense["sense_revision_id"]).version != 7 or sense["ref"] in sense_refs:
+                raise _error("module_target_unresolved")
+            sense_refs.add(sense["ref"])
     surfaces: list[str] = []
     refs: set[str] = set()
     for item in cast(list[dict[str, Any]], payload["morphology"]):
@@ -261,13 +289,19 @@ def _validate_bindings(payload: dict[str, Any]) -> tuple[tuple[str, ...], tuple[
     return tuple(sorted(surfaces)), tuple(sorted(not_evaluable))
 
 
-def _validate_exercises(payload: dict[str, Any]) -> tuple[str, ...]:
+def _validate_exercises(
+    payload: dict[str, Any],
+) -> tuple[tuple[str, ...], int, int, frozenset[str]]:
     _expect_keys(payload, ("schema_version", "exercises"), "exercises")
     gym: set[str] = set()
     for item in cast(list[dict[str, Any]], payload["exercises"]):
-        allowed = {"id", "day", "primitive", "targets", "credit", "gym_operation"}
+        allowed = {
+            "id", "definition_revision_id", "day", "primitive", "targets", "credit",
+            "gym_operation", "gym_plan_revision_id",
+        }
         if not set(item).issubset(allowed) or not {
             "id",
+            "definition_revision_id",
             "day",
             "primitive",
             "targets",
@@ -276,12 +310,20 @@ def _validate_exercises(payload: dict[str, Any]) -> tuple[str, ...]:
             raise _error("fixture_schema_invalid:exercise")
         if item["primitive"] not in CORE_PRIMITIVE_IDS:
             raise _error("module_target_unresolved")
+        if UUID(str(item["definition_revision_id"])).version != 7:
+            raise _error("module_target_unresolved")
         operation = item.get("gym_operation")
         if operation is not None:
             gym.add(str(operation))
+            if UUID(str(item.get("gym_plan_revision_id", ""))).version != 7:
+                raise _error("module_gym_without_w10_contract")
         if item["primitive"] == "EX-ORAL-01" and item["credit"] is not False:
             raise _error("module_pronunciation_not_evaluable")
-    return tuple(sorted(gym))
+    exercises = cast(list[dict[str, Any]], payload["exercises"])
+    ids = frozenset(str(item["id"]) for item in exercises)
+    if len(exercises) != 35 or len(ids) != 35:
+        raise _error("module_target_uncovered")
+    return tuple(sorted(gym)), len(exercises), len(ids), ids
 
 
 def _invalid_result(case: dict[str, Any]) -> str:
@@ -383,6 +425,8 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
             "final_mission",
             "provenance",
             "rights",
+            "mission",
+            "budget_plans",
             "linguistic_review",
             "pedagogical_review",
         ),
@@ -391,7 +435,9 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
     days, recalls = _validate_days(payloads["days.json"])
     bindings = payloads["bindings.json"]
     surfaces, not_evaluable = _validate_bindings(bindings)
-    gym_operations = _validate_exercises(payloads["exercises.json"])
+    gym_operations, exercise_count, pinned_count, exercise_ids = _validate_exercises(
+        payloads["exercises.json"]
+    )
     dialogues = payloads["dialogues.json"]
     _expect_keys(dialogues, ("schema_version", "dialogues"), "dialogues")
     if {item["dialogue_id"] for item in days} != {
@@ -416,6 +462,33 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
     )
     if module["profiles"] != ["P-ABS", "P-FAUX", "P-INT"]:
         raise _error("module_load_budget_exceeded")
+    mission = cast(dict[str, Any], module["mission"])
+    _expect_keys(
+        mission,
+        ("mission_revision_id", "primitive", "correction_strategy", "criteria"),
+        "mission",
+    )
+    if (
+        UUID(str(mission["mission_revision_id"])).version != 7
+        or mission["primitive"] != "EX-PROD-03"
+        or mission["correction_strategy"] != "rubric"
+    ):
+        raise _error("module_final_mission_uncovered")
+    budget_plans = cast(list[dict[str, Any]], module["budget_plans"])
+    budget_keys: list[str] = []
+    for plan in budget_plans:
+        _expect_keys(
+            plan,
+            ("key", "day", "budget_minutes", "planned_seconds", "exercise_ids"),
+            "budget_plan",
+        )
+        if (
+            int(plan["planned_seconds"]) > int(plan["budget_minutes"]) * 60
+            or not set(cast(list[str], plan["exercise_ids"])).issubset(exercise_ids)
+        ):
+            raise _error("module_load_budget_exceeded")
+        budget_keys.append(str(plan["key"]))
+    lexicon_sets = cast(list[dict[str, Any]], bindings["lexicon_sets"])
     return ItalianCurriculumFixtureReport(
         tuple(str(item["code"]) for item in days),
         tuple(cast(list[str], module["profiles"])),
@@ -433,4 +506,10 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
         str(metadata["linguistic_review"]),
         str(metadata["pedagogical_review"]),
         fixture_fingerprint_from_file_order(safe, PAYLOAD_NAMES),
+        tuple((str(item["set_code"]), len(cast(list[object], item["senses"]))) for item in lexicon_sets),
+        sum(len(cast(list[object], item["senses"])) for item in lexicon_sets),
+        exercise_count,
+        pinned_count,
+        tuple(sorted(cast(list[str], mission["criteria"]))),
+        tuple(budget_keys),
     )

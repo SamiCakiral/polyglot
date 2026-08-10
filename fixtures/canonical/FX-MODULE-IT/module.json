@@ -12,6 +12,23 @@
   "max_days": 3,
   "primary_intention": "entrer en contact, obtenir quelque chose et reparer un echange",
   "final_mission": "mener un echange autonome en reutilisant une identification, une demande polie et une strategie de reparation",
+  "mission": {
+    "mission_revision_id": "019fe113-0000-7000-8000-000000000090",
+    "primitive": "EX-PROD-03",
+    "correction_strategy": "rubric",
+    "criteria": ["greeting", "existence_or_location_question", "polite_request", "repair_strategy", "express_need", "closing"]
+  },
+  "budget_plans": [
+    {"key": "D1-15", "day": 1, "budget_minutes": 15, "planned_seconds": 750, "exercise_ids": ["ITP-D1-01", "ITP-D1-11", "ITP-D1-04", "ITP-D1-07"]},
+    {"key": "D1-30", "day": 1, "budget_minutes": 30, "planned_seconds": 1620, "exercise_ids": ["ITP-D1-01", "ITP-D1-11", "ITP-D1-04", "ITP-D1-07", "ITP-D1-02", "ITP-D1-03", "ITP-D1-05", "ITP-D1-06"]},
+    {"key": "D1-60", "day": 1, "budget_minutes": 60, "planned_seconds": 3240, "exercise_ids": ["ITP-D1-01", "ITP-D1-11", "ITP-D1-04", "ITP-D1-07", "ITP-D1-02", "ITP-D1-03", "ITP-D1-05", "ITP-D1-06", "ITP-D1-08", "ITP-D1-09", "ITP-D1-10"]},
+    {"key": "D2-15", "day": 2, "budget_minutes": 15, "planned_seconds": 750, "exercise_ids": ["ITP-D2-11", "ITP-D2-12", "ITP-D2-02", "ITP-D2-04", "ITP-D2-07"]},
+    {"key": "D2-30", "day": 2, "budget_minutes": 30, "planned_seconds": 1620, "exercise_ids": ["ITP-D2-11", "ITP-D2-12", "ITP-D2-02", "ITP-D2-04", "ITP-D2-07", "ITP-D2-03", "ITP-D2-05", "ITP-D2-06"]},
+    {"key": "D2-60", "day": 2, "budget_minutes": 60, "planned_seconds": 3240, "exercise_ids": ["ITP-D2-11", "ITP-D2-12", "ITP-D2-02", "ITP-D2-04", "ITP-D2-07", "ITP-D2-03", "ITP-D2-05", "ITP-D2-06", "ITP-D2-08", "ITP-D2-09", "ITP-D2-10"]},
+    {"key": "D3-15", "day": 3, "budget_minutes": 15, "planned_seconds": 750, "exercise_ids": ["ITP-D3-11", "ITP-D3-12", "ITP-D3-02", "ITP-D3-03", "ITP-D3-08"]},
+    {"key": "D3-30", "day": 3, "budget_minutes": 30, "planned_seconds": 1620, "exercise_ids": ["ITP-D3-11", "ITP-D3-12", "ITP-D3-02", "ITP-D3-03", "ITP-D3-08", "ITP-D3-04", "ITP-D3-05", "ITP-D3-07"]},
+    {"key": "D3-60", "day": 3, "budget_minutes": 60, "planned_seconds": 3240, "exercise_ids": ["ITP-D3-11", "ITP-D3-12", "ITP-D3-02", "ITP-D3-03", "ITP-D3-08", "ITP-D3-04", "ITP-D3-05", "ITP-D3-07", "ITP-D3-06", "ITP-D3-09", "ITP-D3-10"]}
+  ],
   "provenance": "docs/v2/13-pack-italien-pilote.md",
   "rights": ["project-authored"],
   "linguistic_review": "pending_human",

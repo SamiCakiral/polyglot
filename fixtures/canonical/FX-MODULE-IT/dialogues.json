@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dialogues": [
-    {"id": "dialogue:j1-contact", "day": 1, "lines": ["Buongiorno. Sono Luca.", "Salve. Mi chiamo Camille.", "Piacere. A presto."], "grammar_refs": ["grammar:identity"], "lexicon_refs": ["sense:buongiorno", "sense:piacere"]},
-    {"id": "dialogue:j2-cafe", "day": 2, "lines": ["Buongiorno. Vorrei un caffè e un'acqua, per favore.", "Certo. Altro?", "No, grazie."], "grammar_refs": ["grammar:polite-request"], "lexicon_refs": ["sense:caffe", "sense:acqua"]},
-    {"id": "dialogue:j3-repair", "day": 3, "lines": ["Scusi, c'è un autobus diretto per il centro?", "No, ma ci sono due linee con un cambio.", "Non ho capito. Può ripetere, per favore?"], "grammar_refs": ["grammar:existence", "grammar:polite-request"], "lexicon_refs": ["sense:autobus", "sense:centro"]}
+    {"id": "dialogue:j1-contact", "day": 1, "lines": ["Buongiorno.", "Buongiorno. Sono Luca.", "Piacere, sono Camille.", "Piacere. Arrivederci.", "Arrivederci."], "grammar_refs": ["grammar:identity"], "lexicon_refs": ["sense:buongiorno", "sense:piacere", "sense:arrivederci"]},
+    {"id": "dialogue:j2-cafe", "day": 2, "lines": ["Buongiorno. Vorrei un caffè e un'acqua, per favore.", "Certo. Ecco il caffè.", "Grazie. Posso avere il conto?", "Certo."], "grammar_refs": ["grammar:polite-request"], "lexicon_refs": ["sense:caffe", "sense:acqua", "sense:conto"]},
+    {"id": "dialogue:j3-repair", "day": 3, "lines": ["Scusi, c'è un autobus diretto per il centro?", "Sì, parte da qui.", "Può ripetere più lentamente, per favore?", "L'autobus parte da qui.", "Grazie. Ho bisogno di un biglietto.", "Ecco."], "grammar_refs": ["grammar:existence", "grammar:polite-request"], "lexicon_refs": ["sense:scusi", "sense:autobus", "sense:diretto", "sense:centro", "sense:qui", "sense:ripetere", "sense:lentamente", "sense:biglietto"]}
   ]
 }
