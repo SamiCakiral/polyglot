@@ -132,6 +132,15 @@ The implementation was committed as coherent RED/GREEN increments:
 18. `9a860a9` `fix(w02): close timing padding credential path`
     - GREEN: original credential shape is required for success while every local miss
       still performs one valid Argon2id verification.
+19. `c0b251f` `test(w02): capture required contract blockers`
+    - RED: required security/version headers remained optional in OpenAPI, the
+      compatibility validator accepted `required: false`, missing runtime headers did
+      not follow the typed contract and packaged round trip silently enabled destructive
+      downgrade.
+20. `60378b6` `fix(w02): require security contract inputs`
+    - GREEN: runtime-required headers are non-nullable and required, supported
+      idempotency headers retain their runtime optionality, compatibility validation
+      enforces `required: true`, and destructive round trip is caller opted-in only.
 
 ## Adversarial Coverage
 
@@ -153,10 +162,11 @@ PostgreSQL 17 container with independent migration/runtime/retention logins.
 - Ruff: `All checks passed` for `src` and `tests`.
 - Strict Mypy: `Success: no issues found in 35 source files`.
 - Final committed-HEAD combined unit/property/integration/contract rerun, excluding
-  the separately executed wheel test: `175 passed in 12.71s`.
+  the separately executed wheel test: `175 passed in 12.61s`.
 - Exact focused W02 identity target matrix before the final combined rerun: `67 passed
   in 7.28s`; the terminal timing-padding regression and dummy-hash test then passed
   together (`2 passed in 0.49s`).
+- Round-two focused OpenAPI, CSRF and installed-artifact target: `4 passed in 1.26s`.
 - Empty migration: base -> `0001_platform` -> `0002_identity` passed.
 - Full guarded rollback/re-upgrade: `0002_identity` -> base -> head passed.
 - Prior-revision migration: `0002_identity` -> `0001_platform` -> head passed.
@@ -165,8 +175,9 @@ PostgreSQL 17 container with independent migration/runtime/retention logins.
   disposable-environment/permanent-data-loss error and left `0002_identity` current.
 - Alembic: exactly one head, current at `0002_identity`, `No new upgrade operations
   detected`.
-- Installed wheel: contains both migrations and its own guarded round trip passed (`1
-  passed in 0.75s` on the final committed-HEAD rerun).
+- Installed wheel: contains both migrations, rejects round trip without caller opt-in,
+  and completes it with explicit caller opt-in (`1 passed in 0.95s` on the final
+  committed-HEAD rerun).
 - Deterministic OpenAPI check: passed.
 - Repository plus full Git history secret scan: clean.
 - `pip-audit 2.9.0` over the frozen hashed production export: `No known
@@ -206,8 +217,10 @@ procedure when required, and revert the W02 application code while leaving
 `0002_identity` in place. This production rollback preserves account, consent and
 preference history. Downgrade is limited to disposable environments, requires
 `POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE=true`, and permanently deletes the
-identity schema. Guarded migration round trips prove only that disposable test path.
-Append-only platform event/audit facts remain immutable until retention applies.
+identity schema. The source and packaged round-trip entry points never set that flag;
+the invoking caller must provide it explicitly. Guarded migration round trips prove only
+that disposable test path. Append-only platform event/audit facts remain immutable until
+retention applies.
 
 ## Concerns and Acceptance Boundary
 
@@ -259,3 +272,35 @@ Final implementation head before this report commit: `9a860a9`.
   `No known vulnerabilities found`; pinned Trivy `0.69.3` final-code filesystem scan
   found zero Critical vulnerabilities/misconfigurations/secrets; the pinned PostgreSQL
   digest scan found zero unsuppressed Critical vulnerabilities.
+
+## W02 Fix Round 2 - Exact Final Evidence
+
+Final implementation head before this report commit: `60378b6`.
+
+- Required-header contract: `Origin` is a required, non-nullable string on account
+  registration, session creation, logout, password change, preference change and
+  consent change. `X-CSRF-Token` is required on all authenticated mutations, and
+  `If-Match` is required on password, preference and consent writes. `GET /api/v1/session`
+  requires none of those headers. Supported logout/preference `Idempotency-Key` headers
+  remain optional because runtime permits omission.
+- Compatibility validation checks both header presence and `required: true` for Origin,
+  CSRF and If-Match; its mutation test proves that changing If-Match to
+  `required: false` is rejected.
+- Migration opt-in: source and installed-wheel round-trip calls fail closed without
+  `POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE=true` and succeed only when the caller
+  explicitly supplies it. `round_trip()` does not write or restore that environment
+  variable.
+- TDD focus: the RED target produced four intended failures; the GREEN rerun was
+  `4 passed in 1.26s`.
+- W00 evidence: registry validator `contract registry valid`; canonical unittest
+  discovery 23 tests, `OK`.
+- Final code matrix: `175 passed in 12.61s`; installed artifact, blocked no-flag path and
+  explicit flagged packaged round trip: `1 passed in 0.95s`.
+- Migration/OpenAPI evidence: unflagged source round trip failed at `0002_identity` with
+  the disposable-environment/permanent-data-loss guard; flagged round trip completed;
+  exactly one head; current `0002_identity (head)`; `No new upgrade operations detected`;
+  deterministic OpenAPI check passed.
+- Quality/security: Ruff `All checks passed`; strict Mypy `Success: no issues found in 35
+  source files`; repository plus Git-history secret scan clean; `pip-audit 2.9.0` found no
+  known vulnerabilities; pinned Trivy 0.69.3 filesystem and PostgreSQL digest scans found
+  zero unsuppressed Critical findings.
