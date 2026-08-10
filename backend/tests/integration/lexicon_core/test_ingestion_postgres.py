@@ -139,9 +139,14 @@ async def test_rls_hides_another_users_encounter(
     await LexiconCommandService(migration_session).record_encounter(command())
     await migration_session.commit()
     await migration_session.execute(text("SET ROLE polyglot_runtime"))
-    await migration_session.execute(text("SELECT set_config('app.user_id', :user_id, false)"), {"user_id": str(uid(2))})
+    await migration_session.execute(
+        text("SELECT set_config('app.user_id', :user_id, false)"),
+        {"user_id": str(uid(2))},
+    )
 
-    visible = await migration_session.scalar(text("SELECT count(*) FROM lexicon.lexical_encounters"))
+    visible = await migration_session.scalar(
+        text("SELECT count(*) FROM lexicon.lexical_encounters")
+    )
 
     assert visible == 0
 
