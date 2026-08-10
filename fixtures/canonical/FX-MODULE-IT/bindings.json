@@ -3,7 +3,9 @@
   "grammar": [
     {"ref": "grammar:identity", "family": "identity", "patterns": ["Sono + nome", "Mi chiamo + nome", "Ecco + nome"], "role": "new"},
     {"ref": "grammar:polite-request", "family": "polite-request", "patterns": ["Vorrei + nome", "Posso + infinito", "Puo + infinito"], "role": "new"},
-    {"ref": "grammar:existence", "family": "existence", "patterns": ["c'e + singolare", "ci sono + plurale"], "role": "target"}
+    {"ref": "grammar:existence", "family": "existence", "patterns": ["c'e + singolare", "ci sono + plurale"], "role": "target"},
+    {"ref": "grammar:formal-request", "family": "formal-request", "patterns": ["Puo + infinito?"], "role": "due"},
+    {"ref": "grammar:need", "family": "need", "patterns": ["Ho bisogno di + nome"], "role": "due"}
   ],
   "lexicon_sets": [
     {"set_code": "IT-LEXSET-D1", "set_revision_id": "019fe113-0000-7000-8000-000000000201", "senses": [

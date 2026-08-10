@@ -422,6 +422,11 @@ def _production_validation_input(
         day_exercises = tuple(
             exercise for exercise in exercise_items if int(exercise["day"]) == ordinal
         )
+        exercise_targets = {
+            str(target)
+            for exercise in day_exercises
+            for target in cast(list[str], exercise["targets"])
+        }
         exercise_bindings = tuple(
             ExerciseBinding(
                 UUID(str(exercise["definition_revision_id"])),
@@ -430,6 +435,9 @@ def _production_validation_input(
                 _fixture_uuid(9300 + ordinal, index),
                 30_000,
                 60_000,
+                str(exercise["gym_operation"])
+                if exercise.get("gym_operation") is not None
+                else None,
             )
             for index, exercise in enumerate(day_exercises, start=1)
         )
@@ -468,6 +476,9 @@ def _production_validation_input(
                     for gym in cast(list[dict[str, Any]], item["gym"])
                 ),
                 context_revision_ids=(_fixture_uuid(8200, ordinal),),
+                secondary_target_refs=tuple(
+                    sorted(exercise_targets - set(cast(list[str], item["targets"])))
+                ),
                 skill_bindings=tuple(
                     SkillTargetBinding(
                         _fixture_uuid(9400 + ordinal, index),
@@ -475,8 +486,9 @@ def _production_validation_input(
                         ("written_production",),
                         ("produce",),
                         (),
+                        target,
                     )
-                    for index, _target in enumerate(
+                    for index, target in enumerate(
                         (
                             target
                             for target in cast(list[str], item["targets"])
@@ -488,7 +500,7 @@ def _production_validation_input(
                 lexicon_bindings=tuple(
                     LexiconTargetBinding(
                         UUID(str(sense["sense_revision_id"])),
-                        BindingRole.NEW,
+                        BindingRole.DUE if ordinal == 3 else BindingRole.NEW,
                         (_fixture_uuid(9500 + ordinal, index),),
                         (_fixture_uuid(9600 + ordinal, index),),
                     )
@@ -525,7 +537,7 @@ def _production_validation_input(
                 exercise_bindings=exercise_bindings,
                 recall_specs=(
                     RecallSpec(
-                        str(cast(list[str], item["targets"])[0]),
+                        str(cast(list[str], days_payload[ordinal - 2]["targets"])[0]),
                         "j+1",
                         int(item["recall_from"]),
                         UUID(
@@ -866,7 +878,14 @@ def _execute_oracles(
             if all(set(item["targets"]).issubset(item["outputs"]) for item in days)
             else "uncovered",
             "grammar_order": "ordered"
-            if grammar == {"identity", "polite-request", "existence"}
+            if grammar
+            == {
+                "identity",
+                "polite-request",
+                "existence",
+                "formal-request",
+                "need",
+            }
             else "unordered",
             "morphology": "all_distinct"
             if len(morphology_by_ref) == len(bindings["morphology"]) == 10

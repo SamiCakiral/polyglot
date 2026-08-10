@@ -5,10 +5,10 @@
   "clock": "2026-08-10T09:00:00+00:00",
   "payloads": {
     "module.json": "sha256:4f0bd06074902bfcfe05009e2c47f7d2365411a53b09c5125e81025b370da890",
-    "days.json": "sha256:2d4fa558fa0cc1206a3e6bfd2fa01b05454dccc36125fa6d33d4f09bd15952e7",
-    "bindings.json": "sha256:28d7caf528baec554990c37c9cd0e7544cea49f5bf7a4c955946f10879ed466c",
+    "days.json": "sha256:97ff5f4dab6a59df95b7e18df0e2207e03232e715b090c139340d5a7d0e9b87b",
+    "bindings.json": "sha256:047ed6a59c89af19921eab251afda319f228ae0a79dd6319c5ae8fe99cf47d85",
     "dialogues.json": "sha256:570ea5bcf46d36f3317e16a64821a93319073ab83c620281fa92e0b3f921ccd6",
-    "exercises.json": "sha256:d4150267e266853a0578a50c4401cb990362929bfbbb0edeae224ee1055c4fd9",
+    "exercises.json": "sha256:c650704724fbb4c8a78d8b0a697cd2c544e9a73300b0646caa24ad2bd506f1a9",
     "oracles.json": "sha256:00506113d68530d4fac2e64b8254dbe39bd10a5615050926066fe5f07b18afaa",
     "revision-cases.json": "sha256:0f9f9c48469169354353873323559d176729b10e68353a2a24ce396393572b7e"
   },

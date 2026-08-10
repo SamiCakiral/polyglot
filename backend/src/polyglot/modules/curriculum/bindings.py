@@ -54,6 +54,7 @@ class SkillTargetBinding:
     modalities: tuple[str, ...]
     operations: tuple[str, ...]
     evidence_protocol_ids: tuple[UUID, ...]
+    target_ref: str = ""
 
     def __post_init__(self) -> None:
         _require_uuid7(self.skill_revision_id, "skill_revision_id")
@@ -179,6 +180,7 @@ class ExerciseBinding:
     correction_policy_revision_id: UUID
     estimated_p50_ms: int
     estimated_p80_ms: int
+    gym_operation: str | None = None
 
     def __post_init__(self) -> None:
         _require_uuid7(self.definition_revision_id, "definition_revision_id")
@@ -186,6 +188,8 @@ class ExerciseBinding:
         object.__setattr__(self, "target_bindings", tuple(self.target_bindings))
         if self.primitive_id not in CORE_PRIMITIVE_IDS:
             raise CurriculumError("module_target_unresolved")
+        if self.gym_operation is not None and not _is_gym_operation(self.gym_operation):
+            raise CurriculumError("module_gym_without_w10_contract")
         if not self.target_bindings or not 0 < self.estimated_p50_ms <= self.estimated_p80_ms:
             raise CurriculumError("module_load_budget_exceeded")
 

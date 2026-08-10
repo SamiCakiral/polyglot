@@ -288,6 +288,76 @@ def _graph_findings(data: ValidationInput) -> list[ValidationFinding]:
             f"pronunciation:{binding.target_revision_id}"
             for binding in day.pronunciation_bindings
         )
+        target_universe = set(day.primary_target_refs) | set(day.secondary_target_refs)
+        primary_skill_targets = {
+            target for target in day.primary_target_refs if target.startswith("skill:")
+        }
+        bound_primary_skills = {
+            binding.target_ref
+            for binding in day.skill_bindings
+            if binding.credit_eligible and binding.target_ref
+        }
+        if not primary_skill_targets.issubset(bound_primary_skills):
+            findings.append(_finding("module_target_uncovered", f"{path}.skills"))
+        for exercise in day.exercise_bindings:
+            if not set(exercise.target_bindings).issubset(target_universe):
+                findings.append(
+                    _finding("module_target_uncovered", f"{path}.exercises")
+                )
+            if exercise.gym_operation is not None:
+                matching_grammar = tuple(
+                    binding
+                    for binding in day.grammar_bindings
+                    if f"grammar:{binding.family_code}" in exercise.target_bindings
+                )
+                if not matching_grammar or not any(
+                    exercise.gym_operation in binding.allowed_operations
+                    for binding in matching_grammar
+                ):
+                    findings.append(
+                        _finding("module_validation_input_unbound", f"{path}.gym")
+                    )
+        if day.novelty_budget == 0 and any(
+            binding.role.value == "new"
+            for bindings in (
+                day.skill_bindings,
+                day.lexicon_bindings,
+                day.grammar_bindings,
+                day.morphology_bindings,
+                day.pronunciation_bindings,
+            )
+            for binding in bindings
+        ):
+            findings.append(
+                _finding("module_novelty_budget_exceeded", f"{path}.bindings")
+            )
+        for recall in day.recall_specs:
+            source_day = next(
+                (
+                    candidate
+                    for candidate in data.module.days
+                    if candidate.ordinal == recall.source_day_ordinal
+                ),
+                None,
+            )
+            if (
+                source_day is None
+                or (
+                    recall.due_rule == "j+1"
+                    and recall.source_day_ordinal != day.ordinal - 1
+                )
+                or recall.target_ref
+                not in set(source_day.primary_target_refs)
+                | set(source_day.secondary_target_refs)
+                or recall.source_exercise_binding_id
+                not in {
+                    exercise.definition_revision_id
+                    for exercise in source_day.exercise_bindings
+                }
+            ):
+                findings.append(
+                    _finding("module_recall_source_missing", f"{path}.recall")
+                )
     if (
         tuple(sorted(bound_explanations)) != tuple(sorted(data.grammar_explanations))
         or tuple(sorted(bound_practices)) != tuple(sorted(data.grammar_practices))
