@@ -267,6 +267,17 @@ class TransformationCase:
                 ErrorCode.VALIDATION_FAILED,
                 detail="Accepted and rejected outputs must be disjoint",
             )
+        published_targets = (
+            self.grammar_target_id,
+            *self.secondary_target_ids,
+            *self.lexical_support_ids,
+            *self.distractor_target_ids,
+        )
+        if len(set(published_targets)) != len(published_targets):
+            raise DomainError(
+                ErrorCode.VALIDATION_FAILED,
+                detail="Gym target roles must be disjoint in the published case",
+            )
         _validate_semantics(self, spec)
 
     @classmethod

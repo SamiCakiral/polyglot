@@ -117,12 +117,23 @@ def correct_transformation(
     )
     if case.grammar_target_id not in target_roles:
         raise DomainError(ErrorCode.OBSERVATION_TARGET_NOT_DISCRIMINANT)
-    for support_id in case.lexical_support_ids:
-        role = target_roles.get(support_id)
-        if role is not None and role is not TargetRole.SUPPORT:
+    published_roles = {
+        case.grammar_target_id: TargetRole.PRINCIPAL,
+        **{target_id: TargetRole.SECONDARY for target_id in case.secondary_target_ids},
+        **{target_id: TargetRole.SUPPORT for target_id in case.lexical_support_ids},
+        **{target_id: TargetRole.DISTRACTOR for target_id in case.distractor_target_ids},
+    }
+    for target_id, role in frozen_roles:
+        expected_role = published_roles.get(target_id)
+        if expected_role is None:
+            raise DomainError(
+                ErrorCode.OBSERVATION_TARGET_NOT_DISCRIMINANT,
+                detail=f"Target is absent from the published Gym case: {target_id}",
+            )
+        if role is not expected_role:
             raise DomainError(
                 ErrorCode.EVIDENCE_SCOPE_FORBIDDEN,
-                detail="Lexical support cannot be promoted by a Gym correction",
+                detail=f"Published Gym target role mismatch: {target_id}",
             )
     result = _result_for(
         case=case,
