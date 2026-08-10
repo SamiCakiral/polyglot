@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "native_variety": "fr-FR",
+  "target_variety": "it-IT",
+  "policy": "DIAGNOSTIC_V0",
+  "scenarios": [
+    {
+      "id": "P-ABS",
+      "seed": "P-ABS",
+      "oracle": {
+        "classification": "beginner",
+        "next_profile_status": "foundations",
+        "implicit_mastery_credit": false
+      }
+    },
+    {
+      "id": "P-FAUX",
+      "seed": "P-FAUX",
+      "oracle": {
+        "classification": "false_beginner",
+        "next_profile_status": "foundations",
+        "implicit_mastery_credit": false
+      }
+    },
+    {
+      "id": "P-INT",
+      "seed": "P-INT",
+      "oracle": {
+        "classification": "intermediate",
+        "next_profile_status": "active",
+        "implicit_mastery_credit": false
+      }
+    },
+    {
+      "id": "P-RETOUR",
+      "seed": "P-RETOUR",
+      "oracle": {
+        "before_24h": "same_run_resumed",
+        "at_24h": "new_run_allowed",
+        "expired_run_status": "expired",
+        "implicit_mastery_credit": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 3004,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "foundations.json": "sha256:a50c49503b19e08a234adfb2df7deb4c92ec70c2fcb7921c5fe9d94ef7ea7112"
+  },
+  "oracles": ["F1-F5", "audio-absent", "gate-24h", "revelation"],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}

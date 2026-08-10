@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "pack_revision_id": "019b0000-0000-7000-8000-000000000009",
+  "foundation_revision_id": "019b0000-0000-7000-8000-000000000901",
+  "gate_revision_id": "019b0000-0000-7000-8000-000000000940",
+  "scenarios": [
+    {
+      "id": "F1-F5",
+      "oracle": {
+        "block_codes": ["F1", "F2", "F3", "F4", "F5"],
+        "published_item_count": 10,
+        "all_references_resolved": true,
+        "implicit_mastery_credit": false
+      }
+    },
+    {
+      "id": "audio-absent",
+      "oracle": {
+        "result": "not_evaluable",
+        "score": null,
+        "implicit_mastery_credit": false
+      }
+    },
+    {
+      "id": "gate-24h",
+      "oracle": {
+        "at_23_59_59": "gate_not_ready",
+        "at_24_00_00": "eligible",
+        "minimum_distinct_sessions": 2,
+        "implicit_mastery_credit": false
+      }
+    },
+    {
+      "id": "revelation",
+      "oracle": {
+        "attempt_preserved": true,
+        "autonomous_credit": false,
+        "implicit_mastery_credit": false
+      }
+    }
+  ]
+}

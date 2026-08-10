@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 3003,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "personas.json": "sha256:323c9be7ac66dbbfa787357f7892a39f1d0cec95acd8e07205864d577178539b"
+  },
+  "oracles": ["P-ABS", "P-FAUX", "P-INT", "P-RETOUR"],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}
