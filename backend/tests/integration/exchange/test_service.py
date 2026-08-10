@@ -44,6 +44,22 @@ class TargetVerifier:
         return self.exists
 
 
+class DynamicListEvaluator:
+    def __init__(self, members: tuple[UUID, ...]) -> None:
+        self.members = members
+        self.calls: list[tuple[UUID, dict[str, object], object, int]] = []
+
+    async def evaluate(
+        self,
+        profile_id: UUID,
+        query_definition: dict[str, object],
+        cutoff_at,
+        limit: int,
+    ) -> tuple[UUID, ...]:
+        self.calls.append((profile_id, query_definition, cutoff_at, limit))
+        return self.members
+
+
 async def test_list_revisions_and_snapshots_are_immutable_and_idempotent(
     runtime_factory,
 ) -> None:
@@ -522,7 +538,7 @@ async def test_published_snapshot_is_public_until_explicit_retirement(
         PROFILE_A,
         CreateVocabularyList(
             variety_id=TARGET_VARIETY,
-            list_type="editorial",
+            list_type="manual",
             name="Arrivée en Italie",
             purpose="Liste publique sans contexte privé",
             ordered=True,
@@ -779,3 +795,197 @@ async def test_archiving_list_preserves_snapshot_and_replays_exact_status(
     assert current.status == "archived"
     assert current.version == 2
     assert snapshot_count == 1
+
+
+@pytest.mark.parametrize(
+    ("list_type", "query_definition", "code"),
+    (
+        ("manual", {"tag_in": ["voyage"]}, ErrorCode.VALIDATION_FAILED),
+        ("dynamic", {"sql": "SELECT *"}, ErrorCode.VALIDATION_FAILED),
+        ("editorial", None, ErrorCode.FORBIDDEN),
+    ),
+)
+async def test_persisted_list_types_enforce_domain_policy(
+    runtime_factory,
+    list_type,
+    query_definition,
+    code,
+) -> None:
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1100, 1160)),
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        await service.create_list(
+            ACCOUNT_A,
+            PROFILE_A,
+            CreateVocabularyList(
+                variety_id=TARGET_VARIETY,
+                list_type=list_type,
+                name="Politique",
+                purpose="Valider le domaine avant persistance",
+                ordered=True,
+                color=None,
+                tags=(),
+                query_definition=query_definition,
+                member_sense_ids=(),
+                created_at=NOW,
+            ),
+            idempotency_key=f"policy-{list_type}",
+        )
+
+    assert rejected.value.code is code
+
+
+async def test_author_can_create_editorial_and_learner_can_create_dynamic_list(
+    runtime_factory,
+    migration_session,
+) -> None:
+    await set_actor(migration_session, ACCOUNT_A)
+    await migration_session.execute(
+        text(
+            "INSERT INTO identity.account_roles "
+            "(role_grant_id,account_id,role,granted_at,granted_by_actor_id) "
+            "VALUES (:grant,:account,'author',:at,:account)"
+        ),
+        {"grant": uid(1190), "account": ACCOUNT_A, "at": NOW},
+    )
+    await migration_session.commit()
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1200, 1280)),
+    )
+
+    editorial = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="editorial",
+            name="Éditorial",
+            purpose="Publication contrôlée",
+            ordered=True,
+            color=None,
+            tags=(),
+            query_definition=None,
+            member_sense_ids=(),
+            created_at=NOW,
+        ),
+        idempotency_key="editorial-valid",
+    )
+    dynamic = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="dynamic",
+            name="Rappels voyage",
+            purpose="Sélection bornée",
+            ordered=False,
+            color=None,
+            tags=(),
+            query_definition={
+                "all": [
+                    {"tag_in": ["voyage"]},
+                    {"has_due_prompt": True},
+                ]
+            },
+            member_sense_ids=(),
+            created_at=NOW + timedelta(minutes=1),
+        ),
+        idempotency_key="dynamic-valid",
+    )
+
+    assert editorial.list_type == "editorial"
+    assert dynamic.list_type == "dynamic"
+    assert dynamic.query_definition == {
+        "all": [{"tag_in": ["voyage"]}, {"has_due_prompt": True}]
+    }
+    revised = await service.execute_command(
+        command_name="ReviseVocabularyList",
+        actor_id=ACCOUNT_A,
+        resource_id=dynamic.list_id,
+        payload={
+            "name": "Rappels voyage prioritaires",
+            "revised_at": NOW + timedelta(minutes=2),
+        },
+        idempotency_key="dynamic-revise",
+        expected_version=1,
+    )
+    current = await service.get_list(ACCOUNT_A, dynamic.list_id)
+    assert revised.version == 2
+    assert current.query_definition == dynamic.query_definition
+
+    with pytest.raises(DomainError) as explicit_members:
+        await service.change_members(
+            ACCOUNT_A,
+            dynamic.list_id,
+            ChangeListMembers(
+                add_sense_ids=(uid(1290),),
+                remove_sense_ids=(),
+                changed_at=NOW + timedelta(minutes=3),
+            ),
+            expected_version=2,
+            idempotency_key="dynamic-members",
+        )
+    assert explicit_members.value.code is ErrorCode.INVALID_TRANSITION
+
+    await set_actor(migration_session, ACCOUNT_A)
+    await migration_session.execute(
+        text(
+            "UPDATE identity.account_roles SET revoked_at=:at "
+            "WHERE account_id=:account AND role='author'"
+        ),
+        {"at": NOW + timedelta(minutes=4), "account": ACCOUNT_A},
+    )
+    await migration_session.commit()
+    with pytest.raises(DomainError) as revoked_author:
+        await service.execute_command(
+            command_name="ArchiveVocabularyList",
+            actor_id=ACCOUNT_A,
+            resource_id=editorial.list_id,
+            payload={"at": NOW + timedelta(minutes=5)},
+            idempotency_key="editorial-archive-revoked",
+            expected_version=1,
+        )
+    assert revoked_author.value.code is ErrorCode.FORBIDDEN
+
+
+async def test_dynamic_snapshot_freezes_port_result_at_cutoff(runtime_factory) -> None:
+    evaluator = DynamicListEvaluator((uid(1300), uid(1301)))
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1310, 1380)),
+        dynamic_lists=evaluator,
+    )
+    dynamic = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="dynamic",
+            name="À revoir",
+            purpose="Résultat exact au cutoff",
+            ordered=False,
+            color=None,
+            tags=(),
+            query_definition={"has_due_prompt": True},
+            member_sense_ids=(),
+            created_at=NOW,
+        ),
+        idempotency_key="dynamic-cutoff-list",
+    )
+
+    snapshot = await service.freeze_list(
+        ACCOUNT_A,
+        dynamic.list_id,
+        expected_version=1,
+        frozen_at=NOW + timedelta(minutes=1),
+        idempotency_key="dynamic-cutoff-snapshot",
+    )
+
+    assert snapshot.member_sense_revision_ids == (uid(1300), uid(1301))
+    assert evaluator.calls == [
+        (PROFILE_A, {"has_due_prompt": True}, NOW + timedelta(minutes=1), 10_000)
+    ]

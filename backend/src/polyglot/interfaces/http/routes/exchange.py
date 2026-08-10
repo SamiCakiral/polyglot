@@ -321,7 +321,7 @@ def exchange_router(
     @router.patch("/api/v1/vocabulary-lists/{list_id}", operation_id="revise_vocabulary_list", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
     async def revise_vocabulary_list(list_id: UUID, payload: ReviseVocabularyListRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        result = await generic(command_name="ReviseVocabularyList", current=current, resource_id=list_id, payload=payload.model_dump(), idempotency_key=idempotency_key, expected_version=expected(if_match))
+        result = await generic(command_name="ReviseVocabularyList", current=current, resource_id=list_id, payload=payload.model_dump(exclude_unset=True), idempotency_key=idempotency_key, expected_version=expected(if_match))
         etag(response, result.version)
         return result
 

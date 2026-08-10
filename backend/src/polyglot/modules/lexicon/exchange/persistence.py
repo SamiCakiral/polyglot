@@ -25,9 +25,12 @@ from polyglot.modules.lexicon.exchange.domain import (
     PreviewDecision,
     create_preview,
 )
-from polyglot.modules.lexicon.exchange.lists import ListAssociation
+from polyglot.modules.lexicon.exchange.lists import ListAssociation, ListDefinition
 from polyglot.modules.lexicon.exchange.parsing import ParseLimits, parse_import
-from polyglot.modules.lexicon.exchange.ports import AssociationTargetPort
+from polyglot.modules.lexicon.exchange.ports import (
+    AssociationTargetPort,
+    DynamicListQueryPort,
+)
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
@@ -41,11 +44,13 @@ class SqlExchangeService:
         ids: IdGenerator | None = None,
         parse_limits: ParseLimits | None = None,
         association_targets: AssociationTargetPort | None = None,
+        dynamic_lists: DynamicListQueryPort | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
         self._parse_limits = parse_limits or ParseLimits()
         self._association_targets = association_targets
+        self._dynamic_lists = dynamic_lists
 
     async def _set_actor(self, session: AsyncSession, actor_id: UUID) -> None:
         await session.execute(
@@ -68,6 +73,40 @@ class SqlExchangeService:
         )
         if owned is not True:
             raise DomainError(ErrorCode.NOT_FOUND)
+
+    async def _actor_roles(
+        self,
+        session: AsyncSession,
+        actor_id: UUID,
+    ) -> tuple[str, ...]:
+        granted = tuple(
+            (
+                await session.execute(
+                    text(
+                        "SELECT role FROM identity.account_roles "
+                        "WHERE account_id=:actor AND revoked_at IS NULL"
+                    ),
+                    {"actor": actor_id},
+                )
+            ).scalars()
+        )
+        return ("learner", *granted)
+
+    async def _validate_list_mutation(
+        self,
+        session: AsyncSession,
+        actor_id: UUID,
+        current: VocabularyListView,
+        *,
+        members: bool = False,
+    ) -> None:
+        ListDefinition.create(
+            current.list_type,
+            current.query_definition,
+            actor_roles=await self._actor_roles(session, actor_id),
+        )
+        if members and current.list_type == "dynamic":
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
 
     async def _lock_command(
         self,
@@ -583,6 +622,7 @@ class SqlExchangeService:
                 if expected_version is None:
                     raise DomainError(ErrorCode.VERSION_CONFLICT)
                 current = await self._load_list(session, resource_id, for_update=True)
+                await self._validate_list_mutation(session, actor_id, current)
                 if current.version != expected_version:
                     raise DomainError(ErrorCode.VERSION_CONFLICT)
                 if current.status != "active":
@@ -601,8 +641,18 @@ class SqlExchangeService:
                 if expected_version is None:
                     raise DomainError(ErrorCode.VERSION_CONFLICT)
                 current = await self._load_list(session, resource_id, for_update=True)
+                await self._validate_list_mutation(session, actor_id, current)
                 if current.version != expected_version:
                     raise DomainError(ErrorCode.VERSION_CONFLICT)
+                revised_query = cast(
+                    dict[str, Any] | None,
+                    payload.get("query_definition", current.query_definition),
+                )
+                ListDefinition.create(
+                    current.list_type,
+                    revised_query,
+                    actor_roles=await self._actor_roles(session, actor_id),
+                )
                 revision_id = self._ids.new()
                 await self._insert_revision(
                     session,
@@ -625,7 +675,7 @@ class SqlExchangeService:
                     ),
                     query_definition=cast(
                         dict[str, object] | None,
-                        payload.get("query_definition", current.query_definition),
+                        revised_query,
                     ),
                     provenance_id=self._ids.new(),
                     members=current.member_sense_ids,
@@ -891,8 +941,11 @@ class SqlExchangeService:
             )
             if replay is not None:
                 return await self._load_list(session, replay[0])
-            if command.list_type == "dynamic" and command.query_definition is None:
-                raise DomainError(ErrorCode.VALIDATION_FAILED)
+            ListDefinition.create(
+                command.list_type,
+                command.query_definition,
+                actor_roles=await self._actor_roles(session, actor_id),
+            )
             if len(set(command.member_sense_ids)) != len(command.member_sense_ids):
                 raise DomainError(ErrorCode.MEMBER_CONFLICT)
             list_id = self._ids.new()
@@ -901,13 +954,16 @@ class SqlExchangeService:
             await session.execute(
                 text(
                     "INSERT INTO lexicon.vocabulary_lists "
-                    "(list_id,profile_id,variety_id,list_type,status,current_revision_id,version,"
-                    "created_at,updated_at) VALUES "
-                    "(:list,:profile,:variety,:type,'active',NULL,1,:at,:at)"
+                    "(list_id,profile_id,editorial_owner_id,variety_id,list_type,status,"
+                    "current_revision_id,version,created_at,updated_at) VALUES "
+                    "(:list,:profile,:editorial_owner,:variety,:type,'active',NULL,1,:at,:at)"
                 ),
                 {
                     "list": list_id,
                     "profile": profile_id,
+                    "editorial_owner": (
+                        actor_id if command.list_type == "editorial" else None
+                    ),
                     "variety": command.variety_id,
                     "type": command.list_type,
                     "at": command.created_at,
@@ -1037,6 +1093,12 @@ class SqlExchangeService:
             if replay is not None:
                 return await self._load_list(session, replay[0])
             current = await self._load_list(session, list_id, for_update=True)
+            await self._validate_list_mutation(
+                session,
+                actor_id,
+                current,
+                members=True,
+            )
             if current.version != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
             additions = set(command.add_sense_ids)
@@ -1119,12 +1181,30 @@ class SqlExchangeService:
             current = await self._load_list(session, list_id, for_update=True)
             if current.version != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
+            members = current.member_sense_ids
+            if current.list_type == "dynamic":
+                if self._dynamic_lists is None:
+                    raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+                if current.query_definition is None:
+                    raise DomainError(ErrorCode.VALIDATION_FAILED)
+                members = await self._dynamic_lists.evaluate(
+                    current.profile_id,
+                    current.query_definition,
+                    frozen_at,
+                    10_000,
+                )
+                if len(members) > 10_000:
+                    raise DomainError(ErrorCode.SIZE_LIMIT_EXCEEDED)
+                if len(set(members)) != len(members):
+                    raise DomainError(ErrorCode.MEMBER_CONFLICT)
+                if not current.ordered:
+                    members = tuple(sorted(members))
             snapshot_id = self._ids.new()
             checksum = canonical_json_fingerprint(
                 {
                     "list_id": str(list_id),
                     "revision_id": str(current.revision_id),
-                    "members": [str(value) for value in current.member_sense_ids],
+                    "members": [str(value) for value in members],
                 }
             )
             await session.execute(
@@ -1142,7 +1222,7 @@ class SqlExchangeService:
                     "checksum": checksum,
                 },
             )
-            for position, sense_id in enumerate(current.member_sense_ids, 1):
+            for position, sense_id in enumerate(members, 1):
                 await session.execute(
                     text(
                         "INSERT INTO lexicon.list_snapshot_members "
