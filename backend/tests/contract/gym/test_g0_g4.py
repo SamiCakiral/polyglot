@@ -1,4 +1,7 @@
+import socket
 from pathlib import Path
+
+import pytest
 
 from polyglot.modules.exercises.core.domain import CorrectionVerdict, HintLevel
 from polyglot.modules.exercises.gym.cycle import GymStage
@@ -120,9 +123,15 @@ def test_incorrect_controlled_output_is_negative_only_for_evaluable_targets() ->
     assert result.credit_for("it:lexicon:biglietto") == 0.0
 
 
-def test_fx_gym_it_executes_all_operations_and_cycle_oracles_offline() -> None:
+def test_fx_gym_it_executes_all_operations_and_cycle_oracles_offline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from polyglot.modules.exercises.gym.fixtures import validate_gym_fixture
 
+    def deny_network(*args: object, **kwargs: object) -> None:
+        raise AssertionError(f"network access attempted: {args!r} {kwargs!r}")
+
+    monkeypatch.setattr(socket, "socket", deny_network)
     report = validate_gym_fixture(FIXTURE)
 
     assert report.operation_ids == tuple(f"GYM-{index:02d}" for index in range(1, 16))
@@ -142,4 +151,3 @@ def test_fx_gym_it_executes_all_operations_and_cycle_oracles_offline() -> None:
         "transfer",
         "missing_prerequisite",
     }.issubset(report.scenarios)
-

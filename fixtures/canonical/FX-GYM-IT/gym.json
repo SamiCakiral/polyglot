@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-GYM-IT",
+  "seed": 1010,
+  "clock": "2026-08-10T09:00:00+00:00",
+  "operations": [
+    {
+      "operation_id": "GYM-01", "case_id": "it:gym:01", "revision_id": "it:gym:01:v1",
+      "source_text": "Vorrei un caffè", "edits": [["un caffè", "un biglietto"]],
+      "accepted_output": "Vorrei un biglietto", "rejected_output": "Voglio un biglietto",
+      "prerequisites": ["it:frame:vorrei"], "invariants": ["polite_request"],
+      "grammar_target_id": "it:grammar:vorrei", "lexical_support_ids": ["it:lexicon:biglietto"],
+      "scenarios": ["vorrei"]
+    },
+    {
+      "operation_id": "GYM-02", "case_id": "it:gym:02", "revision_id": "it:gym:02:v1",
+      "source_text": "Posso entrare?", "edits": [["Posso", "Può"]],
+      "accepted_output": "Può entrare?", "rejected_output": "Puoi entrare?",
+      "prerequisites": ["it:paradigm:potere"], "invariants": ["permission_request"],
+      "grammar_target_id": "it:grammar:person", "lexical_support_ids": ["it:lexicon:entrare"],
+      "scenarios": ["puo_posso"]
+    },
+    {
+      "operation_id": "GYM-03", "case_id": "it:gym:03", "revision_id": "it:gym:03:v1",
+      "source_text": "C'è una camera", "edits": [["C'è una camera", "Ci sono due camere"]],
+      "accepted_output": "Ci sono due camere", "rejected_output": "C'è due camere",
+      "prerequisites": ["it:agreement:existence"], "invariants": ["existence"],
+      "grammar_target_id": "it:grammar:ce-ci-sono", "lexical_support_ids": ["it:lexicon:camera"],
+      "scenarios": ["ce_ci_sono"]
+    },
+    {
+      "operation_id": "GYM-04", "case_id": "it:gym:04", "revision_id": "it:gym:04:v1",
+      "source_text": "Ho un biglietto", "edits": [["Ho", "Non ho"]],
+      "accepted_output": "Non ho un biglietto", "rejected_output": "No ho un biglietto",
+      "prerequisites": ["it:negation:non"], "invariants": ["ticket_possession"],
+      "grammar_target_id": "it:grammar:negation", "lexical_support_ids": ["it:lexicon:biglietto"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-05", "case_id": "it:gym:05", "revision_id": "it:gym:05:v1",
+      "source_text": "Il treno parte", "edits": [["Il treno parte", "Quando parte il treno?"]],
+      "accepted_output": "Quando parte il treno?", "rejected_output": "Quando il treno parte?",
+      "prerequisites": ["it:question:quando"], "invariants": ["train_departure"],
+      "grammar_target_id": "it:grammar:question", "lexical_support_ids": ["it:lexicon:treno"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-06", "case_id": "it:gym:06", "revision_id": "it:gym:06:v1",
+      "source_text": "Prendo il treno", "edits": [["Prendo", "Ho preso"]],
+      "accepted_output": "Ho preso il treno", "rejected_output": "Ho prenduto il treno",
+      "prerequisites": ["it:tense:present-perfect"], "invariants": ["train_event"],
+      "grammar_target_id": "it:grammar:past", "lexical_support_ids": ["it:lexicon:treno"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-07", "case_id": "it:gym:07", "revision_id": "it:gym:07:v1",
+      "source_text": "Prendo il treno", "edits": [["Prendo", "Devo prendere"]],
+      "accepted_output": "Devo prendere il treno", "rejected_output": "Devo prendo il treno",
+      "prerequisites": ["it:modal:dovere"], "invariants": ["central_action"],
+      "grammar_target_id": "it:grammar:modality", "lexical_support_ids": ["it:lexicon:treno"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-08", "case_id": "it:gym:08", "revision_id": "it:gym:08:v1",
+      "source_text": "Posso entrare?", "edits": [["Posso", "Può"]],
+      "accepted_output": "Può entrare?", "rejected_output": "Voglio entrare",
+      "prerequisites": ["it:register:formal"], "invariants": ["permission_request"],
+      "grammar_target_id": "it:grammar:politeness", "lexical_support_ids": ["it:lexicon:entrare"],
+      "scenarios": ["puo_posso"]
+    },
+    {
+      "operation_id": "GYM-09", "case_id": "it:gym:09", "revision_id": "it:gym:09:v1",
+      "source_text": "Io cerco il binario", "edits": [["Io cerco", "Lei cerca"]],
+      "accepted_output": "Lei cerca il binario", "rejected_output": "Lei cerco il binario",
+      "prerequisites": ["it:deictic:person"], "invariants": ["search_situation"],
+      "grammar_target_id": "it:grammar:viewpoint", "lexical_support_ids": ["it:lexicon:binario"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-10", "case_id": "it:gym:10", "revision_id": "it:gym:10:v1",
+      "source_text": "Prendo il biglietto", "edits": [["Prendo il biglietto", "Lo prendo"]],
+      "accepted_output": "Lo prendo", "rejected_output": "Le prendo",
+      "prerequisites": ["it:complement:direct"], "invariants": ["ticket_referent"],
+      "grammar_target_id": "it:grammar:clitic", "lexical_support_ids": ["it:lexicon:biglietto"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-11", "case_id": "it:gym:11", "revision_id": "it:gym:11:v1",
+      "source_text": "Ho un biglietto. Salgo sul treno", "edits": [[". Salgo", ", quindi salgo"]],
+      "accepted_output": "Ho un biglietto, quindi salgo sul treno", "rejected_output": "Ho un biglietto salgo sul treno",
+      "prerequisites": ["it:connector:quindi"], "invariants": ["two_propositions"],
+      "grammar_target_id": "it:grammar:combination", "lexical_support_ids": ["it:lexicon:treno"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-12", "case_id": "it:gym:12", "revision_id": "it:gym:12:v1",
+      "source_text": "Vorrei un biglietto", "edits": [["un biglietto", "un biglietto per Roma, per favore"]],
+      "accepted_output": "Vorrei un biglietto per Roma, per favore", "rejected_output": "Un biglietto Roma",
+      "prerequisites": ["it:variant:expanded-request"], "invariants": ["semantic_core"],
+      "grammar_target_id": "it:grammar:expansion", "lexical_support_ids": ["it:lexicon:roma"],
+      "scenarios": []
+    },
+    {
+      "operation_id": "GYM-13", "case_id": "it:gym:13", "revision_id": "it:gym:13:v1",
+      "source_text": "Sono Sami", "edits": [["Sono Sami", "Ecco Sami"]],
+      "accepted_output": "Ecco Sami", "rejected_output": "Sami ecco",
+      "prerequisites": ["it:contrast:sono-ecco"], "invariants": ["identity"],
+      "grammar_target_id": "it:grammar:identity", "lexical_support_ids": ["it:lexicon:name"],
+      "scenarios": ["sono_ecco"]
+    },
+    {
+      "operation_id": "GYM-14", "case_id": "it:gym:14", "revision_id": "it:gym:14:v1",
+      "source_text": "Vado prendere il treno", "edits": [["Vado prendere", "Sto per prendere"]],
+      "accepted_output": "Sto per prendere il treno", "rejected_output": "Vado a prendere il treno",
+      "prerequisites": ["it:error:andare-infinitive"], "invariants": ["near_future"],
+      "grammar_target_id": "it:grammar:near-future", "lexical_support_ids": ["it:lexicon:treno"],
+      "scenarios": ["andare_infinitive_calque"]
+    },
+    {
+      "operation_id": "GYM-15", "case_id": "it:gym:15", "revision_id": "it:gym:15:v1",
+      "source_text": "Voglio un biglietto", "edits": [["Voglio", "Vorrei"], ["un biglietto", "un biglietto per Roma, per favore"]],
+      "accepted_output": "Vorrei un biglietto per Roma, per favore", "rejected_output": "Voglio biglietto Roma",
+      "prerequisites": ["it:chain:polite-expanded-request"], "invariants": ["request", "destination"],
+      "grammar_target_id": "it:grammar:controlled-chain", "lexical_support_ids": ["it:lexicon:roma"],
+      "scenarios": []
+    }
+  ],
+  "cycle": [
+    {"stage": "g0", "offset_days": 0, "context_id": "lesson:contrast", "scene_id": "lesson", "structure_cued": true, "expected_credit": 0.0},
+    {"stage": "g1", "offset_days": 0, "context_id": "station:guided", "scene_id": "station:desk", "structure_cued": true, "expected_credit": 0.65},
+    {"stage": "g2", "offset_days": 1, "context_id": "station:near", "scene_id": "station:platform", "structure_cued": false, "expected_credit": 0.55},
+    {"stage": "g3", "offset_days": 3, "context_id": "hotel:varied", "scene_id": "hotel:desk", "structure_cued": false, "expected_credit": 0.65},
+    {"stage": "g4", "offset_days": 7, "context_id": "clinic:transfer", "scene_id": "clinic:reception", "structure_cued": false, "expected_credit": 1.0}
+  ],
+  "scenarios": [
+    "sono_ecco", "vorrei", "ce_ci_sono", "puo_posso",
+    "andare_infinitive_calque", "j_plus_one", "transfer", "missing_prerequisite"
+  ]
+}

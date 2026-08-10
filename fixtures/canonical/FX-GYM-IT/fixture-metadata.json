@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 1010,
+  "clock": "2026-08-10T09:00:00+00:00",
+  "payloads": {
+    "gym.json": "sha256:7518446b0fc109b2bcd008905a093ee9b661cfcb53af6b0dba55a98475464f04"
+  },
+  "oracles": [
+    "all_gym_01_15_positive_negative_and_missing_prerequisite",
+    "g0_g4_frozen_clock_and_credit_caps",
+    "h4_ambiguity_unavailable_and_lexical_support_zero_credit",
+    "deterministic_offline_replay"
+  ],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}
