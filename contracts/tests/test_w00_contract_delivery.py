@@ -273,6 +273,42 @@ class W00ContractDeliveryTest(unittest.TestCase):
             result.stdout,
         )
 
+    def test_allows_reproducible_frontend_artifacts(self) -> None:
+        roots = ("node_modules", "playwright-report", "test-results")
+        for root in roots:
+            with self.subTest(root=root):
+                cache = ROOT / f"frontend/{root}/.polyglot-contract-marker"
+                cache.parent.mkdir(parents=True, exist_ok=True)
+                cache.write_text("reproducible frontend artifact\n")
+                try:
+                    result = self.run_validator("--check-artifacts")
+                finally:
+                    cache.unlink()
+                self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_allows_synced_python_cache_only_for_tracked_source(self) -> None:
+        cache = ROOT / "backend/src/polyglot/__pycache__/__init__.cpython-313 2.pyc"
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_bytes(b"reproducible bytecode cache")
+        try:
+            result = self.run_validator("--check-artifacts")
+        finally:
+            cache.unlink()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
+    def test_allows_exact_frontend_typescript_build_cache(self) -> None:
+        cache = ROOT / "frontend/tsconfig.app.tsbuildinfo"
+        previous = cache.read_bytes() if cache.exists() else None
+        cache.write_bytes(b"reproducible TypeScript build cache")
+        try:
+            result = self.run_validator("--check-artifacts")
+        finally:
+            if previous is None:
+                cache.unlink()
+            else:
+                cache.write_bytes(previous)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+
     def run_validator(self, *flags: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, str(VALIDATOR), "contracts/registry", "contracts/tests", *flags],

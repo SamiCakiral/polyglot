@@ -24,6 +24,7 @@ htmlcov/
 node_modules/
 dist/
 build/
+*.tsbuildinfo
 
 # Local evidence and generated V2 artifacts
 artifacts/

@@ -69,9 +69,16 @@ APPROVED_CACHE_ROOTS = {
     "backend/.pytest_cache",
     "backend/.ruff_cache",
     "backend/.venv",
+    "frontend/node_modules",
+    "frontend/playwright-report",
+    "frontend/test-results",
+    "frontend/tsconfig.app.tsbuildinfo",
+    "frontend/tsconfig.node.tsbuildinfo",
 }
 APPROVED_PYTHON_ROOTS = ("backend/migrations", "backend/src", "backend/tests", "contracts/tests")
-COMPILED_PYTHON = re.compile(r"^(?P<module>.+)\.cpython-\d+(?:-[A-Za-z0-9_.-]+)?\.pyc$")
+COMPILED_PYTHON = re.compile(
+    r"^(?P<module>.+)\.cpython-\d+(?:-[A-Za-z0-9_.-]+)?(?: \d+)?\.pyc$"
+)
 
 
 def load(path: Path) -> object:
