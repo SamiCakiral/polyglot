@@ -1,4 +1,8 @@
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from polyglot.bootstrap.database import migration_database_url_from_environment
 
 ORIGIN = "https://polyglot.test"
 
@@ -146,6 +150,77 @@ async def test_invalid_credentials_do_not_disclose_unknown_identity(
 
     assert wrong_password.status_code == unknown.status_code == 401
     assert wrong_password.json()["code"] == unknown.json()["code"] == "invalid_credentials"
+
+
+async def test_fake_oidc_is_closed_and_never_persists_provider_credentials(
+    identity_service: object,
+) -> None:
+    provider_credential = "fixture-oidc"
+    async with await client_for(identity_service) as client:
+        registered = await client.post(
+            "/api/v1/accounts",
+            headers={"Origin": ORIGIN, "Idempotency-Key": "register-oidc-http"},
+            json={
+                "provider_type": "oidc",
+                "authorization_code": provider_credential,
+            },
+        )
+        authenticated = await client.post(
+            "/api/v1/session",
+            headers={"Origin": ORIGIN, "Idempotency-Key": "authenticate-oidc-http"},
+            json={
+                "provider_type": "oidc",
+                "authorization_code": provider_credential,
+            },
+        )
+        malformed = [
+            await client.post(
+                "/api/v1/session",
+                headers={"Origin": ORIGIN, "Idempotency-Key": "oidc-with-identifier"},
+                json={
+                    "provider_type": "oidc",
+                    "authorization_code": provider_credential,
+                    "identifier": "must-not-be-accepted@example.test",
+                },
+            ),
+            await client.post(
+                "/api/v1/session",
+                headers={"Origin": ORIGIN, "Idempotency-Key": "oidc-with-password"},
+                json={
+                    "provider_type": "oidc",
+                    "authorization_code": provider_credential,
+                    "password": "must not be accepted",
+                },
+            ),
+        ]
+
+    engine = create_async_engine(migration_database_url_from_environment())
+    async with engine.connect() as connection:
+        persisted_provider_credential = await connection.scalar(
+            text(
+                "SELECT EXISTS ("
+                "SELECT 1 FROM identity.login_identities "
+                "WHERE COALESCE(normalized_identifier, '') = :credential "
+                "OR COALESCE(password_hash, '') = :credential "
+                "OR COALESCE(issuer, '') = :credential "
+                "OR COALESCE(subject, '') = :credential "
+                "UNION ALL SELECT 1 FROM platform.command_receipts "
+                "WHERE COALESCE(result_payload::text, '') LIKE :needle "
+                "UNION ALL SELECT 1 FROM platform.domain_events "
+                "WHERE payload::text LIKE :needle "
+                "UNION ALL SELECT 1 FROM platform.security_audit_entries "
+                "WHERE actor_pseudonym LIKE :needle OR action_code LIKE :needle "
+                "OR reason_code LIKE :needle)"
+            ),
+            {"credential": provider_credential, "needle": f"%{provider_credential}%"},
+        )
+    await engine.dispose()
+
+    assert registered.status_code == authenticated.status_code == 201
+    assert authenticated.json()["account_id"] == registered.json()["account_id"]
+    assert all(response.status_code == 422 for response in malformed)
+    assert all(response.json()["code"] == "validation_failed" for response in malformed)
+    assert persisted_provider_credential is False
 
 
 async def test_if_match_and_closed_request_schema_block_stale_write_and_idor(
