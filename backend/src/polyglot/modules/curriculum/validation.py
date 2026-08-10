@@ -182,6 +182,60 @@ def _grammar_findings(data: ValidationInput) -> list[ValidationFinding]:
     return findings
 
 
+def _graph_findings(data: ValidationInput) -> list[ValidationFinding]:
+    findings: list[ValidationFinding] = []
+    bound_explanations: list[tuple[int, str]] = []
+    bound_practices: list[tuple[int, str, str]] = []
+    bound_morphology: set[str] = set()
+    bound_pronunciation: set[str] = set()
+    for day in data.module.days:
+        path = f"days.{day.ordinal}"
+        required_parts = (
+            day.context_revision_ids,
+            day.skill_bindings,
+            day.lexicon_bindings,
+            day.grammar_bindings,
+            day.exercise_bindings,
+            day.fallback_revision_ids,
+            day.validator_revision_ids,
+        )
+        if any(not part for part in required_parts) or not day.final_output_spec:
+            findings.append(_finding("module_day_graph_incomplete", path))
+        if day.ordinal > 1 and not day.recall_specs:
+            findings.append(_finding("module_day_graph_incomplete", f"{path}.recall"))
+
+        grammar_families = {binding.family_code for binding in day.grammar_bindings}
+        if grammar_families != set(day.explained_grammar_family_codes):
+            findings.append(_finding("module_validation_input_unbound", f"{path}.grammar"))
+        if not set(day.gym_grammar_family_codes).issubset(grammar_families):
+            findings.append(_finding("module_validation_input_unbound", f"{path}.gym"))
+        for binding in day.grammar_bindings:
+            bound_explanations.append((day.ordinal, binding.family_code))
+            bound_practices.extend(
+                (day.ordinal, binding.family_code, operation)
+                for operation in binding.allowed_operations
+            )
+        bound_morphology.update(
+            f"analysis:{binding.form_analysis_id}" for binding in day.morphology_bindings
+        )
+        bound_pronunciation.update(
+            f"pronunciation:{binding.target_revision_id}"
+            for binding in day.pronunciation_bindings
+        )
+    if (
+        tuple(sorted(bound_explanations)) != tuple(sorted(data.grammar_explanations))
+        or tuple(sorted(bound_practices)) != tuple(sorted(data.grammar_practices))
+        or len(bound_explanations) != len(data.grammar_explanations)
+        or len(bound_practices) != len(data.grammar_practices)
+    ):
+        findings.append(_finding("module_validation_input_unbound", "grammar"))
+    if bound_morphology != {item.target_ref for item in data.morphology_oracles}:
+        findings.append(_finding("module_validation_input_unbound", "morphology"))
+    if bound_pronunciation != {item.target_ref for item in data.pronunciation_oracles}:
+        findings.append(_finding("module_validation_input_unbound", "pronunciation"))
+    return findings
+
+
 def _load_findings(data: ValidationInput) -> list[ValidationFinding]:
     day_by_ordinal = {item.ordinal: item for item in data.module.days}
     findings: list[ValidationFinding] = []
@@ -212,6 +266,7 @@ def _load_findings(data: ValidationInput) -> list[ValidationFinding]:
 
 def validate_curriculum(data: ValidationInput) -> ValidationReport:
     findings = _reference_findings(data)
+    findings.extend(_graph_findings(data))
     findings.extend(_grammar_findings(data))
     findings.extend(_load_findings(data))
     for morphology in data.morphology_oracles:

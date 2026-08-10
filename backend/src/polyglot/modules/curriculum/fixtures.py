@@ -10,7 +10,18 @@ from uuid import UUID
 
 from polyglot.modules.exercises.core.domain import CORE_PRIMITIVE_IDS
 
-from .bindings import BindingRole, CurriculumError, SkillTargetBinding
+from .bindings import (
+    BindingRole,
+    CurriculumError,
+    ExerciseBinding,
+    GrammarTargetBinding,
+    LexiconTargetBinding,
+    MorphologyTargetBinding,
+    PronunciationEvaluability,
+    PronunciationTargetBinding,
+    RecallSpec,
+    SkillTargetBinding,
+)
 from .domain import ArcType, LearningModuleRevision, ModuleDay, ModuleStatus
 from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
 from .revisioning import (
@@ -373,10 +384,66 @@ def _production_validation_input(
     module_payload: dict[str, Any],
     days_payload: list[dict[str, Any]],
     bindings: dict[str, Any],
+    exercises_payload: dict[str, Any],
 ) -> ValidationInput:
+    grammar_items = {
+        str(item["family"]): item
+        for item in cast(list[dict[str, Any]], bindings["grammar"])
+    }
+    morphology_items = cast(list[dict[str, Any]], bindings["morphology"])
+    pronunciation_items = cast(list[dict[str, Any]], bindings["pronunciation"])
+    lexicon_sets = cast(list[dict[str, Any]], bindings["lexicon_sets"])
+    exercise_items = cast(list[dict[str, Any]], exercises_payload["exercises"])
     module_days: list[ModuleDay] = []
     for item in days_payload:
         ordinal = int(item["ordinal"])
+        grammar_bindings = tuple(
+            GrammarTargetBinding(
+                _fixture_uuid(9200, ordinal * 10 + index),
+                tuple(
+                    _fixture_uuid(9210 + ordinal, ordinal * 100 + index * 10 + pattern_index)
+                    for pattern_index, _ in enumerate(
+                        cast(list[str], grammar_items[family]["patterns"]), start=1
+                    )
+                ),
+                _fixture_uuid(9250, ordinal * 10 + index),
+                BindingRole(str(grammar_items[family]["role"])),
+                family,
+                tuple(
+                    str(gym["operation"])
+                    for gym in cast(list[dict[str, Any]], item["gym"])
+                    if str(gym["family"]) == family
+                ),
+            )
+            for index, family in enumerate(
+                cast(list[str], item["explanations"]), start=1
+            )
+        )
+        day_exercises = tuple(
+            exercise for exercise in exercise_items if int(exercise["day"]) == ordinal
+        )
+        exercise_bindings = tuple(
+            ExerciseBinding(
+                UUID(str(exercise["definition_revision_id"])),
+                str(exercise["primitive"]),
+                tuple(cast(list[str], exercise["targets"])),
+                _fixture_uuid(9300 + ordinal, index),
+                30_000,
+                60_000,
+            )
+            for index, exercise in enumerate(day_exercises, start=1)
+        )
+        lexicon_senses = cast(list[dict[str, Any]], lexicon_sets[ordinal - 1]["senses"])
+        morphology_slice = {
+            1: morphology_items[:2],
+            2: morphology_items[2:8],
+            3: morphology_items[8:],
+        }[ordinal]
+        pronunciation_slice = {
+            1: pronunciation_items[:1],
+            2: pronunciation_items[1:],
+            3: [],
+        }[ordinal]
         module_days.append(
             ModuleDay(
                 module_day_id=_fixture_uuid(8100, ordinal),
@@ -401,6 +468,80 @@ def _production_validation_input(
                     for gym in cast(list[dict[str, Any]], item["gym"])
                 ),
                 context_revision_ids=(_fixture_uuid(8200, ordinal),),
+                skill_bindings=tuple(
+                    SkillTargetBinding(
+                        _fixture_uuid(9400 + ordinal, index),
+                        BindingRole.TARGET,
+                        ("written_production",),
+                        ("produce",),
+                        (),
+                    )
+                    for index, _target in enumerate(
+                        (
+                            target
+                            for target in cast(list[str], item["targets"])
+                            if target.startswith("skill:")
+                        ),
+                        start=1,
+                    )
+                ),
+                lexicon_bindings=tuple(
+                    LexiconTargetBinding(
+                        UUID(str(sense["sense_revision_id"])),
+                        BindingRole.NEW,
+                        (_fixture_uuid(9500 + ordinal, index),),
+                        (_fixture_uuid(9600 + ordinal, index),),
+                    )
+                    for index, sense in enumerate(lexicon_senses, start=1)
+                ),
+                grammar_bindings=grammar_bindings,
+                morphology_bindings=tuple(
+                    MorphologyTargetBinding(
+                        _fixture_uuid(9700 + ordinal, index),
+                        str(morphology["ref"]),
+                        tuple(
+                            sorted(
+                                cast(dict[str, str], morphology["features"]).items()
+                            )
+                        ),
+                        BindingRole.TARGET,
+                        (str(morphology["primitive"]),),
+                    )
+                    for index, morphology in enumerate(morphology_slice, start=1)
+                ),
+                pronunciation_bindings=tuple(
+                    PronunciationTargetBinding(
+                        _fixture_uuid(9800 + ordinal, index),
+                        str(pronunciation["ref"]),
+                        _fixture_uuid(9850 + ordinal, index),
+                        _fixture_uuid(9900 + ordinal, index),
+                        BindingRole(str(pronunciation["role"])),
+                        PronunciationEvaluability(str(pronunciation["evaluability"])),
+                    )
+                    for index, pronunciation in enumerate(
+                        pronunciation_slice, start=1
+                    )
+                ),
+                exercise_bindings=exercise_bindings,
+                recall_specs=(
+                    RecallSpec(
+                        str(cast(list[str], item["targets"])[0]),
+                        "j+1",
+                        int(item["recall_from"]),
+                        UUID(
+                            str(
+                                next(
+                                    exercise["definition_revision_id"]
+                                    for exercise in exercise_items
+                                    if int(exercise["day"]) == ordinal - 1
+                                )
+                            )
+                        ),
+                        "h0",
+                    ),
+                )
+                if ordinal > 1
+                else (),
                 fallback_revision_ids=(_fixture_uuid(8300, ordinal),),
                 final_output_spec=str(item["objective"]),
                 validator_revision_ids=(_fixture_uuid(8400, ordinal),),
@@ -472,22 +613,38 @@ def _production_validation_input(
         ),
         morphology_oracles=tuple(
             MorphologyOracle(
-                str(item["ref"]),
-                tuple(sorted(cast(dict[str, str], item["features"]).items())),
+                f"analysis:{binding.form_analysis_id}",
+                binding.feature_bundle,
                 str(item["accepted"]),
                 True,
             )
-            for item in cast(list[dict[str, Any]], bindings["morphology"])
+            for day in module.days
+            for binding, item in zip(
+                day.morphology_bindings,
+                {
+                    1: morphology_items[:2],
+                    2: morphology_items[2:8],
+                    3: morphology_items[8:],
+                }[day.ordinal],
+                strict=True,
+            )
         ),
         pronunciation_oracles=tuple(
             PronunciationOracle(
-                str(item["ref"]),
+                f"pronunciation:{binding.target_revision_id}",
                 str(item["transcript"]),
                 str(item["transcript_checksum"]),
                 str(item["media_transcript_checksum"]),
                 str(item["evaluability"]),
             )
-            for item in cast(list[dict[str, Any]], bindings["pronunciation"])
+            for day in module.days
+            for binding, item in zip(
+                day.pronunciation_bindings,
+                {1: pronunciation_items[:1], 2: pronunciation_items[1:], 3: []}[
+                    day.ordinal
+                ],
+                strict=True,
+            )
         ),
         profile_novelty_limits=(("P-ABS", 6.0), ("P-FAUX", 8.0), ("P-INT", 10.0)),
         day_novelty_points=tuple(
@@ -818,7 +975,9 @@ def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureRepor
             or not set(dialogue["lexicon_refs"]).issubset(allowed_lexicon_refs)
         ):
             raise _error("module_target_unresolved")
-    production_data = _production_validation_input(module, days, bindings)
+    production_data = _production_validation_input(
+        module, days, bindings, payloads["exercises.json"]
+    )
     _run_production_validation(production_data)
     revision_cases = payloads["revision-cases.json"]
     _validate_revision_cases(revision_cases, production_data)
