@@ -72,7 +72,10 @@ class CorrectionStrategyKind(StrEnum):
     ACCEPTED_SET = "accepted_set"
     MORPHOLOGICAL = "morphological"
     STRUCTURAL_CONSTRAINTS = "structural_constraints"
+    BOUNDED_TRANSLATION = "bounded_translation"
     RUBRIC = "rubric"
+    SELF_ASSESSMENT = "self_assessment"
+    BEFORE_AFTER = "before_after"
 
 
 class BlockStatus(StrEnum):
@@ -472,11 +475,39 @@ class CorrectionStrategy:
         )
 
     @classmethod
+    def bounded_translation(
+        cls, *, accepted_meanings: tuple[str, ...], required_tokens: tuple[str, ...]
+    ) -> CorrectionStrategy:
+        return cls(
+            CorrectionStrategyKind.BOUNDED_TRANSLATION,
+            expected=accepted_meanings,
+            required_tokens=required_tokens,
+        )
+
+    @classmethod
+    def self_assessment(
+        cls, *, required_criteria: tuple[str, ...], passing_score: float
+    ) -> CorrectionStrategy:
+        return cls(
+            CorrectionStrategyKind.SELF_ASSESSMENT,
+            required_criteria=required_criteria,
+            passing_score=passing_score,
+        )
+
+    @classmethod
+    def before_after(cls, *, expected_after: str) -> CorrectionStrategy:
+        return cls(CorrectionStrategyKind.BEFORE_AFTER, expected=(expected_after,))
+
+    @classmethod
     def ambiguous(cls) -> CorrectionStrategy:
         return cls(CorrectionStrategyKind.RUBRIC, always_ambiguous=True)
 
     def correct(
-        self, value: str | Mapping[str, float], *, observed_traits: Mapping[str, str] | None = None
+        self,
+        value: str | Mapping[str, float],
+        *,
+        observed_traits: Mapping[str, str] | None = None,
+        previous_value: str | None = None,
     ) -> CorrectionResult:
         if self.always_ambiguous:
             return CorrectionResult.ambiguous(
@@ -531,6 +562,36 @@ class CorrectionStrategy:
                 1.0,
                 float(matched),
                 "constraints",
+                self.kind,
+            )
+        if self.kind is CorrectionStrategyKind.BOUNDED_TRANSLATION:
+            if not isinstance(value, str):
+                return CorrectionResult(
+                    CorrectionVerdict.INVALID_ANSWER, 1.0, 0.0, "text required", self.kind
+                )
+            normalized = _normalize(value)
+            meaning_matches = normalized in {_normalize(item) for item in self.expected}
+            tokens_match = all(
+                _normalize(token) in normalized.split() for token in self.required_tokens
+            )
+            matched = meaning_matches and tokens_match
+            return CorrectionResult(
+                CorrectionVerdict.CORRECT if matched else CorrectionVerdict.INCORRECT,
+                1.0,
+                float(matched),
+                "bounded translation",
+                self.kind,
+            )
+        if self.kind is CorrectionStrategyKind.BEFORE_AFTER:
+            if not isinstance(value, str) or previous_value is None:
+                return CorrectionResult.not_evaluable("before/after comparison is incomplete")
+            changed = _normalize(value) != _normalize(previous_value)
+            matched = changed and _normalize(value) == _normalize(self.expected[0])
+            return CorrectionResult(
+                CorrectionVerdict.CORRECT if matched else CorrectionVerdict.INCORRECT,
+                1.0,
+                float(matched),
+                "before/after",
                 self.kind,
             )
         if not isinstance(value, Mapping) or not self.required_criteria:

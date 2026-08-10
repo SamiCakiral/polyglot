@@ -4,7 +4,7 @@ import hashlib
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Literal
+from typing import Literal, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -69,19 +69,43 @@ class _Metadata(_StrictModel):
     linguistic_review: Literal["pending_human"]
 
 
-class _CorrectionOracle(_StrictModel):
-    oracle_id: str
-    strategy: Literal[
+class _StrategyOracle(_StrictModel):
+    kind: Literal[
         "exact_value",
         "accepted_set",
         "exact_normalized",
+        "morphological",
         "structural_constraints",
+        "bounded_translation",
+        "rubric",
+        "self_assessment",
+        "before_after",
     ]
+    value_path: str | None = None
+    expected_traits: dict[str, str] | None = None
+    positive_traits: dict[str, str] | None = None
+    negative_traits: dict[str, str] | None = None
+    required_tokens: tuple[str, ...] = ()
+    accepted_meanings: tuple[str, ...] = ()
+    required_criteria: tuple[str, ...] = ()
+    passing_score: float = 1.0
+    positive_scores: dict[str, float] | None = None
+    negative_scores: dict[str, float] | None = None
+    previous_value: str | None = None
+
+
+class _CorrectionOracle(_StrictModel):
+    oracle_id: str
+    strategies: tuple[_StrategyOracle, ...]
     negative_value: JsonValue
     positive_verdict: Literal[CorrectionVerdict.CORRECT]
-    negative_verdict: Literal[CorrectionVerdict.INCORRECT]
+    negative_verdict: Literal[
+        CorrectionVerdict.INCORRECT, CorrectionVerdict.PARTIALLY_CORRECT
+    ]
     ambiguous_verdict: Literal[CorrectionVerdict.AMBIGUOUS]
     not_evaluable_verdict: Literal[CorrectionVerdict.NOT_EVALUABLE]
+    ambiguous_reason: str
+    not_evaluable_reason: str
 
 
 class _A11yOracle(_StrictModel):
@@ -119,9 +143,12 @@ class PrimitiveOracleEvidence:
     oracle_id: str
     primitive_id: str
     sample_kind: str
-    strategy: str
+    declared_strategies: tuple[str, ...]
+    executed_strategies: tuple[str, ...]
     sample_used: bool
     verdicts: tuple[str, str, str, str]
+    ambiguous_policy: str
+    not_evaluable_policy: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,6 +225,8 @@ def _validate_closed_contract(payload: _PrimitivePayload) -> None:
             raise _validation_failed(f"{item.primitive_id} answer contract does not match")
         if item.correction_oracle.oracle_id != f"{item.primitive_id}:oracle":
             raise _validation_failed(f"{item.primitive_id} oracle identity is not unique")
+        if not item.correction_oracle.strategies:
+            raise _validation_failed(f"{item.primitive_id} must declare correction strategies")
         if set(item.case_ids) != _REQUIRED_CASES or len(item.case_ids) != len(_REQUIRED_CASES):
             raise _validation_failed(f"{item.primitive_id} executable cases are incomplete")
 
@@ -257,25 +286,102 @@ def _exact_value_result(actual: JsonValue, expected: JsonValue) -> CorrectionRes
     )
 
 
-def _strategy_results(item: _PrimitiveFixture) -> tuple[CorrectionResult, CorrectionResult]:
-    sample = item.sample.raw_value
-    negative = item.correction_oracle.negative_value
-    strategy = item.correction_oracle.strategy
-    if strategy == "exact_value":
-        return _exact_value_result(sample, sample), _exact_value_result(negative, sample)
-    if not isinstance(sample, str) or not isinstance(negative, str):
-        raise _validation_failed(f"{item.primitive_id} strategy requires text samples")
-    if strategy == "accepted_set":
-        correction = CorrectionStrategy.accepted_set((sample,))
-    elif strategy == "exact_normalized":
-        correction = CorrectionStrategy.exact_normalized(sample)
-    elif strategy == "structural_constraints":
-        correction = CorrectionStrategy.structural_constraints(
-            required_tokens=tuple(sample.casefold().split()), ordered=True
-        )
-    else:
-        raise _validation_failed(f"{item.primitive_id} strategy is not executable")
-    return correction.correct(sample), correction.correct(negative)
+def _strategy_value(value: JsonValue, value_path: str | None) -> JsonValue:
+    if value_path is None:
+        return value
+    if isinstance(value, dict) and value_path in value:
+        return value[value_path]
+    if isinstance(value, list) and value_path.isdigit():
+        index = int(value_path)
+        if index < len(value):
+            return value[index]
+    raise _validation_failed(f"strategy value path {value_path!r} is unavailable")
+
+
+def _score_mapping(value: JsonValue, primitive_id: str) -> dict[str, float]:
+    if not isinstance(value, dict) or any(
+        not isinstance(score, (int, float)) for score in value.values()
+    ):
+        raise _validation_failed(f"{primitive_id} strategy requires numeric criteria")
+    return {name: float(cast(int | float, score)) for name, score in value.items()}
+
+
+def _execute_strategy(
+    item: _PrimitiveFixture, strategy: _StrategyOracle, *, positive: bool
+) -> CorrectionResult:
+    raw_value = item.sample.raw_value if positive else item.correction_oracle.negative_value
+    value = _strategy_value(raw_value, strategy.value_path)
+    if strategy.kind == "exact_value":
+        expected = _strategy_value(item.sample.raw_value, strategy.value_path)
+        return _exact_value_result(value, expected)
+    if strategy.kind in {
+        "accepted_set",
+        "exact_normalized",
+        "morphological",
+        "structural_constraints",
+        "bounded_translation",
+        "before_after",
+    } and not isinstance(value, str):
+        raise _validation_failed(f"{item.primitive_id} strategy requires text")
+    text_value = cast(str, value)
+    if strategy.kind == "accepted_set":
+        expected = _strategy_value(item.sample.raw_value, strategy.value_path)
+        if not isinstance(expected, str):
+            raise _validation_failed(f"{item.primitive_id} accepted set is not textual")
+        correction = CorrectionStrategy.accepted_set((expected,))
+        return correction.correct(text_value)
+    if strategy.kind == "exact_normalized":
+        expected = _strategy_value(item.sample.raw_value, strategy.value_path)
+        if not isinstance(expected, str):
+            raise _validation_failed(f"{item.primitive_id} exact oracle is not textual")
+        return CorrectionStrategy.exact_normalized(expected).correct(text_value)
+    if strategy.kind == "morphological":
+        expected = _strategy_value(item.sample.raw_value, strategy.value_path)
+        if not isinstance(expected, str) or strategy.expected_traits is None:
+            raise _validation_failed(f"{item.primitive_id} morphology parameters are incomplete")
+        observed = strategy.positive_traits if positive else strategy.negative_traits
+        return CorrectionStrategy.morphological(
+            expected=expected, expected_traits=strategy.expected_traits
+        ).correct(text_value, observed_traits=observed)
+    if strategy.kind == "structural_constraints":
+        return CorrectionStrategy.structural_constraints(
+            required_tokens=strategy.required_tokens, ordered=True
+        ).correct(text_value)
+    if strategy.kind == "bounded_translation":
+        return CorrectionStrategy.bounded_translation(
+            accepted_meanings=strategy.accepted_meanings,
+            required_tokens=strategy.required_tokens,
+        ).correct(text_value)
+    if strategy.kind == "rubric":
+        scores = strategy.positive_scores if positive else strategy.negative_scores
+        return CorrectionStrategy.rubric(
+            required_criteria=strategy.required_criteria,
+            passing_score=strategy.passing_score,
+        ).correct(_score_mapping(cast(JsonValue, scores), item.primitive_id))
+    if strategy.kind == "self_assessment":
+        return CorrectionStrategy.self_assessment(
+            required_criteria=strategy.required_criteria,
+            passing_score=strategy.passing_score,
+        ).correct(_score_mapping(value, item.primitive_id))
+    expected = _strategy_value(item.sample.raw_value, strategy.value_path)
+    if not isinstance(expected, str):
+        raise _validation_failed(f"{item.primitive_id} repair target is not textual")
+    return CorrectionStrategy.before_after(expected_after=expected).correct(
+        text_value, previous_value=strategy.previous_value
+    )
+
+
+def _combined_verdict(results: tuple[CorrectionResult, ...]) -> CorrectionVerdict:
+    verdicts = {result.verdict for result in results}
+    for verdict in (
+        CorrectionVerdict.INVALID_ANSWER,
+        CorrectionVerdict.NOT_EVALUABLE,
+        CorrectionVerdict.INCORRECT,
+        CorrectionVerdict.PARTIALLY_CORRECT,
+    ):
+        if verdict in verdicts:
+            return verdict
+    return CorrectionVerdict.CORRECT
 
 
 def _run_correction_oracle(
@@ -287,13 +393,21 @@ def _run_correction_oracle(
         input_method="fixture-negative",
         submitted_at=clock.now(),
     )
-    positive_result, negative_result = _strategy_results(item)
-    ambiguous = CorrectionResult.ambiguous("fixture ambiguity")
-    not_evaluable = CorrectionResult.not_evaluable("fixture unavailable")
     oracle = item.correction_oracle
+    positive_results = tuple(
+        _execute_strategy(item, strategy, positive=True) for strategy in oracle.strategies
+    )
+    negative_results = tuple(
+        _execute_strategy(item, strategy, positive=False) for strategy in oracle.strategies
+    )
+    positive_result = positive_results[-1]
+    positive_verdict = _combined_verdict(positive_results)
+    negative_verdict = _combined_verdict(negative_results)
+    ambiguous = CorrectionResult.ambiguous(oracle.ambiguous_reason)
+    not_evaluable = CorrectionResult.not_evaluable(oracle.not_evaluable_reason)
     verdicts = (
-        positive_result.verdict,
-        negative_result.verdict,
+        positive_verdict,
+        negative_verdict,
         ambiguous.verdict,
         not_evaluable.verdict,
     )
@@ -326,7 +440,8 @@ def _run_correction_oracle(
         oracle_id=oracle.oracle_id,
         primitive_id=item.primitive_id,
         sample_kind=item.sample.kind,
-        strategy=oracle.strategy,
+        declared_strategies=tuple(strategy.kind for strategy in oracle.strategies),
+        executed_strategies=tuple(strategy.kind for strategy in oracle.strategies),
         sample_used=True,
         verdicts=(
             verdicts[0].value,
@@ -334,6 +449,8 @@ def _run_correction_oracle(
             verdicts[2].value,
             verdicts[3].value,
         ),
+        ambiguous_policy=f"{item.primitive_id}:ambiguous",
+        not_evaluable_policy=f"{item.primitive_id}:not_evaluable",
     )
 
 
