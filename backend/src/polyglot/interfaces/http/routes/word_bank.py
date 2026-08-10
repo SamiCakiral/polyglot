@@ -1169,16 +1169,59 @@ class SqlWordBankService:
             ).mappings().one_or_none()
             if row is None:
                 row = (
-                    await session.execute(text("SELECT sense_id,definition,(SELECT lemma FROM lexicon.private_lexical_units unit WHERE unit.lexical_unit_id=sense.lexical_unit_id) AS lemma FROM lexicon.private_lexical_senses sense WHERE sense_id=:sense"), {"sense": sense_id})
+                    await session.execute(text("SELECT sense_id,definition,(SELECT lemma FROM lexicon.private_lexical_units unit WHERE unit.profile_id=:profile AND unit.lexical_unit_id=sense.lexical_unit_id) AS lemma FROM lexicon.private_lexical_senses sense WHERE profile_id=:profile AND sense_id=:sense"), {"profile": profile_id, "sense": sense_id})
+                ).mappings().one_or_none()
+            if row is None:
+                row = (
+                    await session.execute(
+                        text(
+                            "SELECT sense_id,definition,label AS lemma FROM "
+                            "lexicon.lexical_reference_entries WHERE sense_id=:sense "
+                            "ORDER BY reference_set_id LIMIT 1"
+                        ),
+                        {"sense": sense_id},
+                    )
                 ).mappings().one_or_none()
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
+            node_rows = (
+                await session.execute(
+                    text(
+                        "WITH RECURSIVE walk(node,depth) AS (VALUES (CAST(:root AS uuid),0) "
+                        "UNION SELECT relation.target_sense_id,walk.depth+1 FROM walk JOIN "
+                        "lexicon.personal_lexical_relations relation ON relation.profile_id=:profile "
+                        "AND relation.source_sense_id=walk.node AND relation.relation_type=ANY(:types) "
+                        "AND NOT EXISTS (SELECT 1 FROM lexicon.lexical_relation_retractions retract "
+                        "WHERE retract.profile_id=:profile AND retract.relation_id=relation.relation_id) "
+                        "WHERE walk.depth<:depth) SELECT node,min(depth) AS depth FROM walk "
+                        "GROUP BY node ORDER BY min(depth),node LIMIT :maximum"
+                    ),
+                    {
+                        "root": sense_id,
+                        "profile": profile_id,
+                        "types": list(edge_types),
+                        "depth": depth,
+                        "maximum": max_nodes,
+                    },
+                )
+            ).all()
+            nodes = tuple(UUID(str(item.node)) for item in node_rows)
             edge_rows = (
-                await session.execute(text("SELECT source_sense_id,target_sense_id,relation_type FROM lexicon.personal_lexical_relations relation WHERE profile_id=:profile AND relation_type=ANY(:types) AND NOT EXISTS (SELECT 1 FROM lexicon.lexical_relation_retractions retraction WHERE retraction.profile_id=:profile AND retraction.relation_id=relation.relation_id)"), {"profile": profile_id, "types": list(edge_types)})
+                await session.execute(
+                    text(
+                        "SELECT source_sense_id,target_sense_id,relation_type FROM "
+                        "lexicon.personal_lexical_relations relation WHERE profile_id=:profile "
+                        "AND source_sense_id=ANY(:nodes) AND target_sense_id=ANY(:nodes) "
+                        "AND relation_type=ANY(:types) AND NOT EXISTS (SELECT 1 FROM "
+                        "lexicon.lexical_relation_retractions retract WHERE retract.profile_id=:profile "
+                        "AND retract.relation_id=relation.relation_id) ORDER BY relation_id"
+                    ),
+                    {"profile": profile_id, "nodes": list(nodes), "types": list(edge_types)},
+                )
             ).all()
             graph = tuple(GraphEdge(UUID(str(item.source_sense_id)), UUID(str(item.target_sense_id)), str(item.relation_type)) for item in edge_rows)
             neighborhood = bounded_neighborhood(sense_id, graph, depth=depth, edge_types=frozenset(edge_types), max_nodes=max_nodes)
-            return SenseNeighborhoodResponse(sense_id=sense_id, label=str(row["lemma"]), definition=str(row["definition"]), nodes=neighborhood.nodes, edges=tuple({"source": str(edge.source_sense_id), "target": str(edge.target_sense_id), "type": edge.edge_type} for edge in neighborhood.edges), truncated=neighborhood.truncated, version=1)
+            return SenseNeighborhoodResponse(sense_id=sense_id, label=str(row["lemma"]), definition=str(row["definition"]), nodes=nodes, edges=tuple({"source": str(edge.source_sense_id), "target": str(edge.target_sense_id), "type": edge.edge_type} for edge in neighborhood.edges), truncated=len(nodes) == max_nodes or neighborhood.truncated, version=1)
 
     async def list_annotations(self, *, account_id: UUID, profile_id: UUID, limit: int, cursor: str | None) -> LexicalAnnotationPageResponse:
         async with self._session_factory() as session:
