@@ -6,6 +6,7 @@ from uuid import UUID
 
 import pytest
 
+from polyglot.modules.catalogue.core import domain as catalogue_domain
 from polyglot.modules.catalogue.core.domain import (
     ContentRevisionStatus,
     LanguagePackRevision,
@@ -177,3 +178,157 @@ def test_prerequisite_traversal_is_bounded_deterministic_and_reports_truncation(
     assert complete.truncated is False
     assert bounded.skill_revision_ids == (second.skill_revision_id, third.skill_revision_id)
     assert bounded.truncated is True
+
+
+def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot() -> None:
+    required_names = (
+        "FoundationCheckerKind",
+        "PublishedFoundationItem",
+        "PublishedFoundationBlock",
+        "PublishedFoundationGate",
+        "PublishedFoundationDefinition",
+        "PublishedFoundationCatalogue",
+    )
+    missing = [name for name in required_names if not hasattr(catalogue_domain, name)]
+    assert not missing, f"W04F foundation contracts are missing: {missing}"
+
+    checker_kind = catalogue_domain.FoundationCheckerKind
+    item_type = catalogue_domain.PublishedFoundationItem
+    block_type = catalogue_domain.PublishedFoundationBlock
+    gate_type = catalogue_domain.PublishedFoundationGate
+    definition_type = catalogue_domain.PublishedFoundationDefinition
+    aggregate_type = catalogue_domain.PublishedFoundationCatalogue
+
+    def identifier(namespace: int, number: int) -> UUID:
+        return UUID(f"019fe900-4200-7000-{namespace:04x}-{number:012x}")
+
+    def item(block_number: int, item_number: int) -> object:
+        return item_type(
+            item_revision_id=identifier(0x8003 + block_number, item_number),
+            block_revision_id=identifier(0x8010 + block_number, 1),
+            pack_revision_id=PACK_REVISION_ID,
+            item_code=f"ITF-F{block_number}-{item_number:02d}",
+            ordinal=item_number,
+            target_refs=(f"IT-TARGET-F{block_number}-{item_number:02d}",),
+            response_kind="raw",
+            checker_kind=(
+                checker_kind.NOT_EVALUABLE
+                if block_number == 2 and item_number == 2
+                else checker_kind.EXACT_CHOICE
+            ),
+            checker_values=(
+                () if block_number == 2 and item_number == 2 else ("accepted",)
+            ),
+            modalities=("reading",),
+            status=ContentRevisionStatus.PUBLISHED,
+            checksum="a" * 64,
+        )
+
+    blocks = tuple(
+        block_type(
+            block_revision_id=identifier(0x8010 + block_number, 1),
+            foundation_revision_id=identifier(0x8001, 1),
+            pack_revision_id=PACK_REVISION_ID,
+            block_code=f"F{block_number}",
+            ordinal=block_number,
+            component_type=(
+                "script_perception" if block_number == 1 else "interaction"
+            ),
+            prerequisite_refs=(),
+            items=(item(block_number, 1), item(block_number, 2)),
+            modalities=("reading",),
+            backend_criteria=("deterministic",),
+            waiver_policy_ref="DIAGNOSTIC_WAIVER_V0",
+            status=ContentRevisionStatus.PUBLISHED,
+            checksum="b" * 64,
+        )
+        for block_number in range(1, 6)
+    )
+    gate = gate_type(
+        gate_revision_id=identifier(0x8002, 1),
+        foundation_revision_id=identifier(0x8001, 1),
+        pack_revision_id=PACK_REVISION_ID,
+        gate_code="FOUNDATIONS_IT_V0",
+        blocking_target_refs=tuple(
+            item.target_refs[0]
+            for block in blocks
+            for item in block.items
+            if item.checker_kind is not checker_kind.NOT_EVALUABLE
+        ),
+        blocking_facet_refs=("grapheme_sound", "controlled_reading", "survival_exchange"),
+        coverage_threshold=0.8,
+        confidence_threshold=0.6,
+        minimum_distinct_sessions=2,
+        delayed_control_hours=24,
+        grapheme_sound_minimum=8,
+        grapheme_sound_total=10,
+        targeted_reading_minimum=8,
+        targeted_reading_total=10,
+        survival_exchange_minimum=4,
+        survival_exchange_total=5,
+        oral_policy="not_evaluable_non_blocking",
+        status=ContentRevisionStatus.PUBLISHED,
+        checksum="c" * 64,
+    )
+    definition = definition_type(
+        foundation_id=identifier(0x8000, 1),
+        foundation_revision_id=identifier(0x8001, 1),
+        pack_revision_id=PACK_REVISION_ID,
+        foundation_code="FOUNDATIONS_IT_V0",
+        revision_no=1,
+        blocks=blocks,
+        gate=gate,
+        status=ContentRevisionStatus.PUBLISHED,
+        checksum="d" * 64,
+    )
+    aggregate = aggregate_type(definition=definition)
+
+    assert tuple(block.block_code for block in aggregate.definition.blocks) == (
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+    )
+    assert aggregate.definition.gate.minimum_distinct_sessions == 2
+    assert aggregate.definition.gate.delayed_control_hours == 24
+
+    with pytest.raises(DomainError) as incomplete:
+        definition_type(**{**definition.as_dict(), "blocks": blocks[:-1]})
+    assert incomplete.value.code is ErrorCode.VALIDATION_FAILED
+
+    with pytest.raises(DomainError) as missing_checker:
+        item_type(
+            **{
+                **blocks[0].items[0].as_dict(),
+                "checker_values": (),
+            }
+        )
+    assert missing_checker.value.code is ErrorCode.VALIDATION_FAILED
+
+    with pytest.raises(DomainError) as absent_target:
+        definition_type(
+            **{
+                **definition.as_dict(),
+                "gate": gate_type(
+                    **{
+                        **gate.as_dict(),
+                        "blocking_target_refs": (*gate.blocking_target_refs, "IT-MISSING-999"),
+                    }
+                ),
+            }
+        )
+    assert absent_target.value.code is ErrorCode.REFERENCE_NOT_FOUND
+
+    with pytest.raises(DomainError) as duplicate_ordinal:
+        definition_type(
+            **{
+                **definition.as_dict(),
+                "blocks": (blocks[0], block_type(**{**blocks[1].as_dict(), "ordinal": 1}), *blocks[2:]),
+            }
+        )
+    assert duplicate_ordinal.value.code is ErrorCode.VALIDATION_FAILED
+
+    with pytest.raises(DomainError) as invalid_threshold:
+        gate_type(**{**gate.as_dict(), "grapheme_sound_minimum": 11})
+    assert invalid_threshold.value.code is ErrorCode.VALIDATION_FAILED

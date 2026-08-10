@@ -152,3 +152,23 @@ async def test_repository_rejects_tampered_cursor(
         assert error.code is ErrorCode.CURSOR_INVALID
     else:
         raise AssertionError("tampered cursor was accepted")
+
+
+async def test_repository_reads_only_the_complete_published_foundation_aggregate(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+) -> None:
+    repository = SqlCatalogueRepository(session)
+    reader = getattr(repository, "read_foundations", None)
+    assert callable(reader), "W04F foundation catalogue reader is missing"
+
+    await seed_catalogue(migration_session, include_foundations=True)
+    published = await reader(pack_revision_id=IDS["pack_revision"])
+    missing = await reader(
+        pack_revision_id=UUID("019fe900-5000-7000-8fff-000000000001")
+    )
+
+    assert published is not None
+    assert [block.block_code for block in published.definition.blocks] == ["F1", "F2", "F3", "F4", "F5"]
+    assert published.definition.gate.gate_code == "FOUNDATIONS_IT_V0"
+    assert missing is None

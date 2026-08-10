@@ -73,6 +73,16 @@ def test_italian_pilot_fixture_loads_revisioned_catalogue_domain() -> None:
     assert fixture.support_language_tags == ("fr-FR",)
     assert fixture.pack_revision.status is ContentRevisionStatus.PUBLISHED
     assert fixture.pilot_days == (1, 2, 3)
+    assert hasattr(fixture, "foundations"), "W04F foundation fixture contract is missing"
+    assert [block.block_code for block in fixture.foundations.definition.blocks] == [
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+    ]
+    assert fixture.foundations.definition.gate.gate_code == "FOUNDATIONS_IT_V0"
+    assert fixture.foundations.definition.gate.oral_policy == "not_evaluable_non_blocking"
 
     assert {item.function_code for item in fixture.communicative_functions} >= {
         "IT-PRAG-001",
@@ -165,6 +175,30 @@ def _fixture_with_payload(tmp_path: Path, mutate: object) -> Path:
     ),
 )
 def test_fixture_rejects_unresolved_refs_unpublished_nested_content_and_duplicate_ids(
+    tmp_path: Path,
+    mutate: object,
+) -> None:
+    fixture = _fixture_with_payload(tmp_path, mutate)
+    with pytest.raises(DomainError) as rejected:
+        load_catalogue_fixture(fixture)
+    assert rejected.value.code in {ErrorCode.REFERENCE_NOT_FOUND, ErrorCode.VALIDATION_FAILED}
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    (
+        lambda payload: payload["foundations"].update({"blocks": payload["foundations"]["blocks"][:-1]}),
+        lambda payload: payload["foundations"]["blocks"][0]["items"][0].update(
+            {"checker_values": []}
+        ),
+        lambda payload: payload["foundations"]["gate"].update(
+            {"blocking_target_refs": ["IT-MISSING-999"]}
+        ),
+        lambda payload: payload["foundations"]["blocks"][1].update({"ordinal": 1}),
+        lambda payload: payload["foundations"]["gate"].update({"grapheme_sound_minimum": 11}),
+    ),
+)
+def test_fixture_rejects_incoherent_foundation_definitions(
     tmp_path: Path,
     mutate: object,
 ) -> None:

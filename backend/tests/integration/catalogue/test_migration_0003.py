@@ -149,6 +149,11 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
 
     assert tables == {
         "expression_components",
+        "foundation_block_revisions",
+        "foundation_definition_revisions",
+        "foundation_definitions",
+        "foundation_gate_revisions",
+        "foundation_item_revisions",
         "form_analyses",
         "form_realizations",
         "grammar_patterns",
@@ -196,6 +201,53 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
             "'catalogue.language_pack_revisions', 'INSERT')"
         )
     )
+
+
+async def test_0003_restricts_incoherent_foundations_and_published_child_reparenting(
+    migration_session: AsyncSession,
+) -> None:
+    tables = set(
+        (
+            await migration_session.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema = 'catalogue'"
+                )
+            )
+        ).scalars()
+    )
+    required_tables = {
+        "foundation_definitions",
+        "foundation_definition_revisions",
+        "foundation_block_revisions",
+        "foundation_item_revisions",
+        "foundation_gate_revisions",
+    }
+    assert required_tables <= tables, "W04F foundation persistence tables are missing"
+
+    await seed_catalogue(migration_session, include_foundations=True)
+    with pytest.raises(DBAPIError, match="published revision is immutable"):
+        await migration_session.execute(
+            text(
+                "UPDATE catalogue.foundation_item_revisions SET item_code = item_code "
+                "WHERE item_revision_id = :item"
+            ),
+            {"item": IDS["foundation_item_f1_01"]},
+        )
+    await migration_session.rollback()
+
+    with pytest.raises(DBAPIError):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_item_revisions "
+                "(item_revision_id, block_revision_id, pack_revision_id, item_code, ordinal, "
+                "target_refs, response_kind, checker_kind, checker_values, modalities, status, checksum) "
+                "VALUES ('019fe900-5000-7000-8075-000000000099', :block, :pack, "
+                "'ITF-F1-99', 3, ARRAY['IT-TARGET-F1-99'], 'raw', 'exact_choice', "
+                "ARRAY[]::varchar[], ARRAY['reading'], 'published', repeat('a', 64))"
+            ),
+            {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+        )
 
 
 async def test_database_rejects_published_rewrite_duplicate_publication_and_required_cycle(
