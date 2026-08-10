@@ -12,6 +12,7 @@ from polyglot.modules.lexicon.memory.application import (
     MemoryLifecycle,
     MergeMemoryPrompts,
     ResetMemoryPrompt,
+    ResumeMemoryPrompt,
     RestoreMemoryPrompt,
     SubmitMemoryReview,
 )
@@ -19,7 +20,11 @@ from polyglot.modules.lexicon.memory.domain import MemoryAggregate, PromptStatus
 from polyglot.modules.lexicon.memory.policy import HintLevel, ReviewVerdict, SchedulerPolicy
 from polyglot.modules.lexicon.memory.ports import MemoryRating, MemoryState
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
-from polyglot.modules.lexicon.memory.rebuild import rebuild_schedule
+from polyglot.modules.lexicon.memory.rebuild import (
+    MemoryReplayBinding,
+    StaticMemoryReplayResolver,
+    rebuild_schedule,
+)
 from polyglot.platform.errors import DomainError, ErrorCode
 
 NOW = datetime(2026, 1, 5, 9, tzinfo=UTC)
@@ -145,6 +150,15 @@ def lifecycle() -> MemoryLifecycle:
 @pytest.fixture
 def policy() -> SchedulerPolicy:
     return SchedulerPolicy.default()
+
+
+def replay_resolver(
+    *policies: SchedulerPolicy,
+) -> StaticMemoryReplayResolver:
+    scheduler = FsrsV6Scheduler()
+    return StaticMemoryReplayResolver(
+        tuple(MemoryReplayBinding(scheduler, item) for item in policies)
+    )
 
 
 def test_create_has_active_product_status_and_independent_new_schedule(
@@ -327,7 +341,11 @@ def test_suspend_resume_preserves_memory_and_never_invents_again(
         policy,
     ).aggregate
     suspended = lifecycle.suspend(reviewed, NOW + timedelta(hours=1))
-    resumed = lifecycle.resume(suspended, NOW + timedelta(days=30), policy)
+    resumed = lifecycle.resume(
+        suspended,
+        ResumeMemoryPrompt(uid(90), NOW + timedelta(days=30)),
+        policy,
+    )
 
     assert suspended.prompt.status is PromptStatus.SUSPENDED
     assert suspended.schedule == reviewed.schedule
@@ -337,6 +355,8 @@ def test_suspend_resume_preserves_memory_and_never_invents_again(
     assert resumed.schedule.lapses == reviewed.schedule.lapses
     assert resumed.schedule.last_rating is MemoryRating.GOOD
     assert len(resumed.reviews) == 1
+    assert len(resumed.resumptions) == 1
+    assert rebuild_schedule(resumed, replay_resolver(policy)) == resumed.schedule
 
 
 def test_reset_is_append_only_and_rebuilds_a_new_lineage(
@@ -359,7 +379,7 @@ def test_reset_is_append_only_and_rebuilds_a_new_lineage(
     assert reset.schedule.state is MemoryState.NEW
     assert reset.schedule.reps == 0
     assert reset.schedule.projection_version == reviewed.schedule.projection_version + 1
-    assert rebuild_schedule(reset, FsrsV6Scheduler(), policy) == reset.schedule
+    assert rebuild_schedule(reset, replay_resolver(policy)) == reset.schedule
 
 
 def test_archive_restore_requires_available_revision_and_delete_requires_reauth(
@@ -376,7 +396,11 @@ def test_archive_restore_requires_available_revision_and_delete_requires_reauth(
     with pytest.raises(DomainError) as missing:
         lifecycle.restore(
             archived,
-            RestoreMemoryPrompt(NOW + timedelta(hours=2), target_revision_available=False),
+            RestoreMemoryPrompt(
+                uid(91),
+                NOW + timedelta(hours=2),
+                target_revision_available=False,
+            ),
             policy,
         )
     assert missing.value.code is ErrorCode.TARGET_REVISION_UNAVAILABLE
@@ -384,10 +408,16 @@ def test_archive_restore_requires_available_revision_and_delete_requires_reauth(
 
     restored = lifecycle.restore(
         archived,
-        RestoreMemoryPrompt(NOW + timedelta(hours=2), target_revision_available=True),
+        RestoreMemoryPrompt(
+            uid(92),
+            NOW + timedelta(hours=2),
+            target_revision_available=True,
+        ),
         policy,
     )
     assert restored.prompt.status is PromptStatus.ACTIVE
+    assert len(restored.resumptions) == 1
+    assert rebuild_schedule(restored, replay_resolver(policy)) == restored.schedule
 
     with pytest.raises(DomainError) as forbidden:
         lifecycle.delete(restored, DeleteMemoryPrompt(NOW, reauthenticated=False))
@@ -432,7 +462,7 @@ def test_merge_deduplicates_causally_and_supersedes_sources_without_erasing_fact
     assert all(source.prompt.status is PromptStatus.SUPERSEDED for source in result.sources)
     assert all(len(source.reviews) == 1 for source in result.sources)
     assert (
-        rebuild_schedule(result.canonical, FsrsV6Scheduler(), policy)
+        rebuild_schedule(result.canonical, replay_resolver(policy))
         == result.canonical.schedule
     )
 
@@ -453,3 +483,126 @@ def test_incompatible_merge_has_no_partial_effect(
     assert error.value.code is ErrorCode.INCOMPATIBLE_PROTOCOLS
     assert first.prompt.status is PromptStatus.ACTIVE
     assert second.prompt.status is PromptStatus.ACTIVE
+
+
+def test_rebuild_resolves_every_persisted_scheduler_policy_and_fails_closed(
+    policy: SchedulerPolicy,
+) -> None:
+    scheduler = FsrsV6Scheduler()
+    policy_v2 = replace(policy, revision=2)
+    resolver = replay_resolver(policy, policy_v2)
+    lifecycle = MemoryLifecycle(scheduler, replay_resolver=resolver)
+    first = lifecycle.submit_review(
+        lifecycle.create(create_command(prompt_id=71), policy),
+        review_command(review_id=72, opportunity_id=73),
+        policy,
+    ).aggregate
+    second = lifecycle.submit_review(
+        lifecycle.create(create_command(prompt_id=74), policy_v2),
+        review_command(
+            review_id=75,
+            opportunity_id=76,
+            reviewed_at=NOW + timedelta(days=1),
+        ),
+        policy_v2,
+    ).aggregate
+    merged = lifecycle.merge(
+        MergeMemoryPrompts(uid(77), (first, second), NOW + timedelta(days=2)),
+        policy_v2,
+    ).canonical
+
+    assert rebuild_schedule(merged, resolver) == merged.schedule
+    with pytest.raises(DomainError) as unavailable:
+        rebuild_schedule(merged, replay_resolver(policy_v2))
+    assert unavailable.value.code is ErrorCode.DEPENDENCY_UNAVAILABLE
+
+
+def test_merge_replays_resets_reviews_and_duplicate_facts_causally(
+    policy: SchedulerPolicy,
+) -> None:
+    resolver = replay_resolver(policy)
+    lifecycle = MemoryLifecycle(FsrsV6Scheduler(), replay_resolver=resolver)
+    first = lifecycle.submit_review(
+        lifecycle.create(create_command(prompt_id=101), policy),
+        review_command(review_id=111, opportunity_id=121),
+        policy,
+    ).aggregate
+    first = lifecycle.reset(
+        first,
+        ResetMemoryPrompt(uid(112), "merge reset", NOW + timedelta(days=2)),
+        policy,
+    )
+    second = lifecycle.submit_review(
+        lifecycle.create(create_command(prompt_id=102), policy),
+        review_command(
+            review_id=113,
+            opportunity_id=121,
+            reviewed_at=NOW + timedelta(days=1),
+        ),
+        policy,
+    ).aggregate
+
+    canonical = lifecycle.merge(
+        MergeMemoryPrompts(uid(103), (first, second), NOW + timedelta(days=3)),
+        policy,
+    ).canonical
+
+    assert len(canonical.reviews) == 2
+    assert len(canonical.resets) == 1
+    assert canonical.schedule.state is MemoryState.NEW
+    assert canonical.schedule.reps == 0
+    assert rebuild_schedule(canonical, resolver) == canonical.schedule
+
+
+def test_checkpoint_controls_same_instant_review_then_reset_order(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.create(create_command(prompt_id=131), policy)
+    aggregate = lifecycle.submit_review(
+        aggregate,
+        review_command(review_id=199, opportunity_id=132),
+        policy,
+    ).aggregate
+    aggregate = lifecycle.reset(
+        aggregate,
+        ResetMemoryPrompt(uid(133), "same instant", NOW),
+        policy,
+    )
+
+    rebuilt = rebuild_schedule(aggregate, replay_resolver(policy))
+
+    assert rebuilt.state is MemoryState.NEW
+    assert rebuilt.reps == 0
+    assert rebuilt.causal_checkpoint == f"reset:{uid(133)}"
+
+
+def test_rebuild_rejects_broken_checkpoint_and_corrupt_provider_transition(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.submit_review(
+        lifecycle.create(create_command(prompt_id=141), policy),
+        review_command(review_id=142, opportunity_id=143),
+        policy,
+    ).aggregate
+    reset = lifecycle.reset(
+        aggregate,
+        ResetMemoryPrompt(uid(144), "causal check", NOW + timedelta(days=1)),
+        policy,
+    )
+    broken_reset = replace(reset.resets[0], previous_checkpoint="review:missing")
+    broken_history = replace(reset, resets=(broken_reset,))
+
+    with pytest.raises(DomainError) as causal:
+        rebuild_schedule(broken_history, replay_resolver(policy))
+    assert causal.value.code is ErrorCode.VALIDATION_FAILED
+
+    review = aggregate.reviews[0]
+    corrupt_after = replace(review.state_after, difficulty=Decimal("9.999"))
+    corrupt_review = replace(review, state_after=corrupt_after)
+    corrupt_history = replace(aggregate, reviews=(corrupt_review,))
+
+    with pytest.raises(DomainError) as transition:
+        rebuild_schedule(corrupt_history, replay_resolver(policy))
+    assert transition.value.code is ErrorCode.VALIDATION_FAILED
