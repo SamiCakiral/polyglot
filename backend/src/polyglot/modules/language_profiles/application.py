@@ -515,12 +515,7 @@ class LanguageProfileApplicationService:
         account_id: UUID,
         item_revision_id: UUID,
         ordinal: int,
-        target: DiagnosticTarget,
         answer: dict[str, JsonValue],
-        score: float | None,
-        confidence: float | None,
-        evaluable: bool,
-        revealed: bool,
         expected_version: int,
         idempotency_key: str,
         context: RequestContext,
@@ -544,17 +539,6 @@ class LanguageProfileApplicationService:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
             if now >= cast(datetime, row["expires_at"]):
                 raise DomainError(ErrorCode.RUN_EXPIRED)
-            if evaluable != (score is not None and confidence is not None):
-                raise DomainError(ErrorCode.VALIDATION_FAILED)
-            if evaluable:
-                DiagnosticAnswer(
-                    target=target,
-                    score=cast(float, score),
-                    confidence=cast(float, confidence),
-                    evaluable=True,
-                    difficulty=1,
-                    item_revision_id=item_revision_id,
-                )
             receipt = self._receipt(
                 command_type="SubmitDiagnosticResponse",
                 account_id=account_id,
@@ -564,7 +548,6 @@ class LanguageProfileApplicationService:
                     {
                         "item_revision_id": str(item_revision_id),
                         "ordinal": ordinal,
-                        "target": target.value,
                     }
                 ),
                 expected_version=expected_version,
@@ -576,7 +559,13 @@ class LanguageProfileApplicationService:
                 self._replayed_error(reservation.receipt)
                 await uow.commit()
                 return await self.get_diagnostic(run_id, account_id)
-            persisted_answer = {**answer, "_w03_target": target.value, "_w03_difficulty": 1}
+            # No corrector is available in W03. A learner answer is immutable input,
+            # but remains not_evaluable and cannot influence placement.
+            persisted_answer = {
+                **answer,
+                "_w03_target": DiagnosticTarget.FOUNDATIONS.value,
+                "_w03_difficulty": 1,
+            }
             try:
                 await session.execute(
                     diagnostic_responses.insert().values(
@@ -585,10 +574,10 @@ class LanguageProfileApplicationService:
                         item_revision_id=item_revision_id,
                         ordinal=ordinal,
                         answer=persisted_answer,
-                        score=score,
-                        confidence=confidence,
-                        evaluable=evaluable,
-                        revealed=revealed,
+                        score=None,
+                        confidence=None,
+                        evaluable=False,
+                        revealed=False,
                         submitted_at=now,
                         idempotency_key=idempotency_key,
                     )

@@ -23,7 +23,6 @@ from polyglot.modules.language_profiles.application import (
     FoundationRunSummary,
     LanguageProfileApplicationService,
 )
-from polyglot.modules.language_profiles.diagnostic import DiagnosticTarget
 from polyglot.modules.language_profiles.domain import LanguageProfileStatus, LearnerLanguageProfile
 from polyglot.platform.errors import DomainError, ErrorCode
 
@@ -59,12 +58,7 @@ class StartDiagnosticRequest(ClosedModel):
 class SubmitDiagnosticResponseRequest(ClosedModel):
     item_revision_id: UUID
     ordinal: int = Field(ge=1)
-    target: DiagnosticTarget
     answer: dict[str, Any]
-    score: float | None = Field(default=None, ge=0, le=1)
-    confidence: float | None = Field(default=None, ge=0, le=1)
-    evaluable: bool
-    revealed: bool = False
 
 
 class StartFoundationRunRequest(ClosedModel):
@@ -318,12 +312,7 @@ def language_profiles_router(
             account_id=account_id,
             item_revision_id=payload.item_revision_id,
             ordinal=payload.ordinal,
-            target=payload.target,
             answer=payload.answer,
-            score=payload.score,
-            confidence=payload.confidence,
-            evaluable=payload.evaluable,
-            revealed=payload.revealed,
             expected_version=_expected_version(if_match),
             idempotency_key=idempotency_key,
             context=_context(request),
