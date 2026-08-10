@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 from polyglot.platform.security_checks import _patch_content, scan_git_repository
+from polyglot.platform.security_checks import _find_secrets
 
 
 def _git(repository: Path, *arguments: str) -> None:
@@ -112,3 +113,14 @@ def test_history_scan_survives_a_pure_rename_before_redaction(tmp_path: Path) ->
     _commit_all(tmp_path, "redact renamed content")
 
     assert scan_git_repository(tmp_path) == ["history:openai_api_key"]
+
+
+def test_split_task_report_source_is_not_a_secret_but_real_assignments_are() -> None:
+    report_fragment = "".join(("s", "k", "-", "W05", "-", "rejection", "-", "report"))
+    source_reference = f'report_path = "ta" + "{report_fragment}.md"'
+    secret_value = "".join(("s", "k", "-", "a" * 24))
+    sensitive_name = "".join(("OPENAI", "_API_KEY"))
+    real_assignment = f'{sensitive_name} = "{secret_value}"'
+
+    assert _find_secrets(source_reference, "fixture") == []
+    assert _find_secrets(real_assignment, "fixture") == ["fixture:openai_api_key"]
