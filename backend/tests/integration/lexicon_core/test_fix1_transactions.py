@@ -9,7 +9,7 @@ from polyglot.bootstrap.database import migration_database_url_from_environment
 from polyglot.interfaces.http.routes.word_bank import SqlWordBankService
 from polyglot.platform.errors import DomainError, ErrorCode
 
-from .test_ingestion_postgres import NOW, seed_profiles, uid
+from .test_ingestion_postgres import NOW, seed_profiles, set_actor, uid
 
 
 def encounter_payload(*, encounter: int = 1000, mention: int = 1001) -> dict[str, object]:
@@ -75,6 +75,7 @@ async def test_encounter_materializes_candidate_then_resolve_is_api_reachable(
     )
 
     async with factory() as session:
+        await set_actor(session, uid(1))
         candidate_count = await session.scalar(
             text("SELECT count(*) FROM lexicon.mention_candidates WHERE mention_id=:id"),
             {"id": uid(1001)},
@@ -120,6 +121,7 @@ async def test_failed_resolution_rolls_back_receipt_event_and_outbox(service_fac
     assert error.value.code is ErrorCode.NOT_FOUND
 
     async with factory() as session:
+        await set_actor(session, uid(1))
         assert await session.scalar(
             text(
                 "SELECT count(*) FROM platform.command_receipts "
@@ -148,6 +150,7 @@ async def test_concurrent_same_key_same_hash_replays_one_atomic_effect(service_f
     first, second = await asyncio.gather(invoke(), invoke())
     assert first == second
     async with factory() as session:
+        await set_actor(session, uid(1))
         assert await session.scalar(
             text("SELECT count(*) FROM lexicon.lexical_encounters WHERE encounter_id=:id"),
             {"id": uid(1100)},
@@ -182,6 +185,7 @@ async def test_concurrent_same_key_different_hash_conflicts_without_second_effec
     outcomes = await asyncio.gather(invoke(1200), invoke(1210))
     assert ErrorCode.IDEMPOTENCY_CONFLICT in outcomes
     async with factory() as session:
+        await set_actor(session, uid(1))
         assert await session.scalar(
             text(
                 "SELECT count(*) FROM lexicon.lexical_encounters "
@@ -194,6 +198,7 @@ async def test_concurrent_same_key_different_hash_conflicts_without_second_effec
 async def test_neighborhood_is_explicitly_scoped_to_one_owned_profile(service_factory) -> None:
     service, factory = service_factory
     async with factory() as session:
+        await set_actor(session, uid(1))
         # Same account, two profiles: account-level RLS alone cannot separate these graphs.
         await session.execute(
             text(

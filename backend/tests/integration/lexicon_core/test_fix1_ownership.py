@@ -9,7 +9,7 @@ from polyglot.bootstrap.database import migration_database_url_from_environment
 from polyglot.interfaces.http.routes.word_bank import SqlWordBankService
 from polyglot.platform.errors import DomainError, ErrorCode
 
-from .test_ingestion_postgres import NOW, seed_profiles, uid
+from .test_ingestion_postgres import NOW, seed_profiles, set_actor, uid
 
 
 async def seed_same_account_profiles_and_private_senses(session) -> None:
@@ -121,6 +121,7 @@ async def test_path_sense_is_authoritative_over_payload_sense(ownership_service)
         expected_version=None,
     )
     async with factory() as session:
+        await set_actor(session, uid(1))
         stored_sense = await session.scalar(
             text("SELECT sense_id FROM lexicon.lexical_declarations WHERE declaration_id=:id"),
             {"id": result.resource_id},
@@ -173,6 +174,7 @@ async def test_schema_rejects_cross_profile_child_fk_even_with_same_account(
 ) -> None:
     _, factory = ownership_service
     async with factory() as session:
+        await set_actor(session, uid(1))
         await session.execute(
             text(
                 "INSERT INTO lexicon.lexical_encounters "

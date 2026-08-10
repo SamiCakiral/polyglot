@@ -21,6 +21,13 @@ def uid(number: int) -> UUID:
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 
 
+async def set_actor(session: AsyncSession, account_id: UUID) -> None:
+    await session.execute(
+        text("SELECT set_config('app.user_id', :account_id, false)"),
+        {"account_id": str(account_id)},
+    )
+
+
 async def seed_profiles(session: AsyncSession) -> None:
     for account_id in (uid(1), uid(2)):
         await session.execute(
@@ -51,10 +58,7 @@ async def seed_profiles(session: AsyncSession) -> None:
             },
         )
     await session.commit()
-    await session.execute(
-        text("SELECT set_config('app.user_id', :account_id, false)"),
-        {"account_id": str(uid(1))},
-    )
+    await set_actor(session, uid(1))
 
 
 def command(*, surface: str = "piano", fingerprint: str = "a" * 64) -> RecordLexicalEncounter:
@@ -138,17 +142,14 @@ async def test_private_context_delete_keeps_fact_and_minimal_provenance(
 
 async def test_rls_hides_another_users_encounter(
     migration_session: AsyncSession,
+    runtime_session: AsyncSession,
 ) -> None:
     await seed_profiles(migration_session)
     await LexiconCommandService(migration_session).record_encounter(command())
     await migration_session.commit()
-    await migration_session.execute(text("SET ROLE polyglot_runtime"))
-    await migration_session.execute(
-        text("SELECT set_config('app.user_id', :user_id, false)"),
-        {"user_id": str(uid(2))},
-    )
+    await set_actor(runtime_session, uid(2))
 
-    visible = await migration_session.scalar(
+    visible = await runtime_session.scalar(
         text("SELECT count(*) FROM lexicon.lexical_encounters")
     )
 
