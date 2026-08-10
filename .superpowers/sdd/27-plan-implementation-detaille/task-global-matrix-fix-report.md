@@ -34,9 +34,7 @@ reseeds.
 - GREEN extends only `tests/integration/content/conftest.py`: it truncates the
   existing catalogue tables with `CASCADE` before each content test, then each
   content fixture reseeds its own deterministic references.
-- The GREEN files were committed in `145058d` while the concurrent W06 task
-  committed its own staged work. They remain independently identifiable in
-  that commit; no W06 file was modified by this audit.
+- GREEN commit `c695eb9` contains only the content isolation and scanner fixes.
 
 Fresh `/tmp` proof after the fix:
 
@@ -78,8 +76,7 @@ or user datum. No true secret was found.
 - GREEN requires a token boundary before `sk-`. It does not allowlist a file,
   commit, value or secret family, and the positive synthetic-key oracle still
   passes.
-- The GREEN scanner change is also contained in `145058d` for the concurrent
-  staging reason recorded above.
+- The GREEN scanner change is contained in `c695eb9`.
 
 Autonomous `/tmp` proof after the fix:
 
