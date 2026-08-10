@@ -16,6 +16,7 @@ import type {
   CurrentSessionResponse,
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
+  DynamicListPreviewResponse,
   FoundationResponse,
   GetExport200,
   GetSharedVocabularyList200,
@@ -2442,6 +2443,20 @@ export const getChangeListMembersResponseMock = (
   ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
   variety_id: faker.string.uuid(),
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPreviewDynamicListResponseMock = (
+  overrideResponse: Partial<Extract<DynamicListPreviewResponse, object>> = {},
+): DynamicListPreviewResponse => ({
+  cutoff_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  list_id: faker.string.uuid(),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  revision_id: faker.string.uuid(),
+  truncated: faker.datatype.boolean(),
   ...overrideResponse,
 });
 

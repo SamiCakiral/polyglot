@@ -56,6 +56,7 @@ def test_exchange_queries_are_authenticated_and_bounded() -> None:
     for route in (
         "/api/v1/vocabulary-lists",
         "/api/v1/vocabulary-lists/{id}",
+        "/api/v1/vocabulary-lists/{list_id}/preview",
         "/api/v1/shared-vocabulary-lists",
         "/api/v1/shared-vocabulary-lists/{id}",
         "/api/v1/imports/{id}",
@@ -67,6 +68,11 @@ def test_exchange_queries_are_authenticated_and_bounded() -> None:
         assert not {name for name in _parameters(operation) if name.startswith("_")}
     list_parameters = _parameters(document["paths"]["/api/v1/vocabulary-lists"]["get"])
     assert list_parameters["limit"]["schema"]["maximum"] == 100
+    preview_parameters = _parameters(
+        document["paths"]["/api/v1/vocabulary-lists/{list_id}/preview"]["get"]
+    )
+    assert preview_parameters["cutoff_at"]["required"] is True
+    assert preview_parameters["limit"]["schema"]["maximum"] == 100
 
 
 def test_commit_request_cannot_self_assert_catalogue_freshness() -> None:

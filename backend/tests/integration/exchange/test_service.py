@@ -1148,3 +1148,85 @@ async def test_dynamic_snapshot_freezes_port_result_at_cutoff(runtime_factory) -
     assert evaluator.calls == [
         (PROFILE_A, {"has_due_prompt": True}, NOW + timedelta(minutes=1), 10_000)
     ]
+
+
+async def test_dynamic_preview_is_bounded_and_does_not_create_snapshot(
+    runtime_factory,
+    migration_session,
+) -> None:
+    evaluator = DynamicListEvaluator((uid(1400), uid(1401), uid(1402)))
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1410, 1480)),
+        dynamic_lists=evaluator,
+    )
+    dynamic = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="dynamic",
+            name="Aperçu des rappels",
+            purpose="Lecture sans mutation",
+            ordered=False,
+            color=None,
+            tags=(),
+            query_definition={"has_due_prompt": True},
+            member_sense_ids=(),
+            created_at=NOW,
+        ),
+        idempotency_key="dynamic-preview-list",
+    )
+
+    preview = await service.preview_dynamic_list(
+        ACCOUNT_A,
+        dynamic.list_id,
+        cutoff_at=NOW + timedelta(minutes=1),
+        limit=2,
+    )
+
+    await set_actor(migration_session, ACCOUNT_A)
+    snapshots = await migration_session.scalar(
+        text("SELECT count(*) FROM lexicon.list_snapshots WHERE list_id=:list"),
+        {"list": dynamic.list_id},
+    )
+    assert preview.member_sense_ids == (uid(1400), uid(1401))
+    assert preview.truncated is True
+    assert preview.revision_id == dynamic.revision_id
+    assert evaluator.calls == [(PROFILE_A, {"has_due_prompt": True}, NOW + timedelta(minutes=1), 3)]
+    assert snapshots == 0
+
+
+async def test_dynamic_preview_rejects_manual_lists(runtime_factory) -> None:
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1490, 1530)),
+        dynamic_lists=DynamicListEvaluator(()),
+    )
+    manual = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="manual",
+            name="Manuelle",
+            purpose="Pas de requête dynamique",
+            ordered=True,
+            color=None,
+            tags=(),
+            query_definition=None,
+            member_sense_ids=(),
+            created_at=NOW,
+        ),
+        idempotency_key="manual-preview-list",
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        await service.preview_dynamic_list(
+            ACCOUNT_A,
+            manual.list_id,
+            cutoff_at=NOW + timedelta(minutes=1),
+            limit=10,
+        )
+
+    assert rejected.value.code is ErrorCode.INVALID_TRANSITION

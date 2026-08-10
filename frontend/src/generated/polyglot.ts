@@ -44,6 +44,7 @@ import type {
   DeleteMemoryPromptRequest,
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
+  DynamicListPreviewResponse,
   FoundationResponse,
   GetContentHistoryParams,
   GetExport200,
@@ -71,6 +72,7 @@ import type {
   OidcCredentialsRequest,
   PreferencesRequest,
   PreferencesResponse,
+  PreviewDynamicListParams,
   ProblemResponse,
   ProfileResponse,
   ProfilesResponse,
@@ -18394,6 +18396,329 @@ export const useChangeListMembers = <
 > => {
   return useMutation(getChangeListMembersMutationOptions(options), queryClient);
 };
+
+export type previewDynamicListResponse200 = {
+  data: DynamicListPreviewResponse;
+  status: 200;
+};
+
+export type previewDynamicListResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type previewDynamicListResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type previewDynamicListResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type previewDynamicListResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type previewDynamicListResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type previewDynamicListResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type previewDynamicListResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type previewDynamicListResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type previewDynamicListResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type previewDynamicListResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type previewDynamicListResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type previewDynamicListResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type previewDynamicListResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type previewDynamicListResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type previewDynamicListResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type previewDynamicListResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type previewDynamicListResponseSuccess =
+  previewDynamicListResponse200 & {
+    headers: Headers;
+  };
+export type previewDynamicListResponseError = (
+  | previewDynamicListResponse401ApplicationJson
+  | previewDynamicListResponse401ApplicationProblemJson
+  | previewDynamicListResponse403ApplicationJson
+  | previewDynamicListResponse403ApplicationProblemJson
+  | previewDynamicListResponse409ApplicationJson
+  | previewDynamicListResponse409ApplicationProblemJson
+  | previewDynamicListResponse422ApplicationJson
+  | previewDynamicListResponse422ApplicationProblemJson
+  | previewDynamicListResponse423ApplicationJson
+  | previewDynamicListResponse423ApplicationProblemJson
+  | previewDynamicListResponse428ApplicationJson
+  | previewDynamicListResponse428ApplicationProblemJson
+  | previewDynamicListResponse429ApplicationJson
+  | previewDynamicListResponse429ApplicationProblemJson
+  | previewDynamicListResponse503ApplicationJson
+  | previewDynamicListResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type previewDynamicListResponse =
+  previewDynamicListResponseSuccess | previewDynamicListResponseError;
+
+export const getPreviewDynamicListUrl = (
+  listId: string,
+  params: PreviewDynamicListParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/vocabulary-lists/${listId}/preview?${stringifiedParams}`
+    : `/api/v1/vocabulary-lists/${listId}/preview`;
+};
+
+/**
+ * @summary Preview Dynamic List
+ */
+export const previewDynamicList = async (
+  listId: string,
+  params: PreviewDynamicListParams,
+  options?: RequestInit,
+): Promise<previewDynamicListResponse> => {
+  const res = await fetch(getPreviewDynamicListUrl(listId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: previewDynamicListResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as previewDynamicListResponse;
+};
+
+export const getPreviewDynamicListQueryKey = (
+  listId: string,
+  params?: PreviewDynamicListParams,
+) => {
+  return [
+    `/api/v1/vocabulary-lists/${listId}/preview`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getPreviewDynamicListQueryOptions = <
+  TData = Awaited<ReturnType<typeof previewDynamicList>>,
+  TError = ProblemResponse,
+>(
+  listId: string,
+  params: PreviewDynamicListParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof previewDynamicList>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getPreviewDynamicListQueryKey(listId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof previewDynamicList>>
+  > = ({ signal }) =>
+    previewDynamicList(listId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: listId !== null && listId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof previewDynamicList>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type PreviewDynamicListQueryResult = NonNullable<
+  Awaited<ReturnType<typeof previewDynamicList>>
+>;
+export type PreviewDynamicListQueryError = ProblemResponse;
+
+export function usePreviewDynamicList<
+  TData = Awaited<ReturnType<typeof previewDynamicList>>,
+  TError = ProblemResponse,
+>(
+  listId: string,
+  params: PreviewDynamicListParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof previewDynamicList>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof previewDynamicList>>,
+          TError,
+          Awaited<ReturnType<typeof previewDynamicList>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function usePreviewDynamicList<
+  TData = Awaited<ReturnType<typeof previewDynamicList>>,
+  TError = ProblemResponse,
+>(
+  listId: string,
+  params: PreviewDynamicListParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof previewDynamicList>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof previewDynamicList>>,
+          TError,
+          Awaited<ReturnType<typeof previewDynamicList>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function usePreviewDynamicList<
+  TData = Awaited<ReturnType<typeof previewDynamicList>>,
+  TError = ProblemResponse,
+>(
+  listId: string,
+  params: PreviewDynamicListParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof previewDynamicList>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Preview Dynamic List
+ */
+
+export function usePreviewDynamicList<
+  TData = Awaited<ReturnType<typeof previewDynamicList>>,
+  TError = ProblemResponse,
+>(
+  listId: string,
+  params: PreviewDynamicListParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof previewDynamicList>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getPreviewDynamicListQueryOptions(
+    listId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type publishVocabularyListSnapshotResponse200 = {
   data: ResourceMutationResponse;

@@ -78,6 +78,15 @@ class ListSnapshotView:
 
 
 @dataclass(frozen=True, slots=True)
+class DynamicListPreviewView:
+    list_id: UUID
+    revision_id: UUID
+    cutoff_at: datetime
+    member_sense_ids: tuple[UUID, ...]
+    truncated: bool
+
+
+@dataclass(frozen=True, slots=True)
 class ImportRunView:
     import_id: UUID
     profile_id: UUID

@@ -1,7 +1,5 @@
 """Authenticated W08 vocabulary list and exchange routes."""
 
-# ruff: noqa: E501
-
 from __future__ import annotations
 
 import base64
@@ -28,6 +26,7 @@ from polyglot.modules.lexicon.exchange.application import (
     ChangeListMembers,
     CreateImport,
     CreateVocabularyList,
+    DynamicListPreviewView,
     ImportRunView,
     ListSnapshotView,
     MutationView,
@@ -182,6 +181,14 @@ class ListSnapshotResponse(ClosedModel):
     member_sense_revision_ids: tuple[UUID, ...]
 
 
+class DynamicListPreviewResponse(ClosedModel):
+    list_id: UUID
+    revision_id: UUID
+    cutoff_at: datetime
+    member_sense_ids: tuple[UUID, ...]
+    truncated: bool
+
+
 class ImportRunResponse(ClosedModel):
     import_id: UUID
     profile_id: UUID
@@ -208,15 +215,61 @@ class ResourcePageResponse(ClosedModel):
 
 
 class ExchangeService(Protocol):
-    async def create_list(self, actor_id: UUID, profile_id: UUID, command: CreateVocabularyList, *, idempotency_key: str) -> VocabularyListView: ...
-    async def change_members(self, actor_id: UUID, list_id: UUID, command: ChangeListMembers, *, expected_version: int, idempotency_key: str) -> VocabularyListView: ...
-    async def freeze_list(self, actor_id: UUID, list_id: UUID, *, expected_version: int, frozen_at: datetime, idempotency_key: str) -> ListSnapshotView: ...
+    async def create_list(
+        self,
+        actor_id: UUID,
+        profile_id: UUID,
+        command: CreateVocabularyList,
+        *,
+        idempotency_key: str,
+    ) -> VocabularyListView: ...
+    async def change_members(
+        self,
+        actor_id: UUID,
+        list_id: UUID,
+        command: ChangeListMembers,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+    ) -> VocabularyListView: ...
+    async def freeze_list(
+        self,
+        actor_id: UUID,
+        list_id: UUID,
+        *,
+        expected_version: int,
+        frozen_at: datetime,
+        idempotency_key: str,
+    ) -> ListSnapshotView: ...
     async def get_list(self, actor_id: UUID, list_id: UUID) -> VocabularyListView: ...
-    async def create_import(self, actor_id: UUID, profile_id: UUID, command: CreateImport, *, idempotency_key: str) -> ImportRunView: ...
+    async def preview_dynamic_list(
+        self, actor_id: UUID, list_id: UUID, *, cutoff_at: datetime, limit: int
+    ) -> DynamicListPreviewView: ...
+    async def create_import(
+        self, actor_id: UUID, profile_id: UUID, command: CreateImport, *, idempotency_key: str
+    ) -> ImportRunView: ...
     async def get_import(self, actor_id: UUID, import_id: UUID) -> ImportRunView: ...
     async def current_catalogue_version(self, actor_id: UUID, profile_id: UUID) -> str: ...
-    async def commit_import(self, actor_id: UUID, import_id: UUID, *, preview_checksum: str, current_catalogue_version: str, expected_version: int, committed_at: datetime, idempotency_key: str) -> ImportRunView: ...
-    async def revert_import(self, actor_id: UUID, import_id: UUID, *, expected_version: int, reverted_at: datetime, idempotency_key: str) -> ImportRunView: ...
+    async def commit_import(
+        self,
+        actor_id: UUID,
+        import_id: UUID,
+        *,
+        preview_checksum: str,
+        current_catalogue_version: str,
+        expected_version: int,
+        committed_at: datetime,
+        idempotency_key: str,
+    ) -> ImportRunView: ...
+    async def revert_import(
+        self,
+        actor_id: UUID,
+        import_id: UUID,
+        *,
+        expected_version: int,
+        reverted_at: datetime,
+        idempotency_key: str,
+    ) -> ImportRunView: ...
     async def execute_command(
         self,
         *,
@@ -276,7 +329,9 @@ def exchange_router(
             raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         if origin is not None:
             _require_origin(origin, allowed_origin)
-        current = await identity_service.get_current_session(_session_token(token), _context(request))
+        current = await identity_service.get_current_session(
+            _session_token(token), _context(request)
+        )
         if csrf is not None and csrf != current.csrf_token:
             raise DomainError(ErrorCode.FORBIDDEN)
         return current
@@ -311,116 +366,475 @@ def exchange_router(
         )
         return ResourceMutationResponse.model_validate(result, from_attributes=True)
 
-    @router.post("/api/v1/language-profiles/{profile_id}/vocabulary-lists", operation_id="create_vocabulary_list", response_model=VocabularyListResponse, status_code=201, responses=ETAG_RESPONSES)
-    async def create_vocabulary_list(profile_id: UUID, payload: CreateVocabularyListRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, token: SessionCookieToken = None) -> VocabularyListResponse:
+    @router.post(
+        "/api/v1/language-profiles/{profile_id}/vocabulary-lists",
+        operation_id="create_vocabulary_list",
+        response_model=VocabularyListResponse,
+        status_code=201,
+        responses=ETAG_RESPONSES,
+    )
+    async def create_vocabulary_list(
+        profile_id: UUID,
+        payload: CreateVocabularyListRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        token: SessionCookieToken = None,
+    ) -> VocabularyListResponse:
         current = await session_for(request, token, csrf, origin)
-        view = await application_service().create_list(current.account_id, profile_id, CreateVocabularyList(**payload.model_dump()), idempotency_key=idempotency_key)
+        view = await application_service().create_list(
+            current.account_id,
+            profile_id,
+            CreateVocabularyList(**payload.model_dump()),
+            idempotency_key=idempotency_key,
+        )
         etag(response, view.version)
         return _list_response(view)
 
-    @router.patch("/api/v1/vocabulary-lists/{list_id}", operation_id="revise_vocabulary_list", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
-    async def revise_vocabulary_list(list_id: UUID, payload: ReviseVocabularyListRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+    @router.patch(
+        "/api/v1/vocabulary-lists/{list_id}",
+        operation_id="revise_vocabulary_list",
+        response_model=ResourceMutationResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def revise_vocabulary_list(
+        list_id: UUID,
+        payload: ReviseVocabularyListRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        result = await generic(command_name="ReviseVocabularyList", current=current, resource_id=list_id, payload=payload.model_dump(exclude_unset=True), idempotency_key=idempotency_key, expected_version=expected(if_match))
+        result = await generic(
+            command_name="ReviseVocabularyList",
+            current=current,
+            resource_id=list_id,
+            payload=payload.model_dump(exclude_unset=True),
+            idempotency_key=idempotency_key,
+            expected_version=expected(if_match),
+        )
         etag(response, result.version)
         return result
 
-    @router.delete("/api/v1/vocabulary-lists/{list_id}", operation_id="archive_vocabulary_list", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
-    async def archive_vocabulary_list(list_id: UUID, payload: AtRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+    @router.delete(
+        "/api/v1/vocabulary-lists/{list_id}",
+        operation_id="archive_vocabulary_list",
+        response_model=ResourceMutationResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def archive_vocabulary_list(
+        list_id: UUID,
+        payload: AtRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        result = await generic(command_name="ArchiveVocabularyList", current=current, resource_id=list_id, payload=payload.model_dump(), idempotency_key=idempotency_key, expected_version=expected(if_match))
+        result = await generic(
+            command_name="ArchiveVocabularyList",
+            current=current,
+            resource_id=list_id,
+            payload=payload.model_dump(),
+            idempotency_key=idempotency_key,
+            expected_version=expected(if_match),
+        )
         etag(response, result.version)
         return result
 
-    @router.post("/api/v1/vocabulary-lists/{list_id}/members:batch", operation_id="change_list_members", response_model=VocabularyListResponse, responses=ETAG_RESPONSES)
-    async def change_list_members(list_id: UUID, payload: ChangeListMembersRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> VocabularyListResponse:
+    @router.post(
+        "/api/v1/vocabulary-lists/{list_id}/members:batch",
+        operation_id="change_list_members",
+        response_model=VocabularyListResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def change_list_members(
+        list_id: UUID,
+        payload: ChangeListMembersRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> VocabularyListResponse:
         current = await session_for(request, token, csrf, origin)
-        view = await application_service().change_members(current.account_id, list_id, ChangeListMembers(**payload.model_dump()), expected_version=expected(if_match), idempotency_key=idempotency_key)
+        view = await application_service().change_members(
+            current.account_id,
+            list_id,
+            ChangeListMembers(**payload.model_dump()),
+            expected_version=expected(if_match),
+            idempotency_key=idempotency_key,
+        )
         etag(response, view.version)
         return _list_response(view)
 
-    @router.post("/api/v1/vocabulary-lists/{list_id}:snapshot", operation_id="freeze_vocabulary_list", response_model=ListSnapshotResponse, responses=ETAG_RESPONSES)
-    async def freeze_vocabulary_list(list_id: UUID, payload: AtRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ListSnapshotResponse:
+    @router.post(
+        "/api/v1/vocabulary-lists/{list_id}:snapshot",
+        operation_id="freeze_vocabulary_list",
+        response_model=ListSnapshotResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def freeze_vocabulary_list(
+        list_id: UUID,
+        payload: AtRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ListSnapshotResponse:
         current = await session_for(request, token, csrf, origin)
-        view = await application_service().freeze_list(current.account_id, list_id, expected_version=expected(if_match), frozen_at=payload.at, idempotency_key=idempotency_key)
+        view = await application_service().freeze_list(
+            current.account_id,
+            list_id,
+            expected_version=expected(if_match),
+            frozen_at=payload.at,
+            idempotency_key=idempotency_key,
+        )
         etag(response, 1)
         return ListSnapshotResponse.model_validate(view, from_attributes=True)
 
-    async def generic_unversioned(command_name: str, resource_id: UUID, payload: ClosedModel, request: Request, idempotency_key: str, origin: str, csrf: str, token: str | None) -> ResourceMutationResponse:
+    async def generic_unversioned(
+        command_name: str,
+        resource_id: UUID,
+        payload: ClosedModel,
+        request: Request,
+        idempotency_key: str,
+        origin: str,
+        csrf: str,
+        token: str | None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        return await generic(command_name=command_name, current=current, resource_id=resource_id, payload=payload.model_dump(), idempotency_key=idempotency_key, expected_version=None)
+        return await generic(
+            command_name=command_name,
+            current=current,
+            resource_id=resource_id,
+            payload=payload.model_dump(),
+            idempotency_key=idempotency_key,
+            expected_version=None,
+        )
 
-    @router.post("/api/v1/vocabulary-lists/{list_id}:clone", operation_id="clone_vocabulary_list", response_model=ResourceMutationResponse, responses=PROBLEM_RESPONSES)
-    async def clone_vocabulary_list(list_id: UUID, payload: CloneVocabularyListRequest, request: Request, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
-        return await generic_unversioned("CloneVocabularyList", list_id, payload, request, idempotency_key, origin, csrf, token)
+    @router.post(
+        "/api/v1/vocabulary-lists/{list_id}:clone",
+        operation_id="clone_vocabulary_list",
+        response_model=ResourceMutationResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def clone_vocabulary_list(
+        list_id: UUID,
+        payload: CloneVocabularyListRequest,
+        request: Request,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
+        return await generic_unversioned(
+            "CloneVocabularyList", list_id, payload, request, idempotency_key, origin, csrf, token
+        )
 
-    @router.post("/api/v1/vocabulary-lists:merge", operation_id="merge_vocabulary_lists", response_model=ResourceMutationResponse, responses=PROBLEM_RESPONSES)
-    async def merge_vocabulary_lists(payload: MergeVocabularyListsRequest, request: Request, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
-        return await generic_unversioned("MergeVocabularyLists", payload.target_profile_id, payload, request, idempotency_key, origin, csrf, token)
+    @router.post(
+        "/api/v1/vocabulary-lists:merge",
+        operation_id="merge_vocabulary_lists",
+        response_model=ResourceMutationResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def merge_vocabulary_lists(
+        payload: MergeVocabularyListsRequest,
+        request: Request,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
+        return await generic_unversioned(
+            "MergeVocabularyLists",
+            payload.target_profile_id,
+            payload,
+            request,
+            idempotency_key,
+            origin,
+            csrf,
+            token,
+        )
 
-    @router.post("/api/v1/vocabulary-lists/{list_id}/snapshots/{snapshot_id}:publish", operation_id="publish_vocabulary_list_snapshot", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
-    async def publish_vocabulary_list_snapshot(list_id: UUID, snapshot_id: UUID, payload: PublishVocabularyListSnapshotRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+    @router.post(
+        "/api/v1/vocabulary-lists/{list_id}/snapshots/{snapshot_id}:publish",
+        operation_id="publish_vocabulary_list_snapshot",
+        response_model=ResourceMutationResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def publish_vocabulary_list_snapshot(
+        list_id: UUID,
+        snapshot_id: UUID,
+        payload: PublishVocabularyListSnapshotRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        result = await generic(command_name="PublishVocabularyListSnapshot", current=current, resource_id=snapshot_id, payload={**payload.model_dump(), "list_id": list_id}, idempotency_key=idempotency_key, expected_version=expected(if_match))
+        result = await generic(
+            command_name="PublishVocabularyListSnapshot",
+            current=current,
+            resource_id=snapshot_id,
+            payload={**payload.model_dump(), "list_id": list_id},
+            idempotency_key=idempotency_key,
+            expected_version=expected(if_match),
+        )
         etag(response, result.version)
         return result
 
-    @router.post("/api/v1/shared-vocabulary-lists/{publication_id}:retire", operation_id="retire_shared_vocabulary_list", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
-    async def retire_shared_vocabulary_list(publication_id: UUID, payload: AtRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+    @router.post(
+        "/api/v1/shared-vocabulary-lists/{publication_id}:retire",
+        operation_id="retire_shared_vocabulary_list",
+        response_model=ResourceMutationResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def retire_shared_vocabulary_list(
+        publication_id: UUID,
+        payload: AtRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        result = await generic(command_name="RetireSharedVocabularyList", current=current, resource_id=publication_id, payload=payload.model_dump(), idempotency_key=idempotency_key, expected_version=expected(if_match))
+        result = await generic(
+            command_name="RetireSharedVocabularyList",
+            current=current,
+            resource_id=publication_id,
+            payload=payload.model_dump(),
+            idempotency_key=idempotency_key,
+            expected_version=expected(if_match),
+        )
         etag(response, result.version)
         return result
 
-    @router.post("/api/v1/language-profiles/{profile_id}/imports", operation_id="create_import", response_model=ImportRunResponse, status_code=201, responses=ETAG_RESPONSES)
-    async def create_import(profile_id: UUID, payload: CreateImportRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, token: SessionCookieToken = None) -> ImportRunResponse:
+    @router.post(
+        "/api/v1/language-profiles/{profile_id}/imports",
+        operation_id="create_import",
+        response_model=ImportRunResponse,
+        status_code=201,
+        responses=ETAG_RESPONSES,
+    )
+    async def create_import(
+        profile_id: UUID,
+        payload: CreateImportRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        token: SessionCookieToken = None,
+    ) -> ImportRunResponse:
         current = await session_for(request, token, csrf, origin)
         try:
             raw = base64.b64decode(payload.content_base64, validate=True)
         except (binascii.Error, ValueError) as error:
-            raise DomainError(ErrorCode.VALIDATION_FAILED, detail="invalid base64 import") from error
+            raise DomainError(
+                ErrorCode.VALIDATION_FAILED, detail="invalid base64 import"
+            ) from error
         if payload.archive:
             raw = read_single_safe_zip_entry(raw, ImportLimits())
-        catalogue_version = await application_service().current_catalogue_version(current.account_id, profile_id)
-        view = await application_service().create_import(current.account_id, profile_id, CreateImport(format_id=payload.format_id, encoding=payload.encoding, payload=raw, strategy=payload.strategy, catalogue_version=catalogue_version, created_at=payload.created_at, expires_at=payload.expires_at), idempotency_key=idempotency_key)
+        catalogue_version = await application_service().current_catalogue_version(
+            current.account_id, profile_id
+        )
+        view = await application_service().create_import(
+            current.account_id,
+            profile_id,
+            CreateImport(
+                format_id=payload.format_id,
+                encoding=payload.encoding,
+                payload=raw,
+                strategy=payload.strategy,
+                catalogue_version=catalogue_version,
+                created_at=payload.created_at,
+                expires_at=payload.expires_at,
+            ),
+            idempotency_key=idempotency_key,
+        )
         etag(response, view.version)
         return _import_response(view)
 
-    @router.post("/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve", operation_id="resolve_import_conflict", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
-    async def resolve_import_conflict(import_id: UUID, conflict_id: UUID, payload: ResolveImportConflictRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+    @router.post(
+        "/api/v1/imports/{import_id}/conflicts/{conflict_id}:resolve",
+        operation_id="resolve_import_conflict",
+        response_model=ResourceMutationResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def resolve_import_conflict(
+        import_id: UUID,
+        conflict_id: UUID,
+        payload: ResolveImportConflictRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        result = await generic(command_name="ResolveImportConflict", current=current, resource_id=conflict_id, payload={**payload.model_dump(), "import_id": import_id}, idempotency_key=idempotency_key, expected_version=expected(if_match))
+        result = await generic(
+            command_name="ResolveImportConflict",
+            current=current,
+            resource_id=conflict_id,
+            payload={**payload.model_dump(), "import_id": import_id},
+            idempotency_key=idempotency_key,
+            expected_version=expected(if_match),
+        )
         etag(response, result.version)
         return result
 
-    @router.post("/api/v1/imports/{import_id}:commit", operation_id="commit_import", response_model=ImportRunResponse, responses=ETAG_RESPONSES)
-    async def commit_import(import_id: UUID, payload: CommitImportRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ImportRunResponse:
+    @router.post(
+        "/api/v1/imports/{import_id}:commit",
+        operation_id="commit_import",
+        response_model=ImportRunResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def commit_import(
+        import_id: UUID,
+        payload: CommitImportRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ImportRunResponse:
         current = await session_for(request, token, csrf, origin)
         current_run = await application_service().get_import(current.account_id, import_id)
-        catalogue_version = await application_service().current_catalogue_version(current.account_id, current_run.profile_id)
-        view = await application_service().commit_import(current.account_id, import_id, preview_checksum=payload.preview_checksum, current_catalogue_version=catalogue_version, expected_version=expected(if_match), committed_at=payload.committed_at, idempotency_key=idempotency_key)
+        catalogue_version = await application_service().current_catalogue_version(
+            current.account_id, current_run.profile_id
+        )
+        view = await application_service().commit_import(
+            current.account_id,
+            import_id,
+            preview_checksum=payload.preview_checksum,
+            current_catalogue_version=catalogue_version,
+            expected_version=expected(if_match),
+            committed_at=payload.committed_at,
+            idempotency_key=idempotency_key,
+        )
         etag(response, view.version)
         return _import_response(view)
 
-    @router.post("/api/v1/imports/{import_id}:revert", operation_id="revert_import", response_model=ImportRunResponse, responses=ETAG_RESPONSES)
-    async def revert_import(import_id: UUID, payload: AtRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ImportRunResponse:
+    @router.post(
+        "/api/v1/imports/{import_id}:revert",
+        operation_id="revert_import",
+        response_model=ImportRunResponse,
+        responses=ETAG_RESPONSES,
+    )
+    async def revert_import(
+        import_id: UUID,
+        payload: AtRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        if_match: IfMatchHeader,
+        token: SessionCookieToken = None,
+    ) -> ImportRunResponse:
         current = await session_for(request, token, csrf, origin)
-        view = await application_service().revert_import(current.account_id, import_id, expected_version=expected(if_match), reverted_at=payload.at, idempotency_key=idempotency_key)
+        view = await application_service().revert_import(
+            current.account_id,
+            import_id,
+            expected_version=expected(if_match),
+            reverted_at=payload.at,
+            idempotency_key=idempotency_key,
+        )
         etag(response, view.version)
         return _import_response(view)
 
-    @router.post("/api/v1/language-profiles/{profile_id}/exports", operation_id="request_export", response_model=ResourceMutationResponse, status_code=202, responses=PROBLEM_RESPONSES)
-    async def request_export(profile_id: UUID, payload: RequestExportRequest, request: Request, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+    @router.post(
+        "/api/v1/language-profiles/{profile_id}/exports",
+        operation_id="request_export",
+        response_model=ResourceMutationResponse,
+        status_code=202,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def request_export(
+        profile_id: UUID,
+        payload: RequestExportRequest,
+        request: Request,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf: CsrfHeader,
+        token: SessionCookieToken = None,
+    ) -> ResourceMutationResponse:
         current = await session_for(request, token, csrf, origin)
-        return await generic(command_name="RequestExport", current=current, resource_id=profile_id, payload=payload.model_dump(), idempotency_key=idempotency_key, expected_version=None, session_id=current.session_id)
+        return await generic(
+            command_name="RequestExport",
+            current=current,
+            resource_id=profile_id,
+            payload=payload.model_dump(),
+            idempotency_key=idempotency_key,
+            expected_version=None,
+            session_id=current.session_id,
+        )
 
-    @router.get("/api/v1/vocabulary-lists/{id}", operation_id="get_vocabulary_list", response_model=VocabularyListResponse, responses=PROBLEM_RESPONSES)
-    async def get_vocabulary_list(id: UUID, request: Request, token: SessionCookieToken = None) -> VocabularyListResponse:
+    @router.get(
+        "/api/v1/vocabulary-lists/{id}",
+        operation_id="get_vocabulary_list",
+        response_model=VocabularyListResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def get_vocabulary_list(
+        id: UUID, request: Request, token: SessionCookieToken = None
+    ) -> VocabularyListResponse:
         current = await session_for(request, token)
         return _list_response(await application_service().get_list(current.account_id, id))
 
-    @router.get("/api/v1/imports/{id}", operation_id="get_import", response_model=ImportRunResponse, responses=PROBLEM_RESPONSES)
-    async def get_import(id: UUID, request: Request, token: SessionCookieToken = None) -> ImportRunResponse:
+    @router.get(
+        "/api/v1/vocabulary-lists/{list_id}/preview",
+        operation_id="preview_dynamic_list",
+        response_model=DynamicListPreviewResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def preview_dynamic_list(
+        list_id: UUID,
+        request: Request,
+        cutoff_at: Annotated[datetime, Query()],
+        limit: Annotated[int, Query(ge=1, le=100)] = 50,
+        token: SessionCookieToken = None,
+    ) -> DynamicListPreviewResponse:
+        current = await session_for(request, token)
+        view = await application_service().preview_dynamic_list(
+            current.account_id, list_id, cutoff_at=cutoff_at, limit=limit
+        )
+        return DynamicListPreviewResponse.model_validate(view, from_attributes=True)
+
+    @router.get(
+        "/api/v1/imports/{id}",
+        operation_id="get_import",
+        response_model=ImportRunResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def get_import(
+        id: UUID, request: Request, token: SessionCookieToken = None
+    ) -> ImportRunResponse:
         current = await session_for(request, token)
         return _import_response(await application_service().get_import(current.account_id, id))
 
@@ -429,9 +843,7 @@ def exchange_router(
             request: Request,
             profile_id: Annotated[UUID | None, Query()] = None,
             limit: Annotated[int, Query(ge=1, le=100)] = 50,
-            cursor: Annotated[
-                str | None, Query(min_length=1, max_length=1024)
-            ] = None,
+            cursor: Annotated[str | None, Query(min_length=1, max_length=1024)] = None,
             token: SessionCookieToken = None,
         ) -> ResourcePageResponse:
             current = await session_for(request, token)
@@ -452,7 +864,14 @@ def exchange_router(
     ):
         list_endpoint = make_list_endpoint(resource_type)
         list_endpoint.__name__ = operation_id
-        router.add_api_route(route, list_endpoint, methods=["GET"], operation_id=operation_id, response_model=ResourcePageResponse, responses=PROBLEM_RESPONSES)
+        router.add_api_route(
+            route,
+            list_endpoint,
+            methods=["GET"],
+            operation_id=operation_id,
+            response_model=ResourcePageResponse,
+            responses=PROBLEM_RESPONSES,
+        )
 
     def make_get_endpoint(resource_type: str):
         async def get_endpoint(
@@ -481,6 +900,13 @@ def exchange_router(
     ):
         get_endpoint = make_get_endpoint(resource_type)
         get_endpoint.__name__ = operation_id
-        router.add_api_route(route, get_endpoint, methods=["GET"], operation_id=operation_id, response_model=dict[str, JsonValue], responses=PROBLEM_RESPONSES)
+        router.add_api_route(
+            route,
+            get_endpoint,
+            methods=["GET"],
+            operation_id=operation_id,
+            response_model=dict[str, JsonValue],
+            responses=PROBLEM_RESPONSES,
+        )
 
     return router

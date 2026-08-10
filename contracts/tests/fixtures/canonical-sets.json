@@ -905,6 +905,10 @@
     },
     {
       "method": "GET",
+      "route": "/vocabulary-lists/{list_id}/preview"
+    },
+    {
+      "method": "GET",
       "route": "/shared-vocabulary-lists"
     },
     {

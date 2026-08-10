@@ -13,6 +13,7 @@ from polyglot.modules.lexicon.exchange.application import (
     ChangeListMembers,
     CreateImport,
     CreateVocabularyList,
+    DynamicListPreviewView,
     ImportRunView,
     ListSnapshotView,
     MutationView,
@@ -295,6 +296,42 @@ class SqlExchangeService:
         async with self._session_factory() as session:
             await self._set_actor(session, actor_id)
             return await self._load_list(session, list_id)
+
+    async def preview_dynamic_list(
+        self,
+        actor_id: UUID,
+        list_id: UUID,
+        *,
+        cutoff_at: datetime,
+        limit: int,
+    ) -> DynamicListPreviewView:
+        if limit < 1 or limit > 100:
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+        if self._dynamic_lists is None:
+            raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+        async with self._session_factory() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            current = await self._load_list(session, list_id)
+            if current.list_type != "dynamic" or current.query_definition is None:
+                raise DomainError(ErrorCode.INVALID_TRANSITION)
+            members = await self._dynamic_lists.evaluate(
+                current.profile_id,
+                current.query_definition,
+                cutoff_at,
+                limit + 1,
+            )
+            if len(set(members)) != len(members):
+                raise DomainError(
+                    ErrorCode.VALIDATION_FAILED,
+                    detail="dynamic list evaluator returned duplicate members",
+                )
+            return DynamicListPreviewView(
+                list_id=current.list_id,
+                revision_id=current.revision_id,
+                cutoff_at=cutoff_at,
+                member_sense_ids=members[:limit],
+                truncated=len(members) > limit,
+            )
 
     async def associate_list(
         self,

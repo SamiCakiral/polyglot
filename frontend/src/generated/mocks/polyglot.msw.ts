@@ -19,6 +19,7 @@ import type {
   CurrentSessionResponse,
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
+  DynamicListPreviewResponse,
   FoundationResponse,
   GetExport200,
   GetSharedVocabularyList200,
@@ -2448,6 +2449,20 @@ export const getChangeListMembersResponseMock = (
   ...overrideResponse,
 });
 
+export const getPreviewDynamicListResponseMock = (
+  overrideResponse: Partial<Extract<DynamicListPreviewResponse, object>> = {},
+): DynamicListPreviewResponse => ({
+  cutoff_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  list_id: faker.string.uuid(),
+  member_sense_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  revision_id: faker.string.uuid(),
+  truncated: faker.datatype.boolean(),
+  ...overrideResponse,
+});
+
 export const getPublishVocabularyListSnapshotResponseMock = (
   overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
 ): ResourceMutationResponse => ({
@@ -4546,6 +4561,32 @@ export const getChangeListMembersMockHandler = (
   );
 };
 
+export const getPreviewDynamicListMockHandler = (
+  overrideResponse?:
+    | DynamicListPreviewResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<DynamicListPreviewResponse> | DynamicListPreviewResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/vocabulary-lists/:listId/preview",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getPreviewDynamicListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getPublishVocabularyListSnapshotMockHandler = (
   overrideResponse?:
     | ResourceMutationResponse
@@ -4729,6 +4770,7 @@ export const getPolyglotV2APIMock = () => [
   getArchiveVocabularyListMockHandler(),
   getReviseVocabularyListMockHandler(),
   getChangeListMembersMockHandler(),
+  getPreviewDynamicListMockHandler(),
   getPublishVocabularyListSnapshotMockHandler(),
   getCloneVocabularyListMockHandler(),
   getFreezeVocabularyListMockHandler(),
