@@ -75,6 +75,13 @@ class WordBankItemResponse(ClosedModel):
     reasons: tuple[str, ...]
 
 
+class UnresolvedMentionResponse(ClosedModel):
+    mention_id: UUID
+    encounter_id: UUID
+    exact_surface: str
+    created_at: str
+
+
 class WordBankOverviewResponse(ClosedModel):
     items: tuple[WordBankItemResponse, ...]
     next_cursor: str | None
@@ -84,6 +91,7 @@ class WordBankOverviewResponse(ClosedModel):
     reference_revision: str | None
     reference_coverage_count: int | None
     reference_total_count: int | None
+    unresolved_mentions: tuple[UnresolvedMentionResponse, ...] = ()
 
 
 class LexicalAnnotationResponse(ClosedModel):
@@ -1030,7 +1038,13 @@ class SqlWordBankService:
                             "JOIN lexicon.lexical_encounters e ON e.profile_id=:profile "
                             "AND e.encounter_id=m.encounter_id GROUP BY latest.sense_id) "
                             "SELECT entry.sense_id,entry.label,entry.ordinal,observed.encounters,"
-                            "observed.first_at,observed.last_at FROM lexicon.lexical_reference_entries entry "
+                            "observed.first_at,observed.last_at,(SELECT familiarity FROM "
+                            "lexicon.lexical_declarations declaration WHERE declaration.profile_id=:profile "
+                            "AND declaration.sense_id=entry.sense_id ORDER BY declaration.declared_at DESC,"
+                            "declaration.declaration_id DESC LIMIT 1) AS familiarity,(SELECT preference "
+                            "FROM lexicon.lexical_preferences preference WHERE preference.profile_id=:profile "
+                            "AND preference.sense_id=entry.sense_id) AS preference "
+                            "FROM lexicon.lexical_reference_entries entry "
                             "LEFT JOIN observed ON observed.sense_id=entry.sense_id "
                             "WHERE entry.reference_set_id=:reference ORDER BY entry.ordinal,entry.sense_id"
                         ),
@@ -1073,8 +1087,10 @@ class SqlWordBankService:
                             if by_id[item.sense_id]["encounters"] is not None
                             else "unobserved"
                         ),
-                        familiarity_declaration=None,
-                        learning_preference="normal",
+                        familiarity_declaration=by_id[item.sense_id]["familiarity"],
+                        learning_preference=str(
+                            by_id[item.sense_id]["preference"] or "normal"
+                        ),
                         reasons=(
                             ("encountered",)
                             if by_id[item.sense_id]["encounters"] is not None
@@ -1084,16 +1100,17 @@ class SqlWordBankService:
                     for item in page.items
                 )
                 coverage = sum(row["encounters"] is not None for row in rows)
-                unresolved = int(await session.scalar(text("SELECT count(*) FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r WHERE r.profile_id=:profile AND r.mention_id=m.mention_id)"), {"profile": profile_id}) or 0)
+                unresolved_mentions = await self._unresolved_mentions(session, profile_id)
                 return WordBankOverviewResponse(
                     items=items,
                     next_cursor=page.next_cursor,
                     encountered_sense_count=coverage,
-                    unresolved_mention_count=unresolved,
+                    unresolved_mention_count=len(unresolved_mentions),
                     reference_set_code=reference_set_code,
                     reference_revision=str(reference.revision),
                     reference_coverage_count=coverage,
                     reference_total_count=len(rows),
+                    unresolved_mentions=unresolved_mentions,
                 )
             rows = (
                 await session.execute(text("WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id FROM lexicon.mention_resolutions WHERE profile_id=:profile ORDER BY mention_id,created_at DESC,resolution_id DESC) SELECT latest.sense_id,min(e.exact_surface) AS label,count(*) AS encounters,min(e.occurred_at) AS first_at,max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m ON m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e ON e.encounter_id=m.encounter_id GROUP BY latest.sense_id ORDER BY min(e.exact_surface),latest.sense_id"), {"profile": profile_id})
@@ -1115,8 +1132,33 @@ class SqlWordBankService:
                 )
                 for item in page.items
             )
-            unresolved = int(await session.scalar(text("SELECT count(*) FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r WHERE r.mention_id=m.mention_id)"), {"profile": profile_id}) or 0)
-            return WordBankOverviewResponse(items=items, next_cursor=page.next_cursor, encountered_sense_count=len(rows), unresolved_mention_count=unresolved, reference_set_code=None, reference_revision=None, reference_coverage_count=None, reference_total_count=None)
+            unresolved_mentions = await self._unresolved_mentions(session, profile_id)
+            return WordBankOverviewResponse(items=items, next_cursor=page.next_cursor, encountered_sense_count=len(rows), unresolved_mention_count=len(unresolved_mentions), reference_set_code=None, reference_revision=None, reference_coverage_count=None, reference_total_count=None, unresolved_mentions=unresolved_mentions)
+
+    async def _unresolved_mentions(
+        self, session: AsyncSession, profile_id: UUID
+    ) -> tuple[UnresolvedMentionResponse, ...]:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT m.mention_id,m.encounter_id,m.exact_surface,m.created_at "
+                    "FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile "
+                    "AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r "
+                    "WHERE r.profile_id=:profile AND r.mention_id=m.mention_id) "
+                    "ORDER BY m.created_at,m.mention_id LIMIT 100"
+                ),
+                {"profile": profile_id},
+            )
+        ).mappings().all()
+        return tuple(
+            UnresolvedMentionResponse(
+                mention_id=UUID(str(row["mention_id"])),
+                encounter_id=UUID(str(row["encounter_id"])),
+                exact_surface=str(row["exact_surface"]),
+                created_at=row["created_at"].isoformat(),
+            )
+            for row in rows
+        )
 
     async def get_sense(self, *, account_id: UUID, profile_id: UUID, sense_id: UUID, depth: int, edge_types: tuple[str, ...], max_nodes: int) -> SenseNeighborhoodResponse:
         async with self._session_factory() as session:

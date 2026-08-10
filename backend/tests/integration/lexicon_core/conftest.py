@@ -15,6 +15,9 @@ async def clean_lexicon_database() -> AsyncIterator[None]:
     engine = create_async_engine(migration_database_url_from_environment())
     async with engine.begin() as connection:
         if await connection.scalar(text("SELECT to_regnamespace('lexicon')")) is not None:
+            await connection.execute(
+                text("TRUNCATE TABLE lexicon.lexical_reference_sets CASCADE")
+            )
             await connection.execute(text("TRUNCATE TABLE lexicon.lexical_encounters CASCADE"))
             await connection.execute(text("TRUNCATE TABLE lexicon.private_lexical_units CASCADE"))
             await connection.execute(text("TRUNCATE TABLE lexicon.lexical_preferences CASCADE"))
