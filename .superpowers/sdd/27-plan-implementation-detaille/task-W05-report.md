@@ -1,48 +1,45 @@
 # W05 - Rapport d'implémentation
 
-Date: 2026-08-10
+Date : 2026-08-10
 
-Statut global: **BLOQUÉ À W05-T03 PAR UN CONTRAT W00 MANQUANT**.
+Statut : **FIX ROUND 2, T03 ET T04 TERMINÉS ; ACCEPTATION GLOBALE PARTIAL**.
+
+Le détail exécutable et les preuves fraîches sont dans
+`task-W05-fix2-report.md`.
 
 ## Livré
 
-W05-T01 et W05-T02 sont implémentés en TDD et committés. Le cycle éditorial
-est protégé au domaine, dans le service transactionnel et directement dans
-PostgreSQL. Les six commandes canoniques utilisent UoW,
-`SqlCommandReceiptStore`, version attendue, verrou d'agrégat et écriture
-atomique événement/outbox. Les preuves, décisions, manifestes, entrées de
-manifeste et références historiques sont append-only. Les révisions gardent
-leur contenu, provenance, droits, épingles et auteur immuables dès l'insertion.
+- domaine éditorial, rôles et transitions contrôlées ;
+- migration `0005_content`, provenance et historique ;
+- six commandes transactionnelles avec receipts, version, verrou, événement et
+  outbox atomiques ;
+- défense PostgreSQL contre les mutations hors commande et ajouts tardifs ;
+- dix routes auteur/lecture sécurisées et OpenAPI déterministe ;
+- `FX-CONTENT` positif/négatif, hors réseau, avec `P-LING pending_human` ;
+- parcours base vide jusqu'au remplacement, retrait et historique lisible.
 
-La publication valide les références W04 publiées, fige leur checksum,
-provenance, droits et statut, sérialise les premières publications concurrentes
-et conserve une lecture historique complète après remplacement ou retrait.
+## Commits TDD fix round 2
 
-## Preuves
+- P0 RED/GREEN : `8919150`, `d335b42` ;
+- T03 RED/GREEN : `d333ed6`, `e17f059`, `ae0c8b7` ;
+- T04 RED/GREEN : `736d417`, `7774869` ;
+- cohérence Alembic GREEN : `3aca6c2`.
 
-- PostgreSQL isolé : `polyglot_w05_codex` ;
-- Alembic : `0005 -> 0004 -> 0005` réussi, aucune base partagée rétrogradée ;
-- contenu ciblé : `19 passed` ;
-- Ruff ciblé : réussi ;
-- mypy strict ciblé : réussi ;
-- aucun helper `create_approved_revision` ou ancien repository de publication ;
-- commits RED/GREEN : `24b2773`, `7707989`, `87f2836`, `3bec26c`.
+## Résultats
 
-## Blocage précis
+Sur la base PostgreSQL isolée neuve `polyglot_w05_acceptance` : W05
+`36 passed`, cycle migration `0005 -> 0004 -> 0005` vert, `alembic check` vert,
+Ruff complet vert, mypy complet vert, OpenAPI vert et registre W00 vert.
 
-W05 exige dix routes, dont
-`GET /api/v1/authoring/drafts/{draft_id}`. Cette query est absente du registre
-W00. Le RED `cec57b0` le démontre et échoue avec un seul élément manquant.
+La matrice amont est verte pour plateforme (`114`), identité (`68`) et profils
+linguistiques (`20`). W04F reste temporairement rouge (`14 failed, 74 passed`)
+sur ses fichiers `catalogue/0003` modifiés en parallèle et hors write set W05.
 
-Le write set W05 interdit `contracts/registry/**`; son brief exige explicitement
-un incrément W00 séparé dans ce cas. T03 ne peut donc pas devenir GREEN sans
-autoriser d'abord l'ajout de `GetContentDraft` et de sa route au registre W00.
-T04 reste en attente de ce contrat stabilisé.
+## Restes explicites
 
-## Reprise exacte
+1. Stabiliser W04F puis rejouer la matrice commune.
+2. Ajouter au registre W00 un événement canonique de rejet avant d'exposer la
+   décision humaine `validated -> rejected` par le service et l'API.
+3. Obtenir la revue indépendante finale et la revue linguistique humaine.
 
-1. Ouvrir un incrément W00 et enregistrer `GetContentDraft` sur
-   `GET /authoring/drafts/{draft_id}`.
-2. Reprendre `cec57b0`, implémenter les dix routes et régénérer OpenAPI.
-3. Exécuter T03 sécurité/permissions/pagination/Problem Details.
-4. Exécuter FX-CONTENT positif/négatif et le parcours base vide T04.
+Aucun commit n'a été poussé.
