@@ -2,13 +2,35 @@
   "checks": [
     {
       "detail": "fixture oracle matched",
-      "name": "tombstoned_account_not_resurrected",
+      "name": "source_logical_tombstone_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "target_deleted_active_account_absent",
+      "status": "PASS"
+    },
+    {
+      "detail": "source and target logical database checksums match",
+      "name": "database_logical_checksum",
+      "status": "PASS"
+    },
+    {
+      "detail": "completed deletion, tombstone, and deleted active account absence match before and after restore",
+      "name": "tombstone_non_resurrection",
       "status": "PASS"
     }
   ],
   "errors": [],
   "example": true,
+  "expected_migration_head": "0005_content",
   "fixture": "FX-OPS",
+  "fingerprints": {
+    "object_manifest_sha256": "example-only",
+    "postgresql_archive_sha256": "example-only",
+    "source_database_logical_sha256": "example-logical-database-sha256",
+    "target_database_logical_sha256": "example-logical-database-sha256"
+  },
   "limitations": [
     "Synthetic schema example only; not execution evidence.",
     "Local W19L evidence only; it is not W19C cloud, PITR, canary, or release proof."
@@ -21,7 +43,8 @@
   "tool_versions": {
     "pg_dump": "PostgreSQL example",
     "pg_restore": "PostgreSQL example",
-    "psql": "PostgreSQL example"
+    "psql": "PostgreSQL example",
+    "sha256": "sha256sum"
   },
   "utc": "2026-08-10T00:00:00Z",
   "workstream": "W19L-A"

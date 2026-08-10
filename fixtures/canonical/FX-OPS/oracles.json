@@ -11,14 +11,45 @@
       "expected": "1"
     },
     {
+      "name": "completed_deletion_history_present",
+      "query": "SELECT count(*) FROM platform.deletion_requests WHERE deletion_request_id = '019bc186-de00-7a0a-8a0a-0a0a0a0a0a0a' AND subject_id = '019bc186-de00-7202-8202-020202020202' AND status = 'completed' AND completed_at IS NOT NULL",
+      "expected": "1"
+    },
+    {
       "name": "logical_tombstone_present",
       "query": "SELECT count(*) FROM platform.deletion_tombstones WHERE subject_type = 'account' AND subject_fingerprint = 'a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1'",
       "expected": "1"
     },
     {
-      "name": "tombstoned_account_not_resurrected",
+      "name": "deleted_active_account_absent",
       "query": "SELECT count(*) FROM identity.accounts WHERE account_id = '019bc186-de00-7202-8202-020202020202'",
       "expected": "0"
+    }
+  ],
+  "database_fingerprint": [
+    {
+      "name": "migration",
+      "query": "SELECT version_num FROM alembic_version ORDER BY version_num"
+    },
+    {
+      "name": "accounts",
+      "query": "SELECT concat_ws('|', account_id::text, status, security_version::text, session_version::text, version::text, to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"'), to_char(security_last_activity_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"'), COALESCE(to_char(deleted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"'), 'NULL')) FROM identity.accounts WHERE account_id IN ('019bc186-de00-7101-8101-010101010101', '019bc186-de00-7202-8202-020202020202') ORDER BY account_id"
+    },
+    {
+      "name": "domain_events",
+      "query": "SELECT concat_ws('|', event_id::text, event_type, aggregate_id::text, aggregate_version::text, privacy_class, policy_versions::text, payload::text) FROM platform.domain_events WHERE event_id = '019bc186-de00-7303-8303-030303030303' ORDER BY event_id"
+    },
+    {
+      "name": "outbox",
+      "query": "SELECT concat_ws('|', outbox_id::text, event_id::text, destination, attempt_count::text, COALESCE(published_at::text, 'NULL')) FROM platform.outbox_messages WHERE outbox_id = '019bc186-de00-7707-8707-070707070707' ORDER BY outbox_id"
+    },
+    {
+      "name": "deletion_history",
+      "query": "SELECT concat_ws('|', deletion_request_id::text, subject_type, subject_id::text, status, policy_revision_id::text) FROM platform.deletion_requests WHERE subject_id = '019bc186-de00-7202-8202-020202020202' ORDER BY deletion_request_id"
+    },
+    {
+      "name": "tombstones",
+      "query": "SELECT concat_ws('|', tombstone_id::text, subject_type, subject_fingerprint, policy_revision_id::text, purged_scopes::text) FROM platform.deletion_tombstones WHERE tombstone_id = '019bc186-de00-7808-8808-080808080808' ORDER BY tombstone_id"
     }
   ],
   "objects": [

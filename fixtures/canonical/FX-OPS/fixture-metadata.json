@@ -4,14 +4,15 @@
   "seed": 2019,
   "clock": "2026-08-10T12:00:00+00:00",
   "payloads": {
-    "oracles.json": "sha256:324a6cc6625ca6607203aa5a21355133416863a874c8936e184e9bd9569562ee",
+    "oracles.json": "sha256:accc226018c95dbc7b54dd4ed960411dc6c83f4029d71727b5cd1a9f2f11cf91",
     "objects/private/fx-ops-private-object.txt": "sha256:f588e721030a213d56e5b95bf71a8b4029acb972361d292882c02c8e3546fda8"
   },
   "oracles": [
     "active_account_present",
     "pending_outbox_present",
+    "completed_deletion_history_present",
     "logical_tombstone_present",
-    "tombstoned_account_not_resurrected",
+    "deleted_active_account_absent",
     "private_object_checksum_matches"
   ]
 }

@@ -7,6 +7,7 @@
   "contents": [
     "one_active_account",
     "one_pending_outbox_message",
+    "one_completed_deletion_history",
     "one_logical_tombstone",
     "one_fictitious_private_object"
   ]

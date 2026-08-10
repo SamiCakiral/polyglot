@@ -7,6 +7,31 @@ INSERT INTO identity.accounts (
     '2026-08-10T12:00:00+00:00', '2026-08-10T12:00:00+00:00', NULL
 );
 
+-- This account is deliberately created active, then deleted before backup.
+INSERT INTO identity.accounts (
+    account_id, status, security_version, session_version, version,
+    created_at, security_last_activity_at, deleted_at
+) VALUES (
+    '019bc186-de00-7202-8202-020202020202', 'active', 1, 1, 1,
+    '2026-08-10T12:00:00+00:00', '2026-08-10T12:00:00+00:00', NULL
+);
+
+INSERT INTO platform.deletion_requests (
+    deletion_request_id, subject_type, subject_id, requested_by_account_id,
+    status, requested_at, confirmed_at, purge_due_at, completed_at,
+    policy_revision_id
+) VALUES (
+    '019bc186-de00-7a0a-8a0a-0a0a0a0a0a0a', 'account',
+    '019bc186-de00-7202-8202-020202020202',
+    '019bc186-de00-7101-8101-010101010101', 'completed',
+    '2026-08-10T11:00:00+00:00', '2026-08-10T11:15:00+00:00',
+    '2026-08-10T11:30:00+00:00', '2026-08-10T12:00:00+00:00',
+    '019bc186-de00-7909-8909-090909090909'
+);
+
+DELETE FROM identity.accounts
+WHERE account_id = '019bc186-de00-7202-8202-020202020202';
+
 INSERT INTO platform.domain_events (
     event_id, event_type, schema_version, aggregate_type, aggregate_id,
     aggregate_version, actor_type, actor_id, profile_id, occurred_at,

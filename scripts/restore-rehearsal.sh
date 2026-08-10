@@ -15,6 +15,8 @@ EXPECTED_MIGRATION_HEAD="${W19_EXPECTED_MIGRATION_HEAD:-}"
 PG_DUMP_BIN="${PG_DUMP_BIN:-pg_dump}"
 PG_RESTORE_BIN="${PG_RESTORE_BIN:-pg_restore}"
 PSQL_BIN="${PSQL_BIN:-psql}"
+SHA256_PROVIDER=""
+SHA256_VERSION="unavailable"
 STATUS="FAIL"
 ERROR_MESSAGE=""
 WORK_DIR=""
@@ -62,14 +64,17 @@ redacted_dsn() {
 from sys import argv
 from urllib.parse import urlsplit, urlunsplit
 
-value = argv[1]
-parts = urlsplit(value)
-if not parts.scheme or not parts.hostname:
+try:
+    parts = urlsplit(argv[1])
+    if not parts.scheme or not parts.hostname:
+        raise ValueError
+    port = parts.port
+except Exception:
     print("redacted")
 else:
     netloc = parts.hostname
-    if parts.port is not None:
-        netloc = f"{netloc}:{parts.port}"
+    if port is not None:
+        netloc = f"{netloc}:{port}"
     print(urlunsplit((parts.scheme, netloc, parts.path, "", "")))
 PY
 }
@@ -79,13 +84,21 @@ database_identity() {
 from sys import argv, exit
 from urllib.parse import unquote, urlsplit
 
-parts = urlsplit(argv[1])
-scheme = {"postgres": "postgresql"}.get(parts.scheme, parts.scheme)
-if scheme != "postgresql" or not parts.hostname or not parts.path.strip("/"):
+try:
+    parts = urlsplit(argv[1])
+    scheme = {"postgres": "postgresql"}.get(parts.scheme, parts.scheme)
+    port = parts.port if parts.port is not None else 5432
+    if scheme != "postgresql" or not parts.hostname or not parts.path.strip("/"):
+        raise ValueError
+except Exception:
     exit(1)
-port = parts.port if parts.port is not None else 5432
 print(f"{parts.hostname.lower()}:{port}/{unquote(parts.path.lstrip('/'))}")
 PY
+}
+
+server_database_identity() {
+    local dsn="$1"
+    run_psql_scalar "$dsn" "SELECT system_identifier::text || ':' || (SELECT oid::text FROM pg_database WHERE datname = current_database()) FROM pg_control_system()"
 }
 
 write_report() {
@@ -97,15 +110,18 @@ write_report() {
         W19_REPORT_REVISION="$revision" \
         W19_REPORT_UTC="$utc" \
         W19_REPORT_FIXTURE="$FIXTURE" \
-        W19_REPORT_SOURCE="$(redacted_dsn "$SOURCE_DSN")" \
-        W19_REPORT_TARGET="$(redacted_dsn "$TARGET_DSN")" \
+        W19_REPORT_SOURCE="$(redacted_dsn "$SOURCE_DSN" 2>/dev/null || printf 'redacted')" \
+        W19_REPORT_TARGET="$(redacted_dsn "$TARGET_DSN" 2>/dev/null || printf 'redacted')" \
         W19_REPORT_EXPECTED_HEAD="$EXPECTED_MIGRATION_HEAD" \
         W19_REPORT_ERROR="$ERROR_MESSAGE" \
         W19_REPORT_PG_DUMP_VERSION="${PG_DUMP_VERSION:-unavailable}" \
         W19_REPORT_PG_RESTORE_VERSION="${PG_RESTORE_VERSION:-unavailable}" \
         W19_REPORT_PSQL_VERSION="${PSQL_VERSION:-unavailable}" \
+        W19_REPORT_SHA256_VERSION="$SHA256_VERSION" \
         W19_REPORT_ARCHIVE_SHA256="${ARCHIVE_SHA256:-}" \
         W19_REPORT_OBJECT_MANIFEST_SHA256="${OBJECT_MANIFEST_SHA256:-}" \
+        W19_REPORT_SOURCE_DATABASE_SHA256="${SOURCE_DATABASE_LOGICAL_SHA256:-}" \
+        W19_REPORT_TARGET_DATABASE_SHA256="${TARGET_DATABASE_LOGICAL_SHA256:-}" \
         W19_REPORT_CHECKS_FILE="$CHECKS_FILE" \
         "$PYTHON_BIN" - "$REPORT" <<'PY'
 import json
@@ -130,10 +146,13 @@ payload = {
         "pg_dump": os.environ["W19_REPORT_PG_DUMP_VERSION"],
         "pg_restore": os.environ["W19_REPORT_PG_RESTORE_VERSION"],
         "psql": os.environ["W19_REPORT_PSQL_VERSION"],
+        "sha256": os.environ["W19_REPORT_SHA256_VERSION"],
     },
     "fingerprints": {
         "postgresql_archive_sha256": os.environ["W19_REPORT_ARCHIVE_SHA256"],
         "object_manifest_sha256": os.environ["W19_REPORT_OBJECT_MANIFEST_SHA256"],
+        "source_database_logical_sha256": os.environ["W19_REPORT_SOURCE_DATABASE_SHA256"],
+        "target_database_logical_sha256": os.environ["W19_REPORT_TARGET_DATABASE_SHA256"],
     },
     "checks": checks,
     "errors": [os.environ["W19_REPORT_ERROR"]] if os.environ["W19_REPORT_ERROR"] else [],
@@ -167,8 +186,42 @@ canonical_directory() {
     (cd "$1" && pwd -P)
 }
 
+select_sha256_provider() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        SHA256_PROVIDER="sha256sum"
+    elif command -v shasum >/dev/null 2>&1; then
+        SHA256_PROVIDER="shasum"
+    elif command -v openssl >/dev/null 2>&1; then
+        SHA256_PROVIDER="openssl"
+    elif command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+        SHA256_PROVIDER="python"
+    else
+        return 1
+    fi
+    SHA256_VERSION="$SHA256_PROVIDER"
+}
+
 sha256_file() {
-    shasum -a 256 "$1" | awk '{print $1}'
+    local file="$1" digest
+    case "$SHA256_PROVIDER" in
+        sha256sum) digest="$(sha256sum "$file" | awk '{print $1}')" ;;
+        shasum) digest="$(shasum -a 256 "$file" | awk '{print $1}')" ;;
+        openssl) digest="$(openssl dgst -sha256 "$file" | awk '{print $NF}')" ;;
+        python)
+            digest="$("$PYTHON_BIN" - "$file" <<'PY'
+import hashlib
+import sys
+
+with open(sys.argv[1], "rb") as stream:
+    print(hashlib.file_digest(stream, "sha256").hexdigest())
+PY
+)"
+            ;;
+        *) return 1 ;;
+    esac
+    digest="$(printf '%s' "$digest" | tr '[:upper:]' '[:lower:]')"
+    [[ "$digest" =~ ^[0-9a-f]{64}$ ]] || return 1
+    printf '%s\n' "$digest"
 }
 
 validate_object_manifest() {
@@ -187,7 +240,7 @@ PY
     [[ "$actual_count" == "$expected_count" ]] || fail "FAIL" "${phase}_object_manifest" "object count differs from FX-OPS manifest"
     while IFS=$'\t' read -r relative expected; do
         [[ -f "$directory/$relative" ]] || fail "FAIL" "${phase}_object_manifest" "required fixture object is missing"
-        actual="$(sha256_file "$directory/$relative")"
+        actual="$(sha256_file "$directory/$relative")" || fail "FAIL" "${phase}_object_manifest" "fixture object checksum could not be computed"
         [[ "$actual" == "$expected" ]] || fail "FAIL" "${phase}_object_manifest" "fixture object checksum differs"
     done <"$manifest_records"
     add_check "${phase}_object_manifest" "PASS" "all fixture object checksums match"
@@ -200,7 +253,7 @@ copy_objects_deterministically() {
         mkdir -p "$(dirname "$TARGET_OBJECTS/$relative")"
         cp "$SOURCE_OBJECTS/$relative" "$TARGET_OBJECTS/$relative"
     done <"$records"
-    OBJECT_MANIFEST_SHA256="$(sha256_file "$records")"
+    OBJECT_MANIFEST_SHA256="$(sha256_file "$records")" || fail "FAIL" "deterministic_object_copy" "object manifest checksum could not be computed"
     validate_object_manifest "$TARGET_OBJECTS" "target"
     add_check "deterministic_object_copy" "PASS" "sorted FX-OPS manifest copied"
 }
@@ -208,6 +261,46 @@ copy_objects_deterministically() {
 run_psql_scalar() {
     local dsn="$1" query="$2"
     "$PSQL_BIN" --no-psqlrc --quiet --tuples-only --no-align --set ON_ERROR_STOP=1 --dbname "$dsn" --command "$query" 2>"$WORK_DIR/tool.stderr" | tr -d '[:space:]'
+}
+
+run_psql_rows() {
+    local dsn="$1" query="$2"
+    "$PSQL_BIN" --no-psqlrc --quiet --tuples-only --no-align --set ON_ERROR_STOP=1 --dbname "$dsn" --command "$query" 2>"$WORK_DIR/tool.stderr"
+}
+
+database_logical_fingerprint() {
+    local dsn="$1" phase="$2" records queries name query
+    records="$WORK_DIR/${phase}-database-logical.txt"
+    queries="$WORK_DIR/database-fingerprint-queries.tsv"
+    "$PYTHON_BIN" - "$FIXTURE_DIR/oracles.json" >"$queries" <<'PY'
+import json
+import sys
+
+for item in json.load(open(sys.argv[1], encoding="utf-8"))["database_fingerprint"]:
+    print(f"{item['name']}\t{item['query']}")
+PY
+    : >"$records"
+    while IFS=$'\t' read -r name query; do
+        printf '[%s]\n' "$name" >>"$records"
+        run_psql_rows "$dsn" "$query" >>"$records" || return 1
+    done <"$queries"
+    sha256_file "$records"
+}
+
+verify_database_oracles() {
+    local dsn="$1" phase="$2" oracle_name oracle_expected oracle_query actual
+    while IFS=$'\t' read -r oracle_name oracle_expected oracle_query; do
+        actual="$(run_psql_scalar "$dsn" "$oracle_query")" || fail "FAIL" "${phase}_${oracle_name}" "fixture oracle query failed"
+        [[ "$actual" == "$oracle_expected" ]] || fail "FAIL" "${phase}_${oracle_name}" "fixture oracle did not match expected result"
+        add_check "${phase}_${oracle_name}" "PASS" "fixture oracle matched"
+    done < <("$PYTHON_BIN" - "$FIXTURE_DIR/oracles.json" <<'PY'
+import json
+import sys
+
+for oracle in json.load(open(sys.argv[1], encoding="utf-8"))["database"]:
+    print(f"{oracle['name']}\t{oracle['expected']}\t{oracle['query']}")
+PY
+)
 }
 
 parse_options() {
@@ -251,48 +344,45 @@ PY
     [[ -d "$SOURCE_OBJECTS" && -d "$TARGET_OBJECTS" ]] || fail "FAIL" "object_directories" "source and target object directories must exist"
     SOURCE_OBJECTS="$(canonical_directory "$SOURCE_OBJECTS")"
     TARGET_OBJECTS="$(canonical_directory "$TARGET_OBJECTS")"
-    SOURCE_DATABASE_IDENTITY="$(database_identity "$SOURCE_DSN")" || fail "FAIL" "source_target_distinct" "source DSN is not a PostgreSQL database identifier"
-    TARGET_DATABASE_IDENTITY="$(database_identity "$TARGET_DSN")" || fail "FAIL" "source_target_distinct" "target DSN is not a PostgreSQL database identifier"
+    SOURCE_DATABASE_IDENTITY="$(database_identity "$SOURCE_DSN" 2>/dev/null)" || fail "FAIL" "source_target_distinct" "source DSN is not a PostgreSQL database identifier"
+    TARGET_DATABASE_IDENTITY="$(database_identity "$TARGET_DSN" 2>/dev/null)" || fail "FAIL" "source_target_distinct" "target DSN is not a PostgreSQL database identifier"
     [[ "$SOURCE_DATABASE_IDENTITY" != "$TARGET_DATABASE_IDENTITY" ]] || fail "FAIL" "source_target_distinct" "source and target DSNs identify the same database"
     [[ "$SOURCE_OBJECTS" != "$TARGET_OBJECTS" ]] || fail "FAIL" "source_target_distinct" "source and target object directories must differ"
-    add_check "source_target_distinct" "PASS" "source and target are distinct"
     [[ -z "$(find "$TARGET_OBJECTS" -mindepth 1 -print -quit)" ]] || fail "FAIL" "target_object_directory" "target object directory must be empty"
     WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/w19-restore.XXXXXX")"
     for tool in "$PG_DUMP_BIN" "$PG_RESTORE_BIN" "$PSQL_BIN" "$PYTHON_BIN"; do
         command -v "$tool" >/dev/null 2>&1 || fail "PARTIAL" "tool_preflight" "required local PostgreSQL or Python tool is unavailable"
     done
+    select_sha256_provider || fail "PARTIAL" "checksum_preflight" "no safe SHA-256 provider is available"
     PG_DUMP_VERSION="$("$PG_DUMP_BIN" --version 2>"$WORK_DIR/tool.stderr")" || fail "PARTIAL" "tool_preflight" "pg_dump version check failed"
     PG_RESTORE_VERSION="$("$PG_RESTORE_BIN" --version 2>"$WORK_DIR/tool.stderr")" || fail "PARTIAL" "tool_preflight" "pg_restore version check failed"
     PSQL_VERSION="$("$PSQL_BIN" --version 2>"$WORK_DIR/tool.stderr")" || fail "PARTIAL" "tool_preflight" "psql version check failed"
     add_check "tool_preflight" "PASS" "PostgreSQL client tools are available"
-    [[ "$(run_psql_scalar "$SOURCE_DSN" 'SELECT 1')" == "1" ]] || fail "FAIL" "source_reachable" "source PostgreSQL is unavailable"
-    add_check "source_reachable" "PASS" "source PostgreSQL responded"
+    SOURCE_SERVER_DATABASE_IDENTITY="$(server_database_identity "$SOURCE_DSN")" || fail "FAIL" "source_server_identity" "source PostgreSQL identity is unavailable"
+    TARGET_SERVER_DATABASE_IDENTITY="$(server_database_identity "$TARGET_DSN")" || fail "FAIL" "target_server_identity" "target PostgreSQL identity is unavailable"
+    [[ -n "$SOURCE_SERVER_DATABASE_IDENTITY" && -n "$TARGET_SERVER_DATABASE_IDENTITY" ]] || fail "FAIL" "source_target_distinct" "source or target PostgreSQL identity is empty"
+    [[ "$SOURCE_SERVER_DATABASE_IDENTITY" != "$TARGET_SERVER_DATABASE_IDENTITY" ]] || fail "FAIL" "source_target_distinct" "source and target resolve to the same PostgreSQL database"
+    add_check "source_target_distinct" "PASS" "server system identifiers and database OIDs differ"
+    [[ "$(run_psql_scalar "$TARGET_DSN" "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')")" == "0" ]] || fail "FAIL" "target_database_isolation" "target PostgreSQL database is not empty"
+    add_check "target_database_isolation" "PASS" "target PostgreSQL database is empty"
     validate_object_manifest "$SOURCE_OBJECTS" "source"
+    verify_database_oracles "$SOURCE_DSN" "source"
+    SOURCE_DATABASE_LOGICAL_SHA256="$(database_logical_fingerprint "$SOURCE_DSN" "source")" || fail "FAIL" "database_logical_checksum" "source logical database checksum failed"
     ARCHIVE_PATH="$WORK_DIR/source.dump"
     "$PG_DUMP_BIN" --format=custom --no-owner --no-privileges --file="$ARCHIVE_PATH" "$SOURCE_DSN" 2>"$WORK_DIR/tool.stderr" || fail "FAIL" "pg_dump" "pg_dump custom-format backup failed"
     [[ -s "$ARCHIVE_PATH" ]] || fail "FAIL" "pg_dump" "pg_dump archive is empty"
-    ARCHIVE_SHA256="$(sha256_file "$ARCHIVE_PATH")"
+    ARCHIVE_SHA256="$(sha256_file "$ARCHIVE_PATH")" || fail "FAIL" "pg_dump" "pg_dump archive checksum could not be computed"
     add_check "pg_dump" "PASS" "custom-format archive created and checksummed"
-    [[ "$(run_psql_scalar "$TARGET_DSN" "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema')")" == "0" ]] || fail "FAIL" "target_database_isolation" "target PostgreSQL database is not empty"
-    add_check "target_database_isolation" "PASS" "target PostgreSQL database is empty"
     copy_objects_deterministically
     "$PG_RESTORE_BIN" --clean --if-exists --no-owner --no-privileges --dbname "$TARGET_DSN" "$ARCHIVE_PATH" 2>"$WORK_DIR/tool.stderr" || fail "FAIL" "pg_restore" "pg_restore failed on the isolated target"
     add_check "pg_restore" "PASS" "custom-format archive restored to isolated target"
     [[ "$(run_psql_scalar "$TARGET_DSN" 'SELECT version_num FROM alembic_version')" == "$EXPECTED_MIGRATION_HEAD" ]] || fail "FAIL" "migration_head" "restored migration head does not match FX-OPS"
     add_check "migration_head" "PASS" "restored migration head matches FX-OPS"
-    while IFS=$'\t' read -r oracle_name oracle_expected oracle_query; do
-        actual="$(run_psql_scalar "$TARGET_DSN" "$oracle_query")" || fail "FAIL" "$oracle_name" "fixture oracle query failed"
-        [[ "$actual" == "$oracle_expected" ]] || fail "FAIL" "$oracle_name" "fixture oracle did not match expected result"
-        add_check "$oracle_name" "PASS" "fixture oracle matched"
-    done < <("$PYTHON_BIN" - "$FIXTURE_DIR/oracles.json" <<'PY'
-import base64
-import json
-import sys
-
-for oracle in json.load(open(sys.argv[1], encoding="utf-8"))["database"]:
-    print(f"{oracle['name']}\t{oracle['expected']}\t{oracle['query']}")
-PY
-)
+    TARGET_DATABASE_LOGICAL_SHA256="$(database_logical_fingerprint "$TARGET_DSN" "target")" || fail "FAIL" "database_logical_checksum" "target logical database checksum failed"
+    [[ "$SOURCE_DATABASE_LOGICAL_SHA256" == "$TARGET_DATABASE_LOGICAL_SHA256" ]] || fail "FAIL" "database_logical_checksum" "source and target logical database checksums differ"
+    add_check "database_logical_checksum" "PASS" "source and target logical database checksums match"
+    verify_database_oracles "$TARGET_DSN" "target"
+    add_check "tombstone_non_resurrection" "PASS" "completed deletion, tombstone, and deleted active account absence match before and after restore"
     STATUS="PASS"
     ERROR_MESSAGE=""
     write_report

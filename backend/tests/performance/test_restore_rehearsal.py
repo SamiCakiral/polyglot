@@ -45,6 +45,97 @@ def report_payload(path: Path) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def write_executable(path: Path, content: str) -> None:
+    path.write_text(content, encoding="utf-8")
+    path.chmod(0o755)
+
+
+def same_database_tool_wrappers(tmp_path: Path) -> tuple[Path, Path]:
+    wrappers = tmp_path / "same-database-bin"
+    wrappers.mkdir()
+    dump_marker = tmp_path / "pg-dump-was-called"
+    write_executable(
+        wrappers / "psql",
+        """#!/usr/bin/env bash
+set -euo pipefail
+case "$*" in
+  *--version*) printf 'psql (PostgreSQL) 17 fixture\n' ;;
+  *pg_control_system*) printf 'same-cluster:16384\n' ;;
+  *) printf '1\n' ;;
+esac
+""",
+    )
+    write_executable(
+        wrappers / "pg_dump",
+        f"""#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *--version* ]]; then
+  printf 'pg_dump (PostgreSQL) 17 fixture\n'
+  exit 0
+fi
+touch {dump_marker!s}
+exit 1
+""",
+    )
+    write_executable(
+        wrappers / "pg_restore",
+        """#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *--version* ]]; then
+  printf 'pg_restore (PostgreSQL) 17 fixture\n'
+fi
+""",
+    )
+    return wrappers, dump_marker
+
+
+def portable_linux_tool_wrappers(tmp_path: Path) -> Path:
+    wrappers = tmp_path / "linux-bin"
+    wrappers.mkdir()
+    write_executable(
+        wrappers / "psql",
+        """#!/bin/sh
+set -eu
+case "$*" in
+  *--version*) printf 'psql (PostgreSQL) 17 fixture\n' ;;
+  *source-db*pg_control_system*) printf 'source-cluster:16384\n' ;;
+  *target-db*pg_control_system*) printf 'target-cluster:16384\n' ;;
+  *information_schema.tables*) printf '0\n' ;;
+  *version_num*) printf '0005_content\n' ;;
+  *platform.deletion_requests*) printf '1\n' ;;
+  *identity.accounts*019bc186-de00-7202-8202-020202020202*) printf '0\n' ;;
+  *) printf '1\n' ;;
+esac
+""",
+    )
+    write_executable(
+        wrappers / "pg_dump",
+        """#!/bin/sh
+set -eu
+if [ "${1:-}" = "--version" ]; then
+  printf 'pg_dump (PostgreSQL) 17 fixture\n'
+  exit 0
+fi
+for argument in "$@"; do
+  case "$argument" in
+    --file=*) archive=${argument#--file=} ;;
+  esac
+done
+printf 'synthetic custom archive' >"$archive"
+""",
+    )
+    write_executable(
+        wrappers / "pg_restore",
+        """#!/bin/sh
+set -eu
+if [ "${1:-}" = "--version" ]; then
+  printf 'pg_restore (PostgreSQL) 17 fixture\n'
+fi
+""",
+    )
+    return wrappers
+
+
 def test_help_describes_required_connection_inputs() -> None:
     result = run_rehearsal("--help")
 
@@ -113,6 +204,120 @@ def test_rejects_equivalent_source_and_target_database_with_different_dsn_text(
         check["name"] == "source_target_distinct" and check["status"] == "FAIL"
         for check in payload["checks"]
     )
+
+
+def test_rejects_host_aliases_for_same_server_database_before_dump(tmp_path: Path) -> None:
+    source_objects, target_objects = object_directories(tmp_path)
+    wrappers, dump_marker = same_database_tool_wrappers(tmp_path)
+    report = tmp_path / "same-server-database.json"
+
+    result = run_rehearsal(
+        "--fixture",
+        "FX-OPS",
+        "--source-dsn",
+        "postgresql://fixture@127.0.0.1:55432/polyglot",
+        "--target-dsn",
+        "postgresql://fixture@localhost:55432/polyglot",
+        "--source-objects",
+        str(source_objects),
+        "--target-objects",
+        str(target_objects),
+        "--report",
+        str(report),
+        environment={
+            "PG_DUMP_BIN": str(wrappers / "pg_dump"),
+            "PG_RESTORE_BIN": str(wrappers / "pg_restore"),
+            "PSQL_BIN": str(wrappers / "psql"),
+        },
+    )
+
+    payload = report_payload(report)
+    assert result.returncode != 0
+    assert payload["status"] == "FAIL"
+    assert not dump_marker.exists()
+    assert any(
+        check["name"] == "source_target_distinct" and check["status"] == "FAIL"
+        for check in payload["checks"]
+    )
+
+
+def test_malformed_dsn_is_redacted_without_traceback_and_still_reports_json(
+    tmp_path: Path,
+) -> None:
+    source_objects, target_objects = object_directories(tmp_path)
+    report = tmp_path / "malformed-dsn.json"
+    malformed_sentinel = "malformed-sensitive-marker"
+
+    result = run_rehearsal(
+        "--fixture",
+        "FX-OPS",
+        "--source-dsn",
+        "postgresql://fixture@127.0.0.1:55432/source",
+        "--target-dsn",
+        f"postgresql://fixture@localhost:{malformed_sentinel}/target",
+        "--source-objects",
+        str(source_objects),
+        "--target-objects",
+        str(target_objects),
+        "--report",
+        str(report),
+    )
+
+    rendered_report = report.read_text(encoding="utf-8")
+    payload = json.loads(rendered_report)
+    combined_output = result.stdout + result.stderr + rendered_report
+    assert result.returncode != 0
+    assert payload["status"] == "FAIL"
+    assert payload["target"] == "redacted"
+    assert "Traceback" not in combined_output
+    assert malformed_sentinel not in combined_output
+
+
+def test_linux_sha256sum_fallback_keeps_structured_report_without_shasum(
+    tmp_path: Path,
+) -> None:
+    if os.environ.get("W19_REAL_TEST") != "1":
+        pytest.skip("set W19_REAL_TEST=1 to run the Linux portability check")
+    if shutil.which("docker") is None:
+        pytest.skip("Docker is required for the Linux portability check")
+
+    object_directories(tmp_path)
+    portable_linux_tool_wrappers(tmp_path)
+    report = tmp_path / "linux-sha256-report.json"
+    command = [
+        "docker",
+        "run",
+        "--rm",
+        "--volume",
+        f"{ROOT}:/repo:ro",
+        "--volume",
+        f"{tmp_path}:/work",
+        "--env",
+        "PG_DUMP_BIN=/work/linux-bin/pg_dump",
+        "--env",
+        "PG_RESTORE_BIN=/work/linux-bin/pg_restore",
+        "--env",
+        "PSQL_BIN=/work/linux-bin/psql",
+        "python:3.13.11-slim-bookworm",
+        "/bin/bash",
+        "-c",
+        "command -v shasum >/dev/null && exit 97; "
+        "exec /repo/scripts/restore-rehearsal.sh "
+        "--fixture FX-OPS "
+        "--source-dsn postgresql://fixture@source-db:5432/polyglot "
+        "--target-dsn postgresql://fixture@target-db:5432/polyglot "
+        "--source-objects /work/source-objects "
+        "--target-objects /work/target-objects "
+        "--report /work/linux-sha256-report.json",
+    ]
+
+    result = subprocess.run(command, text=True, capture_output=True, check=False)
+
+    assert report.exists(), result.stderr
+    payload = report_payload(report)
+    assert result.returncode == 0, result.stderr
+    assert payload["status"] == "PASS"
+    assert payload["tool_versions"]["sha256"] == "sha256sum"
 
 
 def test_failure_report_redacts_dsn_credentials(tmp_path: Path) -> None:
@@ -199,6 +404,24 @@ def test_real_rehearsal_restores_fixture_into_disposable_database_and_object_dir
         payload = report_payload(report)
         assert result.returncode == 0, result.stderr
         assert payload["status"] == "PASS"
+        fingerprints = payload["fingerprints"]
+        assert fingerprints["source_database_logical_sha256"]
+        assert (
+            fingerprints["source_database_logical_sha256"]
+            == fingerprints["target_database_logical_sha256"]
+        )
+        assert any(
+            check["name"] == "database_logical_checksum" and check["status"] == "PASS"
+            for check in payload["checks"]
+        )
+        checks_by_name = {check["name"]: check["status"] for check in payload["checks"]}
+        assert checks_by_name["source_completed_deletion_history_present"] == "PASS"
+        assert checks_by_name["source_logical_tombstone_present"] == "PASS"
+        assert checks_by_name["source_deleted_active_account_absent"] == "PASS"
+        assert checks_by_name["target_completed_deletion_history_present"] == "PASS"
+        assert checks_by_name["target_logical_tombstone_present"] == "PASS"
+        assert checks_by_name["target_deleted_active_account_absent"] == "PASS"
+        assert checks_by_name["tombstone_non_resurrection"] == "PASS"
         target_object = target_objects / "private" / "fx-ops-private-object.txt"
         source_object = source_objects / "private" / "fx-ops-private-object.txt"
         assert target_object.read_text(encoding="utf-8") == source_object.read_text(
