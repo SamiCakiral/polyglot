@@ -54,7 +54,9 @@ NORMATIVE_CHECKSUMS: dict[str, dict[str, str]] = {
     },
     "pronunciation": {
         "pron:e-vs-e-accent": "8106fc46ae6ce738cd78a1939371b300416e949f82ae04c17e8db632c2415fd7",
-        "pron:shadowing-dialogue-j2": "55218357ca3acdf740598da78d08d8045be783377e964507f5bb067129cdf92f",
+        "pron:shadowing-dialogue-j2": (
+            "55218357ca3acdf740598da78d08d8045be783377e964507f5bb067129cdf92f"
+        ),
     },
     "dialogue": {
         "dialogue:j1-contact": "b1582ff39c0a6179e6e15e82421dacc353b2607e6f2cb6b73ff47b725c5595f3",

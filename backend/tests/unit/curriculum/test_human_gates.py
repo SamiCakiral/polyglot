@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any, cast
+from uuid import UUID
 
 from polyglot.modules.curriculum.validation import (
     ApprovalDecision,
@@ -61,13 +62,13 @@ def evidence(
     signature: bytes = b"verified",
     signed_at: datetime | Any = datetime(2026, 8, 10, 12, tzinfo=UTC),
     decision: ApprovalDecision = ApprovalDecision.APPROVED,
-    reviewer_id=uid(902),  # type: ignore[no-untyped-def]
+    reviewer_id: UUID | None = None,
 ) -> HumanApprovalEvidence:
     data = base_input()
     return HumanApprovalEvidence(
         review_id=uid(900),
         gate_code=gate_code,
-        reviewer_id=reviewer_id,
+        reviewer_id=reviewer_id or uid(902),
         reviewer_role=role,
         author_id=uid(901),
         decision=decision,
