@@ -305,50 +305,58 @@ CREATE POLICY learner_language_profile_owner ON language_profiles.learner_langua
     WITH CHECK (account_id = language_profiles.current_user_id());
 CREATE POLICY support_language_authorization_owner ON language_profiles.support_language_authorizations
     USING (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()))
+        WHERE item.profile_id = language_profiles.support_language_authorizations.profile_id
+        AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()));
+        WHERE item.profile_id = language_profiles.support_language_authorizations.profile_id
+        AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY declared_language_experience_owner ON language_profiles.declared_language_experiences
     USING (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()))
+        WHERE item.profile_id = language_profiles.declared_language_experiences.profile_id
+        AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()));
+        WHERE item.profile_id = language_profiles.declared_language_experiences.profile_id
+        AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY diagnostic_run_owner ON language_profiles.diagnostic_runs
     USING (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()))
+        WHERE item.profile_id = language_profiles.diagnostic_runs.profile_id
+        AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()));
+        WHERE item.profile_id = language_profiles.diagnostic_runs.profile_id
+        AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY diagnostic_response_owner ON language_profiles.diagnostic_responses
     USING (EXISTS (SELECT 1 FROM language_profiles.diagnostic_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
-        WHERE run.diagnostic_run_id = diagnostic_run_id
+        WHERE run.diagnostic_run_id = language_profiles.diagnostic_responses.diagnostic_run_id
         AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.diagnostic_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
-        WHERE run.diagnostic_run_id = diagnostic_run_id
+        WHERE run.diagnostic_run_id = language_profiles.diagnostic_responses.diagnostic_run_id
         AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY foundation_run_owner ON language_profiles.foundation_runs
     USING (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()))
+        WHERE item.profile_id = language_profiles.foundation_runs.profile_id
+        AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles item
-        WHERE item.profile_id = profile_id AND item.account_id = language_profiles.current_user_id()));
+        WHERE item.profile_id = language_profiles.foundation_runs.profile_id
+        AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY foundation_run_block_owner ON language_profiles.foundation_run_blocks
     USING (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
-        WHERE run.foundation_run_id = foundation_run_id
+        WHERE run.foundation_run_id = language_profiles.foundation_run_blocks.foundation_run_id
         AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
-        WHERE run.foundation_run_id = foundation_run_id
+        WHERE run.foundation_run_id = language_profiles.foundation_run_blocks.foundation_run_id
         AND item.account_id = language_profiles.current_user_id()));
 CREATE POLICY foundation_gate_result_owner ON language_profiles.foundation_gate_results
     USING (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
-        WHERE run.foundation_run_id = foundation_run_id
+        WHERE run.foundation_run_id = language_profiles.foundation_gate_results.foundation_run_id
         AND item.account_id = language_profiles.current_user_id()))
     WITH CHECK (EXISTS (SELECT 1 FROM language_profiles.foundation_runs run
         JOIN language_profiles.learner_language_profiles item ON item.profile_id = run.profile_id
-        WHERE run.foundation_run_id = foundation_run_id
+        WHERE run.foundation_run_id = language_profiles.foundation_gate_results.foundation_run_id
         AND item.account_id = language_profiles.current_user_id()));
 
 REVOKE ALL ON SCHEMA language_profiles FROM PUBLIC;

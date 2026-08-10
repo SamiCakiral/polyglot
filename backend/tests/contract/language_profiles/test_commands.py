@@ -30,7 +30,7 @@ async def services() -> tuple[IdentityApplicationService, object]:
     identity = IdentityApplicationService(
         factory,
         clock=clock,
-        session_secrets=SessionSecrets.from_key(b"w03-contract-session-secret-32b"),
+        session_secrets=SessionSecrets.from_key(b"w03-contract-session-secret-at-least-32b"),
         oidc_provider=FakeOidcProvider({}),
     )
     yield identity, LanguageProfileApplicationService(factory, clock=clock)
@@ -164,4 +164,3 @@ async def test_diagnostic_is_resumable_for_exactly_twenty_four_hours_without_cre
     assert summary.json()["status"] == "in_progress"
     assert summary.json()["expires_at"] == "2026-08-11T12:00:00Z"
     assert "mastery" not in summary.json()
-

@@ -26,6 +26,18 @@ if config.config_file_name is not None:
 target_metadata = metadata
 
 
+def include_object(
+    object_: object,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: object | None,
+) -> bool:
+    """W03 uses audited SQL DDL for RLS policies/triggers outside Alembic metadata."""
+    del name, type_, reflected, compare_to
+    return getattr(object_, "schema", None) != "language_profiles"
+
+
 def database_url() -> str:
     return migration_database_url_from_environment()
 
@@ -38,6 +50,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         include_schemas=True,
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -49,6 +62,7 @@ def run_sync_migrations(connection: Connection) -> None:
         target_metadata=target_metadata,
         compare_type=True,
         include_schemas=True,
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()

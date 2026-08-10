@@ -252,6 +252,20 @@ class SqlLanguageProfileRepository:
             raise DomainError(ErrorCode.NOT_FOUND)
         return _profile_from_row(cast(Mapping[str, object], row))
 
+    async def list_owned(self, account_id: UUID) -> tuple[LearnerLanguageProfile, ...]:
+        await self.set_actor(account_id)
+        rows = (
+            await self._session.execute(
+                select(learner_language_profiles)
+                .where(learner_language_profiles.c.account_id == account_id)
+                .order_by(
+                    learner_language_profiles.c.created_at,
+                    learner_language_profiles.c.profile_id,
+                )
+            )
+        ).mappings()
+        return tuple(_profile_from_row(cast(Mapping[str, object], row)) for row in rows)
+
     async def update(self, profile: LearnerLanguageProfile) -> None:
         await self.set_actor(profile.account_id)
         changed = await self._session.scalar(
