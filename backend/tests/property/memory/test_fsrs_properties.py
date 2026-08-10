@@ -1,14 +1,14 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from polyglot.modules.lexicon.memory.policy import SchedulerPolicy
 from polyglot.modules.lexicon.memory.ports import MemoryRating
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 
-
-START = datetime(2026, 1, 5, 9, tzinfo=timezone.utc)
+START = datetime(2026, 1, 5, 9, tzinfo=UTC)
 
 
 @given(

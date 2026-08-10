@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from random import seed
 
 import fsrs
 
-
-START = datetime(2026, 1, 5, 9, tzinfo=timezone.utc)
+START = datetime(2026, 1, 5, 9, tzinfo=UTC)
 
 
 def _review(
@@ -35,7 +34,7 @@ def test_golden_history_and_two_directions_are_stable() -> None:
             card = _review(scheduler, card, rating, at, 4_242 + index)
         results.append(card)
 
-    assert results[0].due == datetime(2026, 1, 20, 9, tzinfo=timezone.utc)
+    assert results[0].due == datetime(2026, 1, 20, 9, tzinfo=UTC)
     assert results[0].state is fsrs.State.Review
     assert results[0].difficulty == results[1].difficulty == 5.170190465277389
     assert results[0].stability == results[1].stability == 7.48411760536693
@@ -48,7 +47,7 @@ def test_same_day_reset_merge_and_utc_provider_rules_are_explicit() -> None:
     card = _review(scheduler, card, fsrs.Rating.Good, START, 6_000)
     card = _review(scheduler, card, fsrs.Rating.Good, START + timedelta(minutes=5), 6_001)
 
-    assert card.due == datetime(2026, 1, 7, 9, 5, tzinfo=timezone.utc)
+    assert card.due == datetime(2026, 1, 7, 9, 5, tzinfo=UTC)
     reset = fsrs.Card(card_id=104, due=START + timedelta(days=2))
     assert reset.stability is None and reset.last_review is None
 
@@ -61,7 +60,7 @@ def test_same_day_reset_merge_and_utc_provider_rules_are_explicit() -> None:
     seed(7_070)
     merged = scheduler.reschedule_card(fsrs.Card(card_id=107, due=START), logs)
     assert merged.last_review == START + timedelta(minutes=11)
-    assert merged.due == datetime(2026, 1, 6, 9, 11, tzinfo=timezone.utc)
+    assert merged.due == datetime(2026, 1, 6, 9, 11, tzinfo=UTC)
 
     try:
         scheduler.review_card(fsrs.Card(), fsrs.Rating.Good, START.replace(tzinfo=None))

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -14,8 +14,7 @@ from polyglot.modules.lexicon.memory.ports import MemoryRating, MemoryState
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 from polyglot.platform.errors import DomainError, ErrorCode
 
-
-NOW = datetime(2026, 1, 5, 9, tzinfo=timezone.utc)
+NOW = datetime(2026, 1, 5, 9, tzinfo=UTC)
 
 
 def test_adapter_exposes_only_the_pinned_scheduler_identity() -> None:
@@ -48,7 +47,7 @@ def test_adapter_matches_the_spike_golden_history() -> None:
         ).after
 
     assert state.state is MemoryState.REVIEW
-    assert state.due_at == datetime(2026, 1, 20, 9, tzinfo=timezone.utc)
+    assert state.due_at == datetime(2026, 1, 20, 9, tzinfo=UTC)
     assert state.difficulty == Decimal("5.170190465277389")
     assert state.stability == Decimal("7.48411760536693")
     assert state.reps == 4
@@ -101,8 +100,8 @@ def test_timezone_input_is_normalized_to_utc_without_rewriting_history() -> None
         policy,
     ).after
 
-    assert state.last_review_at == datetime(2026, 3, 29, 7, tzinfo=timezone.utc)
-    assert state.due_at is not None and state.due_at.tzinfo is timezone.utc
+    assert state.last_review_at == datetime(2026, 3, 29, 7, tzinfo=UTC)
+    assert state.due_at is not None and state.due_at.tzinfo is UTC
 
 
 def test_provider_failure_is_visible_and_does_not_return_a_transition() -> None:
