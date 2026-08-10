@@ -1632,6 +1632,72 @@ class SqlExchangeService:
             await self._set_actor(session, actor_id)
             return await self._load_import(session, import_id)
 
+    async def get_import_preview(
+        self,
+        actor_id: UUID,
+        import_id: UUID,
+        *,
+        limit: int,
+        cursor: str | None,
+    ) -> tuple[tuple[dict[str, Any], ...], str | None]:
+        if not 1 <= limit <= 100:
+            raise DomainError(ErrorCode.VALIDATION_FAILED)
+        try:
+            after_line = 0 if cursor is None else int(cursor)
+        except ValueError as error:
+            raise DomainError(ErrorCode.CURSOR_INVALID) from error
+        if after_line < 0:
+            raise DomainError(ErrorCode.CURSOR_INVALID)
+        async with self._session_factory() as session:
+            await self._set_actor(session, actor_id)
+            await self._load_import(session, import_id)
+            rows = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT line.import_line_id,line.line_no,line.source_path,line.status,"
+                            "line.intermediate_payload,line.redacted_error_value,"
+                            "conflict.conflict_id,conflict.conflict_class,"
+                            "conflict.candidate_refs,conflict.allowed_actions,"
+                            "conflict.selected_action,conflict.version AS conflict_version "
+                            "FROM exchange.import_lines line LEFT JOIN exchange.import_conflicts "
+                            "conflict ON conflict.import_line_id=line.import_line_id "
+                            "WHERE line.import_id=:import AND line.line_no>:after "
+                            "ORDER BY line.line_no LIMIT :limit"
+                        ),
+                        {"import": import_id, "after": after_line, "limit": limit + 1},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            selected = rows[:limit]
+            items = tuple(
+                {
+                    "import_line_id": str(row["import_line_id"]),
+                    "line_no": row["line_no"],
+                    "source_path": row["source_path"],
+                    "status": row["status"],
+                    "intermediate_payload": row["intermediate_payload"],
+                    "redacted_error_value": row["redacted_error_value"],
+                    "conflict": (
+                        None
+                        if row["conflict_id"] is None
+                        else {
+                            "conflict_id": str(row["conflict_id"]),
+                            "conflict_class": row["conflict_class"],
+                            "candidate_refs": row["candidate_refs"],
+                            "allowed_actions": row["allowed_actions"],
+                            "selected_action": row["selected_action"],
+                            "version": row["conflict_version"],
+                        }
+                    ),
+                }
+                for row in selected
+            )
+            next_cursor = str(selected[-1]["line_no"]) if len(rows) > limit else None
+            return items, next_cursor
+
     async def current_catalogue_version(self, actor_id: UUID, profile_id: UUID) -> str:
         async with self._session_factory() as session:
             await self._set_actor(session, actor_id)

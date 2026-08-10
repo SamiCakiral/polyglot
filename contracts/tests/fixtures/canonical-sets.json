@@ -925,6 +925,10 @@
     },
     {
       "method": "GET",
+      "route": "/imports/{import_id}/preview"
+    },
+    {
+      "method": "GET",
       "route": "/exports/{id}"
     },
     {

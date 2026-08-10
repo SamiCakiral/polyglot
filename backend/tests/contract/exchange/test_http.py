@@ -60,6 +60,7 @@ def test_exchange_queries_are_authenticated_and_bounded() -> None:
         "/api/v1/shared-vocabulary-lists",
         "/api/v1/shared-vocabulary-lists/{id}",
         "/api/v1/imports/{id}",
+        "/api/v1/imports/{import_id}/preview",
         "/api/v1/exports/{id}",
     ):
         operation = document["paths"][route]["get"]
@@ -73,6 +74,11 @@ def test_exchange_queries_are_authenticated_and_bounded() -> None:
     )
     assert preview_parameters["cutoff_at"]["required"] is True
     assert preview_parameters["limit"]["schema"]["maximum"] == 100
+    import_preview_parameters = _parameters(
+        document["paths"]["/api/v1/imports/{import_id}/preview"]["get"]
+    )
+    assert import_preview_parameters["limit"]["schema"]["maximum"] == 100
+    assert import_preview_parameters["cursor"]["schema"]["anyOf"][0]["maxLength"] == 20
 
 
 def test_commit_request_cannot_self_assert_catalogue_freshness() -> None:

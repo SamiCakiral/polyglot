@@ -203,6 +203,30 @@ class ImportRunResponse(ClosedModel):
     reused_refs: tuple[str, ...]
 
 
+class ImportConflictResponse(ClosedModel):
+    conflict_id: UUID
+    conflict_class: str
+    candidate_refs: tuple[str, ...]
+    allowed_actions: tuple[str, ...]
+    selected_action: str | None
+    version: int
+
+
+class ImportPreviewLineResponse(ClosedModel):
+    import_line_id: UUID
+    line_no: int
+    source_path: str
+    status: str
+    intermediate_payload: dict[str, JsonValue] | None
+    redacted_error_value: str | None
+    conflict: ImportConflictResponse | None
+
+
+class ImportPreviewPageResponse(ClosedModel):
+    items: tuple[ImportPreviewLineResponse, ...]
+    next_cursor: str | None
+
+
 class ResourceMutationResponse(ClosedModel):
     resource_id: UUID
     version: int
@@ -249,6 +273,14 @@ class ExchangeService(Protocol):
         self, actor_id: UUID, profile_id: UUID, command: CreateImport, *, idempotency_key: str
     ) -> ImportRunView: ...
     async def get_import(self, actor_id: UUID, import_id: UUID) -> ImportRunView: ...
+    async def get_import_preview(
+        self,
+        actor_id: UUID,
+        import_id: UUID,
+        *,
+        limit: int,
+        cursor: str | None,
+    ) -> tuple[tuple[dict[str, Any], ...], str | None]: ...
     async def current_catalogue_version(self, actor_id: UUID, profile_id: UUID) -> str: ...
     async def commit_import(
         self,
@@ -841,6 +873,31 @@ def exchange_router(
     ) -> ImportRunResponse:
         current = await session_for(request, token)
         return _import_response(await application_service().get_import(current.account_id, id))
+
+    @router.get(
+        "/api/v1/imports/{import_id}/preview",
+        operation_id="get_import_preview",
+        response_model=ImportPreviewPageResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def get_import_preview(
+        import_id: UUID,
+        request: Request,
+        limit: Annotated[int, Query(ge=1, le=100)] = 50,
+        cursor: Annotated[str | None, Query(min_length=1, max_length=20)] = None,
+        token: SessionCookieToken = None,
+    ) -> ImportPreviewPageResponse:
+        current = await session_for(request, token)
+        items, next_cursor = await application_service().get_import_preview(
+            current.account_id,
+            import_id,
+            limit=limit,
+            cursor=cursor,
+        )
+        return ImportPreviewPageResponse(
+            items=tuple(ImportPreviewLineResponse.model_validate(item) for item in items),
+            next_cursor=next_cursor,
+        )
 
     def make_list_endpoint(resource_type: str):
         async def list_endpoint(

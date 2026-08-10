@@ -48,9 +48,11 @@ import type {
   FoundationResponse,
   GetContentHistoryParams,
   GetExport200,
+  GetImportPreviewParams,
   GetLexicalSenseParams,
   GetSharedVocabularyList200,
   GetWordBankOverviewParams,
+  ImportPreviewPageResponse,
   ImportRunResponse,
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
@@ -5778,6 +5780,328 @@ export const useResolveImportConflict = <
     queryClient,
   );
 };
+
+export type getImportPreviewResponse200 = {
+  data: ImportPreviewPageResponse;
+  status: 200;
+};
+
+export type getImportPreviewResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getImportPreviewResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getImportPreviewResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getImportPreviewResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getImportPreviewResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getImportPreviewResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getImportPreviewResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getImportPreviewResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getImportPreviewResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getImportPreviewResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getImportPreviewResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getImportPreviewResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getImportPreviewResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getImportPreviewResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getImportPreviewResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getImportPreviewResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getImportPreviewResponseSuccess = getImportPreviewResponse200 & {
+  headers: Headers;
+};
+export type getImportPreviewResponseError = (
+  | getImportPreviewResponse401ApplicationJson
+  | getImportPreviewResponse401ApplicationProblemJson
+  | getImportPreviewResponse403ApplicationJson
+  | getImportPreviewResponse403ApplicationProblemJson
+  | getImportPreviewResponse409ApplicationJson
+  | getImportPreviewResponse409ApplicationProblemJson
+  | getImportPreviewResponse422ApplicationJson
+  | getImportPreviewResponse422ApplicationProblemJson
+  | getImportPreviewResponse423ApplicationJson
+  | getImportPreviewResponse423ApplicationProblemJson
+  | getImportPreviewResponse428ApplicationJson
+  | getImportPreviewResponse428ApplicationProblemJson
+  | getImportPreviewResponse429ApplicationJson
+  | getImportPreviewResponse429ApplicationProblemJson
+  | getImportPreviewResponse503ApplicationJson
+  | getImportPreviewResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getImportPreviewResponse =
+  getImportPreviewResponseSuccess | getImportPreviewResponseError;
+
+export const getGetImportPreviewUrl = (
+  importId: string,
+  params?: GetImportPreviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/imports/${importId}/preview?${stringifiedParams}`
+    : `/api/v1/imports/${importId}/preview`;
+};
+
+/**
+ * @summary Get Import Preview
+ */
+export const getImportPreview = async (
+  importId: string,
+  params?: GetImportPreviewParams,
+  options?: RequestInit,
+): Promise<getImportPreviewResponse> => {
+  const res = await fetch(getGetImportPreviewUrl(importId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getImportPreviewResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getImportPreviewResponse;
+};
+
+export const getGetImportPreviewQueryKey = (
+  importId: string,
+  params?: GetImportPreviewParams,
+) => {
+  return [
+    `/api/v1/imports/${importId}/preview`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetImportPreviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getImportPreview>>,
+  TError = ProblemResponse,
+>(
+  importId: string,
+  params?: GetImportPreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getImportPreview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetImportPreviewQueryKey(importId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getImportPreview>>
+  > = ({ signal }) =>
+    getImportPreview(importId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: importId !== null && importId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getImportPreview>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetImportPreviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getImportPreview>>
+>;
+export type GetImportPreviewQueryError = ProblemResponse;
+
+export function useGetImportPreview<
+  TData = Awaited<ReturnType<typeof getImportPreview>>,
+  TError = ProblemResponse,
+>(
+  importId: string,
+  params: undefined | GetImportPreviewParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getImportPreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getImportPreview>>,
+          TError,
+          Awaited<ReturnType<typeof getImportPreview>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetImportPreview<
+  TData = Awaited<ReturnType<typeof getImportPreview>>,
+  TError = ProblemResponse,
+>(
+  importId: string,
+  params?: GetImportPreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getImportPreview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getImportPreview>>,
+          TError,
+          Awaited<ReturnType<typeof getImportPreview>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetImportPreview<
+  TData = Awaited<ReturnType<typeof getImportPreview>>,
+  TError = ProblemResponse,
+>(
+  importId: string,
+  params?: GetImportPreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getImportPreview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Import Preview
+ */
+
+export function useGetImportPreview<
+  TData = Awaited<ReturnType<typeof getImportPreview>>,
+  TError = ProblemResponse,
+>(
+  importId: string,
+  params?: GetImportPreviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getImportPreview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetImportPreviewQueryOptions(
+    importId,
+    params,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export type commitImportResponse200 = {
   data: ImportRunResponse;

@@ -23,6 +23,7 @@ import type {
   FoundationResponse,
   GetExport200,
   GetSharedVocabularyList200,
+  ImportPreviewPageResponse,
   ImportRunResponse,
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
@@ -1045,6 +1046,64 @@ export const getResolveImportConflictResponseMock = (
   resource_id: faker.string.uuid(),
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetImportPreviewResponseMock = (
+  overrideResponse: Partial<Extract<ImportPreviewPageResponse, object>> = {},
+): ImportPreviewPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    conflict: faker.helpers.arrayElement([
+      {
+        allowed_actions: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+        candidate_refs: Array.from(
+          { length: faker.number.int({ min: 1, max: 10 }) },
+          (_, i) => i + 1,
+        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+        conflict_class: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        conflict_id: faker.string.uuid(),
+        selected_action: faker.helpers.arrayElement([
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        version: faker.number.int(),
+      },
+      null,
+    ]),
+    import_line_id: faker.string.uuid(),
+    intermediate_payload: faker.helpers.arrayElement([
+      {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      null,
+    ]),
+    line_no: faker.number.int(),
+    redacted_error_value: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    source_path: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   ...overrideResponse,
 });
 
@@ -3155,6 +3214,32 @@ export const getResolveImportConflictMockHandler = (
   );
 };
 
+export const getGetImportPreviewMockHandler = (
+  overrideResponse?:
+    | ImportPreviewPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ImportPreviewPageResponse> | ImportPreviewPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/imports/:importId/preview",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetImportPreviewResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getCommitImportMockHandler = (
   overrideResponse?:
     | ImportRunResponse
@@ -4716,6 +4801,7 @@ export const getPolyglotV2APIMock = () => [
   getHealthReadyMockHandler(),
   getGetImportMockHandler(),
   getResolveImportConflictMockHandler(),
+  getGetImportPreviewMockHandler(),
   getCommitImportMockHandler(),
   getRevertImportMockHandler(),
   getListLanguagePacksMockHandler(),

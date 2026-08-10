@@ -301,6 +301,74 @@ async def test_import_preview_does_not_call_lexical_mutation_port(runtime_factor
     assert mutations.calls == []
 
 
+async def test_import_preview_lines_are_paginated_and_owner_scoped(runtime_factory) -> None:
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1900, 1980)),
+    )
+    payload = json.dumps(
+        {
+            "format": "polyglot.lexicon.bundle/v1",
+            "schema_version": 1,
+            "entries": [
+                {
+                    "source_key": source_key,
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": source_key,
+                    "semantic_key": semantic_key,
+                    "visibility": "private",
+                }
+                for source_key, semantic_key in (
+                    ("binario", "transport.platform"),
+                    ("biglietto", "transport.ticket"),
+                )
+            ],
+        }
+    ).encode()
+    preview = await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id="polyglot.lexicon.bundle/v1",
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key="import-lines-preview",
+    )
+
+    first, cursor = await service.get_import_preview(
+        ACCOUNT_A,
+        preview.import_id,
+        limit=1,
+        cursor=None,
+    )
+    second, final_cursor = await service.get_import_preview(
+        ACCOUNT_A,
+        preview.import_id,
+        limit=1,
+        cursor=cursor,
+    )
+
+    assert first[0]["line_no"] == 1
+    assert first[0]["intermediate_payload"]["normalized_form"] == "binario"
+    assert cursor == "1"
+    assert second[0]["line_no"] == 2
+    assert final_cursor is None
+    with pytest.raises(DomainError) as hidden:
+        await service.get_import_preview(
+            ACCOUNT_B,
+            preview.import_id,
+            limit=10,
+            cursor=None,
+        )
+    assert hidden.value.code is ErrorCode.NOT_FOUND
+
+
 async def test_import_commit_uses_lexical_mutation_port(runtime_factory) -> None:
     mutations = LexicalMutationRecorder()
     service = SqlExchangeService(runtime_factory, lexical_mutations=mutations)
