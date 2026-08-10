@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
@@ -14,7 +15,7 @@ from polyglot.modules.lexicon.memory.application import (
     RestoreMemoryPrompt,
     SubmitMemoryReview,
 )
-from polyglot.modules.lexicon.memory.domain import PromptStatus
+from polyglot.modules.lexicon.memory.domain import MemoryAggregate, PromptStatus
 from polyglot.modules.lexicon.memory.policy import HintLevel, ReviewVerdict, SchedulerPolicy
 from polyglot.modules.lexicon.memory.ports import MemoryRating, MemoryState
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
@@ -34,6 +35,7 @@ def create_command(
     direction: str = "target_to_support",
     protocol_id: str = "certified-recall-v1",
     target_revision_id: int = 5,
+    operation: str = "recall",
 ) -> CreateMemoryPrompt:
     return CreateMemoryPrompt(
         prompt_id=uid(prompt_id),
@@ -42,7 +44,7 @@ def create_command(
         target_revision_id=uid(target_revision_id),
         direction=direction,
         modality="written",
-        operation="recall",
+        operation=operation,
         protocol_id=protocol_id,
         protocol_revision=1,
         rating_semantics_id="polyglot-recall-v1",
@@ -63,6 +65,10 @@ def review_command(
     answer_revealed: bool = False,
     exposure_only: bool = False,
     incidental_production: bool = False,
+    certified_operation: str = "recall",
+    certified_protocol_id: str = "certified-recall-v1",
+    certified_protocol_revision: int = 1,
+    certified_target_revision_id: int = 5,
 ) -> SubmitMemoryReview:
     return SubmitMemoryReview(
         review_id=uid(review_id),
@@ -74,6 +80,11 @@ def review_command(
         highest_hint=hint,
         rating=rating,
         certified_recall=certified_recall,
+        certification_ref="certification:recall-v1",
+        certified_operation=certified_operation,
+        certified_protocol_id=certified_protocol_id,
+        certified_protocol_revision=certified_protocol_revision,
+        certified_target_revision_id=uid(certified_target_revision_id),
         answer_revealed=answer_revealed,
         exposure_only=exposure_only,
         incidental_production=incidental_production,
@@ -83,6 +94,47 @@ def review_command(
         reviewed_at=reviewed_at,
         idempotency_key=f"review-{review_id}",
     )
+
+
+@pytest.mark.parametrize(
+    ("prompt_changes", "review_changes"),
+    [
+        ({"operation": "exposure"}, {}),
+        ({}, {"certified_operation": "recognition"}),
+        ({}, {"certified_protocol_id": "other-protocol"}),
+        ({}, {"certified_protocol_revision": 2}),
+        ({}, {"certified_target_revision_id": 999}),
+    ],
+)
+def test_certification_must_match_every_pinned_prompt_dimension(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+    prompt_changes: dict[str, object],
+    review_changes: dict[str, object],
+) -> None:
+    aggregate = lifecycle.create(create_command(**prompt_changes), policy)
+    command = review_command(**review_changes)
+
+    decision = lifecycle.submit_review(aggregate, command, policy)
+
+    assert decision.review_created is False
+    assert decision.reason == "operation_not_certified"
+    assert decision.aggregate == aggregate
+
+
+def test_certification_reference_is_required_for_a_scheduling_review(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.create(create_command(), policy)
+    command = review_command()
+    command = SubmitMemoryReview(**{**command.as_dict(), "certification_ref": ""})
+
+    decision = lifecycle.submit_review(aggregate, command, policy)
+
+    assert decision.review_created is False
+    assert decision.reason == "operation_not_certified"
+    assert decision.aggregate == aggregate
 
 
 @pytest.fixture
@@ -184,6 +236,85 @@ def test_user_cannot_choose_a_more_favorable_rating_than_the_observation(
 
     assert error.value.code is ErrorCode.RATING_NOT_ALLOWED
     assert aggregate.reviews == ()
+
+
+def test_review_rejects_a_policy_other_than_the_prompt_policy(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.create(create_command(), policy)
+    other_revision = replace(policy, revision=2)
+
+    with pytest.raises(DomainError) as error:
+        lifecycle.submit_review(aggregate, review_command(), other_revision)
+
+    assert error.value.code is ErrorCode.DEPENDENCY_UNAVAILABLE
+    assert aggregate.reviews == ()
+
+
+def test_backdated_review_is_rejected_without_mutating_the_history(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.create(create_command(), policy)
+    aggregate = lifecycle.submit_review(
+        aggregate,
+        review_command(reviewed_at=NOW + timedelta(days=2)),
+        policy,
+    ).aggregate
+
+    with pytest.raises(DomainError) as error:
+        lifecycle.submit_review(
+            aggregate,
+            review_command(
+                review_id=20,
+                opportunity_id=21,
+                reviewed_at=NOW + timedelta(days=1),
+            ),
+            policy,
+        )
+
+    assert error.value.code is ErrorCode.REVIEW_CONFLICT
+    assert len(aggregate.reviews) == 1
+
+
+def test_review_transition_counters_must_be_internally_consistent(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.submit_review(
+        lifecycle.create(create_command(), policy),
+        review_command(),
+        policy,
+    ).aggregate
+    review = aggregate.reviews[0]
+    invalid_after = replace(review.state_after, reps=review.state_before.reps)
+
+    with pytest.raises(DomainError) as error:
+        replace(review, state_after=invalid_after)
+
+    assert error.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_aggregate_rejects_facts_owned_by_an_unrelated_prompt(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.submit_review(
+        lifecycle.create(create_command(), policy),
+        review_command(),
+        policy,
+    ).aggregate
+    foreign = replace(aggregate.reviews[0], prompt_id=uid(999))
+
+    with pytest.raises(DomainError) as error:
+        MemoryAggregate(
+            prompt=aggregate.prompt,
+            schedule=aggregate.schedule,
+            reviews=(foreign,),
+        )
+
+    assert error.value.code is ErrorCode.VALIDATION_FAILED
 
 
 def test_suspend_resume_preserves_memory_and_never_invents_again(
