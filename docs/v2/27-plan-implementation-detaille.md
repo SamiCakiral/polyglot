@@ -854,15 +854,15 @@ fuseau, media absent, contenu indisponible et reprise.
 
 **Etapes TDD :**
 
-- [ ] Ecrire les proprietes budget, duree et determinisme par snapshot/graine.
-- [ ] Implementer les contraintes dures avant toute priorisation souple.
-- [ ] Ajouter dette, J+1, contenu indisponible et raisons de selection.
-- [ ] Ecrire les tests PostgreSQL, puis ajouter `0012_sprints`.
-- [ ] Brancher commandes/routes et snapshots immuables.
-- [ ] Tester interruption, reprise, double completion et concurrence.
-- [ ] Implementer l'entrainement libre sans contourner prerequis ni preuves.
-- [ ] Executer le pilote trois jours et tous les budgets 10..60 sur fixture.
-- [ ] Publier `FX-SPRINTS` avec les plans attendus.
+- [x] Ecrire les proprietes budget, duree et determinisme par snapshot/graine.
+- [x] Implementer les contraintes dures avant toute priorisation souple.
+- [x] Ajouter dette, J+1, contenu indisponible et raisons de selection.
+- [x] Ecrire les tests PostgreSQL, puis ajouter `0012_sprints`.
+- [x] Brancher commandes/routes et snapshots immuables.
+- [x] Tester interruption, reprise, double completion et concurrence.
+- [x] Implementer l'entrainement libre sans contourner prerequis ni preuves.
+- [x] Executer le pilote trois jours et tous les budgets 10..60 sur fixture.
+- [x] Publier `FX-SPRINTS` avec les plans attendus.
 
 **Preuves cibles :** `uv run pytest tests/unit/sprints tests/property/sprints
 tests/integration/sprints tests/contract/sprints -q` et rapport du spike

@@ -123,7 +123,7 @@ async def test_attempt_answer_has_a_dedicated_immutability_guard(
     assert "guard_exercise_attempt_answer" in trigger_names
 
 
-async def test_instances_allow_shared_reads_but_only_owned_standalone_writes(
+async def test_instances_allow_shared_reads_owned_standalone_and_planned_writes(
     migration_session: AsyncSession,
 ) -> None:
     row = (
@@ -137,7 +137,7 @@ async def test_instances_allow_shared_reads_but_only_owned_standalone_writes(
             )
         )
     ).one()
-    assert row == (True, True, 2)
+    assert row == (True, True, 3)
 
 
 async def test_schema_covers_versioned_contracts_and_attempt_evidence(

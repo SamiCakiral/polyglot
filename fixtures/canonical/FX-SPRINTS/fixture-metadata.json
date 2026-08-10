@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 1012,
+  "clock": "2026-08-10T10:00:00+00:00",
+  "payloads": {
+    "sprints.json": "sha256:8ed75ba1b14189259a4b210ddaddfe028873b9aefe292e225126c0939d331f7d"
+  },
+  "oracles": [
+    "all_budgets_respect_p50_p80_and_reserve",
+    "same_snapshot_seed_same_plan",
+    "j1_source_is_frozen_and_not_duplicated",
+    "missed_day_does_not_advance_module",
+    "free_practice_never_consumes_curriculum"
+  ],
+  "network_dependencies": [],
+  "pedagogical_review": "pending_human"
+}

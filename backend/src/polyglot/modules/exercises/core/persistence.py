@@ -8,6 +8,7 @@ from typing import Any, cast
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.modules.exercises.core.application import (
@@ -460,6 +461,9 @@ class SqlExerciseService:
                     "attempt": attempt_id,
                 },
             )
+            await self._complete_planned_block_if_terminal(
+                session, attempt_id, command.created_at
+            )
             after = await self._attempt(session, attempt_id)
             assert after is not None
             await self._record_effect(
@@ -533,6 +537,9 @@ class SqlExerciseService:
                 raise DomainError(ErrorCode.NOT_FOUND)
             if instance_profile is not None and _uuid(instance_profile) != command.profile_id:
                 raise DomainError(ErrorCode.FORBIDDEN)
+            planned_block = await self._planned_block_for_open(
+                session, instance_id, command.profile_id
+            )
             open_attempt = await session.scalar(
                 text(
                     "SELECT attempt_id FROM exercises.exercise_attempts "
@@ -567,6 +574,13 @@ class SqlExerciseService:
                     "at": command.started_at,
                 },
             )
+            if planned_block is not None:
+                await self._mark_planned_block_in_progress(
+                    session,
+                    run_id=_uuid(planned_block["sprint_run_id"]),
+                    block_id=_uuid(planned_block["block_id"]),
+                    started_at=command.started_at,
+                )
             after = await self._attempt(session, command.attempt_id)
             if after is None:
                 raise DomainError(ErrorCode.INTERNAL_ERROR)
@@ -586,6 +600,138 @@ class SqlExerciseService:
             )
             await session.commit()
             return after
+
+    @staticmethod
+    async def _planned_block_for_open(
+        session: AsyncSession,
+        instance_id: UUID,
+        profile_id: UUID,
+    ) -> RowMapping | None:
+        row = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT runtime.block_id,runtime.sprint_run_id,runtime.status,"
+                        "run.status AS run_status FROM "
+                        "planning.session_plan_exercise_instances link "
+                        "LEFT JOIN exercises.exercise_block_runs runtime "
+                        "ON runtime.session_plan_block_id=link.session_plan_block_id "
+                        "LEFT JOIN planning.sprint_runs run "
+                        "ON run.sprint_run_id=runtime.sprint_run_id "
+                        "WHERE link.instance_id=:instance AND link.profile_id=:profile"
+                    ),
+                    {"instance": instance_id, "profile": profile_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            return None
+        if row["sprint_run_id"] is None or row["run_status"] != "in_progress":
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+        if row["status"] not in {"available", "in_progress"}:
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+        return row
+
+    @staticmethod
+    async def _mark_planned_block_in_progress(
+        session: AsyncSession,
+        *,
+        run_id: UUID,
+        block_id: UUID,
+        started_at: datetime,
+    ) -> None:
+        await session.execute(
+            text(
+                "UPDATE exercises.exercise_block_runs SET status='in_progress',"
+                "version=version+1,updated_at=:at WHERE block_id=:block "
+                "AND status='available'"
+            ),
+            {"block": block_id, "at": started_at},
+        )
+        await session.execute(
+            text(
+                "UPDATE planning.sprint_runs SET current_block_id=:block,"
+                "version=version+1,updated_at=:at WHERE sprint_run_id=:run "
+                "AND status='in_progress'"
+            ),
+            {"block": block_id, "run": run_id, "at": started_at},
+        )
+
+    @staticmethod
+    async def _complete_planned_block_if_terminal(
+        session: AsyncSession,
+        attempt_id: UUID,
+        completed_at: datetime,
+    ) -> None:
+        block = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT runtime.block_id,runtime.sprint_run_id,plan.ordinal "
+                        "FROM exercises.exercise_attempts attempt "
+                        "JOIN planning.session_plan_exercise_instances link "
+                        "ON link.instance_id=attempt.instance_id "
+                        "JOIN exercises.exercise_block_runs runtime "
+                        "ON runtime.session_plan_block_id=link.session_plan_block_id "
+                        "JOIN planning.session_plan_blocks plan "
+                        "ON plan.session_plan_block_id=link.session_plan_block_id "
+                        "WHERE attempt.attempt_id=:attempt"
+                    ),
+                    {"attempt": attempt_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if block is None:
+            return
+        all_terminal = await session.scalar(
+            text(
+                "SELECT NOT EXISTS ("
+                "SELECT 1 FROM planning.session_plan_exercise_instances link "
+                "WHERE link.session_plan_block_id=("
+                "SELECT session_plan_block_id FROM exercises.exercise_block_runs "
+                "WHERE block_id=:block) AND NOT EXISTS ("
+                "SELECT 1 FROM exercises.exercise_attempts attempt "
+                "WHERE attempt.instance_id=link.instance_id "
+                "AND attempt.status IN ('corrected','not_evaluable')))"
+            ),
+            {"block": block["block_id"]},
+        )
+        if not all_terminal:
+            return
+        await session.execute(
+            text(
+                "UPDATE exercises.exercise_block_runs SET status='completed',"
+                "version=version+1,updated_at=:at WHERE block_id=:block "
+                "AND status IN ('available','in_progress')"
+            ),
+            {"block": block["block_id"], "at": completed_at},
+        )
+        await session.execute(
+            text(
+                "UPDATE exercises.exercise_block_runs runtime SET status='available',"
+                "version=version+1,updated_at=:at FROM planning.session_plan_blocks plan "
+                "WHERE runtime.session_plan_block_id=plan.session_plan_block_id "
+                "AND runtime.sprint_run_id=:run AND plan.ordinal=:ordinal "
+                "AND runtime.status='pending'"
+            ),
+            {
+                "run": block["sprint_run_id"],
+                "ordinal": int(block["ordinal"]) + 1,
+                "at": completed_at,
+            },
+        )
+        await session.execute(
+            text(
+                "UPDATE planning.sprint_runs SET current_block_id=NULL,"
+                "version=version+1,updated_at=:at WHERE sprint_run_id=:run "
+                "AND status IN ('in_progress','interrupted')"
+            ),
+            {"run": block["sprint_run_id"], "at": completed_at},
+        )
 
     async def save_draft(
         self,

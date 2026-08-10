@@ -35,7 +35,13 @@ MODULE_REVISION_ID = uid(11)
 SUCCESSOR_REVISION_ID = uid(12)
 
 
-async def seed_curriculum_dependencies(session: AsyncSession) -> None:
+async def seed_curriculum_dependencies(
+    session: AsyncSession,
+    *,
+    exercise_definition_revision_ids: tuple[UUID, ...] = (),
+    primary_target_ref: str | None = None,
+    grammar_family_code: str | None = None,
+) -> None:
     await session.execute(
         text(
             "INSERT INTO identity.accounts "
@@ -132,7 +138,14 @@ async def seed_curriculum_dependencies(session: AsyncSession) -> None:
         ),
         {"module": MODULE_ID, "pack": PACK_ID, "owner": ACCOUNT_ID, "now": NOW},
     )
-    await insert_module_revision(session, MODULE_REVISION_ID, 1)
+    await insert_module_revision(
+        session,
+        MODULE_REVISION_ID,
+        1,
+        exercise_definition_revision_ids=exercise_definition_revision_ids,
+        primary_target_ref=primary_target_ref,
+        grammar_family_code=grammar_family_code,
+    )
     await session.execute(
         text(
             "UPDATE curriculum.learning_modules SET current_revision_id=:revision "
@@ -148,6 +161,9 @@ async def insert_module_revision(
     revision_no: int,
     *,
     supersedes_revision_id: UUID | None = None,
+    exercise_definition_revision_ids: tuple[UUID, ...] = (),
+    primary_target_ref: str | None = None,
+    grammar_family_code: str | None = None,
 ) -> None:
     await session.execute(
         text(
@@ -187,7 +203,7 @@ async def insert_module_revision(
         (2, "guided_use", 3),
         (3, "transfer", 0),
     ):
-        target = f"skill:{ordinal}"
+        target = primary_target_ref or f"skill:{ordinal}"
         await session.execute(
             text(
                 "INSERT INTO curriculum.module_days "
@@ -199,10 +215,10 @@ async def insert_module_revision(
                 "gym_grammar_family_codes,fallback_revision_ids,final_output_spec,validator_revision_ids,"
                 "prerequisite_day_ordinals,payload_checksum,created_at) VALUES "
                 "(:day,:revision,:ordinal,:arc,ARRAY[:objective],CAST(:modalities AS jsonb),ARRAY[:target],"
-                "ARRAY[]::varchar[],ARRAY[:target],ARRAY[:target],ARRAY[]::uuid[],ARRAY[]::uuid[],"
+                "ARRAY[]::varchar[],ARRAY[:target],ARRAY[:target],ARRAY[]::uuid[],:definitions,"
                 "ARRAY[]::uuid[],CAST(:bindings AS jsonb),'[]',ARRAY[]::smallint[],10,:novelty,"
-                "ARRAY['explanation','practice','production'],ARRAY[]::varchar[],ARRAY[]::varchar[],"
-                "ARRAY[]::varchar[],ARRAY[]::uuid[],'',ARRAY[]::uuid[],ARRAY[]::smallint[],:checksum,:now)"
+                "ARRAY['explanation','practice','production'],:new_grammar,:explained_grammar,"
+                ":gym_grammar,ARRAY[]::uuid[],'',ARRAY[]::uuid[],ARRAY[]::smallint[],:checksum,:now)"
             ),
             {
                 "day": uid(100 + revision_no * 10 + ordinal),
@@ -213,6 +229,10 @@ async def insert_module_revision(
                 "modalities": '[["written_production","produce"]]',
                 "target": target,
                 "bindings": "{}",
+                "definitions": list(exercise_definition_revision_ids),
+                "new_grammar": [] if grammar_family_code is None else [grammar_family_code],
+                "explained_grammar": ([] if grammar_family_code is None else [grammar_family_code]),
+                "gym_grammar": [] if grammar_family_code is None else [grammar_family_code],
                 "novelty": novelty,
                 "checksum": f"sha256:{(revision_no * 10 + ordinal):064x}",
                 "now": NOW,

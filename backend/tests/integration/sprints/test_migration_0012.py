@@ -106,6 +106,19 @@ async def test_exercise_runtime_references_versioned_plan_storage(
     }
 
 
+async def test_planner_can_insert_only_owned_plan_instances(
+    migration_session: AsyncSession,
+) -> None:
+    policy = await migration_session.scalar(
+        text(
+            "SELECT polname FROM pg_policy WHERE polrelid="
+            "'exercises.exercise_instances'::regclass "
+            "AND polname='exercise_instances_planning_write'"
+        )
+    )
+    assert policy == "exercise_instances_planning_write"
+
+
 async def test_runtime_cannot_delete_planning_rows(migration_session: AsyncSession) -> None:
     rows = (
         await migration_session.execute(
@@ -118,4 +131,3 @@ async def test_runtime_cannot_delete_planning_rows(migration_session: AsyncSessi
     ).all()
     assert {row[0] for row in rows} == EXPECTED_TABLES
     assert all(row[1] is False for row in rows)
-

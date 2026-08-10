@@ -42,7 +42,9 @@ import type {
   ResourceMutationResponse,
   ResourcePageResponse,
   SenseNeighborhoodResponse,
+  SessionPlanResponse,
   SessionResponse,
+  SprintRunResponse,
   ValidationReportResponse,
   VocabularyListResponse,
   WordBankOverviewResponse,
@@ -1736,6 +1738,59 @@ export const getDeleteLanguageProfileResponseMock = (
   ...overrideResponse,
 });
 
+export const getComposeDailySessionResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getStartDiagnosticResponseMock = (
   overrideResponse: Partial<Extract<DiagnosticResponse, object>> = {},
 ): DiagnosticResponse => ({
@@ -1804,6 +1859,59 @@ export const getStartFoundationRunResponseMock = (
   session_count: faker.number.int(),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getComposeFreePracticeResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -2896,6 +3004,217 @@ export const getAuthenticateSessionResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetSessionPlanResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCancelSessionPlanResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPrepareSessionPlanResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getListSharedVocabularyListsResponseMock = (
   overrideResponse: Partial<Extract<ResourcePageResponse, object>> = {},
 ): ResourcePageResponse => ({
@@ -2940,6 +3259,370 @@ export const getRetireSharedVocabularyListResponseMock = (
 ): ResourceMutationResponse => ({
   resource_id: faker.string.uuid(),
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getAbandonExerciseBlockResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSkipExerciseBlockResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCompleteSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getInterruptSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResumeSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStopSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });

@@ -35,7 +35,7 @@ def _assert_required_string_header(operation: dict[str, object], name: str) -> N
     assert "anyOf" not in schema
 
 
-def test_openapi_exports_the_implemented_w01_through_w11_surface() -> None:
+def test_openapi_exports_the_implemented_w01_through_w12_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
 
@@ -70,8 +70,10 @@ def test_openapi_exports_the_implemented_w01_through_w11_surface() -> None:
         "/api/v1/language-profiles/{id}",
         "/api/v1/language-profiles/{profile_id}",
         "/api/v1/language-profiles/{profile_id}/diagnostics",
+        "/api/v1/language-profiles/{profile_id}/daily-plans",
         "/api/v1/language-profiles/{profile_id}/encounters",
         "/api/v1/language-profiles/{profile_id}/foundation-runs",
+        "/api/v1/language-profiles/{profile_id}/free-practice-plans",
         "/api/v1/language-profiles/{profile_id}/goals",
         "/api/v1/language-profiles/{profile_id}/lexical-annotations",
         "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation",
@@ -122,6 +124,17 @@ def test_openapi_exports_the_implemented_w01_through_w11_surface() -> None:
         "/api/v1/imports/{import_id}:revert",
         "/api/v1/personal-lexical-relations/{relation_id}:retract",
         "/api/v1/session",
+        "/api/v1/session-plans/{id}",
+        "/api/v1/session-plans/{plan_id}/runs",
+        "/api/v1/session-plans/{plan_id}:cancel",
+        "/api/v1/session-plans/{plan_id}:prepare",
+        "/api/v1/sprint-runs/{id}",
+        "/api/v1/sprint-runs/{run_id}/blocks/{block_id}:abandon",
+        "/api/v1/sprint-runs/{run_id}/blocks/{block_id}:skip",
+        "/api/v1/sprint-runs/{run_id}:complete",
+        "/api/v1/sprint-runs/{run_id}:interrupt",
+        "/api/v1/sprint-runs/{run_id}:resume",
+        "/api/v1/sprint-runs/{run_id}:stop",
         "/api/v1/exports/{id}",
         "/api/v1/shared-vocabulary-lists",
         "/api/v1/shared-vocabulary-lists/{id}",

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-SPRINTS",
+  "seed": 1012,
+  "clock": "2026-08-10T10:00:00+00:00",
+  "budgets": [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60],
+  "required_roles": ["activation", "primary_objective", "reflection"],
+  "policies": {
+    "content_reserve_ratio": 0.1,
+    "budget_step_minutes": 5,
+    "planner_revision": "COMPOSER_V0",
+    "priority_revision": "SPRINT_PRIORITY_V0"
+  },
+  "delayed_recode": {
+    "source_corrected_at": "2026-08-10T10:00:00+00:00",
+    "not_before": "2026-08-11T10:00:00+00:00",
+    "due_policy": "after_24h",
+    "missed_day_consumes_module_day": false,
+    "duplicate_on_late_resume": false,
+    "reason_code": "delayed_recode_due"
+  },
+  "free_practice": {
+    "binds_enrollment": false,
+    "consumes_module_day": false,
+    "rejects_unmet_prerequisites": true
+  }
+}

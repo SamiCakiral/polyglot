@@ -356,6 +356,15 @@ CREATE INDEX ix_planning_run_profile ON planning.sprint_runs(profile_id,status,u
 ALTER TABLE exercises.exercise_instances ADD CONSTRAINT fk_exercise_instance_session_plan_revision
   FOREIGN KEY (session_plan_revision_id)
   REFERENCES planning.session_plan_revisions(plan_revision_id) ON DELETE RESTRICT;
+CREATE POLICY exercise_instances_planning_write ON exercises.exercise_instances
+  FOR INSERT WITH CHECK (
+    standalone_profile_id IS NULL AND session_plan_revision_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1 FROM planning.session_plan_revisions revision
+      WHERE revision.plan_revision_id=session_plan_revision_id
+        AND planning.owns_profile(revision.profile_id)
+    )
+  );
 ALTER TABLE exercises.exercise_block_runs
   ADD COLUMN session_plan_block_id uuid NOT NULL,
   ADD CONSTRAINT fk_exercise_block_sprint_run FOREIGN KEY (sprint_run_id)
@@ -423,6 +432,7 @@ END $owners$;
 
 
 DROP_DDL = r"""
+DROP POLICY IF EXISTS exercise_instances_planning_write ON exercises.exercise_instances;
 ALTER TABLE IF EXISTS exercises.exercise_block_runs
   DROP CONSTRAINT IF EXISTS fk_exercise_block_plan_block,
   DROP CONSTRAINT IF EXISTS fk_exercise_block_sprint_run,

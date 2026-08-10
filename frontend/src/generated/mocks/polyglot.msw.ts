@@ -45,7 +45,9 @@ import type {
   ResourceMutationResponse,
   ResourcePageResponse,
   SenseNeighborhoodResponse,
+  SessionPlanResponse,
   SessionResponse,
+  SprintRunResponse,
   ValidationReportResponse,
   VocabularyListResponse,
   WordBankOverviewResponse,
@@ -1739,6 +1741,59 @@ export const getDeleteLanguageProfileResponseMock = (
   ...overrideResponse,
 });
 
+export const getComposeDailySessionResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getStartDiagnosticResponseMock = (
   overrideResponse: Partial<Extract<DiagnosticResponse, object>> = {},
 ): DiagnosticResponse => ({
@@ -1807,6 +1862,59 @@ export const getStartFoundationRunResponseMock = (
   session_count: faker.number.int(),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getComposeFreePracticeResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -2899,6 +3007,217 @@ export const getAuthenticateSessionResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetSessionPlanResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCancelSessionPlanResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getPrepareSessionPlanResponseMock = (
+  overrideResponse: Partial<Extract<SessionPlanResponse, object>> = {},
+): SessionPlanResponse => ({
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    delayed_recode_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modalities: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    ordinal: faker.number.int(),
+    p50_seconds: faker.number.int(),
+    p80_seconds: faker.number.int(),
+    reason_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    required: faker.datatype.boolean(),
+    roles: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  budget_minutes: faker.number.int(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  failure_code: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  novelty_points: faker.number.float({ fractionDigits: 2 }),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_fingerprint: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  snapshot_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  total_p50_seconds: faker.number.int(),
+  total_p80_seconds: faker.number.int(),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getListSharedVocabularyListsResponseMock = (
   overrideResponse: Partial<Extract<ResourcePageResponse, object>> = {},
 ): ResourcePageResponse => ({
@@ -2943,6 +3262,370 @@ export const getRetireSharedVocabularyListResponseMock = (
 ): ResourceMutationResponse => ({
   resource_id: faker.string.uuid(),
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getAbandonExerciseBlockResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSkipExerciseBlockResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCompleteSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getInterruptSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResumeSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStopSprintRunResponseMock = (
+  overrideResponse: Partial<Extract<SprintRunResponse, object>> = {},
+): SprintRunResponse => ({
+  active_duration_ms: faker.number.int(),
+  blocks: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_id: faker.string.uuid(),
+    exercise_instance_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    family: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    reason: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    required: faker.datatype.boolean(),
+    session_plan_block_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    version: faker.number.int(),
+  })),
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  consumes_module_day: faker.datatype.boolean(),
+  current_block_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+  expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  interrupted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  pedagogical_day: faker.date.past().toISOString().slice(0, 10),
+  plan_id: faker.string.uuid(),
+  plan_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  plan_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -4280,6 +4963,32 @@ export const getDeleteLanguageProfileMockHandler = (
   );
 };
 
+export const getComposeDailySessionMockHandler = (
+  overrideResponse?:
+    | SessionPlanResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SessionPlanResponse> | SessionPlanResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/daily-plans",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getComposeDailySessionResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
 export const getStartDiagnosticMockHandler = (
   overrideResponse?:
     | DiagnosticResponse
@@ -4377,6 +5086,32 @@ export const getStartFoundationRunMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getStartFoundationRunResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getComposeFreePracticeMockHandler = (
+  overrideResponse?:
+    | SessionPlanResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SessionPlanResponse> | SessionPlanResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/free-practice-plans",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getComposeFreePracticeResponseMock(),
         { status: 201 },
       );
     },
@@ -5400,6 +6135,110 @@ export const getAuthenticateSessionMockHandler = (
   );
 };
 
+export const getGetSessionPlanMockHandler = (
+  overrideResponse?:
+    | SessionPlanResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<SessionPlanResponse> | SessionPlanResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/session-plans/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetSessionPlanResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getStartSprintRunMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/session-plans/:planId/runs",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getStartSprintRunResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCancelSessionPlanMockHandler = (
+  overrideResponse?:
+    | SessionPlanResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SessionPlanResponse> | SessionPlanResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/session-plans/:planId\\:cancel",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCancelSessionPlanResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getPrepareSessionPlanMockHandler = (
+  overrideResponse?:
+    | SessionPlanResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SessionPlanResponse> | SessionPlanResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/session-plans/:planId\\:prepare",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getPrepareSessionPlanResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getListSharedVocabularyListsMockHandler = (
   overrideResponse?:
     | ResourcePageResponse
@@ -5471,6 +6310,188 @@ export const getRetireSharedVocabularyListMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getRetireSharedVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetSprintRunMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/sprint-runs/:id",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetSprintRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getAbandonExerciseBlockMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/sprint-runs/:runId/blocks/:blockId\\:abandon",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getAbandonExerciseBlockResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSkipExerciseBlockMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/sprint-runs/:runId/blocks/:blockId\\:skip",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSkipExerciseBlockResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCompleteSprintRunMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/sprint-runs/:runId\\:complete",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCompleteSprintRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getInterruptSprintRunMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/sprint-runs/:runId\\:interrupt",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getInterruptSprintRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getResumeSprintRunMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/sprint-runs/:runId\\:resume",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getResumeSprintRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getStopSprintRunMockHandler = (
+  overrideResponse?:
+    | SprintRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<SprintRunResponse> | SprintRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/sprint-runs/:runId\\:stop",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getStopSprintRunResponseMock(),
         { status: 200 },
       );
     },
@@ -5807,10 +6828,12 @@ export const getPolyglotV2APIMock = () => [
   getCreateLanguageProfileMockHandler(),
   getGetLanguageProfileMockHandler(),
   getDeleteLanguageProfileMockHandler(),
+  getComposeDailySessionMockHandler(),
   getStartDiagnosticMockHandler(),
   getRecordLexicalEncounterMockHandler(),
   getRequestExportMockHandler(),
   getStartFoundationRunMockHandler(),
+  getComposeFreePracticeMockHandler(),
   getUpdateLearningGoalsMockHandler(),
   getCreateImportMockHandler(),
   getListLexicalAnnotationsMockHandler(),
@@ -5850,9 +6873,20 @@ export const getPolyglotV2APIMock = () => [
   getRevokeSessionMockHandler(),
   getGetCurrentSessionMockHandler(),
   getAuthenticateSessionMockHandler(),
+  getGetSessionPlanMockHandler(),
+  getStartSprintRunMockHandler(),
+  getCancelSessionPlanMockHandler(),
+  getPrepareSessionPlanMockHandler(),
   getListSharedVocabularyListsMockHandler(),
   getGetSharedVocabularyListMockHandler(),
   getRetireSharedVocabularyListMockHandler(),
+  getGetSprintRunMockHandler(),
+  getAbandonExerciseBlockMockHandler(),
+  getSkipExerciseBlockMockHandler(),
+  getCompleteSprintRunMockHandler(),
+  getInterruptSprintRunMockHandler(),
+  getResumeSprintRunMockHandler(),
+  getStopSprintRunMockHandler(),
   getGetValidationReportMockHandler(),
   getListVocabularyListsMockHandler(),
   getGetVocabularyListMockHandler(),

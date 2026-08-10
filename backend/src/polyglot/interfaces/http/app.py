@@ -27,6 +27,7 @@ from polyglot.interfaces.http.routes.exercises import exercises_router
 from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
 from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
+from polyglot.interfaces.http.routes.sprints import sprints_router
 from polyglot.interfaces.http.routes.word_bank import (
     SqlWordBankService,
     WordBankService,
@@ -39,6 +40,7 @@ from polyglot.modules.exercises.core.application import ExerciseApplicationServi
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
+from polyglot.modules.sprints.application import SprintApplicationService
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 
 
@@ -83,6 +85,7 @@ def create_app(
     exchange_service: ExchangeService | None = None,
     exercise_service: ExerciseApplicationService | None = None,
     curriculum_service: CurriculumApplicationService | None = None,
+    sprint_service: SprintApplicationService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -144,6 +147,13 @@ def create_app(
     app.include_router(
         curriculum_router(
             curriculum_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
+    app.include_router(
+        sprints_router(
+            sprint_service,
             identity_service,
             allowed_origin=allowed_origin,
         )
@@ -215,10 +225,12 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
+    from polyglot.modules.sprints.persistence import SqlSprintService
 
     exchange_service = SqlExchangeService(session_factory)
     exercise_service = SqlExerciseService(session_factory)
     curriculum_service = SqlCurriculumService(session_factory)
+    sprint_service = SqlSprintService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -241,5 +253,6 @@ def create_runtime_app() -> FastAPI:
         exchange_service=exchange_service,
         exercise_service=exercise_service,
         curriculum_service=curriculum_service,
+        sprint_service=sprint_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

@@ -33,6 +33,8 @@ import type {
   CommitImportRequest,
   CompleteEnrollmentRequest,
   CompleteFoundationGateRequest,
+  ComposeDailyRequest,
+  ComposeFreeRequest,
   ConsentRequest,
   ConsentResponse,
   ContentRevisionPageResponse,
@@ -49,6 +51,7 @@ import type {
   DiagnosticResponse,
   DueMemoryPromptPageResponse,
   DynamicListPreviewResponse,
+  EmptyRequest,
   EnrollInModuleRequest,
   EnrollmentResponse,
   ExerciseInstanceResponse,
@@ -92,6 +95,7 @@ import type {
   PublishContentRevisionRequest,
   PublishVocabularyListSnapshotRequest,
   ReadyStatus,
+  ReasonRequest,
   RequestExportRequest,
   ResetMemoryPromptRequest,
   ResolveCorrectionCaseRequest,
@@ -105,9 +109,12 @@ import type {
   SaveDraftRequest,
   SearchLexiconParams,
   SenseNeighborhoodResponse,
+  SessionPlanResponse,
   SessionResponse,
+  SprintRunResponse,
   StartDiagnosticRequest,
   StartFoundationRunRequest,
+  StartRunRequest,
   SubmitAttemptRequest,
   SubmitDiagnosticResponseRequest,
   SubmitMemoryReviewRequest,
@@ -10085,6 +10092,223 @@ export const useDeleteLanguageProfile = <
   );
 };
 
+export type composeDailySessionResponse201 = {
+  data: SessionPlanResponse;
+  status: 201;
+};
+
+export type composeDailySessionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type composeDailySessionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type composeDailySessionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type composeDailySessionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type composeDailySessionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type composeDailySessionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type composeDailySessionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type composeDailySessionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type composeDailySessionResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type composeDailySessionResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type composeDailySessionResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type composeDailySessionResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type composeDailySessionResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type composeDailySessionResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type composeDailySessionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type composeDailySessionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type composeDailySessionResponseSuccess =
+  composeDailySessionResponse201 & {
+    headers: Headers;
+  };
+export type composeDailySessionResponseError = (
+  | composeDailySessionResponse401ApplicationJson
+  | composeDailySessionResponse401ApplicationProblemJson
+  | composeDailySessionResponse403ApplicationJson
+  | composeDailySessionResponse403ApplicationProblemJson
+  | composeDailySessionResponse409ApplicationJson
+  | composeDailySessionResponse409ApplicationProblemJson
+  | composeDailySessionResponse422ApplicationJson
+  | composeDailySessionResponse422ApplicationProblemJson
+  | composeDailySessionResponse423ApplicationJson
+  | composeDailySessionResponse423ApplicationProblemJson
+  | composeDailySessionResponse428ApplicationJson
+  | composeDailySessionResponse428ApplicationProblemJson
+  | composeDailySessionResponse429ApplicationJson
+  | composeDailySessionResponse429ApplicationProblemJson
+  | composeDailySessionResponse503ApplicationJson
+  | composeDailySessionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type composeDailySessionResponse =
+  composeDailySessionResponseSuccess | composeDailySessionResponseError;
+
+export const getComposeDailySessionUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/daily-plans`;
+};
+
+/**
+ * @summary Compose Daily Session
+ */
+export const composeDailySession = async (
+  profileId: string,
+  composeDailyRequest: ComposeDailyRequest,
+  options?: RequestInit,
+): Promise<composeDailySessionResponse> => {
+  const res = await fetch(getComposeDailySessionUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(composeDailyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: composeDailySessionResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as composeDailySessionResponse;
+};
+
+export const getComposeDailySessionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof composeDailySession>>,
+    TError,
+    { profileId: string; data: ComposeDailyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof composeDailySession>>,
+  TError,
+  { profileId: string; data: ComposeDailyRequest },
+  TContext
+> => {
+  const mutationKey = ["composeDailySession"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof composeDailySession>>,
+    { profileId: string; data: ComposeDailyRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return composeDailySession(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ComposeDailySessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof composeDailySession>>
+>;
+export type ComposeDailySessionMutationBody = ComposeDailyRequest;
+export type ComposeDailySessionMutationError = ProblemResponse;
+
+/**
+ * @summary Compose Daily Session
+ */
+export const useComposeDailySession = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof composeDailySession>>,
+      TError,
+      { profileId: string; data: ComposeDailyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof composeDailySession>>,
+  TError,
+  { profileId: string; data: ComposeDailyRequest },
+  TContext
+> => {
+  return useMutation(
+    getComposeDailySessionMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type startDiagnosticResponse201 = {
   data: DiagnosticResponse;
   status: 201;
@@ -10933,6 +11157,223 @@ export const useStartFoundationRun = <
 > => {
   return useMutation(
     getStartFoundationRunMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type composeFreePracticeResponse201 = {
+  data: SessionPlanResponse;
+  status: 201;
+};
+
+export type composeFreePracticeResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type composeFreePracticeResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type composeFreePracticeResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type composeFreePracticeResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type composeFreePracticeResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type composeFreePracticeResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type composeFreePracticeResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type composeFreePracticeResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type composeFreePracticeResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type composeFreePracticeResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type composeFreePracticeResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type composeFreePracticeResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type composeFreePracticeResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type composeFreePracticeResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type composeFreePracticeResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type composeFreePracticeResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type composeFreePracticeResponseSuccess =
+  composeFreePracticeResponse201 & {
+    headers: Headers;
+  };
+export type composeFreePracticeResponseError = (
+  | composeFreePracticeResponse401ApplicationJson
+  | composeFreePracticeResponse401ApplicationProblemJson
+  | composeFreePracticeResponse403ApplicationJson
+  | composeFreePracticeResponse403ApplicationProblemJson
+  | composeFreePracticeResponse409ApplicationJson
+  | composeFreePracticeResponse409ApplicationProblemJson
+  | composeFreePracticeResponse422ApplicationJson
+  | composeFreePracticeResponse422ApplicationProblemJson
+  | composeFreePracticeResponse423ApplicationJson
+  | composeFreePracticeResponse423ApplicationProblemJson
+  | composeFreePracticeResponse428ApplicationJson
+  | composeFreePracticeResponse428ApplicationProblemJson
+  | composeFreePracticeResponse429ApplicationJson
+  | composeFreePracticeResponse429ApplicationProblemJson
+  | composeFreePracticeResponse503ApplicationJson
+  | composeFreePracticeResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type composeFreePracticeResponse =
+  composeFreePracticeResponseSuccess | composeFreePracticeResponseError;
+
+export const getComposeFreePracticeUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/free-practice-plans`;
+};
+
+/**
+ * @summary Compose Free Practice
+ */
+export const composeFreePractice = async (
+  profileId: string,
+  composeFreeRequest: ComposeFreeRequest,
+  options?: RequestInit,
+): Promise<composeFreePracticeResponse> => {
+  const res = await fetch(getComposeFreePracticeUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(composeFreeRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: composeFreePracticeResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as composeFreePracticeResponse;
+};
+
+export const getComposeFreePracticeMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof composeFreePractice>>,
+    TError,
+    { profileId: string; data: ComposeFreeRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof composeFreePractice>>,
+  TError,
+  { profileId: string; data: ComposeFreeRequest },
+  TContext
+> => {
+  const mutationKey = ["composeFreePractice"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof composeFreePractice>>,
+    { profileId: string; data: ComposeFreeRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return composeFreePractice(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ComposeFreePracticeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof composeFreePractice>>
+>;
+export type ComposeFreePracticeMutationBody = ComposeFreeRequest;
+export type ComposeFreePracticeMutationError = ProblemResponse;
+
+/**
+ * @summary Compose Free Practice
+ */
+export const useComposeFreePractice = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof composeFreePractice>>,
+      TError,
+      { profileId: string; data: ComposeFreeRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof composeFreePractice>>,
+  TError,
+  { profileId: string; data: ComposeFreeRequest },
+  TContext
+> => {
+  return useMutation(
+    getComposeFreePracticeMutationOptions(options),
     queryClient,
   );
 };
@@ -19934,6 +20375,909 @@ export const useAuthenticateSession = <
   );
 };
 
+export type getSessionPlanResponse200 = {
+  data: SessionPlanResponse;
+  status: 200;
+};
+
+export type getSessionPlanResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getSessionPlanResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getSessionPlanResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getSessionPlanResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getSessionPlanResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getSessionPlanResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getSessionPlanResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getSessionPlanResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getSessionPlanResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getSessionPlanResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getSessionPlanResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getSessionPlanResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getSessionPlanResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getSessionPlanResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getSessionPlanResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getSessionPlanResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getSessionPlanResponseSuccess = getSessionPlanResponse200 & {
+  headers: Headers;
+};
+export type getSessionPlanResponseError = (
+  | getSessionPlanResponse401ApplicationJson
+  | getSessionPlanResponse401ApplicationProblemJson
+  | getSessionPlanResponse403ApplicationJson
+  | getSessionPlanResponse403ApplicationProblemJson
+  | getSessionPlanResponse409ApplicationJson
+  | getSessionPlanResponse409ApplicationProblemJson
+  | getSessionPlanResponse422ApplicationJson
+  | getSessionPlanResponse422ApplicationProblemJson
+  | getSessionPlanResponse423ApplicationJson
+  | getSessionPlanResponse423ApplicationProblemJson
+  | getSessionPlanResponse428ApplicationJson
+  | getSessionPlanResponse428ApplicationProblemJson
+  | getSessionPlanResponse429ApplicationJson
+  | getSessionPlanResponse429ApplicationProblemJson
+  | getSessionPlanResponse503ApplicationJson
+  | getSessionPlanResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getSessionPlanResponse =
+  getSessionPlanResponseSuccess | getSessionPlanResponseError;
+
+export const getGetSessionPlanUrl = (id: string) => {
+  return `/api/v1/session-plans/${id}`;
+};
+
+/**
+ * @summary Get Session Plan
+ */
+export const getSessionPlan = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getSessionPlanResponse> => {
+  const res = await fetch(getGetSessionPlanUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getSessionPlanResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getSessionPlanResponse;
+};
+
+export const getGetSessionPlanQueryKey = (id: string) => {
+  return [`/api/v1/session-plans/${id}`] as const;
+};
+
+export const getGetSessionPlanQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSessionPlan>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSessionPlan>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSessionPlanQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSessionPlan>>> = ({
+    signal,
+  }) => getSessionPlan(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSessionPlan>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetSessionPlanQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSessionPlan>>
+>;
+export type GetSessionPlanQueryError = ProblemResponse;
+
+export function useGetSessionPlan<
+  TData = Awaited<ReturnType<typeof getSessionPlan>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSessionPlan>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionPlan>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionPlan>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSessionPlan<
+  TData = Awaited<ReturnType<typeof getSessionPlan>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSessionPlan>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionPlan>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionPlan>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSessionPlan<
+  TData = Awaited<ReturnType<typeof getSessionPlan>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSessionPlan>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Session Plan
+ */
+
+export function useGetSessionPlan<
+  TData = Awaited<ReturnType<typeof getSessionPlan>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSessionPlan>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetSessionPlanQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type startSprintRunResponse201 = {
+  data: SprintRunResponse;
+  status: 201;
+};
+
+export type startSprintRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startSprintRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startSprintRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startSprintRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startSprintRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startSprintRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startSprintRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startSprintRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startSprintRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startSprintRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startSprintRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startSprintRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startSprintRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startSprintRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startSprintRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startSprintRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startSprintRunResponseSuccess = startSprintRunResponse201 & {
+  headers: Headers;
+};
+export type startSprintRunResponseError = (
+  | startSprintRunResponse401ApplicationJson
+  | startSprintRunResponse401ApplicationProblemJson
+  | startSprintRunResponse403ApplicationJson
+  | startSprintRunResponse403ApplicationProblemJson
+  | startSprintRunResponse409ApplicationJson
+  | startSprintRunResponse409ApplicationProblemJson
+  | startSprintRunResponse422ApplicationJson
+  | startSprintRunResponse422ApplicationProblemJson
+  | startSprintRunResponse423ApplicationJson
+  | startSprintRunResponse423ApplicationProblemJson
+  | startSprintRunResponse428ApplicationJson
+  | startSprintRunResponse428ApplicationProblemJson
+  | startSprintRunResponse429ApplicationJson
+  | startSprintRunResponse429ApplicationProblemJson
+  | startSprintRunResponse503ApplicationJson
+  | startSprintRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startSprintRunResponse =
+  startSprintRunResponseSuccess | startSprintRunResponseError;
+
+export const getStartSprintRunUrl = (planId: string) => {
+  return `/api/v1/session-plans/${planId}/runs`;
+};
+
+/**
+ * @summary Start Sprint Run
+ */
+export const startSprintRun = async (
+  planId: string,
+  startRunRequest: StartRunRequest,
+  options?: RequestInit,
+): Promise<startSprintRunResponse> => {
+  const res = await fetch(getStartSprintRunUrl(planId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startRunRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startSprintRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startSprintRunResponse;
+};
+
+export const getStartSprintRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startSprintRun>>,
+    TError,
+    { planId: string; data: StartRunRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startSprintRun>>,
+  TError,
+  { planId: string; data: StartRunRequest },
+  TContext
+> => {
+  const mutationKey = ["startSprintRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startSprintRun>>,
+    { planId: string; data: StartRunRequest }
+  > = (props) => {
+    const { planId, data } = props ?? {};
+
+    return startSprintRun(planId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartSprintRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startSprintRun>>
+>;
+export type StartSprintRunMutationBody = StartRunRequest;
+export type StartSprintRunMutationError = ProblemResponse;
+
+/**
+ * @summary Start Sprint Run
+ */
+export const useStartSprintRun = <TError = ProblemResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startSprintRun>>,
+      TError,
+      { planId: string; data: StartRunRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startSprintRun>>,
+  TError,
+  { planId: string; data: StartRunRequest },
+  TContext
+> => {
+  return useMutation(getStartSprintRunMutationOptions(options), queryClient);
+};
+
+export type cancelSessionPlanResponse200 = {
+  data: SessionPlanResponse;
+  status: 200;
+};
+
+export type cancelSessionPlanResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type cancelSessionPlanResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type cancelSessionPlanResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type cancelSessionPlanResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type cancelSessionPlanResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type cancelSessionPlanResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type cancelSessionPlanResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type cancelSessionPlanResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type cancelSessionPlanResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type cancelSessionPlanResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type cancelSessionPlanResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type cancelSessionPlanResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type cancelSessionPlanResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type cancelSessionPlanResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type cancelSessionPlanResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type cancelSessionPlanResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type cancelSessionPlanResponseSuccess = cancelSessionPlanResponse200 & {
+  headers: Headers;
+};
+export type cancelSessionPlanResponseError = (
+  | cancelSessionPlanResponse401ApplicationJson
+  | cancelSessionPlanResponse401ApplicationProblemJson
+  | cancelSessionPlanResponse403ApplicationJson
+  | cancelSessionPlanResponse403ApplicationProblemJson
+  | cancelSessionPlanResponse409ApplicationJson
+  | cancelSessionPlanResponse409ApplicationProblemJson
+  | cancelSessionPlanResponse422ApplicationJson
+  | cancelSessionPlanResponse422ApplicationProblemJson
+  | cancelSessionPlanResponse423ApplicationJson
+  | cancelSessionPlanResponse423ApplicationProblemJson
+  | cancelSessionPlanResponse428ApplicationJson
+  | cancelSessionPlanResponse428ApplicationProblemJson
+  | cancelSessionPlanResponse429ApplicationJson
+  | cancelSessionPlanResponse429ApplicationProblemJson
+  | cancelSessionPlanResponse503ApplicationJson
+  | cancelSessionPlanResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type cancelSessionPlanResponse =
+  cancelSessionPlanResponseSuccess | cancelSessionPlanResponseError;
+
+export const getCancelSessionPlanUrl = (planId: string) => {
+  return `/api/v1/session-plans/${planId}:cancel`;
+};
+
+/**
+ * @summary Cancel Session Plan
+ */
+export const cancelSessionPlan = async (
+  planId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<cancelSessionPlanResponse> => {
+  const res = await fetch(getCancelSessionPlanUrl(planId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: cancelSessionPlanResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as cancelSessionPlanResponse;
+};
+
+export const getCancelSessionPlanMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof cancelSessionPlan>>,
+    TError,
+    { planId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof cancelSessionPlan>>,
+  TError,
+  { planId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["cancelSessionPlan"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof cancelSessionPlan>>,
+    { planId: string; data: EmptyRequest }
+  > = (props) => {
+    const { planId, data } = props ?? {};
+
+    return cancelSessionPlan(planId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CancelSessionPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof cancelSessionPlan>>
+>;
+export type CancelSessionPlanMutationBody = EmptyRequest;
+export type CancelSessionPlanMutationError = ProblemResponse;
+
+/**
+ * @summary Cancel Session Plan
+ */
+export const useCancelSessionPlan = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof cancelSessionPlan>>,
+      TError,
+      { planId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof cancelSessionPlan>>,
+  TError,
+  { planId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getCancelSessionPlanMutationOptions(options), queryClient);
+};
+
+export type prepareSessionPlanResponse200 = {
+  data: SessionPlanResponse;
+  status: 200;
+};
+
+export type prepareSessionPlanResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type prepareSessionPlanResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type prepareSessionPlanResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type prepareSessionPlanResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type prepareSessionPlanResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type prepareSessionPlanResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type prepareSessionPlanResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type prepareSessionPlanResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type prepareSessionPlanResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type prepareSessionPlanResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type prepareSessionPlanResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type prepareSessionPlanResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type prepareSessionPlanResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type prepareSessionPlanResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type prepareSessionPlanResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type prepareSessionPlanResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type prepareSessionPlanResponseSuccess =
+  prepareSessionPlanResponse200 & {
+    headers: Headers;
+  };
+export type prepareSessionPlanResponseError = (
+  | prepareSessionPlanResponse401ApplicationJson
+  | prepareSessionPlanResponse401ApplicationProblemJson
+  | prepareSessionPlanResponse403ApplicationJson
+  | prepareSessionPlanResponse403ApplicationProblemJson
+  | prepareSessionPlanResponse409ApplicationJson
+  | prepareSessionPlanResponse409ApplicationProblemJson
+  | prepareSessionPlanResponse422ApplicationJson
+  | prepareSessionPlanResponse422ApplicationProblemJson
+  | prepareSessionPlanResponse423ApplicationJson
+  | prepareSessionPlanResponse423ApplicationProblemJson
+  | prepareSessionPlanResponse428ApplicationJson
+  | prepareSessionPlanResponse428ApplicationProblemJson
+  | prepareSessionPlanResponse429ApplicationJson
+  | prepareSessionPlanResponse429ApplicationProblemJson
+  | prepareSessionPlanResponse503ApplicationJson
+  | prepareSessionPlanResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type prepareSessionPlanResponse =
+  prepareSessionPlanResponseSuccess | prepareSessionPlanResponseError;
+
+export const getPrepareSessionPlanUrl = (planId: string) => {
+  return `/api/v1/session-plans/${planId}:prepare`;
+};
+
+/**
+ * @summary Prepare Session Plan
+ */
+export const prepareSessionPlan = async (
+  planId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<prepareSessionPlanResponse> => {
+  const res = await fetch(getPrepareSessionPlanUrl(planId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: prepareSessionPlanResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as prepareSessionPlanResponse;
+};
+
+export const getPrepareSessionPlanMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof prepareSessionPlan>>,
+    TError,
+    { planId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof prepareSessionPlan>>,
+  TError,
+  { planId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["prepareSessionPlan"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof prepareSessionPlan>>,
+    { planId: string; data: EmptyRequest }
+  > = (props) => {
+    const { planId, data } = props ?? {};
+
+    return prepareSessionPlan(planId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PrepareSessionPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof prepareSessionPlan>>
+>;
+export type PrepareSessionPlanMutationBody = EmptyRequest;
+export type PrepareSessionPlanMutationError = ProblemResponse;
+
+/**
+ * @summary Prepare Session Plan
+ */
+export const usePrepareSessionPlan = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof prepareSessionPlan>>,
+      TError,
+      { planId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof prepareSessionPlan>>,
+  TError,
+  { planId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(
+    getPrepareSessionPlanMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type listSharedVocabularyListsResponse200 = {
   data: ResourcePageResponse;
   status: 200;
@@ -20755,6 +22099,1550 @@ export const useRetireSharedVocabularyList = <
     getRetireSharedVocabularyListMutationOptions(options),
     queryClient,
   );
+};
+
+export type getSprintRunResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type getSprintRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getSprintRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getSprintRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getSprintRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getSprintRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getSprintRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getSprintRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getSprintRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getSprintRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getSprintRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getSprintRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getSprintRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getSprintRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getSprintRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getSprintRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getSprintRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getSprintRunResponseSuccess = getSprintRunResponse200 & {
+  headers: Headers;
+};
+export type getSprintRunResponseError = (
+  | getSprintRunResponse401ApplicationJson
+  | getSprintRunResponse401ApplicationProblemJson
+  | getSprintRunResponse403ApplicationJson
+  | getSprintRunResponse403ApplicationProblemJson
+  | getSprintRunResponse409ApplicationJson
+  | getSprintRunResponse409ApplicationProblemJson
+  | getSprintRunResponse422ApplicationJson
+  | getSprintRunResponse422ApplicationProblemJson
+  | getSprintRunResponse423ApplicationJson
+  | getSprintRunResponse423ApplicationProblemJson
+  | getSprintRunResponse428ApplicationJson
+  | getSprintRunResponse428ApplicationProblemJson
+  | getSprintRunResponse429ApplicationJson
+  | getSprintRunResponse429ApplicationProblemJson
+  | getSprintRunResponse503ApplicationJson
+  | getSprintRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getSprintRunResponse =
+  getSprintRunResponseSuccess | getSprintRunResponseError;
+
+export const getGetSprintRunUrl = (id: string) => {
+  return `/api/v1/sprint-runs/${id}`;
+};
+
+/**
+ * @summary Get Sprint Run
+ */
+export const getSprintRun = async (
+  id: string,
+  options?: RequestInit,
+): Promise<getSprintRunResponse> => {
+  const res = await fetch(getGetSprintRunUrl(id), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getSprintRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getSprintRunResponse;
+};
+
+export const getGetSprintRunQueryKey = (id: string) => {
+  return [`/api/v1/sprint-runs/${id}`] as const;
+};
+
+export const getGetSprintRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getSprintRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSprintRun>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetSprintRunQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSprintRun>>> = ({
+    signal,
+  }) => getSprintRun(id, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getSprintRun>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetSprintRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getSprintRun>>
+>;
+export type GetSprintRunQueryError = ProblemResponse;
+
+export function useGetSprintRun<
+  TData = Awaited<ReturnType<typeof getSprintRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSprintRun>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSprintRun>>,
+          TError,
+          Awaited<ReturnType<typeof getSprintRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSprintRun<
+  TData = Awaited<ReturnType<typeof getSprintRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSprintRun>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSprintRun>>,
+          TError,
+          Awaited<ReturnType<typeof getSprintRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetSprintRun<
+  TData = Awaited<ReturnType<typeof getSprintRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSprintRun>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Sprint Run
+ */
+
+export function useGetSprintRun<
+  TData = Awaited<ReturnType<typeof getSprintRun>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getSprintRun>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetSprintRunQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type abandonExerciseBlockResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type abandonExerciseBlockResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type abandonExerciseBlockResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type abandonExerciseBlockResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type abandonExerciseBlockResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type abandonExerciseBlockResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type abandonExerciseBlockResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type abandonExerciseBlockResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type abandonExerciseBlockResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type abandonExerciseBlockResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type abandonExerciseBlockResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type abandonExerciseBlockResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type abandonExerciseBlockResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type abandonExerciseBlockResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type abandonExerciseBlockResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type abandonExerciseBlockResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type abandonExerciseBlockResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type abandonExerciseBlockResponseSuccess =
+  abandonExerciseBlockResponse200 & {
+    headers: Headers;
+  };
+export type abandonExerciseBlockResponseError = (
+  | abandonExerciseBlockResponse401ApplicationJson
+  | abandonExerciseBlockResponse401ApplicationProblemJson
+  | abandonExerciseBlockResponse403ApplicationJson
+  | abandonExerciseBlockResponse403ApplicationProblemJson
+  | abandonExerciseBlockResponse409ApplicationJson
+  | abandonExerciseBlockResponse409ApplicationProblemJson
+  | abandonExerciseBlockResponse422ApplicationJson
+  | abandonExerciseBlockResponse422ApplicationProblemJson
+  | abandonExerciseBlockResponse423ApplicationJson
+  | abandonExerciseBlockResponse423ApplicationProblemJson
+  | abandonExerciseBlockResponse428ApplicationJson
+  | abandonExerciseBlockResponse428ApplicationProblemJson
+  | abandonExerciseBlockResponse429ApplicationJson
+  | abandonExerciseBlockResponse429ApplicationProblemJson
+  | abandonExerciseBlockResponse503ApplicationJson
+  | abandonExerciseBlockResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type abandonExerciseBlockResponse =
+  abandonExerciseBlockResponseSuccess | abandonExerciseBlockResponseError;
+
+export const getAbandonExerciseBlockUrl = (runId: string, blockId: string) => {
+  return `/api/v1/sprint-runs/${runId}/blocks/${blockId}:abandon`;
+};
+
+/**
+ * @summary Abandon Exercise Block
+ */
+export const abandonExerciseBlock = async (
+  runId: string,
+  blockId: string,
+  reasonRequest: ReasonRequest,
+  options?: RequestInit,
+): Promise<abandonExerciseBlockResponse> => {
+  const res = await fetch(getAbandonExerciseBlockUrl(runId, blockId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reasonRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: abandonExerciseBlockResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as abandonExerciseBlockResponse;
+};
+
+export const getAbandonExerciseBlockMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof abandonExerciseBlock>>,
+    TError,
+    { runId: string; blockId: string; data: ReasonRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof abandonExerciseBlock>>,
+  TError,
+  { runId: string; blockId: string; data: ReasonRequest },
+  TContext
+> => {
+  const mutationKey = ["abandonExerciseBlock"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof abandonExerciseBlock>>,
+    { runId: string; blockId: string; data: ReasonRequest }
+  > = (props) => {
+    const { runId, blockId, data } = props ?? {};
+
+    return abandonExerciseBlock(runId, blockId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AbandonExerciseBlockMutationResult = NonNullable<
+  Awaited<ReturnType<typeof abandonExerciseBlock>>
+>;
+export type AbandonExerciseBlockMutationBody = ReasonRequest;
+export type AbandonExerciseBlockMutationError = ProblemResponse;
+
+/**
+ * @summary Abandon Exercise Block
+ */
+export const useAbandonExerciseBlock = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof abandonExerciseBlock>>,
+      TError,
+      { runId: string; blockId: string; data: ReasonRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof abandonExerciseBlock>>,
+  TError,
+  { runId: string; blockId: string; data: ReasonRequest },
+  TContext
+> => {
+  return useMutation(
+    getAbandonExerciseBlockMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type skipExerciseBlockResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type skipExerciseBlockResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type skipExerciseBlockResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type skipExerciseBlockResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type skipExerciseBlockResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type skipExerciseBlockResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type skipExerciseBlockResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type skipExerciseBlockResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type skipExerciseBlockResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type skipExerciseBlockResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type skipExerciseBlockResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type skipExerciseBlockResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type skipExerciseBlockResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type skipExerciseBlockResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type skipExerciseBlockResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type skipExerciseBlockResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type skipExerciseBlockResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type skipExerciseBlockResponseSuccess = skipExerciseBlockResponse200 & {
+  headers: Headers;
+};
+export type skipExerciseBlockResponseError = (
+  | skipExerciseBlockResponse401ApplicationJson
+  | skipExerciseBlockResponse401ApplicationProblemJson
+  | skipExerciseBlockResponse403ApplicationJson
+  | skipExerciseBlockResponse403ApplicationProblemJson
+  | skipExerciseBlockResponse409ApplicationJson
+  | skipExerciseBlockResponse409ApplicationProblemJson
+  | skipExerciseBlockResponse422ApplicationJson
+  | skipExerciseBlockResponse422ApplicationProblemJson
+  | skipExerciseBlockResponse423ApplicationJson
+  | skipExerciseBlockResponse423ApplicationProblemJson
+  | skipExerciseBlockResponse428ApplicationJson
+  | skipExerciseBlockResponse428ApplicationProblemJson
+  | skipExerciseBlockResponse429ApplicationJson
+  | skipExerciseBlockResponse429ApplicationProblemJson
+  | skipExerciseBlockResponse503ApplicationJson
+  | skipExerciseBlockResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type skipExerciseBlockResponse =
+  skipExerciseBlockResponseSuccess | skipExerciseBlockResponseError;
+
+export const getSkipExerciseBlockUrl = (runId: string, blockId: string) => {
+  return `/api/v1/sprint-runs/${runId}/blocks/${blockId}:skip`;
+};
+
+/**
+ * @summary Skip Exercise Block
+ */
+export const skipExerciseBlock = async (
+  runId: string,
+  blockId: string,
+  reasonRequest: ReasonRequest,
+  options?: RequestInit,
+): Promise<skipExerciseBlockResponse> => {
+  const res = await fetch(getSkipExerciseBlockUrl(runId, blockId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reasonRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: skipExerciseBlockResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as skipExerciseBlockResponse;
+};
+
+export const getSkipExerciseBlockMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof skipExerciseBlock>>,
+    TError,
+    { runId: string; blockId: string; data: ReasonRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof skipExerciseBlock>>,
+  TError,
+  { runId: string; blockId: string; data: ReasonRequest },
+  TContext
+> => {
+  const mutationKey = ["skipExerciseBlock"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof skipExerciseBlock>>,
+    { runId: string; blockId: string; data: ReasonRequest }
+  > = (props) => {
+    const { runId, blockId, data } = props ?? {};
+
+    return skipExerciseBlock(runId, blockId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SkipExerciseBlockMutationResult = NonNullable<
+  Awaited<ReturnType<typeof skipExerciseBlock>>
+>;
+export type SkipExerciseBlockMutationBody = ReasonRequest;
+export type SkipExerciseBlockMutationError = ProblemResponse;
+
+/**
+ * @summary Skip Exercise Block
+ */
+export const useSkipExerciseBlock = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof skipExerciseBlock>>,
+      TError,
+      { runId: string; blockId: string; data: ReasonRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof skipExerciseBlock>>,
+  TError,
+  { runId: string; blockId: string; data: ReasonRequest },
+  TContext
+> => {
+  return useMutation(getSkipExerciseBlockMutationOptions(options), queryClient);
+};
+
+export type completeSprintRunResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type completeSprintRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeSprintRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type completeSprintRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeSprintRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type completeSprintRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeSprintRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type completeSprintRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeSprintRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type completeSprintRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeSprintRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type completeSprintRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeSprintRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type completeSprintRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeSprintRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type completeSprintRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeSprintRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type completeSprintRunResponseSuccess = completeSprintRunResponse200 & {
+  headers: Headers;
+};
+export type completeSprintRunResponseError = (
+  | completeSprintRunResponse401ApplicationJson
+  | completeSprintRunResponse401ApplicationProblemJson
+  | completeSprintRunResponse403ApplicationJson
+  | completeSprintRunResponse403ApplicationProblemJson
+  | completeSprintRunResponse409ApplicationJson
+  | completeSprintRunResponse409ApplicationProblemJson
+  | completeSprintRunResponse422ApplicationJson
+  | completeSprintRunResponse422ApplicationProblemJson
+  | completeSprintRunResponse423ApplicationJson
+  | completeSprintRunResponse423ApplicationProblemJson
+  | completeSprintRunResponse428ApplicationJson
+  | completeSprintRunResponse428ApplicationProblemJson
+  | completeSprintRunResponse429ApplicationJson
+  | completeSprintRunResponse429ApplicationProblemJson
+  | completeSprintRunResponse503ApplicationJson
+  | completeSprintRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type completeSprintRunResponse =
+  completeSprintRunResponseSuccess | completeSprintRunResponseError;
+
+export const getCompleteSprintRunUrl = (runId: string) => {
+  return `/api/v1/sprint-runs/${runId}:complete`;
+};
+
+/**
+ * @summary Complete Sprint Run
+ */
+export const completeSprintRun = async (
+  runId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<completeSprintRunResponse> => {
+  const res = await fetch(getCompleteSprintRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: completeSprintRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as completeSprintRunResponse;
+};
+
+export const getCompleteSprintRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeSprintRun>>,
+    TError,
+    { runId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeSprintRun>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["completeSprintRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeSprintRun>>,
+    { runId: string; data: EmptyRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return completeSprintRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteSprintRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeSprintRun>>
+>;
+export type CompleteSprintRunMutationBody = EmptyRequest;
+export type CompleteSprintRunMutationError = ProblemResponse;
+
+/**
+ * @summary Complete Sprint Run
+ */
+export const useCompleteSprintRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeSprintRun>>,
+      TError,
+      { runId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeSprintRun>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getCompleteSprintRunMutationOptions(options), queryClient);
+};
+
+export type interruptSprintRunResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type interruptSprintRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type interruptSprintRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type interruptSprintRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type interruptSprintRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type interruptSprintRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type interruptSprintRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type interruptSprintRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type interruptSprintRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type interruptSprintRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type interruptSprintRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type interruptSprintRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type interruptSprintRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type interruptSprintRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type interruptSprintRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type interruptSprintRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type interruptSprintRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type interruptSprintRunResponseSuccess =
+  interruptSprintRunResponse200 & {
+    headers: Headers;
+  };
+export type interruptSprintRunResponseError = (
+  | interruptSprintRunResponse401ApplicationJson
+  | interruptSprintRunResponse401ApplicationProblemJson
+  | interruptSprintRunResponse403ApplicationJson
+  | interruptSprintRunResponse403ApplicationProblemJson
+  | interruptSprintRunResponse409ApplicationJson
+  | interruptSprintRunResponse409ApplicationProblemJson
+  | interruptSprintRunResponse422ApplicationJson
+  | interruptSprintRunResponse422ApplicationProblemJson
+  | interruptSprintRunResponse423ApplicationJson
+  | interruptSprintRunResponse423ApplicationProblemJson
+  | interruptSprintRunResponse428ApplicationJson
+  | interruptSprintRunResponse428ApplicationProblemJson
+  | interruptSprintRunResponse429ApplicationJson
+  | interruptSprintRunResponse429ApplicationProblemJson
+  | interruptSprintRunResponse503ApplicationJson
+  | interruptSprintRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type interruptSprintRunResponse =
+  interruptSprintRunResponseSuccess | interruptSprintRunResponseError;
+
+export const getInterruptSprintRunUrl = (runId: string) => {
+  return `/api/v1/sprint-runs/${runId}:interrupt`;
+};
+
+/**
+ * @summary Interrupt Sprint Run
+ */
+export const interruptSprintRun = async (
+  runId: string,
+  reasonRequest: ReasonRequest,
+  options?: RequestInit,
+): Promise<interruptSprintRunResponse> => {
+  const res = await fetch(getInterruptSprintRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reasonRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: interruptSprintRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as interruptSprintRunResponse;
+};
+
+export const getInterruptSprintRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof interruptSprintRun>>,
+    TError,
+    { runId: string; data: ReasonRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof interruptSprintRun>>,
+  TError,
+  { runId: string; data: ReasonRequest },
+  TContext
+> => {
+  const mutationKey = ["interruptSprintRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof interruptSprintRun>>,
+    { runId: string; data: ReasonRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return interruptSprintRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InterruptSprintRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof interruptSprintRun>>
+>;
+export type InterruptSprintRunMutationBody = ReasonRequest;
+export type InterruptSprintRunMutationError = ProblemResponse;
+
+/**
+ * @summary Interrupt Sprint Run
+ */
+export const useInterruptSprintRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof interruptSprintRun>>,
+      TError,
+      { runId: string; data: ReasonRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof interruptSprintRun>>,
+  TError,
+  { runId: string; data: ReasonRequest },
+  TContext
+> => {
+  return useMutation(
+    getInterruptSprintRunMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type resumeSprintRunResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type resumeSprintRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumeSprintRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumeSprintRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumeSprintRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumeSprintRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumeSprintRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumeSprintRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumeSprintRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumeSprintRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resumeSprintRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type resumeSprintRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumeSprintRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumeSprintRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resumeSprintRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type resumeSprintRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumeSprintRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumeSprintRunResponseSuccess = resumeSprintRunResponse200 & {
+  headers: Headers;
+};
+export type resumeSprintRunResponseError = (
+  | resumeSprintRunResponse401ApplicationJson
+  | resumeSprintRunResponse401ApplicationProblemJson
+  | resumeSprintRunResponse403ApplicationJson
+  | resumeSprintRunResponse403ApplicationProblemJson
+  | resumeSprintRunResponse409ApplicationJson
+  | resumeSprintRunResponse409ApplicationProblemJson
+  | resumeSprintRunResponse422ApplicationJson
+  | resumeSprintRunResponse422ApplicationProblemJson
+  | resumeSprintRunResponse423ApplicationJson
+  | resumeSprintRunResponse423ApplicationProblemJson
+  | resumeSprintRunResponse428ApplicationJson
+  | resumeSprintRunResponse428ApplicationProblemJson
+  | resumeSprintRunResponse429ApplicationJson
+  | resumeSprintRunResponse429ApplicationProblemJson
+  | resumeSprintRunResponse503ApplicationJson
+  | resumeSprintRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resumeSprintRunResponse =
+  resumeSprintRunResponseSuccess | resumeSprintRunResponseError;
+
+export const getResumeSprintRunUrl = (runId: string) => {
+  return `/api/v1/sprint-runs/${runId}:resume`;
+};
+
+/**
+ * @summary Resume Sprint Run
+ */
+export const resumeSprintRun = async (
+  runId: string,
+  emptyRequest: EmptyRequest,
+  options?: RequestInit,
+): Promise<resumeSprintRunResponse> => {
+  const res = await fetch(getResumeSprintRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(emptyRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resumeSprintRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resumeSprintRunResponse;
+};
+
+export const getResumeSprintRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resumeSprintRun>>,
+    TError,
+    { runId: string; data: EmptyRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resumeSprintRun>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  const mutationKey = ["resumeSprintRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resumeSprintRun>>,
+    { runId: string; data: EmptyRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return resumeSprintRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResumeSprintRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resumeSprintRun>>
+>;
+export type ResumeSprintRunMutationBody = EmptyRequest;
+export type ResumeSprintRunMutationError = ProblemResponse;
+
+/**
+ * @summary Resume Sprint Run
+ */
+export const useResumeSprintRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resumeSprintRun>>,
+      TError,
+      { runId: string; data: EmptyRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resumeSprintRun>>,
+  TError,
+  { runId: string; data: EmptyRequest },
+  TContext
+> => {
+  return useMutation(getResumeSprintRunMutationOptions(options), queryClient);
+};
+
+export type stopSprintRunResponse200 = {
+  data: SprintRunResponse;
+  status: 200;
+};
+
+export type stopSprintRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type stopSprintRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type stopSprintRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type stopSprintRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type stopSprintRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type stopSprintRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type stopSprintRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type stopSprintRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type stopSprintRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type stopSprintRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type stopSprintRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type stopSprintRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type stopSprintRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type stopSprintRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type stopSprintRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type stopSprintRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type stopSprintRunResponseSuccess = stopSprintRunResponse200 & {
+  headers: Headers;
+};
+export type stopSprintRunResponseError = (
+  | stopSprintRunResponse401ApplicationJson
+  | stopSprintRunResponse401ApplicationProblemJson
+  | stopSprintRunResponse403ApplicationJson
+  | stopSprintRunResponse403ApplicationProblemJson
+  | stopSprintRunResponse409ApplicationJson
+  | stopSprintRunResponse409ApplicationProblemJson
+  | stopSprintRunResponse422ApplicationJson
+  | stopSprintRunResponse422ApplicationProblemJson
+  | stopSprintRunResponse423ApplicationJson
+  | stopSprintRunResponse423ApplicationProblemJson
+  | stopSprintRunResponse428ApplicationJson
+  | stopSprintRunResponse428ApplicationProblemJson
+  | stopSprintRunResponse429ApplicationJson
+  | stopSprintRunResponse429ApplicationProblemJson
+  | stopSprintRunResponse503ApplicationJson
+  | stopSprintRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type stopSprintRunResponse =
+  stopSprintRunResponseSuccess | stopSprintRunResponseError;
+
+export const getStopSprintRunUrl = (runId: string) => {
+  return `/api/v1/sprint-runs/${runId}:stop`;
+};
+
+/**
+ * @summary Stop Sprint Run
+ */
+export const stopSprintRun = async (
+  runId: string,
+  reasonRequest: ReasonRequest,
+  options?: RequestInit,
+): Promise<stopSprintRunResponse> => {
+  const res = await fetch(getStopSprintRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reasonRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: stopSprintRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as stopSprintRunResponse;
+};
+
+export const getStopSprintRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof stopSprintRun>>,
+    TError,
+    { runId: string; data: ReasonRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof stopSprintRun>>,
+  TError,
+  { runId: string; data: ReasonRequest },
+  TContext
+> => {
+  const mutationKey = ["stopSprintRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof stopSprintRun>>,
+    { runId: string; data: ReasonRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return stopSprintRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StopSprintRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof stopSprintRun>>
+>;
+export type StopSprintRunMutationBody = ReasonRequest;
+export type StopSprintRunMutationError = ProblemResponse;
+
+/**
+ * @summary Stop Sprint Run
+ */
+export const useStopSprintRun = <TError = ProblemResponse, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof stopSprintRun>>,
+      TError,
+      { runId: string; data: ReasonRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof stopSprintRun>>,
+  TError,
+  { runId: string; data: ReasonRequest },
+  TContext
+> => {
+  return useMutation(getStopSprintRunMutationOptions(options), queryClient);
 };
 
 export type getValidationReportResponse200 = {
