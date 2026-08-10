@@ -152,6 +152,25 @@
         "title": "ChangePasswordRequest",
         "type": "object"
       },
+      "CompleteFoundationGateRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/FoundationAnswerRequest"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "title": "Answers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "title": "CompleteFoundationGateRequest",
+        "type": "object"
+      },
       "ConsentRequest": {
         "additionalProperties": false,
         "properties": {
@@ -492,6 +511,11 @@
             "title": "Content Type",
             "type": "string"
           },
+          "pack_id": {
+            "format": "uuid",
+            "title": "Pack Id",
+            "type": "string"
+          },
           "payload": {
             "additionalProperties": {
               "$ref": "#/components/schemas/JsonValue-Input"
@@ -525,6 +549,7 @@
           }
         },
         "required": [
+          "pack_id",
           "content_type",
           "variety_id",
           "payload",
@@ -717,6 +742,32 @@
         "title": "DiagnosticResponse",
         "type": "object"
       },
+      "FoundationAnswerRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "additionalProperties": true,
+            "title": "Answer",
+            "type": "object"
+          },
+          "item_revision_id": {
+            "format": "uuid",
+            "title": "Item Revision Id",
+            "type": "string"
+          },
+          "revealed": {
+            "default": false,
+            "title": "Revealed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "item_revision_id",
+          "answer"
+        ],
+        "title": "FoundationAnswerRequest",
+        "type": "object"
+      },
       "FoundationResponse": {
         "additionalProperties": false,
         "properties": {
@@ -732,6 +783,11 @@
             ],
             "title": "Completed At"
           },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
           "foundation_revision_id": {
             "format": "uuid",
             "title": "Foundation Revision Id",
@@ -742,6 +798,24 @@
             "title": "Foundation Run Id",
             "type": "string"
           },
+          "gate_passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gate Passed"
+          },
+          "gate_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Gate Reasons",
+            "type": "array"
+          },
           "pack_revision_id": {
             "format": "uuid",
             "title": "Pack Revision Id",
@@ -751,6 +825,10 @@
             "format": "uuid",
             "title": "Profile Id",
             "type": "string"
+          },
+          "session_count": {
+            "title": "Session Count",
+            "type": "integer"
           },
           "started_at": {
             "format": "date-time",
@@ -773,8 +851,12 @@
           "pack_revision_id",
           "foundation_revision_id",
           "started_at",
+          "expires_at",
           "version",
-          "completed_at"
+          "completed_at",
+          "session_count",
+          "gate_passed",
+          "gate_reasons"
         ],
         "title": "FoundationResponse",
         "type": "object"
@@ -4430,10 +4512,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -4618,10 +4707,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -4932,13 +5028,41 @@
               "title": "Idempotency-Key",
               "type": "string"
             }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
+            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteFoundationGateRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/FoundationResponse"
+                }
               }
             },
             "description": "Successful Response"
@@ -5679,10 +5803,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -5857,10 +5988,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -6045,10 +6183,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -6063,7 +6208,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -6233,10 +6378,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -6421,10 +6573,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -6599,10 +6758,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
@@ -6777,10 +6943,17 @@
           {
             "in": "header",
             "name": "If-Match",
-            "required": true,
+            "required": false,
             "schema": {
-              "title": "If-Match",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-Match"
             }
           }
         ],
