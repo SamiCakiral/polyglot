@@ -2,7 +2,6 @@ from pathlib import Path
 
 from polyglot.modules.lexicon.core.fixtures import load_lexicon_fixture, load_word_bank_fixture
 
-
 ROOT = Path(__file__).resolve().parents[4] / "fixtures" / "canonical"
 
 

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 6006,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "lexicon.json": "sha256:5067dc212f1c808ff51a1651072df5b729f547226a0da4beb76404f7ca43d9fd"
+  },
+  "oracles": [
+    "homonyms_distinct",
+    "polysemy_distinct",
+    "syncretism_ambiguous",
+    "mwe_ordered",
+    "private_unit_isolated",
+    "late_resolution_append_only"
+  ],
+  "network_dependencies": []
+}

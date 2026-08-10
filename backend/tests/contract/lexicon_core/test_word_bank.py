@@ -1,6 +1,5 @@
 from polyglot.interfaces.http.app import create_app
 
-
 COMMANDS = {
     ("post", "/api/v1/language-profiles/{profile_id}/encounters"),
     ("post", "/api/v1/lexical-mentions/{mention_id}:resolve"),

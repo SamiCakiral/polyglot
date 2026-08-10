@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "seed": 6006,
+  "profiles": {
+    "empty": {"sense_count": 0},
+    "small": {"sense_count": 10},
+    "owner": {"account": "user-a"},
+    "cross_user": {"account": "user-b", "can_read_owner": false}
+  },
+  "synthetic_generator": {
+    "sense_count": 100000,
+    "label_template": "lemma-{index:06d}",
+    "relation_stride": 97,
+    "max_degree": 4,
+    "reference_revision": "fx-wb-100k-v1"
+  },
+  "private_context": {
+    "deleted": true,
+    "content": null,
+    "fingerprint_retained": true
+  },
+  "pagination_oracle": {"page_size": 100, "stable_key": ["lexical_order", "sense_id"]},
+  "neighborhood_oracle": {"depth": 2, "max_nodes": 500}
+}

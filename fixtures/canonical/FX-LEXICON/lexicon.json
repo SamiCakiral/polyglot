@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "language_tag": "it-IT",
+  "cases": [
+    {"id": "piano-homonym", "surface": "piano", "unit_ids": ["piano-adverb", "piano-noun"], "sense_ids": ["slowly", "instrument", "floor"]},
+    {"id": "sono-syncretism", "surface": "sono", "analyses": ["essere.ind.pres.1s", "essere.ind.pres.3p"]},
+    {"id": "avere-bisogno-di", "type": "multiword_expression", "components": ["avere", "bisogno", "di"]},
+    {"id": "private-family-word", "visibility": "private", "owner_profile": "profile-a"},
+    {"id": "late-resolution", "initial": "ambiguous", "resolved_to": "floor", "raw_fact_mutated": false}
+  ],
+  "relations": [
+    {"source": "instrument", "target": "floor", "type": "confusable", "direction": "directed", "confidence": 0.9}
+  ]
+}

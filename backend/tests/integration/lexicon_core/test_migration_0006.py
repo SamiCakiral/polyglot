@@ -1,7 +1,6 @@
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 EXPECTED_TABLES = {
     "private_lexical_units",
     "private_lexical_senses",

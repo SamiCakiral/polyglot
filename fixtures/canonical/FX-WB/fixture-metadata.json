@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 6006,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "word-bank.json": "sha256:410432b38131701b8a7e96578459220c68f99ad87a271caea89ce443d3b4cf02"
+  },
+  "oracles": [
+    "zero_senses",
+    "ten_senses",
+    "reproducible_100k",
+    "private_context_deleted",
+    "cross_user_denied",
+    "stable_pagination",
+    "bounded_neighborhood"
+  ],
+  "network_dependencies": []
+}
