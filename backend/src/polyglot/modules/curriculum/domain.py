@@ -200,3 +200,23 @@ class LearningModuleRevision:
 
     def recanonicalized(self) -> LearningModuleRevision:
         return replace(self, payload_checksum="")
+
+    def all_reference_keys(self) -> tuple[str, ...]:
+        values = {
+            f"pack:{self.pack_revision_id}",
+            f"variety:{self.target_variety_id}",
+            f"mission:{self.final_mission_revision_id}",
+            f"policy:{self.exit_policy_revision_id}",
+            f"policy:{self.recall_policy_revision_id}",
+            f"validator:{self.validator_set_revision_id}",
+            *(f"variety:{value}" for value in self.support_variety_ids),
+            *(f"skill:{value}" for value in self.prerequisite_skill_revision_ids),
+            *(f"skill:{value}" for value in self.target_skill_revision_ids),
+        }
+        for day in self.days:
+            values.update(day.primary_target_refs)
+            values.update(f"content:{value}" for value in day.content_revision_ids)
+            values.update(
+                f"exercise:{value}" for value in day.exercise_definition_revision_ids
+            )
+        return tuple(sorted(values))
