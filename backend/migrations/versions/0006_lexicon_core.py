@@ -412,7 +412,7 @@ $rls$;
 
 GRANT USAGE ON SCHEMA lexicon TO polyglot_runtime;
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA lexicon TO polyglot_runtime;
-GRANT USAGE ON SCHEMA lexicon TO polyglot_migration;
+GRANT USAGE, CREATE ON SCHEMA lexicon TO polyglot_migration;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA lexicon TO polyglot_migration;
 
 ALTER FUNCTION lexicon.is_uuid7(uuid) OWNER TO polyglot_migration;

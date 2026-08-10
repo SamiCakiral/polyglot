@@ -51,6 +51,10 @@ async def seed_profiles(session: AsyncSession) -> None:
             },
         )
     await session.commit()
+    await session.execute(
+        text("SELECT set_config('app.user_id', :account_id, false)"),
+        {"account_id": str(uid(1))},
+    )
 
 
 def command(*, surface: str = "piano", fingerprint: str = "a" * 64) -> RecordLexicalEncounter:
