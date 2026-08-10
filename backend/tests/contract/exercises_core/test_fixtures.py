@@ -14,6 +14,25 @@ FIXTURE = ROOT / "fixtures/canonical/FX-PRIMITIVES"
 MANIFEST_SCHEMA = json.loads((ROOT / "contracts/fixtures/manifest.schema.json").read_text())
 
 
+def _seeded_order(primitive_ids: list[str], seed: int) -> list[str]:
+    return sorted(
+        primitive_ids,
+        key=lambda primitive_id: hashlib.sha256(
+            f"{seed}:{primitive_id}".encode()
+        ).digest(),
+    )
+
+
+def _rewrite_checksum(root: Path) -> None:
+    payload_path = root / "primitives.json"
+    metadata_path = root / "fixture-metadata.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata["payloads"]["primitives.json"] = (
+        "sha256:" + hashlib.sha256(payload_path.read_bytes()).hexdigest()
+    )
+    metadata_path.write_text(json.dumps(metadata, sort_keys=True))
+
+
 def test_fx_primitives_executes_every_oracle_without_network(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -60,12 +79,68 @@ def test_fx_primitives_rejects_a_missing_per_primitive_oracle(tmp_path: Path) ->
     payload = json.loads(payload_path.read_text())
     payload["primitives"][0]["case_ids"].remove("unavailable")
     payload_path.write_text(json.dumps(payload, sort_keys=True))
+    _rewrite_checksum(mutated)
+
+    with pytest.raises(DomainError) as rejected:
+        load_and_run_primitive_fixture(mutated)
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_fx_seed_reaches_every_instance_and_controls_replay(tmp_path: Path) -> None:
+    from polyglot.modules.exercises.core.fixtures import load_and_run_primitive_fixture
+
+    baseline = load_and_run_primitive_fixture(FIXTURE)
+    repeated = load_and_run_primitive_fixture(FIXTURE)
+    assert baseline.instance_seeds == (9009,) * 22
+    assert repeated.replay_order == baseline.replay_order
+
+    mutated = tmp_path / "FX-PRIMITIVES"
+    shutil.copytree(FIXTURE, mutated)
+    payload_path = mutated / "primitives.json"
+    payload = json.loads(payload_path.read_text())
+    changed_seed = 123456
+    primitive_ids = [item["primitive_id"] for item in payload["primitives"]]
+    payload["seed"] = changed_seed
+    payload["expected_replay_order"] = _seeded_order(primitive_ids, changed_seed)
+    payload_path.write_text(json.dumps(payload, sort_keys=True))
     metadata_path = mutated / "fixture-metadata.json"
     metadata = json.loads(metadata_path.read_text())
-    metadata["payloads"]["primitives.json"] = (
-        "sha256:" + hashlib.sha256(payload_path.read_bytes()).hexdigest()
-    )
+    metadata["seed"] = changed_seed
     metadata_path.write_text(json.dumps(metadata, sort_keys=True))
+    _rewrite_checksum(mutated)
+
+    changed = load_and_run_primitive_fixture(mutated)
+
+    assert changed.instance_seeds == (changed_seed,) * 22
+    assert changed.replay_order == tuple(_seeded_order(primitive_ids, changed_seed))
+    assert changed.replay_order != baseline.replay_order
+
+
+def test_fx_executes_a_distinct_sample_typed_oracle_for_every_primitive(
+    tmp_path: Path,
+) -> None:
+    from polyglot.modules.exercises.core.fixtures import load_and_run_primitive_fixture
+
+    report = load_and_run_primitive_fixture(FIXTURE)
+
+    assert len(report.primitive_oracles) == 22
+    assert len({evidence.oracle_id for evidence in report.primitive_oracles}) == 22
+    assert len({evidence.strategy for evidence in report.primitive_oracles}) >= 4
+    assert all(evidence.sample_used for evidence in report.primitive_oracles)
+    assert all(
+        evidence.verdicts
+        == ("correct", "incorrect", "ambiguous", "not_evaluable")
+        for evidence in report.primitive_oracles
+    )
+
+    mutated = tmp_path / "FX-PRIMITIVES"
+    shutil.copytree(FIXTURE, mutated)
+    payload_path = mutated / "primitives.json"
+    payload = json.loads(payload_path.read_text())
+    payload["primitives"][0]["correction_oracle"]["positive_verdict"] = "incorrect"
+    payload_path.write_text(json.dumps(payload, sort_keys=True))
+    _rewrite_checksum(mutated)
 
     with pytest.raises(DomainError) as rejected:
         load_and_run_primitive_fixture(mutated)
