@@ -37,6 +37,21 @@ PAYLOAD_NAMES = (
     "oracles.json",
     "revision-cases.json",
 )
+INVALID_CASE_NAMES = (
+    "invalid/cycle/case.json",
+    "invalid/duration/case.json",
+    "invalid/false-credit/case.json",
+    "invalid/load/case.json",
+    "invalid/missing-human-review/case.json",
+    "invalid/past-mutation/case.json",
+    "invalid/unresolved-ref/case.json",
+)
+BUNDLE_NAMES = (
+    "fixture-metadata.json",
+    "manifest.json",
+    *PAYLOAD_NAMES,
+    *INVALID_CASE_NAMES,
+)
 MAX_FILE_BYTES = 512_000
 MAX_DEPTH = 12
 
@@ -123,10 +138,16 @@ def fixture_fingerprint_from_file_order(root: Path, order: tuple[str, ...]) -> s
     safe = _safe_root(root)
     if set(order) != set(PAYLOAD_NAMES) or len(order) != len(PAYLOAD_NAMES):
         raise _error("fixture_payload_set_invalid")
+    actual_names = {
+        path.relative_to(safe).as_posix() for path in safe.rglob("*") if path.is_file()
+    }
+    if actual_names != set(BUNDLE_NAMES):
+        raise _error("fixture_bundle_set_invalid")
     digest = hashlib.sha256()
-    for name in sorted(order):
+    # The fingerprint is external to the bundle, so no recursive field is excluded.
+    for name in sorted(BUNDLE_NAMES):
         path = safe / name
-        if path.parent != safe or path.is_symlink():
+        if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
             raise _error("fixture_path_or_size_invalid")
         data = path.read_bytes()
         digest.update(name.encode("utf-8"))
