@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 9009,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {},
+  "oracles": [
+    "all_core_primitives_closed_contract",
+    "positive_negative_ambiguous_not_evaluable_per_primitive",
+    "hint_h0_h4_credit_bounds",
+    "a11y_keyboard_screen_reader_untimed",
+    "idempotent_replay_single_effect",
+    "skip_abandon_unavailable_explicit",
+    "no_false_success_on_ambiguity_or_unavailability"
+  ],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}
