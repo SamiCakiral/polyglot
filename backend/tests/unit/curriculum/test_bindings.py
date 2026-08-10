@@ -60,3 +60,14 @@ def test_binding_rejects_unknown_operations_and_false_credit() -> None:
         SkillTargetBinding(
             uid(1), BindingRole.SUPPORT, ("written_production",), ("credit",), (uid(2),)
         )
+
+
+def test_support_skill_cannot_carry_an_evidence_protocol() -> None:
+    with pytest.raises(CurriculumError, match="module_support_lexicon_miscredited"):
+        SkillTargetBinding(
+            uid(20),
+            BindingRole.SUPPORT,
+            ("written_production",),
+            ("produce",),
+            (uid(21),),
+        )
