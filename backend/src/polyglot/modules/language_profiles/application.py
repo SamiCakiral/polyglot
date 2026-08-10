@@ -471,6 +471,15 @@ class LanguageProfileApplicationService:
             profile = await repository.get_owned(profile_id, account_id)
             if profile.version != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
+            await session.execute(
+                diagnostic_runs.update()
+                .where(
+                    diagnostic_runs.c.profile_id == profile_id,
+                    diagnostic_runs.c.status.in_(("prepared", "in_progress", "interrupted")),
+                    diagnostic_runs.c.expires_at <= now,
+                )
+                .values(status="expired", version=diagnostic_runs.c.version + 1)
+            )
             receipt = self._receipt(
                 command_type="StartDiagnostic",
                 account_id=account_id,
