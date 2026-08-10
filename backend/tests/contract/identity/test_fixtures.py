@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
+from jsonschema import Draft202012Validator
+
 from polyglot.modules.identity.domain import (
     AccountRole,
     Actor,
@@ -17,6 +19,10 @@ from polyglot.modules.identity.domain import (
 ROOT = Path(__file__).resolve().parents[4]
 FIXTURES = ROOT / "fixtures/canonical"
 EXPECTED_ROLES = {role.value for role in AccountRole}
+MANIFEST_SCHEMA = json.loads((ROOT / "contracts/fixtures/manifest.schema.json").read_text())
+REGISTERED_ERRORS = set(
+    json.loads((ROOT / "contracts/registry/errors.yaml").read_text())["errors"]
+)
 FORBIDDEN_SECRET_FIELDS = {
     "password",
     "plaintext_password",
@@ -30,14 +36,19 @@ FORBIDDEN_SECRET_FIELDS = {
 }
 
 
-def _load_fixture(code: str, payload_name: str) -> tuple[dict[str, Any], dict[str, Any]]:
+def _load_fixture(
+    code: str,
+    payload_name: str,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     fixture = FIXTURES / code
     manifest = json.loads((fixture / "manifest.json").read_text())
+    Draft202012Validator(MANIFEST_SCHEMA).validate(manifest)
+    metadata = json.loads((fixture / "fixture-metadata.json").read_text())
     payload_path = fixture / payload_name
     payload = json.loads(payload_path.read_text())
     fingerprint = hashlib.sha256(payload_path.read_bytes()).hexdigest()
-    assert manifest["payloads"] == {payload_name: f"sha256:{fingerprint}"}
-    return manifest, payload
+    assert metadata["payloads"] == {payload_name: f"sha256:{fingerprint}"}
+    return manifest, metadata, payload
 
 
 def _all_keys(value: Any) -> set[str]:
@@ -53,14 +64,18 @@ def _all_keys(value: Any) -> set[str]:
 
 
 def test_fx_users_manifest_has_clock_seed_fingerprint_and_owner_oracles() -> None:
-    manifest, users = _load_fixture("FX-USERS", "users.json")
+    manifest, metadata, users = _load_fixture("FX-USERS", "users.json")
 
-    assert manifest["fixture_code"] == "FX-USERS"
-    assert manifest["schema_version"] == 1
-    assert manifest["synthetic"] is True
-    assert isinstance(manifest["seed"], int)
-    assert datetime.fromisoformat(manifest["clock"])
-    assert set(manifest["oracles"]) == {
+    assert manifest == {
+        "id": "FX-USERS",
+        "kind": "positive",
+        "expected_status": "accepted",
+    }
+    assert metadata["schema_version"] == 1
+    assert metadata["synthetic"] is True
+    assert isinstance(metadata["seed"], int)
+    assert datetime.fromisoformat(metadata["clock"])
+    assert set(metadata["oracles"]) == {
         "all_six_roles_present",
         "owner_can_read_own_account",
         "owner_cannot_read_foreign_account",
@@ -90,14 +105,18 @@ def test_fx_users_manifest_has_clock_seed_fingerprint_and_owner_oracles() -> Non
 
 
 def test_fx_auth_covers_expiry_invalid_csrf_fake_oidc_and_role_rotation() -> None:
-    manifest, auth = _load_fixture("FX-AUTH", "auth.json")
+    manifest, metadata, auth = _load_fixture("FX-AUTH", "auth.json")
 
-    assert manifest["fixture_code"] == "FX-AUTH"
-    assert manifest["schema_version"] == 1
-    assert manifest["synthetic"] is True
-    assert isinstance(manifest["seed"], int)
-    clock = datetime.fromisoformat(manifest["clock"])
-    assert set(manifest["oracles"]) == {
+    assert manifest == {
+        "id": "FX-AUTH",
+        "kind": "positive",
+        "expected_status": "accepted",
+    }
+    assert metadata["schema_version"] == 1
+    assert metadata["synthetic"] is True
+    assert isinstance(metadata["seed"], int)
+    clock = datetime.fromisoformat(metadata["clock"])
+    assert set(metadata["oracles"]) == {
         "expired_session_rejected",
         "invalid_csrf_rejected",
         "fake_oidc_accepted",
@@ -106,7 +125,8 @@ def test_fx_auth_covers_expiry_invalid_csrf_fake_oidc_and_role_rotation() -> Non
 
     expired = auth["expired_session"]
     assert datetime.fromisoformat(expired["absolute_expires_at"]) <= clock
-    assert expired["expected_error"] == "session_expired"
+    assert expired["expected_error"] == "unauthenticated"
+    assert expired["expected_error"] in REGISTERED_ERRORS
 
     csrf = auth["invalid_csrf"]
     assert csrf["stored_csrf_hash"] != csrf["presented_csrf_hash"]
@@ -115,13 +135,13 @@ def test_fx_auth_covers_expiry_invalid_csrf_fake_oidc_and_role_rotation() -> Non
     claims = auth["fake_oidc"]
     provider = FakeOidcProvider(
         {
-            str(manifest["seed"]): OidcAssertion(
+            str(metadata["seed"]): OidcAssertion(
                 issuer=claims["issuer"],
                 subject=claims["subject"],
             )
         }
     )
-    assert provider.authenticate(str(manifest["seed"])) == OidcAssertion(
+    assert provider.authenticate(str(metadata["seed"])) == OidcAssertion(
         issuer=claims["issuer"],
         subject=claims["subject"],
     )
@@ -137,8 +157,8 @@ def test_canonical_identity_fixtures_never_store_plaintext_secrets_or_tokens() -
         ("FX-USERS", "users.json"),
         ("FX-AUTH", "auth.json"),
     ):
-        manifest, payload = _load_fixture(fixture_code, payload_name)
-        documents.extend((manifest, payload))
+        manifest, metadata, payload = _load_fixture(fixture_code, payload_name)
+        documents.extend((manifest, metadata, payload))
 
     fixture_keys = set().union(*(_all_keys(document) for document in documents))
     assert not (fixture_keys & FORBIDDEN_SECRET_FIELDS)

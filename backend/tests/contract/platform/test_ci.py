@@ -55,6 +55,7 @@ def test_ci_gates_migration_round_trip_drift_and_installed_wheel() -> None:
     upgrade = workflow.index("uv run alembic upgrade head", downgrade)
     drift = workflow.index("uv run alembic check", upgrade)
     assert downgrade < upgrade < drift
+    assert "POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE: true" in workflow
     assert "test_installed_artifact.py" in workflow
 
 

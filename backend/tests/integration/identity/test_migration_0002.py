@@ -1,4 +1,6 @@
+import importlib.util
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -137,6 +139,17 @@ async def test_0002_identity_has_strict_constraints_indexes_rls_and_runtime_gran
             )
         ).scalars()
     )
+    forced_rls_tables = set(
+        (
+            await migration_session.execute(
+                text(
+                    "SELECT relation.relname FROM pg_class AS relation "
+                    "JOIN pg_namespace AS namespace ON namespace.oid = relation.relnamespace "
+                    "WHERE namespace.nspname = 'identity' AND relation.relforcerowsecurity"
+                )
+            )
+        ).scalars()
+    )
     session_columns = set(
         (
             await migration_session.execute(
@@ -177,12 +190,33 @@ async def test_0002_identity_has_strict_constraints_indexes_rls_and_runtime_gran
         "user_preferences",
         "consent_grants",
     }
+    assert forced_rls_tables == set()
     assert await migration_session.scalar(
         text("SELECT has_schema_privilege('polyglot_runtime', 'identity', 'USAGE')")
     )
     assert not await migration_session.scalar(
         text("SELECT has_schema_privilege('public', 'identity', 'USAGE')")
     )
+
+
+def test_0002_destructive_downgrade_requires_explicit_disposable_opt_in(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path = Path(__file__).resolve().parents[3] / "migrations/versions/0002_identity.py"
+    spec = importlib.util.spec_from_file_location("identity_migration_0002", path)
+    assert spec is not None and spec.loader is not None
+    migration = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(migration)
+    executed: list[str] = []
+    monkeypatch.setattr(migration.op, "execute", executed.append)
+    monkeypatch.delenv("POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE", raising=False)
+
+    with pytest.raises(RuntimeError, match="disposable.*data loss"):
+        migration.downgrade()
+
+    monkeypatch.setenv("POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE", "true")
+    migration.downgrade()
+    assert executed == ["DROP SCHEMA identity CASCADE"]
 
 
 async def test_local_and_oidc_identity_uniqueness_and_argon2id_are_database_enforced(
