@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-CATALOGUE-IT-CYCLE",
+  "skills": [
+    {
+      "skill_revision_id": "019b0000-0000-7000-8000-000000000601",
+      "skill_id": "019b0000-0000-7000-8000-000000000600",
+      "revision_no": 1,
+      "skill_code": "IT-CYCLE-A",
+      "skill_type": "fixture_probe",
+      "modality": "reading",
+      "operation": "recognize",
+      "target_ref": "IT-CYCLE-A",
+      "scope": ["negative_fixture"],
+      "evidence_protocol_ids": [],
+      "load_profile": {"intrinsic": 1},
+      "status": "published",
+      "provenance_id": "019b0000-0000-7000-8000-000000000001"
+    },
+    {
+      "skill_revision_id": "019b0000-0000-7000-8000-000000000611",
+      "skill_id": "019b0000-0000-7000-8000-000000000610",
+      "revision_no": 1,
+      "skill_code": "IT-CYCLE-B",
+      "skill_type": "fixture_probe",
+      "modality": "reading",
+      "operation": "recognize",
+      "target_ref": "IT-CYCLE-B",
+      "scope": ["negative_fixture"],
+      "evidence_protocol_ids": [],
+      "load_profile": {"intrinsic": 1},
+      "status": "published",
+      "provenance_id": "019b0000-0000-7000-8000-000000000001"
+    }
+  ],
+  "prerequisites": [
+    {
+      "edge_id": "019b0000-0000-7000-8000-000000000620",
+      "from_skill_revision_id": "019b0000-0000-7000-8000-000000000601",
+      "to_skill_revision_id": "019b0000-0000-7000-8000-000000000611",
+      "edge_type": "required",
+      "provenance_id": "019b0000-0000-7000-8000-000000000001"
+    },
+    {
+      "edge_id": "019b0000-0000-7000-8000-000000000621",
+      "from_skill_revision_id": "019b0000-0000-7000-8000-000000000611",
+      "to_skill_revision_id": "019b0000-0000-7000-8000-000000000601",
+      "edge_type": "required",
+      "provenance_id": "019b0000-0000-7000-8000-000000000001"
+    }
+  ]
+}

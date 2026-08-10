@@ -1,0 +1,6 @@
+{
+  "id": "FX-CATALOGUE-IT-CYCLE",
+  "kind": "negative",
+  "expected_status": "rejected",
+  "expected_error": "prerequisite_cycle"
+}

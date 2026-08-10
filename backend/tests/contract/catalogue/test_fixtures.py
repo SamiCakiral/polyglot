@@ -15,7 +15,6 @@ from polyglot.modules.catalogue.core.fixtures import (
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 
-
 ROOT = Path(__file__).resolve().parents[4]
 FIXTURE = ROOT / "fixtures/canonical/FX-CATALOGUE-IT"
 MANIFEST_SCHEMA = json.loads(

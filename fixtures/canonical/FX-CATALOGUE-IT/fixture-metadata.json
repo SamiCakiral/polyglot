@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 2004,
+  "clock": "2026-01-15T12:00:00+00:00",
+  "payloads": {
+    "catalogue.json": "sha256:745b1bf332bf845e46572b2fa88dee146536e6f8328bcda9623f555915149041"
+  },
+  "oracles": [
+    "published_revisions_immutable",
+    "required_prerequisites_acyclic",
+    "diacritics_preserved",
+    "forms_analyses_and_senses_distinct",
+    "pilot_scope_only"
+  ],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}

@@ -28,6 +28,7 @@ def test_installed_wheel_contains_contracts_and_runs_its_own_migrations(
         "polyglot/migrations/env.py",
         "polyglot/migrations/versions/0001_platform.py",
         "polyglot/migrations/versions/0002_identity.py",
+        "polyglot/migrations/versions/0003_catalogue.py",
         "polyglot/platform/contracts/envelope.schema.json",
         "polyglot/platform/contracts/event-catalogue.yaml",
     } <= names

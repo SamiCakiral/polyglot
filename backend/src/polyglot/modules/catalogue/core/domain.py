@@ -1,3 +1,4 @@
+import unicodedata
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from enum import StrEnum
@@ -79,6 +80,43 @@ def require_revision_number(value: int) -> None:
 def require_stable_code(value: str, field: str) -> None:
     if not value or len(value) > 120 or any(character.isspace() for character in value):
         raise _invalid(f"{field} must be a non-empty stable code")
+
+
+@dataclass(frozen=True, slots=True)
+class LanguageVariety:
+    variety_id: UUID
+    language_tag: str
+    region_code: str | None
+    script_codes: tuple[str, ...]
+    text_direction: str
+    segmentation_policy_revision_id: UUID
+    media_capabilities: tuple[str, ...]
+    normalization_policy_revision_id: UUID
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.variety_id, "variety_id")
+        require_uuid7(
+            self.segmentation_policy_revision_id,
+            "segmentation_policy_revision_id",
+        )
+        require_uuid7(
+            self.normalization_policy_revision_id,
+            "normalization_policy_revision_id",
+        )
+        if "-" not in self.language_tag or not self.script_codes:
+            raise _invalid("language variety requires a regional tag and script")
+        if self.text_direction not in {"ltr", "rtl"}:
+            raise _invalid("text direction is not canonical")
+
+
+@dataclass(frozen=True, slots=True)
+class LanguagePack:
+    pack_id: UUID
+    pack_code: str
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.pack_id, "pack_id")
+        require_stable_code(self.pack_code, "pack_code")
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,3 +249,149 @@ class SkillPrerequisiteEdge:
             if self.edge_type is PrerequisiteEdgeType.REQUIRED:
                 raise DomainError(ErrorCode.PREREQUISITE_CYCLE)
             raise _invalid("a prerequisite edge cannot reference itself")
+
+
+@dataclass(frozen=True, slots=True)
+class CommunicativeFunctionRevision:
+    function_revision_id: UUID
+    function_id: UUID
+    revision_no: int
+    function_code: str
+    label: str
+    realizations: tuple[str, ...]
+    status: ContentRevisionStatus
+    provenance_id: UUID
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.function_revision_id, "function_revision_id")
+        require_uuid7(self.function_id, "function_id")
+        require_uuid7(self.provenance_id, "provenance_id")
+        require_revision_number(self.revision_no)
+        require_stable_code(self.function_code, "function_code")
+        if not self.label or not self.realizations:
+            raise _invalid("communicative function content must be non-empty")
+
+
+@dataclass(frozen=True, slots=True)
+class GrammarPattern:
+    pattern_id: UUID
+    pattern_code: str
+    template: str
+    slots: tuple[str, ...]
+    instantiation_rules: tuple[tuple[str, str], ...]
+    examples: tuple[str, ...]
+    counterexamples: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.pattern_id, "pattern_id")
+        require_stable_code(self.pattern_code, "pattern_code")
+        if not self.template or not self.examples:
+            raise _invalid("grammar pattern requires a template and examples")
+        if len(dict(self.instantiation_rules)) != len(self.instantiation_rules):
+            raise _invalid("grammar pattern rules must have unique keys")
+
+
+@dataclass(frozen=True, slots=True)
+class GrammarStructureRevision:
+    structure_revision_id: UUID
+    structure_id: UUID
+    revision_no: int
+    structure_code: str
+    function_code: str
+    constraints: tuple[tuple[str, str], ...]
+    contrasts: tuple[str, ...]
+    typical_errors: tuple[str, ...]
+    variants: tuple[str, ...]
+    patterns: tuple[GrammarPattern, ...]
+    status: ContentRevisionStatus
+    provenance_id: UUID
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.structure_revision_id, "structure_revision_id")
+        require_uuid7(self.structure_id, "structure_id")
+        require_uuid7(self.provenance_id, "provenance_id")
+        require_revision_number(self.revision_no)
+        require_stable_code(self.structure_code, "structure_code")
+        require_stable_code(self.function_code, "function_code")
+        if not self.patterns:
+            raise _invalid("grammar structure requires at least one pattern")
+        pattern_codes = {pattern.pattern_code for pattern in self.patterns}
+        if len(pattern_codes) != len(self.patterns):
+            raise _invalid("grammar pattern codes must be unique per structure")
+
+
+@dataclass(frozen=True, slots=True)
+class LexicalSenseRevision:
+    sense_revision_id: UUID
+    sense_id: UUID
+    revision_no: int
+    sense_code: str
+    definition: str
+    domains: tuple[str, ...]
+    register: str | None
+    status: ContentRevisionStatus
+    provenance_id: UUID
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.sense_revision_id, "sense_revision_id")
+        require_uuid7(self.sense_id, "sense_id")
+        require_uuid7(self.provenance_id, "provenance_id")
+        require_revision_number(self.revision_no)
+        require_stable_code(self.sense_code, "sense_code")
+        if not self.definition or not self.domains:
+            raise _invalid("lexical sense requires a definition and domain")
+
+
+@dataclass(frozen=True, slots=True)
+class FormAnalysis:
+    form_analysis_id: UUID
+    surface: str
+    features: tuple[tuple[str, str], ...]
+    pronunciation_refs: tuple[UUID, ...]
+    normalization_key: str
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.form_analysis_id, "form_analysis_id")
+        if not self.surface:
+            raise _invalid("surface form must be non-empty")
+        expected_key = unicodedata.normalize("NFC", self.surface).casefold()
+        if self.normalization_key != expected_key:
+            raise _invalid("normalization key must preserve NFC diacritics")
+        if len(dict(self.features)) != len(self.features):
+            raise _invalid("morphological feature keys must be unique")
+        for pronunciation_ref in self.pronunciation_refs:
+            require_uuid7(pronunciation_ref, "pronunciation_refs")
+
+
+@dataclass(frozen=True, slots=True)
+class LexicalUnitRevision:
+    unit_revision_id: UUID
+    lexical_unit_id: UUID
+    revision_no: int
+    lemma: str
+    unit_type: LexicalUnitType
+    part_of_speech: str
+    register: str | None
+    senses: tuple[LexicalSenseRevision, ...]
+    forms: tuple[FormAnalysis, ...]
+    components: tuple[str, ...]
+    status: ContentRevisionStatus
+    provenance_id: UUID
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.unit_revision_id, "unit_revision_id")
+        require_uuid7(self.lexical_unit_id, "lexical_unit_id")
+        require_uuid7(self.provenance_id, "provenance_id")
+        require_revision_number(self.revision_no)
+        if not self.lemma or not self.part_of_speech or not self.senses or not self.forms:
+            raise _invalid("lexical unit revision is incomplete")
+        if self.unit_type is LexicalUnitType.MULTIWORD_EXPRESSION:
+            if len(self.components) < 2:
+                raise _invalid("multiword expressions require ordered components")
+        elif self.components:
+            raise _invalid("only multiword expressions may have components")
+        if len({sense.sense_code for sense in self.senses}) != len(self.senses):
+            raise _invalid("lexical sense codes must be unique per unit")
+        form_keys = {(form.surface, form.features) for form in self.forms}
+        if len(form_keys) != len(self.forms):
+            raise _invalid("form analyses must be unique per unit")
