@@ -1,10 +1,28 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page }, testInfo) => {
   await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
   await page.goto("/today");
   await expect(page.getByRole("heading", { level: 1, name: "Aujourd'hui" })).toBeVisible();
+
+  if (testInfo.project.name === "browser-zoom-200") {
+    await page.evaluate(() => {
+      const heading = document.querySelector("h1");
+      const accountControl = document.querySelector(".account-nav a");
+      if (!(heading instanceof HTMLElement) || !(accountControl instanceof HTMLElement)) {
+        throw new Error("Missing shell zoom probes");
+      }
+      document.documentElement.dataset.baselineHeadingHeight = String(
+        heading.getBoundingClientRect().height,
+      );
+      document.documentElement.dataset.baselineControlHeight = String(
+        accountControl.getBoundingClientRect().height,
+      );
+      document.documentElement.style.zoom = "2";
+    });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+  }
 });
 
 test("keeps the shell inside the viewport without truncated mobile labels", async ({
@@ -15,10 +33,9 @@ test("keeps the shell inside the viewport without truncated mobile labels", asyn
     scrollWidth: document.documentElement.scrollWidth,
   }));
   expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
-  if (testInfo.project.name === "zoom-200") {
+  if (testInfo.project.name === "reflow-720") {
     expect(testInfo.project.metadata).toMatchObject({
-      physicalViewportWidth: 1440,
-      zoomPercent: 200,
+      effectiveViewportWidth: 720,
     });
     expect(metrics.clientWidth).toBe(720);
   }
@@ -26,19 +43,33 @@ test("keeps the shell inside the viewport without truncated mobile labels", asyn
   const mobileLabels = page.locator(".mobile-navigation__label");
   const labelCount = await mobileLabels.count();
   expect(labelCount).toBe(5);
-  for (let index = 0; index < labelCount; index += 1) {
-    const style = await mobileLabels.nth(index).evaluate((element) => {
-      const computed = getComputedStyle(element);
-      return {
-        overflow: computed.overflow,
-        textOverflow: computed.textOverflow,
-        whiteSpace: computed.whiteSpace,
-      };
-    });
-    expect(style.textOverflow).not.toBe("ellipsis");
+  if (testInfo.project.name === "shell-320") {
+    for (let index = 0; index < labelCount; index += 1) {
+      const label = mobileLabels.nth(index);
+      await expect(label).toBeVisible();
+      const geometry = await label.evaluate((element) => {
+        const labelBox = element.getBoundingClientRect();
+        const linkBox = element.parentElement?.getBoundingClientRect();
+        return {
+          clientHeight: element.clientHeight,
+          clientWidth: element.clientWidth,
+          labelBox: labelBox.toJSON(),
+          linkBox: linkBox?.toJSON(),
+          scrollHeight: element.scrollHeight,
+          scrollWidth: element.scrollWidth,
+        };
+      });
+      expect(geometry.clientWidth).toBeGreaterThan(1);
+      expect(geometry.clientHeight).toBeGreaterThan(1);
+      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+      expect(geometry.scrollHeight).toBeLessThanOrEqual(geometry.clientHeight);
+      expect(geometry.linkBox).toBeDefined();
+      expect(geometry.labelBox.left).toBeGreaterThanOrEqual(geometry.linkBox?.left ?? 0);
+      expect(geometry.labelBox.right).toBeLessThanOrEqual(geometry.linkBox?.right ?? 0);
+    }
   }
 
-  if (metrics.clientWidth < 1024) {
+  if (["shell-320", "shell-768", "reflow-720"].includes(testInfo.project.name)) {
     const mobileNavigation = page.getByRole("navigation", { name: "Navigation mobile" });
     for (const label of [
       "Aujourd'hui",
@@ -49,6 +80,39 @@ test("keeps the shell inside the viewport without truncated mobile labels", asyn
     ]) {
       await expect(mobileNavigation.getByRole("link", { name: label })).toHaveCount(1);
     }
+  }
+
+  if (testInfo.project.name === "browser-zoom-200") {
+    const zoomEvidence = await page.evaluate(() => {
+      const heading = document.querySelector("h1");
+      const accountControl = document.querySelector(".account-nav a");
+      if (!(heading instanceof HTMLElement) || !(accountControl instanceof HTMLElement)) {
+        throw new Error("Missing zoomed shell probes");
+      }
+      return {
+        baselineControlHeight: Number(
+          document.documentElement.dataset.baselineControlHeight,
+        ),
+        baselineHeadingHeight: Number(
+          document.documentElement.dataset.baselineHeadingHeight,
+        ),
+        controlHeight: accountControl.getBoundingClientRect().height,
+        headingHeight: heading.getBoundingClientRect().height,
+        zoom: getComputedStyle(document.documentElement).zoom,
+      };
+    });
+    expect(zoomEvidence.zoom).toBe("2");
+    expect(zoomEvidence.headingHeight).toBeGreaterThanOrEqual(
+      zoomEvidence.baselineHeadingHeight * 1.9,
+    );
+    expect(zoomEvidence.controlHeight).toBeGreaterThanOrEqual(
+      zoomEvidence.baselineControlHeight * 1.9,
+    );
+    await expect(
+      page.getByRole("navigation", { name: "Navigation principale" }).getByRole("link"),
+    ).toHaveCount(6);
+    await expect(page.getByRole("navigation", { name: "Actions du compte" }).getByRole("link"))
+      .toHaveCount(2);
   }
 
   await page.screenshot({
@@ -84,6 +148,28 @@ test("keeps shell navigation operable from the keyboard", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Apprendre" })).toBeVisible();
 });
 
+test("shows accessible tooltips on compact icon controls", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "shell-compact", "Compact rail only");
+
+  const primaryNavigation = page.getByRole("navigation", { name: "Navigation principale" });
+  const learnLink = primaryNavigation.getByRole("link", { name: "Apprendre" });
+  await learnLink.focus();
+  await expect(page.getByRole("tooltip", { name: "Apprendre" })).toBeVisible();
+
+  const progressLink = primaryNavigation.getByRole("link", { name: "Progression" });
+  await progressLink.hover();
+  await expect(page.getByRole("tooltip", { name: "Progression" })).toBeVisible();
+
+  const accountNavigation = page.getByRole("navigation", { name: "Actions du compte" });
+  const settingsLink = accountNavigation.getByRole("link", { name: "Préférences" });
+  await settingsLink.focus();
+  await expect(page.getByRole("tooltip", { name: "Préférences" })).toBeVisible();
+
+  const profileLink = accountNavigation.getByRole("link", { name: "Profil de langue" });
+  await profileLink.hover();
+  await expect(page.getByRole("tooltip", { name: "Profil de langue" })).toBeVisible();
+});
+
 test("has no serious, critical, or color contrast axe violation", async ({ page }) => {
   const results = await new AxeBuilder({ page }).include(".app-shell").analyze();
   const blockingViolations = results.violations.filter(
@@ -101,7 +187,7 @@ test("does not enable browser mocks without explicit opt-in", async ({ page }, t
   await expect(page.getByRole("heading", { level: 1, name: "Aujourd'hui" })).toHaveCount(0);
 });
 
-test("rejects unexpected requests while contract mocks are enabled", async ({ page }, testInfo) => {
+test("fails closed with a mocked 500 for an unexpected request", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "shell-320", "Mock mode is viewport-independent");
   const result = await page.evaluate(async () => {
     try {

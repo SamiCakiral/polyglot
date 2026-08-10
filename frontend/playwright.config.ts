@@ -41,11 +41,17 @@ export default defineConfig({
   projects: [
     { name: "shell-320", use: { viewport: { width: 320, height: 720 } } },
     { name: "shell-768", use: { viewport: { width: 768, height: 900 } } },
+    { name: "shell-compact", use: { viewport: { width: 1100, height: 900 } } },
     { name: "shell-1440", use: { viewport: { width: 1440, height: 900 } } },
     {
-      name: "zoom-200",
-      metadata: { physicalViewportWidth: 1440, zoomPercent: 200 },
+      name: "reflow-720",
+      metadata: { effectiveViewportWidth: 720 },
       use: { viewport: { width: 720, height: 450 } },
+    },
+    {
+      name: "browser-zoom-200",
+      metadata: { cssZoom: 2, zoomPercent: 200 },
+      use: { viewport: { width: 1440, height: 900 } },
     },
   ],
 });
