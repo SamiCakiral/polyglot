@@ -1,8 +1,8 @@
 import hashlib
 import json
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Iterator
 from typing import Any, cast
 from uuid import UUID
 

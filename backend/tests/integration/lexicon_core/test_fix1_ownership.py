@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from polyglot.bootstrap.database import migration_database_url_from_environment
@@ -184,7 +185,7 @@ async def test_schema_rejects_cross_profile_child_fk_even_with_same_account(
             ),
             {"id": uid(3010), "profile": uid(11), "fp": "f" * 64, "now": NOW},
         )
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             await session.execute(
                 text(
                     "INSERT INTO lexicon.lexical_mentions "
