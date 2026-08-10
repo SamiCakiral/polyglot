@@ -461,6 +461,40 @@ async def test_local_authentication_uses_valid_dummy_hash_for_unknown_identifier
     await engine.dispose()
 
 
+async def test_timing_padding_value_never_authenticates_an_incomplete_command(
+    database_url: str,
+) -> None:
+    engine = create_async_engine(database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    service = build_service(factory)
+    module = application()
+    await service.register_account(
+        module.RegisterAccount(
+            provider_type="local_password",
+            identifier="padding@example.test",
+            password="invalid credential padding",
+            authorization_code=None,
+            idempotency_key="register-padding",
+            context=context(module),
+        )
+    )
+
+    with pytest.raises(DomainError) as captured:
+        await service.authenticate_session(
+            module.AuthenticateSession(
+                provider_type="local_password",
+                identifier="padding@example.test",
+                password=None,
+                authorization_code=None,
+                idempotency_key="missing-password",
+                context=context(module),
+            )
+        )
+
+    assert captured.value.code is ErrorCode.INVALID_CREDENTIALS
+    await engine.dispose()
+
+
 async def test_authentication_throttles_source_and_identifier_with_bounded_state(
     database_url: str,
 ) -> None:
