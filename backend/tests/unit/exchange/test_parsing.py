@@ -38,8 +38,7 @@ def test_lexicon_json_parses_to_versioned_intermediate_rows() -> None:
 
 def test_generic_qa_csv_requires_declared_columns_and_is_deterministic() -> None:
     payload = (
-        f"question,answer,variety_id\n"
-        f"Dov'è la stazione?,Où est la gare ? ,{VARIETY}\n"
+        f"question,answer,variety_id\nDov'è la stazione?,Où est la gare ? ,{VARIETY}\n"
     ).encode()
 
     first = parse_import(payload, "polyglot.generic.qa/v1", "utf-8", ParseLimits())
@@ -106,3 +105,12 @@ def test_parser_enforces_row_and_depth_limits_before_preview() -> None:
 
     assert rows_error.value.code is ErrorCode.SIZE_LIMIT_EXCEEDED
     assert depth_error.value.code is ErrorCode.SIZE_LIMIT_EXCEEDED
+
+
+def test_normative_parser_limits_are_locked() -> None:
+    assert ParseLimits() == ParseLimits(
+        max_bytes=20 * 1024 * 1024,
+        max_rows=100_000,
+        max_depth=32,
+        max_string_length=32 * 1024,
+    )

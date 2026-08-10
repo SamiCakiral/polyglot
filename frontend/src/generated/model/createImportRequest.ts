@@ -10,7 +10,7 @@ export interface CreateImportRequest {
   archive?: boolean;
   /**
    * @minLength 1
-   * @maxLength 14000000
+   * @maxLength 70000000
    */
   content_base64: string;
   created_at: string;

@@ -82,3 +82,12 @@ def test_commit_request_cannot_self_assert_catalogue_freshness() -> None:
     schema = document["components"]["schemas"][schema_ref["$ref"].rsplit("/", 1)[-1]]
     assert "current_catalogue_version" not in schema["properties"]
     assert "catalogue_version" not in schema["properties"]
+
+
+def test_import_upload_boundary_matches_archive_limit() -> None:
+    document = create_app(test_mode=True).openapi()
+    operation = document["paths"]["/api/v1/language-profiles/{profile_id}/imports"]["post"]
+    schema_ref = operation["requestBody"]["content"]["application/json"]["schema"]
+    schema = document["components"]["schemas"][schema_ref["$ref"].rsplit("/", 1)[-1]]
+
+    assert schema["properties"]["content_base64"]["maxLength"] == 70_000_000

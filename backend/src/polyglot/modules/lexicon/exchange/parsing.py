@@ -27,10 +27,10 @@ SUPPORTED_FORMATS = frozenset(
 
 @dataclass(frozen=True, slots=True)
 class ParseLimits:
-    max_bytes: int = 10 * 1024 * 1024
-    max_rows: int = 10_000
-    max_depth: int = 20
-    max_string_length: int = 65_536
+    max_bytes: int = 20 * 1024 * 1024
+    max_rows: int = 100_000
+    max_depth: int = 32
+    max_string_length: int = 32 * 1024
 
 
 @dataclass(frozen=True, slots=True)

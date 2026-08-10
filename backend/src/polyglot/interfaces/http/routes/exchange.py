@@ -126,7 +126,7 @@ class PublishVocabularyListSnapshotRequest(ClosedModel):
 class CreateImportRequest(ClosedModel):
     format_id: str = Field(min_length=1, max_length=80)
     encoding: str = Field(min_length=1, max_length=40)
-    content_base64: str = Field(min_length=1, max_length=14_000_000)
+    content_base64: str = Field(min_length=1, max_length=70_000_000)
     archive: bool = False
     strategy: ImportStrategy
     created_at: datetime
@@ -655,7 +655,11 @@ def exchange_router(
                 ErrorCode.VALIDATION_FAILED, detail="invalid base64 import"
             ) from error
         if payload.archive:
-            raw = read_single_safe_zip_entry(raw, ImportLimits())
+            raw = read_single_safe_zip_entry(
+                raw,
+                ImportLimits(),
+                format_id=payload.format_id,
+            )
         catalogue_version = await application_service().current_catalogue_version(
             current.account_id, profile_id
         )
