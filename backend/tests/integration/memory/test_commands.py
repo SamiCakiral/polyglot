@@ -2,11 +2,11 @@ import asyncio
 from uuid import UUID
 
 import pytest
-from polyglot.modules.lexicon.memory.persistence import SqlMemoryService
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.lexicon.memory.application import CreateMemoryPrompt
+from polyglot.modules.lexicon.memory.persistence import SqlMemoryService
 from polyglot.modules.lexicon.memory.policy import SchedulerPolicy
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -33,6 +33,10 @@ def create_command(prompt_id: UUID | None = None) -> CreateMemoryPrompt:
 
 
 async def counts(session: AsyncSession, prompt_id) -> tuple[int, int, int, int]:
+    await session.execute(
+        text("SELECT set_config('app.user_id', :account_id, false)"),
+        {"account_id": str(ACCOUNT_A)},
+    )
     return tuple(
         int(value)
         for value in (
@@ -100,7 +104,11 @@ async def test_two_reviews_on_same_version_yield_one_success_and_one_conflict(
             return await service.submit_review(
                 ACCOUNT_A,
                 prompt.prompt.prompt_id,
-                review_command(uid(321 + index), opportunity_id=uid(331 + index)),
+                review_command(
+                    uid(321 + index),
+                    opportunity_id=uid(331 + index),
+                    target_revision_id=uid(302),
+                ),
                 policy,
                 expected_version=prompt.prompt.version,
                 idempotency_key=f"concurrent-review-{index}",
@@ -111,6 +119,42 @@ async def test_two_reviews_on_same_version_yield_one_success_and_one_conflict(
     outcomes = await asyncio.gather(invoke(0), invoke(1))
     assert sum(not isinstance(outcome, ErrorCode) for outcome in outcomes) == 1
     assert ErrorCode.VERSION_CONFLICT in outcomes
+
+
+async def test_uncertified_review_is_idempotent_without_learning_event(
+    runtime_factory,
+    migration_session: AsyncSession,
+    review_command,
+) -> None:
+    service = SqlMemoryService(runtime_factory, FsrsV6Scheduler())
+    policy = SchedulerPolicy.default()
+    prompt = await service.create(
+        ACCOUNT_A,
+        create_command(uid(335)),
+        policy,
+        idempotency_key="uncertified-create",
+    )
+
+    unchanged = await service.submit_review(
+        ACCOUNT_A,
+        prompt.prompt.prompt_id,
+        review_command(uid(336)),
+        policy,
+        expected_version=prompt.prompt.version,
+        idempotency_key="uncertified-review",
+    )
+    replay = await service.submit_review(
+        ACCOUNT_A,
+        prompt.prompt.prompt_id,
+        review_command(uid(336)),
+        policy,
+        expected_version=prompt.prompt.version,
+        idempotency_key="uncertified-review",
+    )
+
+    assert unchanged == prompt
+    assert replay == prompt
+    assert await counts(migration_session, prompt.prompt.prompt_id) == (1, 2, 1, 1)
 
 
 async def test_failure_before_commit_rolls_back_fact_projection_receipt_event_and_outbox(

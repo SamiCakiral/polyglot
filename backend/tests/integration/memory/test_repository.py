@@ -1,10 +1,10 @@
 from dataclasses import replace
 
 import pytest
-from polyglot.modules.lexicon.memory.persistence import SqlMemoryRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.lexicon.memory.application import MemoryLifecycle
+from polyglot.modules.lexicon.memory.persistence import SqlMemoryRepository
 from polyglot.modules.lexicon.memory.policy import SchedulerPolicy
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -81,3 +81,40 @@ async def test_repository_appends_review_and_replaces_only_projection(
     loaded = await repository.get(PROFILE_A, before.prompt.prompt_id)
     assert loaded == after
     assert len(loaded.reviews) == 1
+
+
+async def test_repository_rejects_divergent_payload_for_existing_fact(
+    migration_session: AsyncSession,
+    runtime_session: AsyncSession,
+    review_command,
+) -> None:
+    await seed_profiles(migration_session)
+    policy = SchedulerPolicy.default()
+    before = new_aggregate(prompt_id=uid(130))
+    after = MemoryLifecycle(FsrsV6Scheduler()).submit_review(
+        before,
+        review_command(uid(131)),
+        policy,
+    ).aggregate
+    await set_actor(runtime_session, ACCOUNT_A)
+    repository = SqlMemoryRepository(runtime_session)
+    await repository.add(before)
+    await repository.save(
+        after,
+        expected_prompt_version=before.prompt.version,
+        expected_projection_version=before.schedule.projection_version,
+    )
+    await runtime_session.commit()
+
+    divergent = replace(
+        after,
+        reviews=(replace(after.reviews[0], correction_ref="correction:divergent"),),
+    )
+    await set_actor(runtime_session, ACCOUNT_A)
+    with pytest.raises(DomainError) as error:
+        await repository.save(
+            divergent,
+            expected_prompt_version=after.prompt.version,
+            expected_projection_version=after.schedule.projection_version,
+        )
+    assert error.value.code is ErrorCode.IDEMPOTENCY_CONFLICT

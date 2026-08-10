@@ -1,6 +1,7 @@
-from polyglot.modules.lexicon.memory.persistence import SqlMemoryRepository
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from polyglot.modules.lexicon.memory.persistence import SqlMemoryRepository
 
 from .conftest import (
     ACCOUNT_A,

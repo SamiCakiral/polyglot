@@ -35,9 +35,13 @@ def include_object(
     reflected: bool,
     compare_to: object | None,
 ) -> bool:
-    """W03 uses audited SQL DDL for RLS policies/triggers outside Alembic metadata."""
+    """Audited SQL DDL owns schemas with RLS policies and append-only triggers."""
     del name, type_, reflected, compare_to
-    return getattr(object_, "schema", None) not in {"language_profiles", "lexicon"}
+    return getattr(object_, "schema", None) not in {
+        "language_profiles",
+        "lexicon",
+        "memory",
+    }
 
 
 def database_url() -> str:

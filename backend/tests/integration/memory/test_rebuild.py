@@ -1,8 +1,9 @@
 import pytest
-from polyglot.modules.lexicon.memory.persistence import SqlMemoryRepository
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.lexicon.memory.application import MemoryLifecycle, ResetMemoryPrompt
+from polyglot.modules.lexicon.memory.persistence import SqlMemoryRepository
 from polyglot.modules.lexicon.memory.policy import SchedulerPolicy
 from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 from polyglot.modules.lexicon.memory.rebuild import rebuild_schedule
@@ -40,6 +41,19 @@ async def test_loaded_history_rebuilds_to_identical_projection(
     repository = SqlMemoryRepository(runtime_session)
     await repository.add(aggregate)
     await runtime_session.commit()
+
+    await set_actor(runtime_session, ACCOUNT_A)
+    await runtime_session.execute(
+        text(
+            "UPDATE memory.memory_prompts "
+            "SET aggregate_payload = aggregate_payload "
+            "  - 'reviews' - 'resets' - 'resumptions' - 'lineages' "
+            "WHERE prompt_id=:prompt"
+        ),
+        {"prompt": aggregate.prompt.prompt_id},
+    )
+    await runtime_session.commit()
+    await set_actor(runtime_session, ACCOUNT_A)
 
     loaded = await repository.get(PROFILE_A, aggregate.prompt.prompt_id)
     assert loaded is not None

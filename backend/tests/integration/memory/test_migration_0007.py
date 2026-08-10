@@ -88,7 +88,7 @@ async def test_due_index_restrict_fks_and_runtime_grants(
         (
             await migration_session.execute(
                 text(
-                    "SELECT confdeltype FROM pg_constraint constraint_row "
+                        "SELECT confdeltype::text FROM pg_constraint constraint_row "
                     "JOIN pg_class table_row ON table_row.oid=constraint_row.conrelid "
                     "JOIN pg_namespace namespace_row ON namespace_row.oid=table_row.relnamespace "
                     "WHERE namespace_row.nspname='memory' AND constraint_row.contype='f'"

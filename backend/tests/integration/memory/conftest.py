@@ -41,7 +41,7 @@ NATIVE_VARIETY = uid(22)
 
 async def set_actor(session: AsyncSession, account_id: UUID | None) -> None:
     await session.execute(
-        text("SELECT set_config('app.user_id', :account_id, true)"),
+        text("SELECT set_config('app.user_id', :account_id, false)"),
         {"account_id": "" if account_id is None else str(account_id)},
     )
 
@@ -129,6 +129,7 @@ def review_command():
         review_id: UUID,
         *,
         opportunity_id: UUID | None = None,
+        target_revision_id: UUID | None = None,
     ) -> SubmitMemoryReview:
         return SubmitMemoryReview(
             review_id=review_id,
@@ -152,7 +153,7 @@ def review_command():
             certified_operation="recall",
             certified_protocol_id="certified-recall-v1",
             certified_protocol_revision=1,
-            certified_target_revision_id=uid(201),
+            certified_target_revision_id=target_revision_id or uid(201),
         )
 
     return build
