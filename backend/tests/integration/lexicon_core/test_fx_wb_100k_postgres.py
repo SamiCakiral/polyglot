@@ -1,8 +1,11 @@
 import statistics
+import time
 from pathlib import Path
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from polyglot.interfaces.http.routes.word_bank import SqlWordBankService
 from polyglot.modules.lexicon.core.fixtures import (
     load_word_bank_fixture,
     materialize_word_bank_fixture,
@@ -63,5 +66,23 @@ async def test_fx_wb_loads_real_100k_and_meets_bounded_sql_p95(migration_session
     search_p95 = statistics.quantiles(search_times, n=20)[18]
     graph_p95 = statistics.quantiles(graph_times, n=20)[18]
 
+    factory = async_sessionmaker(migration_session.bind, expire_on_commit=False)
+    service = SqlWordBankService(factory)
+    service_times = []
+    for _ in range(25):
+        started = time.perf_counter()
+        result = await service.get_sense(
+            account_id=uid(1),
+            profile_id=uid(11),
+            sense_id=uid(500_001),
+            depth=2,
+            edge_types=("association",),
+            max_nodes=500,
+        )
+        service_times.append((time.perf_counter() - started) * 1000)
+        assert len(result.nodes) <= 500
+    service_p95 = statistics.quantiles(service_times, n=20)[18]
+
     assert search_p95 < 100, search_plan
     assert graph_p95 < 200, graph_plan
+    assert service_p95 < 200, service_times
