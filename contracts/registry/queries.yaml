@@ -118,6 +118,10 @@
     },
     {
       "method": "GET",
+      "route": "/authoring/drafts/{draft_id}"
+    },
+    {
+      "method": "GET",
       "route": "/authoring/catalogue"
     },
     {
@@ -188,6 +192,7 @@
     "GetAssessmentResult",
     "GetGenerationJob",
     "ListContentDrafts",
+    "GetContentDraft",
     "GetValidationReport",
     "GetTtsCapabilities",
     "GetMediaAvailability"

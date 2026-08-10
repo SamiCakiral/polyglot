@@ -131,6 +131,7 @@
     "GetAssessmentResult",
     "GetGenerationJob",
     "ListContentDrafts",
+    "GetContentDraft",
     "GetValidationReport",
     "GetTtsCapabilities",
     "GetMediaAvailability"
@@ -954,6 +955,10 @@
     {
       "method": "GET",
       "route": "/authoring/drafts"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring/drafts/{draft_id}"
     },
     {
       "method": "GET",

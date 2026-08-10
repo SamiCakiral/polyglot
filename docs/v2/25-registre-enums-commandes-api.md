@@ -252,7 +252,8 @@ maîtrise supplémentaires.
 `/attempts/{id}`, `/correction-cases/{id}`,
 `/language-profiles/{id}/progress`,
 `/language-profiles/{id}/recommendations`,
-`/assessments/{id}`, `/authoring/drafts`, `/authoring/catalogue`,
+`/assessments/{id}`, `/authoring/drafts`, `/authoring/drafts/{draft_id}`,
+`/authoring/catalogue`,
 `/authoring/modules`, `/authoring/content/{id}/history`,
 `/authoring/previews/{id}`, `/validation-reports/{id}`,
 `/jobs/{id}`, `/jobs/{id}/events`, `/media/{id}` et
