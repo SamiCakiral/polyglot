@@ -189,6 +189,12 @@ a {
   transform: translateX(-50%);
 }
 
+.account-nav .tooltip-anchor:last-child .control-tooltip--below {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
 .control-tooltip--rail {
   top: 50%;
   left: calc(100% + 10px);
