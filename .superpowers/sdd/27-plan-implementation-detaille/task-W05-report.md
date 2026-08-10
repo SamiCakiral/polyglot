@@ -31,15 +31,14 @@ Sur la base PostgreSQL isolée neuve `polyglot_w05_acceptance` : W05
 `36 passed`, cycle migration `0005 -> 0004 -> 0005` vert, `alembic check` vert,
 Ruff complet vert, mypy complet vert, OpenAPI vert et registre W00 vert.
 
-La matrice amont est verte pour plateforme (`114`), identité (`68`) et profils
-linguistiques (`20`). W04F reste temporairement rouge (`14 failed, 74 passed`)
-sur ses fichiers `catalogue/0003` modifiés en parallèle et hors write set W05.
+La matrice amont, rejouée par incrément sur bases isolées pour éviter les
+collisions de fixtures, est verte pour plateforme (`114`), identité (`68`),
+W04F catalogue (`88`) et profils linguistiques (`20`).
 
 ## Restes explicites
 
-1. Stabiliser W04F puis rejouer la matrice commune.
-2. Ajouter au registre W00 un événement canonique de rejet avant d'exposer la
+1. Ajouter au registre W00 un événement canonique de rejet avant d'exposer la
    décision humaine `validated -> rejected` par le service et l'API.
-3. Obtenir la revue indépendante finale et la revue linguistique humaine.
+2. Obtenir la revue indépendante finale et la revue linguistique humaine.
 
 Aucun commit n'a été poussé.

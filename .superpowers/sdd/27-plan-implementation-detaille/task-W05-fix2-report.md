@@ -7,10 +7,9 @@ Révision vérifiée : `3aca6c26442666e041cb5f8b98144da5a3e12bbc`
 
 **PASS pour le périmètre fix round 2 demandé : deux P0, T03 et T04.**
 
-L'acceptation globale du brief W05 reste **PARTIAL** pour deux dépendances hors
+L'acceptation globale du brief W05 reste **PARTIAL** pour une dépendance hors
 write set : le rejet éditorial exécutable n'a toujours aucun événement canonique
-W00, et la matrice W04F est rouge pendant une modification parallèle de
-`catalogue/0003`. Aucun de ces fichiers n'a été modifié ou indexé par W05.
+W00. Aucun fichier W00 ou W04F n'a été modifié ou indexé par W05.
 
 `P-LING` reste explicitement `pending_human`.
 
@@ -67,14 +66,15 @@ Commits RED/GREEN : `736d417`, `7774869`.
 
 ## Preuves exécutées
 
-Base isolée neuve : `polyglot_w05_acceptance`, PostgreSQL 17 local, sans DSN ni
-secret versionné.
+Bases isolées neuves : `polyglot_w05_acceptance`, `polyglot_w05_matrix2` et
+`polyglot_w05_final`, PostgreSQL 17 local, sans DSN ni secret versionné.
 
 - base vide `alembic upgrade head` : PASS jusqu'à `0005_content` ;
 - cycle isolé `0005 -> 0004_language_profiles -> 0005` : PASS ;
 - `alembic check` : PASS, aucune opération nouvelle ;
 - W01 plateforme : `114 passed` ;
 - W02 identité : `68 passed` ;
+- W04F catalogue : `88 passed` sur sa base neuve dédiée ;
 - profils linguistiques : `20 passed` ;
 - W05 complet : `36 passed` ;
 - Ruff `src tests` : PASS ;
@@ -88,14 +88,13 @@ mypy 2.3.0.
 
 ## Limites et blocages externes
 
-- W04F : `14 failed, 74 passed` pendant que ses fichiers non committés modifient
-  la table `foundation_reference_revisions` et un trigger qui attend encore
-  `blocking_facet_refs`. W05 n'a ni modifié ni indexé ces fichiers.
 - Le lancement de toute la matrice en un seul processus Pytest provoque trois
-  collisions de noms de modules. Les incréments ont été relancés séparément.
+  collisions de noms de modules. L'enchaînement W04F puis W05 dans la même base
+  provoque aussi une collision de données de fixture sur `pack_code`. Chaque
+  incrément a donc été rejoué dans un processus et une base neuve dédiés.
 - Le rejet humain `validated -> rejected` existe au domaine et dans la fixture,
   mais n'est pas exposé par le service : W00 n'autorise pour
   `ApproveContentRevision` que `content_approved` et ne définit aucun événement
   de rejet. Inventer silencieusement cet événement violerait le registre.
 - La revue finale indépendante et l'approbation éditoriale humaine restent à
-  demander après stabilisation de ces deux dépendances.
+  demander après stabilisation du contrat de rejet.
