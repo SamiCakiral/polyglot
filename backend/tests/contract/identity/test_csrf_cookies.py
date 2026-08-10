@@ -44,6 +44,11 @@ async def test_mutations_require_same_origin_and_session_bound_csrf(
             headers={"X-CSRF-Token": csrf, "If-Match": '"1"'},
             json={"interface_locale": "fr-FR"},
         )
+        missing_csrf = await client.patch(
+            "/api/v1/account/preferences",
+            headers={"Origin": ORIGIN, "If-Match": '"1"'},
+            json={"interface_locale": "fr-FR"},
+        )
         invalid_csrf = await client.patch(
             "/api/v1/account/preferences",
             headers={
@@ -54,9 +59,12 @@ async def test_mutations_require_same_origin_and_session_bound_csrf(
             json={"interface_locale": "fr-FR"},
         )
 
-    for response in (cross_origin, missing_origin, invalid_csrf):
+    for response in (cross_origin, invalid_csrf):
         assert response.status_code == 403
         assert response.json()["code"] == "forbidden"
+    for response in (missing_origin, missing_csrf):
+        assert response.status_code == 422
+        assert response.json()["code"] == "validation_failed"
 
 
 async def test_revoke_clears_cookie_and_prevents_session_replay(

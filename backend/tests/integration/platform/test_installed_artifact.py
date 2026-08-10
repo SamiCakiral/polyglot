@@ -46,6 +46,25 @@ def test_installed_wheel_contains_contracts_and_runs_its_own_migrations(
         "POLYGLOT_MIGRATION_DATABASE_URL": migration_database_url,
         "PYTHONPATH": str(target),
     }
+    environment.pop("POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE", None)
+    blocked = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "polyglot.bootstrap.migrations",
+            "round-trip",
+        ],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert blocked.returncode != 0
+    assert "disposable-environment-only" in blocked.stdout + blocked.stderr
+
+    environment["POLYGLOT_ALLOW_DESTRUCTIVE_IDENTITY_DOWNGRADE"] = "true"
     smoke = subprocess.run(
         [
             sys.executable,

@@ -16,6 +16,24 @@ def _parameter_names(operation: dict[str, object]) -> set[str]:
     }
 
 
+def _parameters(operation: dict[str, object]) -> dict[str, dict[str, object]]:
+    return {
+        parameter["name"]: parameter
+        for parameter in operation.get("parameters", [])
+        if isinstance(parameter, dict) and isinstance(parameter.get("name"), str)
+    }
+
+
+def _assert_required_string_header(operation: dict[str, object], name: str) -> None:
+    parameter = _parameters(operation)[name]
+    assert parameter["in"] == "header"
+    assert parameter["required"] is True
+    schema = parameter["schema"]
+    assert isinstance(schema, dict)
+    assert schema.get("type") == "string"
+    assert "anyOf" not in schema
+
+
 def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
     from polyglot.interfaces.http.app import create_app
     from polyglot.interfaces.http.export_openapi import validate_registry_compatibility
@@ -52,8 +70,15 @@ def test_identity_openapi_models_security_headers_union_and_rfc9457() -> None:
     assert len(credentials_schema["oneOf"]) == 2
     assert credentials_schema["discriminator"]["propertyName"] == "provider_type"
 
-    assert "Origin" in _parameter_names(paths["/api/v1/accounts"]["post"])
-    assert "Origin" in _parameter_names(paths["/api/v1/session"]["post"])
+    for method, route in (
+        ("post", "/api/v1/accounts"),
+        ("post", "/api/v1/session"),
+        ("delete", "/api/v1/session"),
+        ("put", "/api/v1/account/password"),
+        ("patch", "/api/v1/account/preferences"),
+        ("put", "/api/v1/consents/{purpose}"),
+    ):
+        _assert_required_string_header(paths[route][method], "Origin")
     for method, route in (
         ("delete", "/api/v1/session"),
         ("put", "/api/v1/account/password"),
@@ -61,7 +86,7 @@ def test_identity_openapi_models_security_headers_union_and_rfc9457() -> None:
         ("put", "/api/v1/consents/{purpose}"),
     ):
         operation = paths[route][method]
-        assert {"Origin", "X-CSRF-Token"} <= _parameter_names(operation)
+        _assert_required_string_header(operation, "X-CSRF-Token")
         assert operation["security"] == [{"SessionCookie": []}]
 
     for method, route in (
@@ -69,7 +94,14 @@ def test_identity_openapi_models_security_headers_union_and_rfc9457() -> None:
         ("patch", "/api/v1/account/preferences"),
         ("put", "/api/v1/consents/{purpose}"),
     ):
-        assert "If-Match" in _parameter_names(paths[route][method])
+        _assert_required_string_header(paths[route][method], "If-Match")
+
+    assert _parameters(paths["/api/v1/session"]["delete"])["Idempotency-Key"][
+        "required"
+    ] is False
+    assert _parameters(paths["/api/v1/account/preferences"]["patch"])[
+        "Idempotency-Key"
+    ]["required"] is False
 
     assert paths["/api/v1/session"]["get"]["security"] == [{"SessionCookie": []}]
     for status in ("401", "403", "409", "423", "429"):
@@ -101,6 +133,11 @@ def test_registry_compatibility_rejects_missing_w02_operation_and_security_detai
         parameter for parameter in operation["parameters"] if parameter["name"] != "If-Match"
     ]
     mutations.append(missing_header)
+
+    optional_header = deepcopy(document)
+    operation = optional_header["paths"]["/api/v1/account/password"]["put"]
+    _parameters(operation)["If-Match"]["required"] = False
+    mutations.append(optional_header)
 
     for mutation in mutations:
         try:
