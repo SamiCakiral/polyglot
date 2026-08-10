@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -198,10 +199,62 @@ def test_expired_rights_cannot_enter_processing_and_orphans_block_deletion() -> 
     assert asset.status is MediaStatus.QUARANTINED
     assert asset.quarantine_reason is QuarantineReason.RIGHTS_EXPIRED
 
-    deleting = reserved_asset().request_deletion()
+    deleting = asset.request_deletion()
     with pytest.raises(DomainError) as blocked:
         deleting.complete_deletion(existing_object_keys=(deleting.upload.object_key,))
     assert blocked.value.code is ErrorCode.MEDIA_STILL_REQUIRED
+
+
+@pytest.mark.parametrize(
+    "status",
+    (
+        MediaStatus.RESERVED,
+        MediaStatus.UPLOADING,
+        MediaStatus.UPLOADED,
+        MediaStatus.VERIFYING,
+        MediaStatus.PROCESSING,
+        MediaStatus.DELETING,
+        MediaStatus.DELETED,
+    ),
+)
+def test_deletion_rejects_every_non_terminal_source_state(status: MediaStatus) -> None:
+    asset = replace(reserved_asset(), status=status)
+
+    with pytest.raises(DomainError) as blocked:
+        asset.request_deletion()
+
+    assert blocked.value.code is ErrorCode.INVALID_TRANSITION
+
+
+@pytest.mark.parametrize(
+    ("status", "reason"),
+    (
+        (MediaStatus.QUARANTINED, QuarantineReason.CHECKSUM_MISMATCH),
+        (MediaStatus.READY, None),
+        (MediaStatus.REJECTED, None),
+        (MediaStatus.FAILED, None),
+    ),
+)
+def test_deletion_accepts_only_terminal_source_states(
+    status: MediaStatus,
+    reason: QuarantineReason | None,
+) -> None:
+    asset = replace(reserved_asset(), status=status, quarantine_reason=reason)
+
+    deleting = asset.request_deletion()
+
+    assert deleting.status is MediaStatus.DELETING
+
+
+def test_reservation_cancellation_is_explicit_and_skips_no_processing_gate() -> None:
+    asset = reserved_asset()
+    cancel_reservation = getattr(asset, "cancel_reservation", None)
+    assert callable(cancel_reservation)
+
+    cancelled = cancel_reservation(at=NOW + timedelta(seconds=1))
+
+    assert cancelled.status is MediaStatus.REJECTED
+    assert cancelled.updated_at == NOW + timedelta(seconds=1)
 
 
 def test_illegal_transition_never_skips_verification() -> None:
