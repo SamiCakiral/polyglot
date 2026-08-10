@@ -45,3 +45,21 @@ class LexicalMutationPort(Protocol):
         *,
         session: AsyncSession,
     ) -> tuple[str, str]: ...
+
+
+@dataclass(frozen=True, slots=True)
+class StoredPrivateArtifact:
+    media_revision_id: UUID
+    encryption_scheme: str
+    checksum_sha256: str
+
+
+class PrivateArtifactPort(Protocol):
+    async def store_encrypted_export(
+        self,
+        *,
+        export_id: UUID,
+        profile_id: UUID,
+        payload: bytes,
+        expires_at: datetime,
+    ) -> StoredPrivateArtifact: ...

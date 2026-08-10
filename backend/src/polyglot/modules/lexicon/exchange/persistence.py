@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta
+from hashlib import sha256
 from typing import Any, cast
 from uuid import UUID
 
@@ -26,6 +27,10 @@ from polyglot.modules.lexicon.exchange.domain import (
     PreviewDecision,
     create_preview,
 )
+from polyglot.modules.lexicon.exchange.exports import (
+    require_encrypted_artifact,
+    validate_export_scope,
+)
 from polyglot.modules.lexicon.exchange.lexical_adapter import SqlLexicalMutationAdapter
 from polyglot.modules.lexicon.exchange.lists import ListAssociation, ListDefinition
 from polyglot.modules.lexicon.exchange.parsing import ParseLimits, parse_import
@@ -34,6 +39,7 @@ from polyglot.modules.lexicon.exchange.ports import (
     CreateImportedLexicalEntry,
     DynamicListQueryPort,
     LexicalMutationPort,
+    PrivateArtifactPort,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
@@ -50,6 +56,7 @@ class SqlExchangeService:
         association_targets: AssociationTargetPort | None = None,
         dynamic_lists: DynamicListQueryPort | None = None,
         lexical_mutations: LexicalMutationPort | None = None,
+        private_artifacts: PrivateArtifactPort | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
@@ -57,6 +64,7 @@ class SqlExchangeService:
         self._association_targets = association_targets
         self._dynamic_lists = dynamic_lists
         self._lexical_mutations = lexical_mutations or SqlLexicalMutationAdapter(self._ids)
+        self._private_artifacts = private_artifacts
 
     async def _set_actor(self, session: AsyncSession, actor_id: UUID) -> None:
         await session.execute(
@@ -889,6 +897,7 @@ class SqlExchangeService:
             else:
                 profile_id = resource_id
                 await self._assert_owner(session, actor_id, profile_id)
+                validate_export_scope(cast(dict[str, object], payload["scope"]))
                 if session_id is None:
                     raise DomainError(ErrorCode.UNAUTHENTICATED)
                 authenticated_at = await session.scalar(
@@ -1639,6 +1648,195 @@ class SqlExchangeService:
                 {"profile": profile_id},
             )
             return f"catalogue:{version}"
+
+    async def _build_export_payload(
+        self,
+        session: AsyncSession,
+        *,
+        export_id: UUID,
+        profile_id: UUID,
+        scope: dict[str, object],
+        requested_at: datetime,
+    ) -> bytes:
+        selected = validate_export_scope(scope)
+        queries = {
+            "word_bank": (
+                "SELECT coalesce(jsonb_agg(to_jsonb(item) ORDER BY item.kind,item.id),'[]') "
+                "FROM ("
+                "SELECT 'unit' AS kind,lexical_unit_id AS id,to_jsonb(unit) AS payload "
+                "FROM lexicon.private_lexical_units unit WHERE profile_id=:profile "
+                "UNION ALL "
+                "SELECT 'sense',sense_id,to_jsonb(sense) FROM lexicon.private_lexical_senses sense "
+                "WHERE profile_id=:profile) item"
+            ),
+            "vocabulary_lists": (
+                "SELECT coalesce(jsonb_agg(to_jsonb(item) ORDER BY item.list_id),'[]') "
+                "FROM lexicon.vocabulary_lists item WHERE profile_id=:profile"
+            ),
+            "memory_prompts": (
+                "SELECT coalesce(jsonb_agg(to_jsonb(item) ORDER BY item.prompt_id),'[]') "
+                "FROM memory.memory_prompts item WHERE profile_id=:profile"
+            ),
+            "learning_history": (
+                "SELECT coalesce(jsonb_agg(to_jsonb(item) "
+                "ORDER BY item.occurred_at,item.encounter_id),"
+                "'[]') FROM lexicon.lexical_encounters item WHERE profile_id=:profile"
+            ),
+        }
+        data: dict[str, object] = {}
+        for section in selected:
+            data[section] = await session.scalar(
+                text(queries[section]),
+                {"profile": profile_id},
+            )
+        document = {
+            "format": "polyglot.user.export/v1",
+            "schema_version": 1,
+            "export_id": str(export_id),
+            "profile_id": str(profile_id),
+            "requested_at": requested_at.isoformat(),
+            "scope": list(selected),
+            "data": data,
+        }
+        return json.dumps(
+            document,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+
+    async def _fail_export(
+        self,
+        actor_id: UUID,
+        export_id: UUID,
+        *,
+        failed_at: datetime,
+    ) -> None:
+        async with self._session_factory() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            await session.execute(
+                text(
+                    "UPDATE exchange.export_runs SET status='failed',completed_at=:at,"
+                    "version=version+1 WHERE export_id=:id AND status='running'"
+                ),
+                {"id": export_id, "at": failed_at},
+            )
+
+    async def complete_export(
+        self,
+        actor_id: UUID,
+        export_id: UUID,
+        *,
+        completed_at: datetime,
+    ) -> MutationView:
+        async with self._session_factory() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            row = (
+                (
+                    await session.execute(
+                        text("SELECT * FROM exchange.export_runs WHERE export_id=:id FOR UPDATE"),
+                        {"id": export_id},
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if row is None:
+                raise DomainError(ErrorCode.NOT_FOUND)
+            if row["status"] == "ready":
+                return MutationView(export_id, row["version"], "ready")
+            if row["status"] not in {"requested", "running"}:
+                raise DomainError(ErrorCode.INVALID_TRANSITION)
+            if row["expires_at"] <= completed_at:
+                raise DomainError(ErrorCode.RUN_EXPIRED)
+            payload = await self._build_export_payload(
+                session,
+                export_id=export_id,
+                profile_id=row["profile_id"],
+                scope=row["scope"],
+                requested_at=row["requested_at"],
+            )
+            if row["status"] == "requested":
+                await session.execute(
+                    text(
+                        "UPDATE exchange.export_runs SET status='running',version=version+1 "
+                        "WHERE export_id=:id"
+                    ),
+                    {"id": export_id},
+                )
+            profile_id = row["profile_id"]
+            expires_at = row["expires_at"]
+
+        if self._private_artifacts is None:
+            await self._fail_export(actor_id, export_id, failed_at=completed_at)
+            raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+        try:
+            artifact = await self._private_artifacts.store_encrypted_export(
+                export_id=export_id,
+                profile_id=profile_id,
+                payload=payload,
+                expires_at=expires_at,
+            )
+            require_encrypted_artifact(
+                artifact.encryption_scheme,
+                artifact.checksum_sha256,
+            )
+        except Exception:
+            await self._fail_export(actor_id, export_id, failed_at=completed_at)
+            raise
+
+        manifest_checksum = sha256(payload).hexdigest()
+        async with self._session_factory() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            row = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT status,version FROM exchange.export_runs "
+                            "WHERE export_id=:id FOR UPDATE"
+                        ),
+                        {"id": export_id},
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if row is None:
+                raise DomainError(ErrorCode.NOT_FOUND)
+            if row["status"] == "ready":
+                return MutationView(export_id, row["version"], "ready")
+            if row["status"] != "running":
+                raise DomainError(ErrorCode.INVALID_TRANSITION)
+            await session.execute(
+                text(
+                    "INSERT INTO exchange.export_artifacts "
+                    "(export_artifact_id,export_id,profile_id,media_revision_id,"
+                    "encryption_scheme,schema_version,created_at) VALUES "
+                    "(:artifact,:export,:profile,:media,:scheme,1,:at)"
+                ),
+                {
+                    "artifact": self._ids.new(),
+                    "export": export_id,
+                    "profile": profile_id,
+                    "media": artifact.media_revision_id,
+                    "scheme": artifact.encryption_scheme,
+                    "at": completed_at,
+                },
+            )
+            version = int(row["version"]) + 1
+            await session.execute(
+                text(
+                    "UPDATE exchange.export_runs SET status='ready',completed_at=:at,"
+                    "manifest_checksum=:checksum,version=:version WHERE export_id=:id"
+                ),
+                {
+                    "id": export_id,
+                    "at": completed_at,
+                    "checksum": manifest_checksum,
+                    "version": version,
+                },
+            )
+            return MutationView(export_id, version, "ready")
 
     async def commit_import(
         self,

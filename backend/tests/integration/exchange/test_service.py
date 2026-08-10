@@ -16,6 +16,7 @@ from polyglot.modules.lexicon.exchange.application import (
 )
 from polyglot.modules.lexicon.exchange.domain import ImportStrategy
 from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
+from polyglot.modules.lexicon.exchange.ports import StoredPrivateArtifact
 from polyglot.platform.errors import DomainError, ErrorCode
 
 from .conftest import ACCOUNT_A, ACCOUNT_B, NOW, PROFILE_A, TARGET_VARIETY, set_actor, uid
@@ -72,6 +73,27 @@ class LexicalMutationRecorder:
         return (
             f"lexical_unit:{uid(901)}",
             f"lexical_sense:{uid(902)}",
+        )
+
+
+class PrivateArtifactRecorder:
+    def __init__(self, *, encryption_scheme: str = "aes-256-gcm/v1") -> None:
+        self.encryption_scheme = encryption_scheme
+        self.calls = []
+
+    async def store_encrypted_export(
+        self,
+        *,
+        export_id,
+        profile_id,
+        payload,
+        expires_at,
+    ) -> StoredPrivateArtifact:
+        self.calls.append((export_id, profile_id, payload, expires_at))
+        return StoredPrivateArtifact(
+            media_revision_id=uid(1880),
+            encryption_scheme=self.encryption_scheme,
+            checksum_sha256="e" * 64,
         )
 
 
@@ -914,6 +936,144 @@ async def test_export_requires_recent_session_and_replays_one_request(
 
     assert requested.status == "requested"
     assert replay.resource_id == requested.resource_id
+
+
+async def test_export_becomes_ready_only_after_encrypted_private_storage(
+    runtime_factory,
+    migration_session,
+) -> None:
+    artifacts = PrivateArtifactRecorder()
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1700, 1780)),
+        private_artifacts=artifacts,
+    )
+    session_id = uid(1690)
+    await set_actor(migration_session, ACCOUNT_A)
+    await migration_session.execute(
+        text(
+            "INSERT INTO identity.auth_sessions "
+            "(session_id,account_id,session_fingerprint,csrf_secret_hash,roles_snapshot,"
+            "account_session_version,created_at,authenticated_at,last_seen_at,rotated_at,"
+            "idle_expires_at,absolute_expires_at) VALUES "
+            "(:session,:account,:fingerprint,:csrf,ARRAY['learner']::varchar[],1,"
+            ":at,:at,:at,:at,:idle,:absolute)"
+        ),
+        {
+            "session": session_id,
+            "account": ACCOUNT_A,
+            "fingerprint": "c" * 64,
+            "csrf": "d" * 64,
+            "at": NOW,
+            "idle": NOW + timedelta(hours=1),
+            "absolute": NOW + timedelta(days=7),
+        },
+    )
+    await migration_session.commit()
+    requested = await service.execute_command(
+        command_name="RequestExport",
+        actor_id=ACCOUNT_A,
+        resource_id=PROFILE_A,
+        payload={
+            "scope": {"word_bank": True, "vocabulary_lists": True},
+            "requested_at": NOW + timedelta(minutes=1),
+        },
+        idempotency_key="encrypted-export-request",
+        expected_version=None,
+        session_id=session_id,
+    )
+
+    ready = await service.complete_export(
+        ACCOUNT_A,
+        requested.resource_id,
+        completed_at=NOW + timedelta(minutes=2),
+    )
+    replay = await service.complete_export(
+        ACCOUNT_A,
+        requested.resource_id,
+        completed_at=NOW + timedelta(minutes=3),
+    )
+
+    exported = json.loads(artifacts.calls[0][2])
+    assert ready.status == "ready"
+    assert replay.status == "ready"
+    assert len(artifacts.calls) == 1
+    assert exported["format"] == "polyglot.user.export/v1"
+    assert exported["scope"] == ["vocabulary_lists", "word_bank"]
+    await set_actor(migration_session, ACCOUNT_A)
+    row = (
+        await migration_session.execute(
+            text(
+                "SELECT run.status,artifact.encryption_scheme FROM exchange.export_runs run "
+                "JOIN exchange.export_artifacts artifact USING (export_id) "
+                "WHERE run.export_id=:id"
+            ),
+            {"id": requested.resource_id},
+        )
+    ).one()
+    assert tuple(row) == ("ready", "aes-256-gcm/v1")
+
+
+async def test_plaintext_export_attestation_marks_run_failed(
+    runtime_factory,
+    migration_session,
+) -> None:
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1800, 1870)),
+        private_artifacts=PrivateArtifactRecorder(encryption_scheme="plaintext"),
+    )
+    session_id = uid(1790)
+    await set_actor(migration_session, ACCOUNT_A)
+    await migration_session.execute(
+        text(
+            "INSERT INTO identity.auth_sessions "
+            "(session_id,account_id,session_fingerprint,csrf_secret_hash,roles_snapshot,"
+            "account_session_version,created_at,authenticated_at,last_seen_at,rotated_at,"
+            "idle_expires_at,absolute_expires_at) VALUES "
+            "(:session,:account,:fingerprint,:csrf,ARRAY['learner']::varchar[],1,"
+            ":at,:at,:at,:at,:idle,:absolute)"
+        ),
+        {
+            "session": session_id,
+            "account": ACCOUNT_A,
+            "fingerprint": "f" * 64,
+            "csrf": "1" * 64,
+            "at": NOW,
+            "idle": NOW + timedelta(hours=1),
+            "absolute": NOW + timedelta(days=7),
+        },
+    )
+    await migration_session.commit()
+    requested = await service.execute_command(
+        command_name="RequestExport",
+        actor_id=ACCOUNT_A,
+        resource_id=PROFILE_A,
+        payload={"scope": {"word_bank": True}, "requested_at": NOW},
+        idempotency_key="plaintext-export-request",
+        expected_version=None,
+        session_id=session_id,
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        await service.complete_export(
+            ACCOUNT_A,
+            requested.resource_id,
+            completed_at=NOW + timedelta(minutes=1),
+        )
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+    await set_actor(migration_session, ACCOUNT_A)
+    status = await migration_session.scalar(
+        text("SELECT status FROM exchange.export_runs WHERE export_id=:id"),
+        {"id": requested.resource_id},
+    )
+    artifacts = await migration_session.scalar(
+        text("SELECT count(*) FROM exchange.export_artifacts WHERE export_id=:id"),
+        {"id": requested.resource_id},
+    )
+    assert status == "failed"
+    assert artifacts == 0
 
 
 async def test_list_association_verifies_target_and_versions_list(
