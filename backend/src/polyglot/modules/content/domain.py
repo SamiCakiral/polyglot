@@ -197,15 +197,33 @@ class ContentRevision:
         *,
         now: datetime,
     ) -> ContentRevision:
-        if self.status is not ContentRevisionStatus.DRAFT:
+        if self.status is not ContentRevisionStatus.VALIDATING:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         if outcome.status is not ValidationReportStatus.PASSED:
-            return self._with(validator_set_revision_id=outcome.validator_set_revision_id)
+            return self._with(
+                status=ContentRevisionStatus.DRAFT,
+                validator_set_revision_id=outcome.validator_set_revision_id,
+            )
         return self._with(
             status=ContentRevisionStatus.VALIDATED,
             validator_set_revision_id=outcome.validator_set_revision_id,
             validated_at=now,
         )
+
+    def start_validation(self) -> ContentRevision:
+        if self.status is not ContentRevisionStatus.DRAFT:
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+        return self._with(status=ContentRevisionStatus.VALIDATING)
+
+    def abandon(self, *, now: datetime) -> ContentRevision:
+        if self.status is not ContentRevisionStatus.DRAFT:
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+        return self._with(status=ContentRevisionStatus.ABANDONED, retired_at=now)
+
+    def reject(self, *, now: datetime) -> ContentRevision:
+        if self.status is not ContentRevisionStatus.VALIDATED:
+            raise DomainError(ErrorCode.INVALID_TRANSITION)
+        return self._with(status=ContentRevisionStatus.REJECTED, retired_at=now)
 
     def approve(self, *, actor_id: UUID, now: datetime) -> ContentRevision:
         if actor_id == self.created_by_actor_id:

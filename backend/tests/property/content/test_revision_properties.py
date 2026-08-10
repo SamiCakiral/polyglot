@@ -55,17 +55,21 @@ def test_revision_chain_preserves_each_payload_and_monotonic_numbers(texts: list
 def test_same_actor_is_never_an_approver() -> None:
     from polyglot.modules.content.domain import ContentRevision, ValidationOutcome
 
-    revision = ContentRevision.create_draft(
-        content_id=CONTENT_ID,
-        content_revision_id=identifier(9),
-        revision_no=1,
-        variety_id=VARIETY_ID,
-        created_by_actor_id=AUTHOR_ID,
-        provenance_id=PROVENANCE_ID,
-        rights_ref="rights:fixture:content",
-        payload={"schema_version": 1, "text": "Ciao."},
-        now=NOW,
-    ).start_validation().complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
+    revision = (
+        ContentRevision.create_draft(
+            content_id=CONTENT_ID,
+            content_revision_id=identifier(9),
+            revision_no=1,
+            variety_id=VARIETY_ID,
+            created_by_actor_id=AUTHOR_ID,
+            provenance_id=PROVENANCE_ID,
+            rights_ref="rights:fixture:content",
+            payload={"schema_version": 1, "text": "Ciao."},
+            now=NOW,
+        )
+        .start_validation()
+        .complete_validation(ValidationOutcome.passed(VALIDATOR_SET_ID), now=NOW)
+    )
 
     with pytest.raises(DomainError) as rejected:
         revision.approve(actor_id=AUTHOR_ID, now=NOW)

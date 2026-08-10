@@ -95,6 +95,17 @@ content_revisions = Table(
     CheckConstraint("revision_no >= 1 AND schema_version >= 1", name="ck_content_revision_numbers"),
     CheckConstraint("payload_checksum ~ '^[0-9a-f]{64}$'", name="ck_content_revision_checksum"),
     CheckConstraint(
+        "content.is_uuid7(content_revision_id) AND content.is_uuid7(content_id) "
+        "AND content.is_uuid7(provenance_id) AND content.is_uuid7(created_by_actor_id) "
+        "AND (approved_by_actor_id IS NULL OR content.is_uuid7(approved_by_actor_id)) "
+        "AND (supersedes_revision_id IS NULL OR content.is_uuid7(supersedes_revision_id))",
+        name="ck_content_revision_uuid7",
+    ),
+    CheckConstraint(
+        "approved_by_actor_id IS NULL OR approved_by_actor_id <> created_by_actor_id",
+        name="ck_content_revision_distinct_approver",
+    ),
+    CheckConstraint(
         "status IN ('draft', 'validating', 'validated', 'approved', 'published', 'retired', 'superseded', 'rejected', 'abandoned')",
         name="ck_content_revision_status",
     ),
@@ -103,6 +114,13 @@ content_revisions = Table(
         "payload->>'schema_version' ~ '^[1-9][0-9]*$' AND "
         "jsonb_typeof(pinned_revision_refs) = 'array'",
         name="ck_content_revision_payload",
+    ),
+    CheckConstraint(
+        "created_at <= COALESCE(validated_at, created_at) "
+        "AND created_at <= COALESCE(approved_at, created_at) "
+        "AND created_at <= COALESCE(published_at, created_at) "
+        "AND created_at <= COALESCE(retired_at, created_at)",
+        name="ck_content_revision_dates",
     ),
     UniqueConstraint("content_id", "revision_no", name="uq_content_revision_number"),
     schema="content",
@@ -136,7 +154,23 @@ validation_reports = Table(
     CheckConstraint(
         "summary_checksum ~ '^[0-9a-f]{64}$'", name="ck_content_validation_report_checksum"
     ),
+    CheckConstraint(
+        "content.is_uuid7(report_id) AND content.is_uuid7(subject_revision_id) "
+        "AND content.is_uuid7(validator_set_revision_id)",
+        name="ck_content_validation_report_uuid7",
+    ),
+    CheckConstraint(
+        "completed_at IS NOT NULL AND completed_at >= started_at "
+        "AND status IN ('passed', 'failed', 'human_required')",
+        name="ck_content_validation_report_dates",
+    ),
     schema="content",
+)
+Index(
+    "ix_content_validation_report_revision",
+    validation_reports.c.subject_revision_id,
+    validation_reports.c.completed_at,
+    validation_reports.c.report_id,
 )
 
 validation_findings = Table(
@@ -164,6 +198,11 @@ validation_findings = Table(
         "severity IN ('blocking', 'warning', 'information', 'human_required')",
         name="ck_content_validation_finding_severity",
     ),
+    CheckConstraint(
+        "content.is_uuid7(finding_id) AND content.is_uuid7(report_id) "
+        "AND (resolved_by_revision_id IS NULL OR content.is_uuid7(resolved_by_revision_id))",
+        name="ck_content_validation_finding_uuid7",
+    ),
     UniqueConstraint("report_id", "ordinal", name="uq_content_validation_finding_ordinal"),
     schema="content",
 )
@@ -186,6 +225,12 @@ content_approval_decisions = Table(
     CheckConstraint(
         "decision IN ('approved', 'rejected') AND author_id <> reviewer_id",
         name="ck_content_approval_distinct",
+    ),
+    CheckConstraint(
+        "content.is_uuid7(approval_decision_id) "
+        "AND content.is_uuid7(content_revision_id) AND content.is_uuid7(author_id) "
+        "AND content.is_uuid7(reviewer_id)",
+        name="ck_content_approval_uuid7",
     ),
     schema="content",
 )
@@ -219,6 +264,15 @@ publication_manifests = Table(
     Column("published_at", DateTime(timezone=True), nullable=False),
     Column("retired_at", DateTime(timezone=True)),
     CheckConstraint("checksum ~ '^[0-9a-f]{64}$'", name="ck_content_publication_manifest_checksum"),
+    CheckConstraint(
+        "content.is_uuid7(publication_manifest_id) AND content.is_uuid7(content_id) "
+        "AND content.is_uuid7(content_revision_id) AND content.is_uuid7(provenance_id)",
+        name="ck_content_publication_manifest_uuid7",
+    ),
+    CheckConstraint(
+        "retired_at IS NULL OR retired_at >= published_at",
+        name="ck_content_publication_manifest_dates",
+    ),
     schema="content",
 )
 Index(
@@ -242,6 +296,10 @@ publication_manifest_entries = Table(
     Column("ordinal", Integer, primary_key=True),
     Column("referenced_revision_id", PG_UUID(as_uuid=True), nullable=False),
     Column("reference_kind", String(120), nullable=False),
+    CheckConstraint(
+        "content.is_uuid7(publication_manifest_id) AND content.is_uuid7(referenced_revision_id)",
+        name="ck_content_publication_entry_uuid7",
+    ),
     schema="content",
 )
 
@@ -260,7 +318,17 @@ historical_content_references = Table(
     Column("context_checksum", String(64), nullable=False),
     Column("recorded_at", DateTime(timezone=True), nullable=False),
     CheckConstraint("context_checksum ~ '^[0-9a-f]{64}$'", name="ck_content_history_checksum"),
+    CheckConstraint(
+        "content.is_uuid7(reference_id) AND content.is_uuid7(content_revision_id)",
+        name="ck_content_history_uuid7",
+    ),
     schema="content",
+)
+Index(
+    "ix_content_history_revision",
+    historical_content_references.c.content_revision_id,
+    historical_content_references.c.recorded_at,
+    historical_content_references.c.reference_id,
 )
 
 

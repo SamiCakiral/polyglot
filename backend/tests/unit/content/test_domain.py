@@ -55,9 +55,13 @@ def test_revising_a_draft_creates_a_new_immutable_revision() -> None:
 def test_author_cannot_approve_own_validated_revision_even_with_reviewer_role() -> None:
     from polyglot.modules.content.domain import ValidationOutcome
 
-    validated = draft().start_validation().complete_validation(
-        outcome=ValidationOutcome.passed(VALIDATOR_SET_ID),
-        now=NOW,
+    validated = (
+        draft()
+        .start_validation()
+        .complete_validation(
+            outcome=ValidationOutcome.passed(VALIDATOR_SET_ID),
+            now=NOW,
+        )
     )
 
     with pytest.raises(DomainError) as rejected:
@@ -69,9 +73,13 @@ def test_author_cannot_approve_own_validated_revision_even_with_reviewer_role() 
 def test_human_required_validation_cannot_transition_to_approval() -> None:
     from polyglot.modules.content.domain import ValidationOutcome
 
-    pending_human_review = draft().start_validation().complete_validation(
-        outcome=ValidationOutcome.human_required(VALIDATOR_SET_ID),
-        now=NOW,
+    pending_human_review = (
+        draft()
+        .start_validation()
+        .complete_validation(
+            outcome=ValidationOutcome.human_required(VALIDATOR_SET_ID),
+            now=NOW,
+        )
     )
 
     with pytest.raises(DomainError) as rejected:

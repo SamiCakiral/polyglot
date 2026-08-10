@@ -1,5 +1,3 @@
-from collections.abc import Callable
-
 import pytest
 from sqlalchemy import Table, select
 from sqlalchemy.exc import DBAPIError
@@ -78,7 +76,9 @@ async def test_revision_insert_and_updates_cannot_skip_cycle_or_self_approve(
                     content_revisions.c.content_revision_id == IDS["revision"]
                 )
             )
-        ).mappings().one()
+        )
+        .mappings()
+        .one()
     )
     values["content_revision_id"] = IDS["replacement"]
     values["revision_no"] = 2
@@ -241,7 +241,7 @@ async def test_audit_proofs_are_append_only(
     await migration_session.commit()
 
     for table in tables:
-        primary_key = tuple(table.primary_key.columns)[0]
+        primary_key = next(iter(table.primary_key.columns))
         value = await migration_session.scalar(select(primary_key).limit(1))
         statement = (
             table.update().where(primary_key == value).values(**{primary_key.name: value})
