@@ -262,7 +262,7 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
     assert blocks == 5
     assert len(measures) == 20
     assert sum(not row.evaluable and row.score is None for row in measures) == 2
-    assert gate_count == 1
+    assert gate_count == 2
     assert "foundation_gate_completed" in events
     assert outbox_count == 1
 
