@@ -244,6 +244,113 @@ async def test_role_change_and_24_hour_boundary_rotate_to_current_roles(
     await engine.dispose()
 
 
+async def test_rotation_preserves_original_absolute_boundary(
+    database_url: str,
+    migration_session: AsyncSession,
+) -> None:
+    engine = create_async_engine(database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    service = build_service(factory)
+    registered = await register_local(service)
+    authenticated = await authenticate_local(service)
+    original_deadline = authenticated.absolute_expires_at
+    await migration_session.execute(
+        text(
+            "UPDATE identity.accounts SET session_version = session_version + 1, "
+            "security_version = security_version + 1, version = version + 1 "
+            "WHERE account_id = :account_id"
+        ),
+        {"account_id": registered.account_id},
+    )
+    await migration_session.execute(
+        text(
+            "UPDATE identity.auth_sessions SET last_seen_at = :last_seen_at, "
+            "idle_expires_at = :idle_expires_at WHERE session_id = :session_id"
+        ),
+        {
+            "session_id": authenticated.session_id,
+            "last_seen_at": NOW + timedelta(hours=23),
+            "idle_expires_at": NOW + timedelta(days=1, hours=1),
+        },
+    )
+    await migration_session.commit()
+
+    rotated = await build_service(
+        factory,
+        now=NOW + timedelta(days=1),
+    ).get_current_session(authenticated.session_token)
+
+    assert rotated.absolute_expires_at == original_deadline
+    await migration_session.execute(
+        text(
+            "UPDATE identity.auth_sessions SET last_seen_at = :last_seen_at, "
+            "idle_expires_at = absolute_expires_at WHERE session_id = :session_id"
+        ),
+        {
+            "session_id": rotated.session_id,
+            "last_seen_at": original_deadline - timedelta(minutes=1),
+        },
+    )
+    await migration_session.commit()
+    with pytest.raises(DomainError) as expired:
+        await build_service(factory, now=original_deadline).get_current_session(
+            rotated.session_token
+        )
+    assert expired.value.code is ErrorCode.UNAUTHENTICATED
+    await engine.dispose()
+
+
+async def test_concurrent_rotation_creates_one_successor_and_one_set_of_facts(
+    database_url: str,
+    migration_session: AsyncSession,
+) -> None:
+    engine = create_async_engine(database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    service = build_service(factory)
+    registered = await register_local(service)
+    authenticated = await authenticate_local(service)
+    await migration_session.execute(
+        text(
+            "UPDATE identity.accounts SET session_version = session_version + 1, "
+            "security_version = security_version + 1, version = version + 1 "
+            "WHERE account_id = :account_id"
+        ),
+        {"account_id": registered.account_id},
+    )
+    await migration_session.commit()
+    services = (build_service(factory), build_service(factory))
+
+    first, second = await asyncio.gather(
+        *(candidate.get_current_session(authenticated.session_token) for candidate in services)
+    )
+
+    assert first.session_id == second.session_id
+    assert first.session_token == second.session_token
+    assert await migration_session.scalar(
+        text(
+            "SELECT count(*) FROM identity.auth_sessions "
+            "WHERE account_id = :account_id AND revoked_at IS NULL"
+        ),
+        {"account_id": registered.account_id},
+    ) == 1
+    assert await migration_session.scalar(
+        text("SELECT count(*) FROM platform.domain_events WHERE event_type = 'session_revoked'")
+    ) == 1
+    assert await migration_session.scalar(
+        text(
+            "SELECT count(*) FROM platform.domain_events "
+            "WHERE event_type = 'session_authenticated'"
+        )
+    ) == 2
+    assert await migration_session.scalar(
+        text(
+            "SELECT count(*) FROM platform.security_audit_entries "
+            "WHERE action_code = 'identity.revoke_session'"
+        )
+    ) == 1
+    await engine.dispose()
+
+
 async def test_expired_session_and_replayed_or_conflicting_consent_are_closed(
     database_url: str,
 ) -> None:

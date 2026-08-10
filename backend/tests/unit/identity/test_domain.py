@@ -200,6 +200,42 @@ def test_session_touch_is_bounded_by_absolute_expiry_and_rotation_is_exact() -> 
     assert session.requires_rotation(NOW + timedelta(minutes=1), 2)
 
 
+def test_daily_rotation_chain_preserves_original_authentication_and_absolute_deadline() -> None:
+    module = domain()
+    current = module.AuthSession.issue(
+        session_id=SESSION_ID,
+        account_id=ACCOUNT_ID,
+        session_fingerprint="a" * 64,
+        csrf_secret_hash="b" * 64,
+        roles=frozenset({module.AccountRole.LEARNER}),
+        account_session_version=1,
+        now=NOW,
+    )
+    original_deadline = NOW + timedelta(days=7)
+
+    for day in range(1, 7):
+        current = current.rotate(
+            session_id=UUID(f"019fe900-0000-7{day:03x}-8000-000000000003"),
+            session_fingerprint=f"{day:x}" * 64,
+            csrf_secret_hash=f"{day + 6:x}" * 64,
+            roles=frozenset({module.AccountRole.LEARNER}),
+            account_session_version=day + 1,
+            now=NOW + timedelta(days=day),
+        )
+        assert current.authenticated_at == NOW
+        assert current.absolute_expires_at == original_deadline
+
+    with pytest.raises(module.IdentityValidationError):
+        current.rotate(
+            session_id=UUID("019fe900-0000-7fff-8000-000000000003"),
+            session_fingerprint="e" * 64,
+            csrf_secret_hash="f" * 64,
+            roles=frozenset({module.AccountRole.LEARNER}),
+            account_session_version=8,
+            now=original_deadline,
+        )
+
+
 def test_session_revoke_is_individual_and_idempotent() -> None:
     module = domain()
     session = module.AuthSession.issue(

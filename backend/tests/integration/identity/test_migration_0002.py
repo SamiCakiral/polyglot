@@ -137,6 +137,16 @@ async def test_0002_identity_has_strict_constraints_indexes_rls_and_runtime_gran
             )
         ).scalars()
     )
+    session_columns = set(
+        (
+            await migration_session.execute(
+                text(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_schema = 'identity' AND table_name = 'auth_sessions'"
+                )
+            )
+        ).scalars()
+    )
 
     assert {
         "ck_account_uuid7",
@@ -144,10 +154,13 @@ async def test_0002_identity_has_strict_constraints_indexes_rls_and_runtime_gran
         "ck_identity_provider_shape",
         "ck_session_uuid7",
         "ck_session_expiry_order",
+        "ck_session_replacement_shape",
+        "fk_session_replacement",
         "ck_preferences_sprint_minutes",
         "ck_consent_withdrawal_shape",
         "uq_consent_account_purpose_version",
     } <= constraint_names
+    assert "replaced_by_session_id" in session_columns
     assert {
         "uq_login_identity_local_active",
         "uq_login_identity_oidc_active",

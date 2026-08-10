@@ -1,3 +1,4 @@
+import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -246,3 +247,64 @@ async def test_if_match_and_closed_request_schema_block_stale_write_and_idor(
 
     assert stale.status_code == 409 and stale.json()["code"] == "version_conflict"
     assert idor.status_code == 422 and idor.json()["code"] == "validation_failed"
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "headers", "payload"),
+    [
+        (
+            "PATCH",
+            "/api/v1/account/preferences",
+            {"If-Match": '"1"'},
+            {"interface_locale": "fr-FR"},
+        ),
+        (
+            "PUT",
+            "/api/v1/consents/speech_training",
+            {"If-Match": '"0"', "Idempotency-Key": "rotation-consent"},
+            {
+                "status": "granted",
+                "policy_revision_id": "019fe900-4000-7000-8000-000000000001",
+            },
+        ),
+    ],
+)
+async def test_authenticated_mutation_propagates_rotated_cookie_and_csrf(
+    identity_service: object,
+    method: str,
+    path: str,
+    headers: dict[str, str],
+    payload: dict[str, object],
+) -> None:
+    async with await client_for(identity_service) as client:
+        registered = await register(client)
+        authenticated = await authenticate(client)
+        old_csrf = authenticated.json()["csrf_token"]
+        old_cookie = client.cookies.get("__Host-polyglot_session")
+        engine = create_async_engine(migration_database_url_from_environment())
+        async with engine.begin() as connection:
+            await connection.execute(
+                text(
+                    "UPDATE identity.accounts SET session_version = session_version + 1, "
+                    "security_version = security_version + 1, version = version + 1 "
+                    "WHERE account_id = :account_id"
+                ),
+                {"account_id": registered.json()["account_id"]},
+            )
+        await engine.dispose()
+
+        mutation = await client.request(
+            method,
+            path,
+            headers={"Origin": ORIGIN, "X-CSRF-Token": old_csrf} | headers,
+            json=payload,
+        )
+        replacement_csrf = mutation.headers["X-CSRF-Token"]
+        replacement_cookie = client.cookies.get("__Host-polyglot_session")
+        current = await client.get("/api/v1/session")
+
+    assert mutation.status_code == 200
+    assert replacement_cookie is not None and replacement_cookie != old_cookie
+    assert replacement_csrf != old_csrf
+    assert current.status_code == 200
+    assert current.json()["csrf_token"] == replacement_csrf
