@@ -1559,7 +1559,8 @@ class SqlExchangeService:
             (
                 await session.execute(
                     text(
-                        "SELECT created_refs,reused_refs FROM exchange.import_manifests "
+                        "SELECT profile_id,created_refs,reused_refs,inverse_operations,checksum "
+                        "FROM exchange.import_manifests "
                         "WHERE import_id=:id"
                     ),
                     {"id": import_id},
@@ -1568,6 +1569,19 @@ class SqlExchangeService:
             .mappings()
             .one_or_none()
         )
+        if manifest is not None:
+            expected_manifest_checksum = self._manifest_checksum(
+                import_id=import_id,
+                profile_id=manifest["profile_id"],
+                created_refs=list(manifest["created_refs"]),
+                reused_refs=list(manifest["reused_refs"]),
+                inverse_operations=list(manifest["inverse_operations"]),
+            )
+            if manifest["checksum"] != expected_manifest_checksum:
+                raise DomainError(
+                    ErrorCode.VALIDATION_FAILED,
+                    detail="import manifest integrity check failed",
+                )
         return ImportRunView(
             import_id=row["import_id"],
             profile_id=row["profile_id"],
@@ -1580,6 +1594,28 @@ class SqlExchangeService:
             unresolved_conflicts=int(unresolved or 0),
             created_refs=() if manifest is None else tuple(manifest["created_refs"]),
             reused_refs=() if manifest is None else tuple(manifest["reused_refs"]),
+        )
+
+    @staticmethod
+    def _manifest_checksum(
+        *,
+        import_id: UUID,
+        profile_id: UUID,
+        created_refs: list[str],
+        reused_refs: list[str],
+        inverse_operations: list[dict[str, object]],
+    ) -> str:
+        return canonical_json_fingerprint(
+            cast(
+                Any,
+                {
+                    "import_id": str(import_id),
+                    "profile_id": str(profile_id),
+                    "created_refs": created_refs,
+                    "reused_refs": reused_refs,
+                    "inverse_operations": inverse_operations,
+                },
+            )
         )
 
     async def get_import(self, actor_id: UUID, import_id: UUID) -> ImportRunView:
@@ -1698,15 +1734,15 @@ class SqlExchangeService:
                     {"refs": json.dumps(refs), "line": row["import_line_id"]},
                 )
             manifest_id = self._ids.new()
-            checksum = canonical_json_fingerprint(
-                cast(
-                    Any,
-                    {
-                        "created_refs": created_refs,
-                        "reused_refs": reused_refs,
-                        "import_id": str(import_id),
-                    },
-                )
+            inverse_operations: list[dict[str, object]] = [
+                {"operation": "delete_if_exclusive", "ref": ref} for ref in created_refs
+            ]
+            checksum = self._manifest_checksum(
+                import_id=import_id,
+                profile_id=run.profile_id,
+                created_refs=created_refs,
+                reused_refs=reused_refs,
+                inverse_operations=inverse_operations,
             )
             await session.execute(
                 text(
@@ -1722,9 +1758,7 @@ class SqlExchangeService:
                     "profile": run.profile_id,
                     "created": json.dumps(created_refs),
                     "reused": json.dumps(reused_refs),
-                    "inverse": json.dumps(
-                        [{"operation": "delete_if_exclusive", "ref": ref} for ref in created_refs]
-                    ),
+                    "inverse": json.dumps(inverse_operations),
                     "checksum": checksum,
                     "at": committed_at,
                 },

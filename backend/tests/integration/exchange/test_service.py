@@ -394,6 +394,85 @@ async def test_lexical_mutation_failure_rolls_back_import_commit(
     assert manifests == 0
 
 
+async def test_tampered_import_manifest_is_rejected_before_revert(
+    runtime_factory,
+    migration_session,
+) -> None:
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1600, 1670)),
+    )
+    payload = json.dumps(
+        {
+            "format": "polyglot.lexicon.bundle/v1",
+            "schema_version": 1,
+            "entries": [
+                {
+                    "source_key": "biglietto",
+                    "variety_id": str(TARGET_VARIETY),
+                    "unit_type": "word",
+                    "form": "biglietto",
+                    "semantic_key": "transport.ticket",
+                    "visibility": "private",
+                }
+            ],
+        }
+    ).encode()
+    preview = await service.create_import(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateImport(
+            format_id="polyglot.lexicon.bundle/v1",
+            encoding="utf-8",
+            payload=payload,
+            strategy=ImportStrategy.INTERACTIVE,
+            catalogue_version="catalogue:17",
+            created_at=NOW,
+            expires_at=NOW + timedelta(hours=2),
+        ),
+        idempotency_key="tamper-preview",
+    )
+    committed = await service.commit_import(
+        ACCOUNT_A,
+        preview.import_id,
+        preview_checksum=preview.preview_checksum,
+        current_catalogue_version="catalogue:17",
+        expected_version=1,
+        committed_at=NOW + timedelta(minutes=1),
+        idempotency_key="tamper-commit",
+    )
+
+    await set_actor(migration_session, ACCOUNT_A)
+    await migration_session.execute(
+        text("ALTER TABLE exchange.import_manifests DISABLE TRIGGER USER")
+    )
+    try:
+        await migration_session.execute(
+            text(
+                "UPDATE exchange.import_manifests SET inverse_operations='[]'::jsonb "
+                "WHERE import_id=:id"
+            ),
+            {"id": preview.import_id},
+        )
+        await migration_session.commit()
+    finally:
+        await migration_session.execute(
+            text("ALTER TABLE exchange.import_manifests ENABLE TRIGGER USER")
+        )
+        await migration_session.commit()
+
+    with pytest.raises(DomainError) as rejected:
+        await service.revert_import(
+            ACCOUNT_A,
+            preview.import_id,
+            expected_version=committed.version,
+            reverted_at=NOW + timedelta(minutes=2),
+            idempotency_key="tamper-revert",
+        )
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
 async def test_stale_preview_and_reused_resource_block_commit_or_revert(
     runtime_factory,
 ) -> None:
