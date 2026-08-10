@@ -2,8 +2,8 @@
 
 # ruff: noqa: E501
 
-from dataclasses import dataclass
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated, Any, Protocol
 from uuid import UUID
