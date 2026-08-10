@@ -224,28 +224,58 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
         assert started.headers["etag"] == '"1"'
         run_id = started.json()["foundation_run_id"]
 
+        first_payload = {"answers": _correct_answers()}
+        first_headers = _headers(csrf, "foundation-session-1", 1)
         first = await client.post(
             f"/api/v1/foundation-runs/{run_id}:complete",
-            headers=_headers(csrf, "foundation-session-1", 1),
-            json={"answers": _correct_answers()},
+            headers=first_headers,
+            json=first_payload,
         )
         assert first.status_code == 200
         assert first.json()["status"] == "interrupted"
         assert first.json()["session_count"] == 1
         assert first.json()["gate_passed"] is False
         assert "two_sessions_required" in first.json()["gate_reasons"]
+        first_replay = await client.post(
+            f"/api/v1/foundation-runs/{run_id}:complete",
+            headers=first_headers,
+            json=first_payload,
+        )
+        assert first_replay.status_code == 200, first_replay.text
+        assert first_replay.json() == first.json()
+        assert first_replay.headers["etag"] == first.headers["etag"] == '"2"'
+
+        conflicting_payload = {"answers": _correct_answers()}
+        conflicting_payload["answers"][0]["answer"] = {"value": "different-answer"}
+        conflict = await client.post(
+            f"/api/v1/foundation-runs/{run_id}:complete",
+            headers=first_headers,
+            json=conflicting_payload,
+        )
+        assert conflict.status_code == 409
+        assert conflict.json()["code"] == "idempotency_conflict"
 
         clock.advance(timedelta(hours=24))
         csrf = await _authenticate(client, "session-foundations-day-2")
+        second_payload = {"answers": _correct_answers()}
+        second_headers = _headers(csrf, "foundation-session-2", 2)
         second = await client.post(
             f"/api/v1/foundation-runs/{run_id}:complete",
-            headers=_headers(csrf, "foundation-session-2", 2),
-            json={"answers": _correct_answers()},
+            headers=second_headers,
+            json=second_payload,
         )
         assert second.status_code == 200
         assert second.headers["etag"] == '"3"'
         assert second.json()["status"] == "completed"
         assert second.json()["gate_passed"] is True
+        second_replay = await client.post(
+            f"/api/v1/foundation-runs/{run_id}:complete",
+            headers=second_headers,
+            json=second_payload,
+        )
+        assert second_replay.status_code == 200, second_replay.text
+        assert second_replay.json() == second.json()
+        assert second_replay.headers["etag"] == second.headers["etag"] == '"3"'
         profile = await client.get(f"/api/v1/language-profiles/{profile_id}")
         assert profile.json()["status"] == "active"
 
@@ -296,6 +326,13 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
             ),
             {"run_id": UUID(run_id)},
         )
+        receipt_count = await connection.scalar(
+            text(
+                "SELECT count(*) FROM platform.command_receipts "
+                "WHERE command_type = 'CompleteFoundationGate' AND aggregate_id = :run_id"
+            ),
+            {"run_id": UUID(run_id)},
+        )
     await engine.dispose()
     assert blocks == 5
     assert len(measures) == 64
@@ -308,6 +345,7 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
     assert gate_count == 2
     assert "foundation_gate_completed" in events
     assert outbox_count == 1
+    assert receipt_count == 2
 
 
 async def test_foundation_commands_require_if_match_and_reject_missing_pack(
