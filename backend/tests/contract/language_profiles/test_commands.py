@@ -164,3 +164,49 @@ async def test_diagnostic_is_resumable_for_exactly_twenty_four_hours_without_cre
     assert summary.json()["status"] == "in_progress"
     assert summary.json()["expires_at"] == "2026-08-11T12:00:00Z"
     assert "mastery" not in summary.json()
+
+
+async def test_client_cannot_submit_normative_diagnostic_scores_or_force_active(
+    services: tuple[IdentityApplicationService, object],
+) -> None:
+    async with await _client(services) as client:
+        _, csrf = await _login(client, "w03-forged-placement@example.test")
+        profile = await client.post(
+            "/api/v1/language-profiles",
+            headers={"Origin": ORIGIN, "X-CSRF-Token": csrf, "Idempotency-Key": "create-forged"},
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        started = await client.post(
+            f"/api/v1/language-profiles/{profile.json()['profile_id']}/diagnostics",
+            headers={
+                "Origin": ORIGIN,
+                "X-CSRF-Token": csrf,
+                "If-Match": '"1"',
+                "Idempotency-Key": "start-forged",
+            },
+            json={
+                "policy_revision_id": "019fe900-5000-7000-8001-000000000003",
+                "pack_revision_id": "019fe900-5000-7000-8001-000000000004",
+                "seed": "offline-fixture",
+            },
+        )
+        forged = await client.post(
+            f"/api/v1/diagnostics/{started.json()['diagnostic_run_id']}/responses",
+            headers={
+                "Origin": ORIGIN,
+                "X-CSRF-Token": csrf,
+                "If-Match": '"1"',
+                "Idempotency-Key": "forge-score",
+            },
+            json={
+                "item_revision_id": "019fe900-5000-7000-8001-000000000005",
+                "ordinal": 1,
+                "answer": {"value": "ciao"},
+                "target": "foundations",
+                "score": 1,
+                "confidence": 1,
+                "evaluable": True,
+            },
+        )
+
+    assert forged.status_code == 422
