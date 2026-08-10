@@ -71,6 +71,19 @@ def validate_revision_mapping(
         (item.ordinal, reference) for item in target.days for reference in item.primary_target_refs
     }
     if (
+        target.module_id != source.module_id
+        or target.revision_no != source.revision_no + 1
+        or target.supersedes_revision_id != source.module_revision_id
+    ):
+        findings.append(
+            ValidationFinding(
+                "W11-REVISION-V1",
+                FindingSeverity.BLOCKING,
+                "revision_mapping.target_revision",
+                "module_revision_not_direct_successor",
+            )
+        )
+    if (
         mapping.source_revision_id != source.module_revision_id
         or mapping.target_revision_id != target.module_revision_id
         or not required.issubset(mapped)
@@ -93,10 +106,12 @@ def validate_revision_mapping(
             )
         )
     destinations_by_source: dict[tuple[int, str], set[tuple[int, str]]] = {}
+    sources_by_destination: dict[tuple[int, str], set[tuple[int, str]]] = {}
     for entry in entries:
         source_key = (entry.source_day_ordinal, entry.source_target_ref)
         target_key = (entry.target_day_ordinal, entry.target_target_ref)
         destinations_by_source.setdefault(source_key, set()).add(target_key)
+        sources_by_destination.setdefault(target_key, set()).add(source_key)
         if source_key not in required:
             findings.append(
                 ValidationFinding(
@@ -117,7 +132,9 @@ def validate_revision_mapping(
                     (entry.target_target_ref,),
                 )
             )
-    if any(len(destinations) > 1 for destinations in destinations_by_source.values()):
+    if any(
+        len(destinations) > 1 for destinations in destinations_by_source.values()
+    ) or any(len(sources) > 1 for sources in sources_by_destination.values()):
         findings.append(
             ValidationFinding(
                 "W11-REVISION-V1",
