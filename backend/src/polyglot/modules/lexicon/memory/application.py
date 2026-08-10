@@ -500,11 +500,40 @@ class MemoryLifecycle:
         ] = (*reviews, *resets, *resumptions)
         source_prompt_ids = {fact.prompt_id for fact in facts}
         source_prompt_ids.update(source.prompt.prompt_id for source in command.sources)
+        source_origins: dict[UUID, tuple[datetime, str, str, str, int]] = {}
+        for source in command.sources:
+            prompt = source.prompt
+            source_origins[prompt.prompt_id] = (
+                prompt.created_at,
+                prompt.scheduler_kind,
+                prompt.scheduler_version,
+                prompt.parameter_set_id,
+                prompt.policy_revision,
+            )
+            for lineage in source.lineages:
+                origin = (
+                    lineage.source_created_at,
+                    lineage.source_scheduler_kind,
+                    lineage.source_scheduler_version,
+                    lineage.source_parameter_set_id,
+                    lineage.source_policy_revision,
+                )
+                previous = source_origins.setdefault(lineage.source_prompt_id, origin)
+                if previous != origin:
+                    raise DomainError(
+                        ErrorCode.VALIDATION_FAILED,
+                        detail="conflicting source lineage metadata",
+                    )
         lineages = tuple(
             MemoryPromptLineage(
                 source_prompt_id=source_prompt_id,
                 canonical_prompt_id=command.canonical_prompt_id,
                 merged_at=merged_at,
+                source_created_at=source_origins[source_prompt_id][0],
+                source_scheduler_kind=source_origins[source_prompt_id][1],
+                source_scheduler_version=source_origins[source_prompt_id][2],
+                source_parameter_set_id=source_origins[source_prompt_id][3],
+                source_policy_revision=source_origins[source_prompt_id][4],
             )
             for source_prompt_id in sorted(source_prompt_ids, key=lambda item: item.int)
         )

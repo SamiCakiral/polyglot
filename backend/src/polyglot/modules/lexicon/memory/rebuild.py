@@ -186,6 +186,26 @@ def _validate_persisted_transition(
             )
 
 
+def _validate_chain_continuity(
+    chain: tuple[MemoryFact, ...],
+    initial_state: ScheduledState,
+    resolver: MemoryReplayResolver,
+) -> None:
+    state = initial_state
+    for fact in chain:
+        binding = _binding_for_fact(resolver, fact)
+        _validate_persisted_transition(fact, binding)
+        if isinstance(fact, MemoryScheduleReset):
+            state = binding.scheduler.initial_state(binding.policy, fact.reset_at)
+            continue
+        if fact.state_before != state:
+            raise DomainError(
+                ErrorCode.VALIDATION_FAILED,
+                detail="persisted state is detached from causal checkpoint",
+            )
+        state = fact.state_after
+
+
 @dataclass(slots=True)
 class _ReplayState:
     state: ScheduledState
@@ -272,6 +292,7 @@ def rebuild_schedule(
         )
         if facts_by_prompt:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="unowned causal history")
+        _validate_chain_continuity(ordered, replay.state, resolver)
         for fact in ordered:
             _apply_fact(replay, fact, resolver, seen_opportunities, seen_receipts)
     else:
@@ -282,11 +303,29 @@ def rebuild_schedule(
         source_events: list[tuple[datetime, int, int, MemoryFact]] = []
         for lineage in aggregate.lineages:
             source_facts = tuple(facts_by_prompt.pop(lineage.source_prompt_id, ()))
+            created_checkpoint = f"created:{lineage.source_prompt_id}"
+            merge_checkpoint = f"merge:{lineage.source_prompt_id}"
+            root_checkpoint = (
+                merge_checkpoint
+                if any(fact.previous_checkpoint == merge_checkpoint for fact in source_facts)
+                else created_checkpoint
+            )
             chain = _ordered_chain(
                 source_facts,
-                f"created:{lineage.source_prompt_id}",
-                None,
+                root_checkpoint,
+                lineage.source_created_at,
             )
+            source_binding = resolver.resolve(
+                lineage.source_scheduler_kind,
+                lineage.source_scheduler_version,
+                lineage.source_parameter_set_id,
+                lineage.source_policy_revision,
+            )
+            source_initial = source_binding.scheduler.initial_state(
+                source_binding.policy,
+                lineage.source_created_at,
+            )
+            _validate_chain_continuity(chain, source_initial, resolver)
             source_events.extend(
                 (_fact_at(fact), lineage.source_prompt_id.int, index, fact)
                 for index, fact in enumerate(chain)
@@ -310,6 +349,7 @@ def rebuild_schedule(
         )
         if facts_by_prompt:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="unowned merge history")
+        _validate_chain_continuity(canonical_chain, replay.state, resolver)
         for fact in canonical_chain:
             _apply_fact(replay, fact, resolver, seen_opportunities, seen_receipts)
 

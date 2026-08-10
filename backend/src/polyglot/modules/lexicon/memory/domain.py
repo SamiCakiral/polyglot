@@ -400,13 +400,29 @@ class MemoryPromptLineage:
     source_prompt_id: UUID
     canonical_prompt_id: UUID
     merged_at: datetime
+    source_created_at: datetime
+    source_scheduler_kind: str
+    source_scheduler_version: str
+    source_parameter_set_id: str
+    source_policy_revision: int
 
     def __post_init__(self) -> None:
         _uuid7(self.source_prompt_id, "source_prompt_id")
         _uuid7(self.canonical_prompt_id, "canonical_prompt_id")
         if self.source_prompt_id == self.canonical_prompt_id:
             raise DomainError(ErrorCode.VALIDATION_FAILED, detail="self lineage is invalid")
-        object.__setattr__(self, "merged_at", _utc(self.merged_at, "merged_at"))
+        merged_at = _utc(self.merged_at, "merged_at")
+        source_created_at = _utc(self.source_created_at, "source_created_at")
+        if source_created_at > merged_at:
+            raise DomainError(ErrorCode.VALIDATION_FAILED, detail="source created after merge")
+        _scheduler_identity(
+            self.source_scheduler_kind,
+            self.source_scheduler_version,
+            self.source_parameter_set_id,
+            self.source_policy_revision,
+        )
+        object.__setattr__(self, "merged_at", merged_at)
+        object.__setattr__(self, "source_created_at", source_created_at)
 
 
 @dataclass(frozen=True, slots=True)
