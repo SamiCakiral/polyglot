@@ -65,6 +65,28 @@ def test_fx_content_positive_fixture_covers_editorial_and_failure_oracles() -> N
         "failed",
         "human_required",
     }
+    assert sum("author" in actor.roles for actor in fixture.actors) == 3
+    assert sum("reviewer" in actor.roles for actor in fixture.actors) == 2
+    assert any(set(actor.roles) == {"author", "reviewer"} for actor in fixture.actors)
+    assert {case.case for case in fixture.linguistic_oracles} == {
+        "pronunciation_reduced_to_vocabulary",
+        "subject_pronoun_always_before_verb",
+        "essere_stare_confusion",
+        "correction_outage_counted_correct",
+        "artificial_grazie_prego_same_speaker",
+        "andare_infinitive_as_general_near_future",
+    }
+    assert all(
+        case.expected_outcome == "human_required"
+        for case in fixture.linguistic_oracles
+    )
+    assert len(fixture.historical_references) == 1
+    historical = fixture.historical_references[0]
+    assert historical.content_revision_id in {
+        revision.content_revision_id
+        for revision in fixture.revisions
+        if revision.status in {"published", "superseded", "retired"}
+    }
     assert all(item.source_ref.startswith("FX-CONTENT") for item in fixture.provenance)
 
 

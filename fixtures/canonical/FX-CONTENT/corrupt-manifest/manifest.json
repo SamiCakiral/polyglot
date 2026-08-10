@@ -1,0 +1,6 @@
+{
+  "id": "FX-CONTENT-CORRUPT-MANIFEST",
+  "kind": "negative",
+  "expected_status": "rejected",
+  "expected_error": "validation_failed"
+}

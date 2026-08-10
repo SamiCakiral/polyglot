@@ -1,0 +1,6 @@
+{
+  "id": "FX-CONTENT-INVALID-RIGHTS",
+  "kind": "negative",
+  "expected_status": "rejected",
+  "expected_error": "license_missing"
+}

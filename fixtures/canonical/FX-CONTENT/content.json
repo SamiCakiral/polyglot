@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-CONTENT",
+  "synthetic": true,
+  "linguistic_review": "pending_human",
+  "actors": [
+    {
+      "actor_id": "019fe005-0000-7000-8000-000000000001",
+      "roles": ["author"]
+    },
+    {
+      "actor_id": "019fe005-0000-7000-8000-000000000002",
+      "roles": ["author"]
+    },
+    {
+      "actor_id": "019fe005-0000-7000-8000-000000000003",
+      "roles": ["reviewer"]
+    },
+    {
+      "actor_id": "019fe005-0000-7000-8000-000000000004",
+      "roles": ["author", "reviewer"]
+    }
+  ],
+  "provenance": [
+    {
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "source_type": "fixture",
+      "source_ref": "FX-CONTENT/editorial"
+    },
+    {
+      "provenance_id": "019fe005-0000-7000-8003-000000000002",
+      "source_type": "human_author",
+      "source_ref": "FX-CONTENT/reviewer"
+    }
+  ],
+  "revisions": [
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000001",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 1,
+      "status": "draft",
+      "payload": {"schema_version": 1, "text": "Ciao."},
+      "payload_checksum": "cc44ca17ac9f8ca5f8dcddc4dc0838971a1d74b672ea3e3f067ebf760996c9c4",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000001"
+    },
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000002",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 2,
+      "status": "rejected",
+      "payload": {"schema_version": 1, "text": "Correzione necessaria."},
+      "payload_checksum": "eaf9cd88141bd50ac94962b91c521b8ef0e941be365a7c93ff70b94c1a108535",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000001",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003"
+    },
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000003",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 3,
+      "status": "validated",
+      "payload": {"schema_version": 1, "text": "Versione validata."},
+      "payload_checksum": "f7a3e59e28285851b64431496db9fbfc1299a82af1a25ce1f389dff6a20f45f7",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000001"
+    },
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000004",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 4,
+      "status": "approved",
+      "payload": {"schema_version": 1, "text": "Versione approvata."},
+      "payload_checksum": "33f070027e3b264a4f1f9c3f39f2135395f3489bcf4e384631fc7d12509231f1",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000001",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003"
+    },
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000005",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 5,
+      "status": "published",
+      "payload": {"schema_version": 1, "text": "Versione pubblicata."},
+      "payload_checksum": "ee4580c6d5734b5c5b374bed8631650b4e6fb1fb8386a0240a9a1633428b3c69",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000001",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003"
+    },
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000006",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 6,
+      "status": "retired",
+      "payload": {"schema_version": 1, "text": "Versione ritirata."},
+      "payload_checksum": "c1ba1618c0f863f8718c6211453f56ad5f987cd1e9f6276afa22813992046169",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000002",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003"
+    },
+    {
+      "content_revision_id": "019fe005-0000-7000-8002-000000000007",
+      "content_id": "019fe005-0000-7000-8001-000000000001",
+      "revision_no": 7,
+      "status": "superseded",
+      "payload": {"schema_version": 1, "text": "Versione sostituita."},
+      "payload_checksum": "247cdf9af8d12d2d7648191a72a37f975603916c09e65cb896dbba0d841a9e6b",
+      "provenance_id": "019fe005-0000-7000-8003-000000000001",
+      "rights_ref": "rights:fixture:content",
+      "author_id": "019fe005-0000-7000-8000-000000000002",
+      "reviewer_id": "019fe005-0000-7000-8000-000000000003"
+    }
+  ],
+  "validation_oracles": [
+    {"validation_status": "passed", "resulting_revision_status": "validated"},
+    {"validation_status": "failed", "resulting_revision_status": "draft"},
+    {"validation_status": "human_required", "resulting_revision_status": "draft"}
+  ],
+  "negative_oracles": [
+    {"case": "same_actor_approval", "expected_error": "self_approval_forbidden"},
+    {"case": "stale_expected_version", "expected_error": "version_conflict"},
+    {"case": "reused_key_other_payload", "expected_error": "idempotency_conflict"},
+    {"case": "retired_catalogue_reference", "expected_error": "reference_not_publishable"},
+    {"case": "unknown_historical_rights", "expected_error": "historical_rights_conflict"}
+  ],
+  "linguistic_oracles": [
+    {
+      "case": "pronunciation_reduced_to_vocabulary",
+      "document_ref": "docs/v2/22-imports-edition-validation.md#8",
+      "expected_outcome": "human_required"
+    },
+    {
+      "case": "subject_pronoun_always_before_verb",
+      "document_ref": "docs/v2/22-imports-edition-validation.md#8",
+      "expected_outcome": "human_required"
+    },
+    {
+      "case": "essere_stare_confusion",
+      "document_ref": "docs/v2/22-imports-edition-validation.md#8",
+      "expected_outcome": "human_required"
+    },
+    {
+      "case": "correction_outage_counted_correct",
+      "document_ref": "docs/v2/22-imports-edition-validation.md#8",
+      "expected_outcome": "human_required"
+    },
+    {
+      "case": "artificial_grazie_prego_same_speaker",
+      "document_ref": "docs/v2/22-imports-edition-validation.md#8",
+      "expected_outcome": "human_required"
+    },
+    {
+      "case": "andare_infinitive_as_general_near_future",
+      "document_ref": "docs/v2/22-imports-edition-validation.md#8",
+      "expected_outcome": "human_required"
+    }
+  ],
+  "historical_references": [
+    {
+      "reference_id": "019fe005-0000-7000-8008-000000000001",
+      "content_revision_id": "019fe005-0000-7000-8002-000000000005",
+      "usage_type": "exercise_instance",
+      "usage_ref": "FX-CONTENT/exercise/1",
+      "context_checksum": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    }
+  ],
+  "publication_manifest": {
+    "content_revision_id": "019fe005-0000-7000-8002-000000000005",
+    "provenance_id": "019fe005-0000-7000-8003-000000000002",
+    "references": [
+      {
+        "reference_kind": "skill_revision",
+        "revision_id": "019fe003-0000-7000-800d-000000000001",
+        "status": "published"
+      }
+    ],
+    "checksum": "cdc3ad2013e6943acd8ea10700ba9a0fe4c4ef4830c8cef5912b06f51b839134"
+  }
+}

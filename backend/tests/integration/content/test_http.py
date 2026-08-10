@@ -191,3 +191,30 @@ async def test_http_rejects_bad_transport_stale_version_and_out_of_scope_reads(
     for response in (cross_origin, missing_csrf, stale, forbidden, out_of_scope):
         assert response.headers["content-type"].startswith("application/problem+json")
         assert response.json()["request_id"] == response.headers["X-Request-ID"]
+
+
+async def test_http_draft_pagination_uses_a_stable_opaque_cursor(http_services) -> None:
+    identity, service = http_services
+    async with await _client(identity, service) as client:
+        first = await client.post(
+            "/api/v1/authoring/drafts",
+            headers=_headers(key="page-create-first"),
+            json=_create_payload("Primo."),
+        )
+        second = await client.post(
+            "/api/v1/authoring/drafts",
+            headers=_headers(key="page-create-second"),
+            json=_create_payload("Secondo."),
+        )
+        page_one = await client.get("/api/v1/authoring/drafts", params={"limit": 1})
+        page_two = await client.get(
+            "/api/v1/authoring/drafts",
+            params={"limit": 1, "cursor": page_one.json()["next_cursor"]},
+        )
+
+    assert first.status_code == 201 and second.status_code == 201
+    assert page_one.status_code == 200 and page_one.json()["next_cursor"]
+    assert page_two.status_code == 200
+    assert page_one.json()["items"][0]["content_revision_id"] != page_two.json()["items"][0][
+        "content_revision_id"
+    ]

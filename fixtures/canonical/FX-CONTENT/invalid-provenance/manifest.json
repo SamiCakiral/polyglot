@@ -1,0 +1,6 @@
+{
+  "id": "FX-CONTENT-INVALID-PROVENANCE",
+  "kind": "negative",
+  "expected_status": "rejected",
+  "expected_error": "reference_not_found"
+}

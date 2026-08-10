@@ -21,6 +21,14 @@ class AlwaysRecentAuthentication:
         return True
 
 
+class NeverRecentAuthentication:
+    async def is_recent(
+        self, *, session: AsyncSession, actor_id: UUID, session_id: UUID, now: object
+    ) -> bool:
+        del session, actor_id, session_id, now
+        return False
+
+
 class FailAt:
     def __init__(self, stage: str) -> None:
         self._stage = stage
@@ -507,3 +515,138 @@ async def test_create_round_trips_the_requested_content_type(factory) -> None:
         )
 
     assert stored_type == "grammar_note"
+
+
+async def test_publish_requires_recent_reauthentication_without_partial_effects(factory) -> None:
+    from polyglot.modules.content.application import ContentApplicationService
+    from polyglot.modules.content.persistence import publication_manifests
+    from polyglot.platform.persistence.models import domain_events
+
+    normal = _service(factory)
+    approved = await _approve(
+        normal,
+        await _validate(
+            normal, await _create(normal, key="reauth-create"), key="reauth-validate"
+        ),
+        key="reauth-approve",
+    )
+    expired = ContentApplicationService(
+        factory,
+        clock=FrozenClock(NOW),
+        reauthentication_policy=NeverRecentAuthentication(),
+    )
+
+    with pytest.raises(DomainError) as rejected:
+        await _publish(expired, approved, key="reauth-publish")
+
+    assert rejected.value.code is ErrorCode.UNAUTHENTICATED
+    async with factory() as session:
+        assert await session.scalar(select(func.count()).select_from(publication_manifests)) == 0
+        assert (
+            await session.scalar(
+                select(func.count())
+                .select_from(domain_events)
+                .where(domain_events.c.event_type == "content_published")
+            )
+            == 0
+        )
+
+
+async def test_empty_database_acceptance_flow_preserves_first_published_revision(factory) -> None:
+    from polyglot.modules.content.application import RetireContentRevision, ReviseContentDraft
+    from polyglot.modules.content.persistence import SqlContentRepository
+
+    service = _service(factory)
+    invalid = await _create(
+        service,
+        key="accept-create",
+        payload={"schema_version": 1, "text": "Da correggere.", "blocking": True},
+    )
+    failed = await _validate(service, invalid, key="accept-validate-failed")
+    assert failed.revision.status == "draft"
+
+    corrected = await service.revise_draft(
+        ReviseContentDraft(
+            actor=_actor(IDS["author"], "author"),
+            revision_id=failed.revision.content_revision_id,
+            payload={"schema_version": 1, "text": "Versione corretta."},
+            provenance_id=IDS["provenance"],
+            rights_ref="rights:fixture:content",
+            pinned_revision_refs=(_reference(),),
+            expected_version=failed.version,
+            idempotency_key="accept-revise-first",
+            context=_context(),
+        )
+    )
+    first = await _publish(
+        service,
+        await _approve(
+            service,
+            await _validate(service, corrected, key="accept-validate-green"),
+            key="accept-approve-first",
+        ),
+        key="accept-publish-first",
+    )
+    async with factory() as session:
+        await SqlContentRepository(session).record_historical_reference(
+            reference_id=IDS["history"],
+            content_revision_id=first.revision.content_revision_id,
+            usage_type="exercise_instance",
+            usage_ref="FX-CONTENT/acceptance",
+            context_checksum="e" * 64,
+            now=NOW,
+        )
+        await session.commit()
+
+    replacement = await service.revise_draft(
+        ReviseContentDraft(
+            actor=_actor(IDS["author"], "author"),
+            revision_id=first.revision.content_revision_id,
+            payload={"schema_version": 1, "text": "Versione sostitutiva."},
+            provenance_id=IDS["provenance"],
+            rights_ref="rights:fixture:content",
+            pinned_revision_refs=(_reference(),),
+            expected_version=first.version,
+            idempotency_key="accept-revise-replacement",
+            context=_context(),
+        )
+    )
+    replacement = await _publish(
+        service,
+        await _approve(
+            service,
+            await _validate(service, replacement, key="accept-validate-replacement"),
+            key="accept-approve-replacement",
+        ),
+        key="accept-publish-replacement",
+    )
+    retired = await service.retire_revision(
+        RetireContentRevision(
+            actor=_actor(IDS["reviewer"], "reviewer"),
+            content_id=replacement.revision.content_id,
+            revision_id=replacement.revision.content_revision_id,
+            expected_version=replacement.version,
+            idempotency_key="accept-retire",
+            context=_context(),
+        )
+    )
+
+    history = await service.get_history(
+        actor=_actor(IDS["reviewer"], "reviewer"),
+        content_id=retired.revision.content_id,
+        limit=10,
+        cursor=None,
+    )
+    async with factory() as session:
+        historical = await SqlContentRepository(session).get_historical_revision(
+            first.revision.content_revision_id
+        )
+
+    assert retired.revision.status == "retired"
+    assert historical.status == "superseded"
+    assert historical.payload["text"] == "Versione corretta."
+    assert {revision.status for revision in history.items} >= {
+        "draft",
+        "superseded",
+        "retired",
+    }

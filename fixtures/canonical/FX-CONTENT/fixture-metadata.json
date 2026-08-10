@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 5005,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "content.json": "sha256:36cbaa6115a67b06e96b2fc3735c7b9e54fd9661239c7b2250cdd74ed16b49c7"
+  },
+  "oracles": [
+    "editorial_cycle_complete",
+    "author_reviewer_separated",
+    "validation_failure_blocks",
+    "publication_manifest_atomic",
+    "historical_revision_readable",
+    "v1_counterexamples_require_human_review"
+  ],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}

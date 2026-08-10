@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 5008,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "mutation.json": "sha256:59424d65064107f836060929df2222b55508c8523528e43fce64dd10d1b8bd8b"
+  },
+  "oracles": ["unknown_rights_rejected"],
+  "network_dependencies": [],
+  "linguistic_review": "pending_human"
+}
