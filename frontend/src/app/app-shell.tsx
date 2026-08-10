@@ -166,7 +166,7 @@ export function AppShell() {
         {mobileNavigation.map(({ icon: Icon, label, to }) => (
           <NavLink key={to} to={to}>
             <Icon aria-hidden="true" size={20} strokeWidth={1.8} />
-            <span>{label}</span>
+            <span className="mobile-navigation__label">{label}</span>
           </NavLink>
         ))}
       </nav>

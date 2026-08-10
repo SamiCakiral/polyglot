@@ -509,13 +509,13 @@ a {
     text-decoration: none;
   }
 
-  .mobile-navigation a span {
-    overflow: hidden;
+  .mobile-navigation__label {
     width: 100%;
     padding-inline: 2px;
     text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.15;
+    text-overflow: clip;
+    white-space: normal;
   }
 
   .mobile-navigation a[aria-current="page"] {
@@ -542,6 +542,18 @@ a {
     height: 1px;
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .mobile-navigation__label {
+    position: absolute;
+    overflow: hidden;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    text-overflow: clip;
     white-space: nowrap;
   }
 }

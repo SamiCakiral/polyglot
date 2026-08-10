@@ -16,22 +16,25 @@ export default defineConfig({
   use: {
     baseURL: mockBaseUrl,
     colorScheme: "light",
-    reducedMotion: "reduce",
     trace: "retain-on-failure",
   },
   webServer: [
     {
-      command: "pnpm exec vite --host 127.0.0.1 --port 4175",
+      command: "pnpm exec vite --host 127.0.0.1 --port 4175 --strictPort",
       url: mockBaseUrl,
       env: { VITE_ENABLE_API_MOCKS: "true" },
       reuseExistingServer: false,
+      stderr: "ignore",
+      stdout: "ignore",
       timeout: 30_000,
     },
     {
-      command: "pnpm exec vite --host 127.0.0.1 --port 4176",
+      command: "pnpm exec vite --host 127.0.0.1 --port 4176 --strictPort",
       url: "http://127.0.0.1:4176",
       env: { VITE_ENABLE_API_MOCKS: "" },
       reuseExistingServer: false,
+      stderr: "ignore",
+      stdout: "ignore",
       timeout: 30_000,
     },
   ],

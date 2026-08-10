@@ -42,6 +42,62 @@ jobs:
         working-directory: backend
         run: uv run pytest tests/unit tests/property -q
 
+  frontend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.16.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install locked frontend
+        run: pnpm --dir frontend install --frozen-lockfile
+      - name: Verify deterministic generated client
+        run: |
+          pnpm --dir frontend generate:api
+          git diff --exit-code -- frontend/src/generated
+      - name: Lint frontend
+        run: pnpm --dir frontend lint
+      - name: Typecheck frontend
+        run: pnpm --dir frontend typecheck
+      - name: Test frontend shell
+        run: pnpm --dir frontend test --run
+      - name: Build frontend
+        run: pnpm --dir frontend build
+
+  frontend-browser:
+    runs-on: ubuntu-latest
+    needs: frontend-quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.16.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install locked frontend
+        run: pnpm --dir frontend install --frozen-lockfile
+      - name: Install pinned Playwright Chromium
+        run: pnpm --dir frontend exec playwright install --with-deps chromium
+      - name: Test shell in real browser
+        run: pnpm --dir frontend exec playwright test
+      - name: Archive non-approved browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w17-shell-browser-evidence
+          path: frontend/test-results/w17-shell
+          if-no-files-found: warn
+
   security:
     runs-on: ubuntu-latest
     steps:

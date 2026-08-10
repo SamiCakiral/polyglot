@@ -8,12 +8,12 @@ import { createAppRouter } from "./app/router";
 import "./app/styles.css";
 
 async function enableContractMocks(): Promise<void> {
-  if (!import.meta.env.DEV || import.meta.env.VITE_ENABLE_API_MOCKS === "false") {
+  if (!import.meta.env.DEV || import.meta.env.VITE_ENABLE_API_MOCKS !== "true") {
     return;
   }
 
   const { worker } = await import("./lib/mocks/browser");
-  await worker.start({ onUnhandledRequest: "bypass" });
+  await worker.start({ onUnhandledRequest: "error" });
 }
 
 await enableContractMocks();
