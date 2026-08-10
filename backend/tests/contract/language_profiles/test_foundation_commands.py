@@ -376,3 +376,27 @@ async def test_expired_diagnostic_is_persisted_and_does_not_block_a_new_run(
         )
     await engine.dispose()
     assert old_status == "expired"
+
+
+async def test_diagnostic_start_rejects_pack_without_published_foundations(
+    foundation_services: tuple[IdentityApplicationService, Any, MutableClock],
+) -> None:
+    async with await _client(foundation_services) as client:
+        csrf = await _login(client)
+        created = await client.post(
+            "/api/v1/language-profiles",
+            headers=_headers(csrf, "create-missing-diagnostic-pack"),
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        response = await client.post(
+            f"/api/v1/language-profiles/{created.json()['profile_id']}/diagnostics",
+            headers=_headers(csrf, "start-missing-diagnostic-pack", 1),
+            json={
+                "policy_revision_id": POLICY,
+                "pack_revision_id": "019fe900-5000-7000-8001-000000000099",
+                "seed": "missing-published-pack",
+            },
+        )
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "diagnostic_unavailable"
