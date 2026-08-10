@@ -170,6 +170,21 @@ test("shows accessible tooltips on compact icon controls", async ({ page }, test
   await expect(page.getByRole("tooltip", { name: "Profil de langue" })).toBeVisible();
 });
 
+test("keeps edge tooltips inside the viewport", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "shell-1440", "Edge placement is viewport-independent");
+  const tooltip = page.locator(".account-nav .control-tooltip").last();
+  await tooltip.evaluate((element) => {
+    element.textContent = "Préférences utilisateur détaillées";
+  });
+
+  const geometry = await tooltip.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    return { left: box.left, right: box.right, viewportWidth: document.documentElement.clientWidth };
+  });
+  expect(geometry.left).toBeGreaterThanOrEqual(0);
+  expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth);
+});
+
 test("has no serious, critical, or color contrast axe violation", async ({ page }) => {
   const results = await new AxeBuilder({ page }).include(".app-shell").analyze();
   const blockingViolations = results.violations.filter(
