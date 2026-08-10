@@ -189,22 +189,17 @@ async def _profile_in_foundations(client: AsyncClient, csrf: str) -> tuple[str, 
 
 
 def _correct_answers() -> list[dict[str, object]]:
-    answers: list[dict[str, object]] = []
-    totals = {"ITF-F1-01": 10, "ITF-F1-02": 10, "ITF-F5-02": 5}
-    for block in CATALOGUE.definition.blocks:
-        for item in block.items:
-            for trial_ordinal in range(1, totals.get(item.item_code, 1) + 1):
-                answers.append(
-                    {
-                        "item_revision_id": str(item.item_revision_id),
-                        "trial_ordinal": trial_ordinal,
-                        "answer": {
-                            "value": item.checker_values[0] if item.checker_values else "audio"
-                        },
-                        "revealed": False,
-                    }
-                )
+    answers = [
+        {
+            "item_revision_id": str(item.item_revision_id),
+            "answer": {"value": item.checker_values[0] if item.checker_values else "audio"},
+            "revealed": False,
+        }
+        for block in CATALOGUE.definition.blocks
+        for item in block.items
+    ]
     assert len(answers) == 32
+    assert len({item["item_revision_id"] for item in answers}) == 32
     return answers
 
 
@@ -265,10 +260,10 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
         measures = (
             await connection.execute(
                 text(
-                    "SELECT item_revision_id, trial_ordinal, criterion, evaluable, score "
+                    "SELECT item_revision_id, criterion, evaluable, score "
                     "FROM language_profiles.foundation_measurements "
                     "WHERE foundation_run_id = :run_id "
-                    "ORDER BY measured_at, item_revision_id, trial_ordinal"
+                    "ORDER BY measured_at, item_revision_id"
                 ),
                 {"run_id": UUID(run_id)},
             )
@@ -307,13 +302,8 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
     assert sum(row.criterion == "grapheme_sound_discrimination" for row in measures) == 20
     assert sum(row.criterion == "targeted_reading" for row in measures) == 20
     assert sum(row.criterion == "survival_exchange" for row in measures) == 10
-    assert {row.trial_ordinal for row in measures if row.criterion == "survival_exchange"} == {
-        1,
-        2,
-        3,
-        4,
-        5,
-    }
+    for session_items in (measures[:32], measures[32:]):
+        assert len({row.item_revision_id for row in session_items}) == 32
     assert gate_count == 2
     assert "foundation_gate_completed" in events
     assert outbox_count == 1

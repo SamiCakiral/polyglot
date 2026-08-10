@@ -31,7 +31,6 @@ def test_foundation_openapi_exposes_versioned_complete_workflow() -> None:
     assert set(answer_schema["required"]) == {
         "answer",
         "item_revision_id",
-        "trial_ordinal",
     }
     assert complete["responses"]["200"]["headers"]["ETag"]["schema"] == {
         "type": "string"
