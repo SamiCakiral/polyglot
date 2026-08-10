@@ -88,6 +88,9 @@ def test_openapi_exposes_ten_authenticated_w05_routes_with_transport_contracts()
     ):
         assert schemas[name]["additionalProperties"] is False
     approval_schema = schemas["ApproveContentRevisionRequest"]
+    create_schema = schemas["CreateContentDraftRequest"]
+    assert "pack_id" in create_schema["required"]
+    assert create_schema["properties"]["pack_id"]["format"] == "uuid"
     assert set(approval_schema["required"]) == {"decision", "reason_code"}
     assert approval_schema["properties"]["decision"]["enum"] == [
         "approved",

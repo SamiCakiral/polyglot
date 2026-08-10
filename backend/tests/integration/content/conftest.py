@@ -1,5 +1,6 @@
+import hashlib
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import pytest
@@ -33,13 +34,24 @@ IDS = {
         ("catalogue_revision", 0x800D, 1),
         ("publication_provenance", 0x800E, 1),
         ("session", 0x800F, 1),
+        ("reviewer_session", 0x800F, 2),
+        ("outsider_session", 0x800F, 3),
         ("pack", 0x8010, 1),
         ("pack_revision", 0x8011, 1),
         ("pack_publication", 0x8012, 1),
         ("skill", 0x8013, 1),
+        ("author_assignment", 0x8014, 1),
+        ("reviewer_assignment", 0x8014, 2),
+        ("admin_assignment", 0x8014, 3),
+        ("author_reviewer_assignment", 0x8014, 4),
     )
 }
 VARIETY_ID = UUID("019fe900-5000-7000-8001-000000000001")
+SESSION_PROOFS = {
+    IDS["author"]: "author-session-proof",
+    IDS["reviewer"]: "reviewer-session-proof",
+    IDS["replacement"]: "outsider-session-proof",
+}
 
 
 @pytest.fixture
@@ -77,7 +89,12 @@ async def clean_content_tables(migration_database_url: str) -> AsyncIterator[Non
     engine = create_async_engine(migration_database_url)
     async with engine.begin() as connection:
         if await connection.scalar(text("SELECT to_regnamespace('content')")) is not None:
-            await connection.execute(text("TRUNCATE content.content_items CASCADE"))
+            await connection.execute(
+                text(
+                    "TRUNCATE content.editorial_pack_assignments, "
+                    "content.content_items CASCADE"
+                )
+            )
         await connection.execute(text("TRUNCATE platform.domain_events CASCADE"))
         await connection.execute(text("TRUNCATE platform.command_receipts CASCADE"))
         await connection.execute(text("TRUNCATE platform.outbox_messages CASCADE"))
@@ -134,6 +151,77 @@ async def seed_published_catalogue_reference(session: AsyncSession) -> None:
         ),
         {"pack": IDS["pack"]},
     )
+    for account_id in (IDS["author"], IDS["reviewer"], IDS["replacement"]):
+        await session.execute(
+            text(
+                "INSERT INTO identity.accounts "
+                "(account_id, status, security_version, session_version, version, "
+                "created_at, security_last_activity_at, deleted_at) VALUES "
+                "(:account_id, 'active', 1, 1, 1, :now, :now, NULL) "
+                "ON CONFLICT (account_id) DO NOTHING"
+            ),
+            {"account_id": account_id, "now": NOW},
+        )
+    sessions = (
+        (IDS["session"], IDS["author"], ["author", "reviewer"]),
+        (IDS["reviewer_session"], IDS["reviewer"], ["reviewer", "admin"]),
+        (
+            IDS["outsider_session"],
+            IDS["replacement"],
+            ["author", "reviewer", "admin"],
+        ),
+    )
+    for session_id, account_id, roles in sessions:
+        fingerprint = hashlib.sha256(SESSION_PROOFS[account_id].encode("ascii")).hexdigest()
+        await session.execute(
+            text(
+                "INSERT INTO identity.auth_sessions "
+                "(session_id, account_id, session_fingerprint, csrf_secret_hash, "
+                "roles_snapshot, account_session_version, created_at, authenticated_at, "
+                "last_seen_at, rotated_at, idle_expires_at, absolute_expires_at, "
+                "revoked_at, revoke_reason, replaced_by_session_id) VALUES "
+                "(:session_id, :account_id, :fingerprint, :csrf, :roles, 1, :now, :now, "
+                ":now, :now, :idle, :absolute, NULL, NULL, NULL) "
+                "ON CONFLICT (session_id) DO UPDATE SET "
+                "roles_snapshot = EXCLUDED.roles_snapshot, "
+                "authenticated_at = EXCLUDED.authenticated_at, "
+                "last_seen_at = EXCLUDED.last_seen_at, "
+                "idle_expires_at = EXCLUDED.idle_expires_at, "
+                "absolute_expires_at = EXCLUDED.absolute_expires_at, "
+                "revoked_at = NULL, revoke_reason = NULL"
+            ),
+            {
+                "session_id": session_id,
+                "account_id": account_id,
+                "fingerprint": fingerprint,
+                "csrf": fingerprint,
+                "roles": roles,
+                "now": NOW,
+                "idle": NOW + timedelta(minutes=30),
+                "absolute": NOW + timedelta(days=7),
+            },
+        )
+    for assignment_id, actor_id, role in (
+        (IDS["author_assignment"], IDS["author"], "author"),
+        (IDS["reviewer_assignment"], IDS["reviewer"], "reviewer"),
+        (IDS["admin_assignment"], IDS["reviewer"], "admin"),
+        (IDS["author_reviewer_assignment"], IDS["author"], "reviewer"),
+    ):
+        await session.execute(
+            text(
+                "INSERT INTO content.editorial_pack_assignments "
+                "(assignment_id, actor_id, pack_id, editorial_role, granted_at, "
+                "granted_by_actor_id, revoked_at) VALUES "
+                "(:assignment_id, :actor_id, :pack_id, :role, :now, :actor_id, NULL)"
+            ),
+            {
+                "assignment_id": assignment_id,
+                "actor_id": actor_id,
+                "pack_id": IDS["pack"],
+                "role": role,
+                "now": NOW,
+            },
+        )
     await session.execute(
         text(
             "INSERT INTO catalogue.language_pack_revisions "

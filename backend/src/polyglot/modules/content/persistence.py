@@ -20,6 +20,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
     and_,
+    exists,
     func,
     or_,
     select,
@@ -29,6 +30,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_bytes
@@ -40,6 +42,12 @@ content_items = Table(
     metadata,
     Column("content_id", PG_UUID(as_uuid=True), primary_key=True),
     Column("content_type", String(120), nullable=False),
+    Column(
+        "pack_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("catalogue.language_packs.pack_id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
     Column(
         "variety_id",
         PG_UUID(as_uuid=True),
@@ -155,14 +163,17 @@ validation_reports = Table(
     Column("status", String(24), nullable=False),
     Column("started_at", DateTime(timezone=True), nullable=False),
     Column("completed_at", DateTime(timezone=True)),
-    Column("summary_checksum", String(64), nullable=False),
+    Column("finding_count", Integer, nullable=False, server_default="0"),
+    Column("summary_checksum", String(64)),
     CheckConstraint(
         "status IN ('pending', 'running', 'passed', 'failed', 'human_required', 'cancelled')",
         name="ck_content_validation_report_status",
     ),
     CheckConstraint(
-        "summary_checksum ~ '^[0-9a-f]{64}$'", name="ck_content_validation_report_checksum"
+        "summary_checksum IS NULL OR summary_checksum ~ '^[0-9a-f]{64}$'",
+        name="ck_content_validation_report_checksum",
     ),
+    CheckConstraint("finding_count >= 0", name="ck_content_validation_report_count"),
     CheckConstraint(
         "content.is_uuid7(report_id) AND content.is_uuid7(subject_revision_id) "
         "AND content.is_uuid7(validator_set_revision_id)",
@@ -275,9 +286,11 @@ publication_manifests = Table(
         nullable=False,
     ),
     Column("command_id", PG_UUID(as_uuid=True)),
+    Column("entry_count", Integer, nullable=False),
     Column("published_at", DateTime(timezone=True), nullable=False),
     Column("retired_at", DateTime(timezone=True)),
     CheckConstraint("checksum ~ '^[0-9a-f]{64}$'", name="ck_content_publication_manifest_checksum"),
+    CheckConstraint("entry_count >= 0", name="ck_content_publication_manifest_count"),
     CheckConstraint(
         "content.is_uuid7(publication_manifest_id) AND content.is_uuid7(content_id) "
         "AND content.is_uuid7(content_revision_id) AND content.is_uuid7(provenance_id)",
@@ -363,6 +376,55 @@ Index(
     historical_content_references.c.reference_id,
 )
 
+editorial_pack_assignments = Table(
+    "editorial_pack_assignments",
+    metadata,
+    Column("assignment_id", PG_UUID(as_uuid=True), primary_key=True),
+    Column(
+        "actor_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("identity.accounts.account_id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column(
+        "pack_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("catalogue.language_packs.pack_id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("editorial_role", String(16), nullable=False),
+    Column("granted_at", DateTime(timezone=True), nullable=False),
+    Column(
+        "granted_by_actor_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("identity.accounts.account_id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("revoked_at", DateTime(timezone=True)),
+    CheckConstraint(
+        "content.is_uuid7(assignment_id) AND content.is_uuid7(actor_id) "
+        "AND content.is_uuid7(pack_id) AND content.is_uuid7(granted_by_actor_id)",
+        name="ck_content_assignment_uuid7",
+    ),
+    CheckConstraint(
+        "editorial_role IN ('author','reviewer','admin')",
+        name="ck_content_assignment_role",
+    ),
+    CheckConstraint(
+        "revoked_at IS NULL OR revoked_at >= granted_at",
+        name="ck_content_assignment_dates",
+    ),
+    schema="content",
+)
+Index(
+    "uq_content_editorial_pack_assignment_active",
+    editorial_pack_assignments.c.actor_id,
+    editorial_pack_assignments.c.pack_id,
+    editorial_pack_assignments.c.editorial_role,
+    unique=True,
+    postgresql_where=editorial_pack_assignments.c.revoked_at.is_(None),
+)
+
 command_contexts = Table(
     "command_contexts",
     metadata,
@@ -374,6 +436,10 @@ command_contexts = Table(
     ),
     Column("transaction_id", BigInteger, nullable=False, unique=True),
     Column("command_type", String(120), nullable=False),
+    Column("actor_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("actor_type", String(16), nullable=False),
+    Column("session_id", PG_UUID(as_uuid=True), nullable=False),
+    Column("pack_id", PG_UUID(as_uuid=True), nullable=False),
     Column(
         "opened_at",
         DateTime(timezone=True),
@@ -382,6 +448,9 @@ command_contexts = Table(
     ),
     CheckConstraint(
         "content.is_uuid7(command_id)", name="ck_content_command_context_uuid7"
+    ),
+    CheckConstraint(
+        "actor_type = 'account'", name="ck_content_command_context_actor_type"
     ),
     CheckConstraint(
         "command_type IN ('CreateContentDraft','ReviseContentDraft',"
@@ -418,6 +487,7 @@ class StoredContentRevision:
 class StoredContentItem:
     content_id: UUID
     content_type: str
+    pack_id: UUID
     variety_id: UUID
     editorial_owner_id: UUID
     version: int
@@ -508,11 +578,84 @@ class SqlContentRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def begin_command(self, command_id: UUID) -> None:
+    async def begin_command(
+        self,
+        *,
+        command_id: UUID,
+        actor_id: UUID,
+        session_id: UUID,
+        pack_id: UUID,
+        session_proof: str,
+    ) -> None:
         await self._session.execute(
-            text("SELECT content.begin_command(:command_id)"),
-            {"command_id": command_id},
+            text(
+                "SELECT content.begin_command("
+                ":command_id, 'account', :session_id, :pack_id, :session_proof)"
+            ),
+            {
+                "command_id": command_id,
+                "actor_id": actor_id,
+                "session_id": session_id,
+                "pack_id": pack_id,
+                "session_proof": session_proof,
+            },
         )
+
+    async def get_pack_id_for_revision(self, content_revision_id: UUID) -> UUID:
+        pack_id = await self._session.scalar(
+            select(content_items.c.pack_id)
+            .join(
+                content_revisions,
+                content_revisions.c.content_id == content_items.c.content_id,
+            )
+            .where(content_revisions.c.content_revision_id == content_revision_id)
+        )
+        if not isinstance(pack_id, UUID):
+            raise DomainError(ErrorCode.DRAFT_NOT_FOUND)
+        return pack_id
+
+    async def require_pack_assignment(
+        self, *, actor_id: UUID, pack_id: UUID, allowed_roles: tuple[str, ...]
+    ) -> None:
+        allowed = await self._session.scalar(
+            select(
+                exists().where(
+                    editorial_pack_assignments.c.actor_id == actor_id,
+                    editorial_pack_assignments.c.pack_id == pack_id,
+                    editorial_pack_assignments.c.editorial_role.in_(allowed_roles),
+                    editorial_pack_assignments.c.revoked_at.is_(None),
+                )
+            )
+        )
+        if allowed is not True:
+            raise DomainError(ErrorCode.FORBIDDEN)
+
+    @staticmethod
+    def _scope_filter(
+        *, actor_id: UUID, roles: frozenset[str]
+    ) -> ColumnElement[bool]:
+        branches: list[ColumnElement[bool]] = []
+        if "author" in roles:
+            branches.append(
+                exists().where(
+                    editorial_pack_assignments.c.actor_id == actor_id,
+                    editorial_pack_assignments.c.pack_id == content_items.c.pack_id,
+                    editorial_pack_assignments.c.editorial_role == "author",
+                    editorial_pack_assignments.c.revoked_at.is_(None),
+                    content_items.c.editorial_owner_id == actor_id,
+                )
+            )
+        scoped_review_roles = tuple(roles.intersection({"reviewer", "admin"}))
+        if scoped_review_roles:
+            branches.append(
+                exists().where(
+                    editorial_pack_assignments.c.actor_id == actor_id,
+                    editorial_pack_assignments.c.pack_id == content_items.c.pack_id,
+                    editorial_pack_assignments.c.editorial_role.in_(scoped_review_roles),
+                    editorial_pack_assignments.c.revoked_at.is_(None),
+                )
+            )
+        return or_(*branches)
 
     async def get_command_proofs(self, command_id: UUID) -> tuple[UUID | None, UUID | None]:
         report_id = await self._session.scalar(
@@ -533,6 +676,7 @@ class SqlContentRepository:
         content_id: UUID,
         content_revision_id: UUID,
         content_type: str,
+        pack_id: UUID,
         variety_id: UUID,
         author_id: UUID,
         provenance_id: UUID,
@@ -546,6 +690,7 @@ class SqlContentRepository:
             content_items.insert().values(
                 content_id=content_id,
                 content_type=content_type,
+                pack_id=pack_id,
                 variety_id=variety_id,
                 editorial_owner_id=author_id,
                 lineage_root_id=content_id,
@@ -596,7 +741,7 @@ class SqlContentRepository:
         self,
         *,
         actor_id: UUID,
-        reviewer: bool,
+        roles: frozenset[str],
         limit: int,
         cursor: str | None,
     ) -> ContentRevisionPage:
@@ -609,9 +754,8 @@ class SqlContentRepository:
                     ("draft", "validating", "validated", "approved", "rejected")
                 )
             )
+            .where(self._scope_filter(actor_id=actor_id, roles=roles))
         )
-        if not reviewer:
-            statement = statement.where(content_items.c.editorial_owner_id == actor_id)
         if after is not None:
             after_time, after_id = after
             statement = statement.where(
@@ -647,7 +791,7 @@ class SqlContentRepository:
         content_revision_id: UUID,
         *,
         actor_id: UUID,
-        reviewer: bool,
+        roles: frozenset[str],
     ) -> StoredContentRevision:
         row = (
             await self._session.execute(
@@ -658,10 +802,11 @@ class SqlContentRepository:
                     content_revisions.c.status.in_(
                         ("draft", "validating", "validated", "approved", "rejected")
                     ),
+                    self._scope_filter(actor_id=actor_id, roles=roles),
                 )
             )
         ).mappings().one_or_none()
-        if row is None or (not reviewer and row["editorial_owner_id"] != actor_id):
+        if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         return _stored_revision(row)
 
@@ -670,7 +815,7 @@ class SqlContentRepository:
         content_id: UUID,
         *,
         actor_id: UUID,
-        reviewer: bool,
+        roles: frozenset[str],
         limit: int,
         cursor: str | None,
     ) -> ContentRevisionPage:
@@ -679,9 +824,8 @@ class SqlContentRepository:
             select(content_revisions)
             .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
             .where(content_revisions.c.content_id == content_id)
+            .where(self._scope_filter(actor_id=actor_id, roles=roles))
         )
-        if not reviewer:
-            statement = statement.where(content_items.c.editorial_owner_id == actor_id)
         if after is not None:
             after_time, after_id = after
             statement = statement.where(
@@ -719,7 +863,7 @@ class SqlContentRepository:
         report_id: UUID,
         *,
         actor_id: UUID,
-        reviewer: bool,
+        roles: frozenset[str],
     ) -> StoredValidationReport:
         row = (
             await self._session.execute(
@@ -731,9 +875,10 @@ class SqlContentRepository:
                 )
                 .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
                 .where(validation_reports.c.report_id == report_id)
+                .where(self._scope_filter(actor_id=actor_id, roles=roles))
             )
         ).mappings().one_or_none()
-        if row is None or (not reviewer and row["editorial_owner_id"] != actor_id):
+        if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         finding_rows = (
             await self._session.execute(
@@ -784,6 +929,7 @@ class SqlContentRepository:
         item = StoredContentItem(
             content_id=item_row["content_id"],
             content_type=item_row["content_type"],
+            pack_id=item_row["pack_id"],
             variety_id=item_row["variety_id"],
             editorial_owner_id=item_row["editorial_owner_id"],
             version=item_row["version"],
@@ -878,7 +1024,6 @@ class SqlContentRepository:
         command_id: UUID,
         validator_set_revision_id: UUID,
         status: str,
-        summary_checksum: str,
         findings: tuple[Mapping[str, object], ...],
         now: datetime,
     ) -> StoredContentRevision:
@@ -888,10 +1033,11 @@ class SqlContentRepository:
                 subject_revision_id=content_revision_id,
                 validator_set_revision_id=validator_set_revision_id,
                 command_id=command_id,
-                status=status,
+                status="running",
                 started_at=now,
-                completed_at=now,
-                summary_checksum=summary_checksum,
+                completed_at=None,
+                finding_count=0,
+                summary_checksum=None,
             )
         )
         if findings:
@@ -899,6 +1045,14 @@ class SqlContentRepository:
                 validation_findings.insert(),
                 [dict(finding, report_id=report_id) for finding in findings],
             )
+        await self._session.execute(
+            validation_reports.update()
+            .where(
+                validation_reports.c.report_id == report_id,
+                validation_reports.c.status == "running",
+            )
+            .values(status=status, completed_at=now)
+        )
         final_status = "validated" if status == "passed" else "draft"
         values: dict[str, object] = {"status": final_status}
         if final_status == "validated":
@@ -1097,6 +1251,7 @@ class SqlContentRepository:
                 checksum=manifest_checksum,
                 provenance_id=publication_provenance_id,
                 command_id=command_id,
+                entry_count=len(references),
                 published_at=now,
                 retired_at=None,
             )

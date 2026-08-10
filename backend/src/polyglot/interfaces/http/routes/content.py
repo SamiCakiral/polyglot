@@ -57,6 +57,7 @@ class ContentReferenceRequest(ClosedModel):
 
 
 class CreateContentDraftRequest(ClosedModel):
+    pack_id: UUID
     content_type: str = Field(min_length=1, max_length=120)
     variety_id: UUID
     payload: dict[str, JsonValue]
@@ -209,15 +210,15 @@ def content_router(
             raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         if origin is not None:
             _require_origin(origin, allowed_origin)
-        current = await identity_service.get_current_session(
-            _session_token(session_token), _context(request)
-        )
+        session_proof = _session_token(session_token)
+        current = await identity_service.get_current_session(session_proof, _context(request))
         if csrf_token is not None and csrf_token != current.csrf_token:
             raise DomainError(ErrorCode.FORBIDDEN)
         return EditorialActor(
             actor_id=current.account_id,
             roles=frozenset(current.roles),
             session_id=current.session_id,
+            session_proof=getattr(current, "session_proof", session_proof),
         )
 
     @router.post(
@@ -239,6 +240,7 @@ def content_router(
         result = await application_service().create_draft(
             CreateContentDraft(
                 actor=actor,
+                pack_id=payload.pack_id,
                 content_type=payload.content_type,
                 variety_id=payload.variety_id,
                 payload=payload.payload,

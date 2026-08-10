@@ -36,6 +36,7 @@ class EditorialActor:
     actor_id: UUID
     roles: frozenset[str]
     session_id: UUID
+    session_proof: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +54,7 @@ class ContentReference:
 @dataclass(frozen=True, slots=True)
 class CreateContentDraft:
     actor: EditorialActor
+    pack_id: UUID
     content_type: str
     variety_id: UUID
     payload: Mapping[str, JsonValue]
@@ -322,12 +324,29 @@ class ContentApplicationService:
         fingerprint: str,
         expected_version: int | None,
         action: CommandAction,
+        pack_id: UUID | None = None,
     ) -> ContentMutationResult:
         now = self._clock.now()
         async with self._uow() as uow:
             session = self._session(uow)
             repository = SqlContentRepository(session)
             store = SqlCommandReceiptStore(session)
+            command_pack_id = pack_id
+            if command_pack_id is None:
+                command_pack_id = await repository.get_pack_id_for_revision(aggregate_id)
+            allowed_roles = {
+                "CreateContentDraft": ("author",),
+                "ReviseContentDraft": ("author",),
+                "ValidateContentRevision": ("author", "reviewer"),
+                "ApproveContentRevision": ("reviewer",),
+                "PublishContentRevision": ("reviewer", "admin"),
+                "RetireContentRevision": ("reviewer", "admin"),
+            }[command_type]
+            await repository.require_pack_assignment(
+                actor_id=actor.actor_id,
+                pack_id=command_pack_id,
+                allowed_roles=allowed_roles,
+            )
             receipt = self._receipt(
                 command_type=command_type,
                 actor=actor,
@@ -361,7 +380,13 @@ class ContentApplicationService:
 
             savepoint = await session.begin_nested()
             try:
-                await repository.begin_command(reservation.receipt.command_id)
+                await repository.begin_command(
+                    command_id=reservation.receipt.command_id,
+                    actor_id=actor.actor_id,
+                    session_id=actor.session_id,
+                    pack_id=command_pack_id,
+                    session_proof=actor.session_proof,
+                )
                 result = await action(repository, reservation.receipt, now)
                 await self._failure_injector.checkpoint("after_event")
                 await store.complete(
@@ -451,6 +476,7 @@ class ContentApplicationService:
         fingerprint = canonical_json_fingerprint(
             {
                 "content_type": command.content_type,
+                "pack_id": str(command.pack_id),
                 "variety_id": str(command.variety_id),
                 "payload": payload,
                 "provenance_id": str(command.provenance_id),
@@ -470,6 +496,7 @@ class ContentApplicationService:
                 content_id=content_id,
                 content_revision_id=revision_id,
                 content_type=command.content_type,
+                pack_id=command.pack_id,
                 variety_id=command.variety_id,
                 author_id=command.actor.actor_id,
                 provenance_id=command.provenance_id,
@@ -499,6 +526,7 @@ class ContentApplicationService:
             fingerprint=fingerprint,
             expected_version=None,
             action=action,
+            pack_id=command.pack_id,
         )
 
     async def revise_draft(self, command: ReviseContentDraft) -> ContentMutationResult:
@@ -606,23 +634,6 @@ class ContentApplicationService:
                 }
                 for ordinal, finding in enumerate(validation.findings, start=1)
             )
-            checksum_findings: list[JsonValue] = [
-                {
-                    "ordinal": ordinal,
-                    "validator_code": finding.validator_code,
-                    "severity": finding.severity,
-                    "path": finding.path,
-                    "message_code": finding.message_code,
-                    "redacted_value": finding.redacted_value,
-                }
-                for ordinal, finding in enumerate(validation.findings, start=1)
-            ]
-            summary_checksum = canonical_json_fingerprint(
-                {
-                    "status": validation.status,
-                    "findings": checksum_findings,
-                }
-            )
             report_id = self._id_generator.new()
             updated = await repository.complete_validation(
                 content_revision_id=command.revision_id,
@@ -630,7 +641,6 @@ class ContentApplicationService:
                 command_id=receipt.command_id,
                 validator_set_revision_id=command.validator_set_revision_id,
                 status=validation.status,
-                summary_checksum=summary_checksum,
                 findings=findings,
                 now=now,
             )
@@ -868,12 +878,12 @@ class ContentApplicationService:
         limit: int,
         cursor: str | None,
     ) -> ContentRevisionPage:
-        self._require_role(actor, "author", "reviewer")
+        self._require_role(actor, "author", "reviewer", "admin")
         async with self._uow() as uow:
             repository = SqlContentRepository(self._session(uow))
             page = await repository.list_drafts(
                 actor_id=actor.actor_id,
-                reviewer="reviewer" in actor.roles,
+                roles=actor.roles,
                 limit=limit,
                 cursor=cursor,
             )
@@ -887,13 +897,13 @@ class ContentApplicationService:
         actor: EditorialActor,
         revision_id: UUID,
     ) -> StoredContentRevision:
-        self._require_role(actor, "author", "reviewer")
+        self._require_role(actor, "author", "reviewer", "admin")
         async with self._uow() as uow:
             repository = SqlContentRepository(self._session(uow))
             revision = await repository.get_draft_for_actor(
                 revision_id,
                 actor_id=actor.actor_id,
-                reviewer="reviewer" in actor.roles,
+                roles=actor.roles,
             )
             await uow.commit()
             return revision
@@ -907,13 +917,13 @@ class ContentApplicationService:
         limit: int,
         cursor: str | None,
     ) -> ContentRevisionPage:
-        self._require_role(actor, "author", "reviewer")
+        self._require_role(actor, "author", "reviewer", "admin")
         async with self._uow() as uow:
             repository = SqlContentRepository(self._session(uow))
             page = await repository.get_history_for_actor(
                 content_id,
                 actor_id=actor.actor_id,
-                reviewer="reviewer" in actor.roles,
+                roles=actor.roles,
                 limit=limit,
                 cursor=cursor,
             )
@@ -927,13 +937,13 @@ class ContentApplicationService:
         actor: EditorialActor,
         report_id: UUID,
     ) -> StoredValidationReport:
-        self._require_role(actor, "author", "reviewer")
+        self._require_role(actor, "author", "reviewer", "admin")
         async with self._uow() as uow:
             repository = SqlContentRepository(self._session(uow))
             report = await repository.get_validation_report_for_actor(
                 report_id,
                 actor_id=actor.actor_id,
-                reviewer="reviewer" in actor.roles,
+                roles=actor.roles,
             )
             await uow.commit()
             return report

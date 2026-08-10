@@ -10,7 +10,13 @@ from polyglot.bootstrap.database import database_url_from_environment
 from polyglot.platform.clock import FrozenClock
 from polyglot.platform.errors import DomainError, ErrorCode
 
-from .conftest import IDS, NOW, VARIETY_ID, seed_published_catalogue_reference
+from .conftest import (
+    IDS,
+    NOW,
+    SESSION_PROOFS,
+    VARIETY_ID,
+    seed_published_catalogue_reference,
+)
 
 
 class AlwaysRecentAuthentication:
@@ -41,7 +47,17 @@ class FailAt:
 def _actor(actor_id: UUID, *roles: str):
     from polyglot.modules.content.application import EditorialActor
 
-    return EditorialActor(actor_id=actor_id, roles=frozenset(roles), session_id=IDS["session"])
+    session_id = {
+        IDS["author"]: IDS["session"],
+        IDS["reviewer"]: IDS["reviewer_session"],
+        IDS["replacement"]: IDS["outsider_session"],
+    }[actor_id]
+    return EditorialActor(
+        actor_id=actor_id,
+        roles=frozenset(roles),
+        session_id=session_id,
+        session_proof=SESSION_PROOFS[actor_id],
+    )
 
 
 def _context():
@@ -90,6 +106,7 @@ async def _create(service, *, key: str = "create", payload=None, references=None
     return await service.create_draft(
         CreateContentDraft(
             actor=_actor(IDS["author"], "author"),
+            pack_id=IDS["pack"],
             content_type="dialogue",
             variety_id=VARIETY_ID,
             payload=payload or {"schema_version": 1, "text": "Ciao."},
@@ -270,6 +287,7 @@ async def test_self_approval_human_required_rights_provenance_and_references_are
             replace(
                 CreateContentDraft(
                     actor=_actor(IDS["author"], "author"),
+                    pack_id=IDS["pack"],
                     content_type="dialogue",
                     variety_id=VARIETY_ID,
                     payload={"schema_version": 1, "text": "Ciao."},
@@ -595,6 +613,7 @@ async def test_create_round_trips_the_requested_content_type(factory) -> None:
     created = await service.create_draft(
         CreateContentDraft(
             actor=_actor(IDS["author"], "author"),
+            pack_id=IDS["pack"],
             content_type="grammar_note",
             variety_id=VARIETY_ID,
             payload={"schema_version": 1, "text": "Il futuro prossimo."},

@@ -10,7 +10,13 @@ from polyglot.interfaces.http.app import create_app
 from polyglot.modules.content.application import ContentApplicationService
 from polyglot.platform.clock import FrozenClock
 
-from .conftest import IDS, NOW, VARIETY_ID, seed_published_catalogue_reference
+from .conftest import (
+    IDS,
+    NOW,
+    SESSION_PROOFS,
+    VARIETY_ID,
+    seed_published_catalogue_reference,
+)
 
 ORIGIN = "https://polyglot.test"
 
@@ -24,10 +30,16 @@ class StaticIdentity:
         del context
         if token != "content-session":
             raise AssertionError("unexpected session token")
+        session_id = {
+            IDS["author"]: IDS["session"],
+            IDS["reviewer"]: IDS["reviewer_session"],
+            IDS["replacement"]: IDS["outsider_session"],
+        }[self.account_id]
         return SimpleNamespace(
             account_id=self.account_id,
             roles=self.roles,
-            session_id=IDS["session"],
+            session_id=session_id,
+            session_proof=SESSION_PROOFS[self.account_id],
             csrf_token="content-csrf",
         )
 
@@ -295,30 +307,121 @@ async def test_http_enforces_pack_scope_for_author_reviewer_and_admin(http_servi
             json=_create_payload(),
         )
         draft_id = created.json()["content_revision_id"]
+        content_id = created.json()["content_id"]
+
+        identity.account_id = IDS["replacement"]
+        identity.roles = ("author",)
+        revise_denied = await client.patch(
+            f"/api/v1/authoring/drafts/{draft_id}",
+            headers=_headers(key="scope-revise-denied", version=1),
+            json={
+                "payload": {"schema_version": 1, "text": "Fuori ambito."},
+                "provenance_id": str(IDS["provenance"]),
+                "rights_ref": "rights:fixture:content",
+                "pinned_revision_refs": [],
+            },
+        )
+        validate_denied = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:validate",
+            headers=_headers(key="scope-validate-denied", version=1),
+            json={"validator_set_revision_id": str(IDS["validator_set"])},
+        )
+        author_list_denied = await client.get("/api/v1/authoring/drafts")
+        author_read_denied = await client.get(f"/api/v1/authoring/drafts/{draft_id}")
+        author_history_denied = await client.get(
+            f"/api/v1/authoring/content/{content_id}/history"
+        )
+
+        identity.account_id = IDS["author"]
+        identity.roles = ("author",)
+        validated = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:validate",
+            headers=_headers(key="scope-validate-allowed", version=1),
+            json={"validator_set_revision_id": str(IDS["validator_set"])},
+        )
+        report_id = validated.json()["report_id"]
 
         identity.account_id = IDS["replacement"]
         identity.roles = ("reviewer",)
         reviewer_read_denied = await client.get(
             f"/api/v1/authoring/drafts/{draft_id}"
         )
-        reviewer_validate_denied = await client.post(
-            f"/api/v1/authoring/drafts/{draft_id}:validate",
-            headers=_headers(key="scope-reviewer-denied", version=1),
-            json={"validator_set_revision_id": str(IDS["validator_set"])},
+        reviewer_report_denied = await client.get(
+            f"/api/v1/validation-reports/{report_id}"
         )
-
-        identity.roles = ("admin",)
-        admin_read_denied = await client.get(f"/api/v1/authoring/drafts/{draft_id}")
+        approve_denied = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:approve",
+            headers=_headers(key="scope-approve-denied", version=2),
+            json={"decision": "approved", "reason_code": "reviewed.complete"},
+        )
 
         identity.account_id = IDS["reviewer"]
         identity.roles = ("reviewer",)
-        reviewer_read_allowed = await client.get(
-            f"/api/v1/authoring/drafts/{draft_id}"
+        approved = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:approve",
+            headers=_headers(key="scope-approve-allowed", version=2),
+            json={"decision": "approved", "reason_code": "reviewed.complete"},
+        )
+
+        identity.account_id = IDS["replacement"]
+        identity.roles = ("admin",)
+        admin_read_denied = await client.get(f"/api/v1/authoring/drafts/{draft_id}")
+        publish_denied = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:publish",
+            headers=_headers(key="scope-publish-denied", version=3),
+            json={
+                "publication_provenance_id": str(IDS["publication_provenance"]),
+                "channel_code": "stable",
+                "compatibility_range": ">=2.0.0,<2.1.0",
+            },
+        )
+
+        identity.account_id = IDS["reviewer"]
+        identity.roles = ("admin",)
+        admin_read_allowed = await client.get(f"/api/v1/authoring/drafts/{draft_id}")
+        admin_report_allowed = await client.get(f"/api/v1/validation-reports/{report_id}")
+        published = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:publish",
+            headers=_headers(key="scope-publish-allowed", version=3),
+            json={
+                "publication_provenance_id": str(IDS["publication_provenance"]),
+                "channel_code": "stable",
+                "compatibility_range": ">=2.0.0,<2.1.0",
+            },
+        )
+
+        identity.account_id = IDS["replacement"]
+        retire_denied = await client.post(
+            f"/api/v1/content/{content_id}/revisions/{draft_id}:retire",
+            headers=_headers(key="scope-retire-denied", version=4),
+        )
+
+        identity.account_id = IDS["reviewer"]
+        admin_history_allowed = await client.get(
+            f"/api/v1/authoring/content/{content_id}/history"
+        )
+        retired = await client.post(
+            f"/api/v1/content/{content_id}/revisions/{draft_id}:retire",
+            headers=_headers(key="scope-retire-allowed", version=4),
         )
 
     assert author_denied.status_code == 403
     assert created.status_code == 201
+    assert revise_denied.status_code == 403
+    assert validate_denied.status_code == 403
+    assert author_list_denied.status_code == 200
+    assert author_list_denied.json()["items"] == []
+    assert author_read_denied.status_code == 404
+    assert author_history_denied.status_code == 404
     assert reviewer_read_denied.status_code == 404
-    assert reviewer_validate_denied.status_code == 403
+    assert reviewer_report_denied.status_code == 404
+    assert approve_denied.status_code == 403
+    assert approved.status_code == 200
     assert admin_read_denied.status_code == 404
-    assert reviewer_read_allowed.status_code == 200
+    assert publish_denied.status_code == 403
+    assert admin_read_allowed.status_code == 200
+    assert admin_report_allowed.status_code == 200
+    assert published.status_code == 200
+    assert retire_denied.status_code == 403
+    assert admin_history_allowed.status_code == 200
+    assert retired.status_code == 200

@@ -3,11 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def test_content_migration_creates_revision_publication_and_history_tables(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
     table_names = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text(
                     "SELECT table_name FROM information_schema.tables "
                     "WHERE table_schema = 'content'"
@@ -31,11 +31,11 @@ async def test_content_migration_creates_revision_publication_and_history_tables
 
 
 async def test_content_migration_persists_pack_scope_and_sealed_proof_counts(
-    session: AsyncSession,
+    migration_session: AsyncSession,
 ) -> None:
     columns = set(
         (
-            await session.execute(
+            await migration_session.execute(
                 text(
                     "SELECT table_name || '.' || column_name "
                     "FROM information_schema.columns WHERE table_schema = 'content'"

@@ -60,6 +60,18 @@ def test_fx_content_positive_fixture_covers_editorial_and_failure_oracles() -> N
         "reference_not_publishable",
         "historical_rights_conflict",
     }
+    assert {case.case for case in fixture.negative_oracles} >= {
+        "identical_key_identical_payload",
+        "concurrent_same_if_match",
+        "failure_after_event",
+        "service_editorial_command",
+        "actor_outside_pack",
+        "blocking_finding_in_passed_report",
+        "late_manifest_entry",
+        "rejected_revision_publish",
+        "rejected_revision_replay",
+        "rejected_revision_revise_in_place",
+    }
     assert {case.validation_status for case in fixture.validation_oracles} == {
         "passed",
         "failed",

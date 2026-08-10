@@ -1,19 +1,28 @@
+from datetime import timedelta
+
 import pytest
 from sqlalchemy import Table, select, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .conftest import IDS, NOW, VARIETY_ID, seed_provenance
+from .conftest import (
+    IDS,
+    NOW,
+    SESSION_PROOFS,
+    VARIETY_ID,
+    seed_published_catalogue_reference,
+)
 
 
 async def _insert_draft(session: AsyncSession) -> None:
     from polyglot.modules.content.persistence import content_items, content_revisions
 
-    await seed_provenance(session)
+    await seed_published_catalogue_reference(session)
     await session.execute(
         content_items.insert().values(
             content_id=IDS["content"],
             content_type="dialogue",
+            pack_id=IDS["pack"],
             variety_id=VARIETY_ID,
             editorial_owner_id=IDS["author"],
             lineage_root_id=IDS["content"],
@@ -137,10 +146,11 @@ async def _insert_complete_audit_chain(session: AsyncSession) -> tuple[Table, ..
             report_id=IDS["report"],
             subject_revision_id=IDS["revision"],
             validator_set_revision_id=IDS["validator_set"],
-            status="passed",
+            status="running",
             started_at=NOW,
-            completed_at=NOW,
-            summary_checksum="c" * 64,
+            completed_at=None,
+            finding_count=0,
+            summary_checksum=None,
         )
     )
     await session.execute(
@@ -155,6 +165,11 @@ async def _insert_complete_audit_chain(session: AsyncSession) -> tuple[Table, ..
             redacted_value=None,
             resolved_by_revision_id=None,
         )
+    )
+    await session.execute(
+        validation_reports.update()
+        .where(validation_reports.c.report_id == IDS["report"])
+        .values(status="passed", completed_at=NOW)
     )
     await session.execute(
         content_revisions.update()
@@ -190,6 +205,7 @@ async def _insert_complete_audit_chain(session: AsyncSession) -> tuple[Table, ..
             compatibility_range=">=2.0.0,<2.1.0",
             checksum="d" * 64,
             provenance_id=IDS["provenance"],
+            entry_count=1,
             published_at=NOW,
             retired_at=None,
         )
@@ -250,11 +266,17 @@ async def _insert_validated_revision(session: AsyncSession) -> None:
             report_id=IDS["report"],
             subject_revision_id=IDS["revision"],
             validator_set_revision_id=IDS["validator_set"],
-            status="passed",
+            status="running",
             started_at=NOW,
-            completed_at=NOW,
-            summary_checksum="c" * 64,
+            completed_at=None,
+            finding_count=0,
+            summary_checksum=None,
         )
+    )
+    await session.execute(
+        validation_reports.update()
+        .where(validation_reports.c.report_id == IDS["report"])
+        .values(status="passed", completed_at=NOW)
     )
     await session.execute(
         content_revisions.update()
@@ -392,6 +414,7 @@ async def test_runtime_cannot_execute_editorial_cycle_without_command_artifacts(
                 compatibility_range=">=2.0.0,<2.1.0",
                 checksum="d" * 64,
                 provenance_id=IDS["provenance"],
+                entry_count=0,
                 published_at=NOW,
                 retired_at=None,
             )
@@ -453,16 +476,28 @@ async def test_runtime_cannot_extend_terminal_child_collections(
     await session.rollback()
 
 
+@pytest.mark.parametrize(
+    "command_type",
+    (
+        "CreateContentDraft",
+        "ReviseContentDraft",
+        "ValidateContentRevision",
+        "ApproveContentRevision",
+        "PublishContentRevision",
+        "RetireContentRevision",
+    ),
+)
 async def test_service_actor_cannot_open_editorial_command_context(
     migration_session: AsyncSession,
     session: AsyncSession,
+    command_type: str,
 ) -> None:
     from polyglot.platform.persistence.models import command_receipts
 
     await migration_session.execute(
         command_receipts.insert().values(
             command_id=IDS["command"],
-            command_type="CreateContentDraft",
+            command_type=command_type,
             actor_id=IDS["author"],
             aggregate_type="content_item",
             aggregate_id=IDS["content"],
@@ -481,14 +516,218 @@ async def test_service_actor_cannot_open_editorial_command_context(
     with pytest.raises(DBAPIError, match="human account command context required"):
         await session.execute(
             text(
-                "SELECT content.begin_command(:command_id, 'service', :session_id, :pack_id)"
+                "SELECT content.begin_command(:command_id, 'service', :session_id, "
+                ":pack_id, :session_proof)"
             ),
             {
                 "command_id": IDS["command"],
                 "session_id": IDS["session"],
                 "pack_id": IDS["pack"],
+                "session_proof": "not-a-human-proof",
             },
         )
+
+
+async def test_sql_command_context_requires_matching_session_and_pack_scope(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+) -> None:
+    from polyglot.platform.persistence.models import command_receipts
+
+    await seed_published_catalogue_reference(migration_session)
+    await migration_session.execute(
+        command_receipts.insert().values(
+            command_id=IDS["command"],
+            command_type="ValidateContentRevision",
+            actor_id=IDS["replacement"],
+            aggregate_type="content_item",
+            aggregate_id=IDS["content"],
+            idempotency_key="out-of-pack-human",
+            request_fingerprint="d" * 64,
+            expected_version=1,
+            received_at=NOW,
+            result_ref=None,
+            result_payload=None,
+            status="started",
+            expires_at=NOW + timedelta(hours=1),
+        )
+    )
+    await migration_session.commit()
+
+    with pytest.raises(DBAPIError, match="active human session required"):
+        await session.execute(
+            text(
+                "SELECT content.begin_command(:command_id, 'account', :session_id, "
+                ":pack_id, :session_proof)"
+            ),
+            {
+                "command_id": IDS["command"],
+                "session_id": IDS["session"],
+                "pack_id": IDS["pack"],
+                "session_proof": SESSION_PROOFS[IDS["replacement"]],
+            },
+        )
+    await session.rollback()
+
+    with pytest.raises(DBAPIError, match="active human session required"):
+        await session.execute(
+            text(
+                "SELECT content.begin_command(:command_id, 'account', :session_id, "
+                ":pack_id, :session_proof)"
+            ),
+            {
+                "command_id": IDS["command"],
+                "session_id": IDS["outsider_session"],
+                "pack_id": IDS["pack"],
+                "session_proof": SESSION_PROOFS[IDS["author"]],
+            },
+        )
+    await session.rollback()
+
+    with pytest.raises(DBAPIError, match="editorial pack scope required"):
+        await session.execute(
+            text(
+                "SELECT content.begin_command(:command_id, 'account', :session_id, "
+                ":pack_id, :session_proof)"
+            ),
+            {
+                "command_id": IDS["command"],
+                "session_id": IDS["outsider_session"],
+                "pack_id": IDS["pack"],
+                "session_proof": SESSION_PROOFS[IDS["replacement"]],
+            },
+        )
+
+
+async def test_sql_command_context_requires_recent_human_reauthentication(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+) -> None:
+    from polyglot.platform.persistence.models import command_receipts
+
+    await seed_published_catalogue_reference(migration_session)
+    await migration_session.execute(
+        text(
+            "UPDATE identity.auth_sessions SET authenticated_at = :authenticated_at, "
+            "absolute_expires_at = :absolute_expires_at "
+            "WHERE session_id = :session_id"
+        ),
+        {
+            "authenticated_at": NOW - timedelta(minutes=6),
+            "absolute_expires_at": NOW - timedelta(minutes=6) + timedelta(days=7),
+            "session_id": IDS["reviewer_session"],
+        },
+    )
+    await migration_session.execute(
+        command_receipts.insert().values(
+            command_id=IDS["command"],
+            command_type="PublishContentRevision",
+            actor_id=IDS["reviewer"],
+            aggregate_type="content_item",
+            aggregate_id=IDS["content"],
+            idempotency_key="stale-human-session",
+            request_fingerprint="b" * 64,
+            expected_version=1,
+            received_at=NOW,
+            result_ref=None,
+            result_payload=None,
+            status="started",
+            expires_at=NOW + timedelta(hours=1),
+        )
+    )
+    await migration_session.commit()
+
+    with pytest.raises(DBAPIError, match="recent human authentication required"):
+        await session.execute(
+            text(
+                "SELECT content.begin_command(:command_id, 'account', :session_id, "
+                ":pack_id, :session_proof)"
+            ),
+            {
+                "command_id": IDS["command"],
+                "session_id": IDS["reviewer_session"],
+                "pack_id": IDS["pack"],
+                "session_proof": SESSION_PROOFS[IDS["reviewer"]],
+            },
+        )
+
+
+async def test_passed_report_rejects_blocking_findings_when_sealed(
+    migration_session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import (
+        content_revisions,
+        validation_findings,
+        validation_reports,
+    )
+
+    await _insert_draft(migration_session)
+    await migration_session.execute(
+        content_revisions.update()
+        .where(content_revisions.c.content_revision_id == IDS["revision"])
+        .values(status="validating")
+    )
+    await migration_session.execute(
+        validation_reports.insert().values(
+            report_id=IDS["report"],
+            subject_revision_id=IDS["revision"],
+            validator_set_revision_id=IDS["validator_set"],
+            status="running",
+            started_at=NOW,
+            completed_at=None,
+            finding_count=0,
+            summary_checksum=None,
+        )
+    )
+    await migration_session.execute(
+        validation_findings.insert().values(
+            finding_id=IDS["finding"],
+            report_id=IDS["report"],
+            ordinal=1,
+            validator_code="sql.blocking",
+            severity="blocking",
+            path="$",
+            message_code="sql.blocking",
+            redacted_value=None,
+            resolved_by_revision_id=None,
+        )
+    )
+    with pytest.raises(DBAPIError, match="status contradicts findings"):
+        await migration_session.execute(
+            validation_reports.update()
+            .where(validation_reports.c.report_id == IDS["report"])
+            .values(status="passed", completed_at=NOW)
+        )
+
+
+async def test_sealed_report_and_manifest_persist_coherent_counts_and_checksum(
+    migration_session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import (
+        publication_manifests,
+        validation_reports,
+    )
+
+    await _insert_complete_audit_chain(migration_session)
+    report = (
+        await migration_session.execute(
+            select(
+                validation_reports.c.finding_count,
+                validation_reports.c.summary_checksum,
+            ).where(validation_reports.c.report_id == IDS["report"])
+        )
+    ).one()
+    manifest_count = await migration_session.scalar(
+        select(publication_manifests.c.entry_count).where(
+            publication_manifests.c.publication_manifest_id == IDS["manifest"]
+        )
+    )
+
+    assert report.finding_count == 1
+    assert isinstance(report.summary_checksum, str)
+    assert len(report.summary_checksum) == 64
+    assert report.summary_checksum != "c" * 64
+    assert manifest_count == 1
 
 
 async def test_passed_report_cannot_receive_blocking_finding_in_same_transaction(

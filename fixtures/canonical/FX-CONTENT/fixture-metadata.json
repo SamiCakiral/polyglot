@@ -4,7 +4,7 @@
   "seed": 5005,
   "clock": "2026-08-10T12:00:00+00:00",
   "payloads": {
-    "content.json": "sha256:e25d59b60dadd45fe0b66aae240b000b1b48b81356c307643919fef68ecc5157"
+    "content.json": "sha256:2b9698dec9a8abe9b20d8f3c05168dbcaddcc654f666fcc45f8972dd92368b5c"
   },
   "oracles": [
     "editorial_cycle_complete",
@@ -13,7 +13,15 @@
     "publication_manifest_atomic",
     "historical_revision_readable",
     "v1_counterexamples_require_human_review",
-    "editorial_rejection_requires_new_revision"
+    "editorial_rejection_requires_new_revision",
+    "idempotent_replay_single_effect",
+    "concurrent_if_match_conflict",
+    "injected_failure_rolls_back",
+    "service_actor_forbidden",
+    "pack_scope_enforced",
+    "sealed_validation_report",
+    "sealed_publication_manifest",
+    "rejection_event_outbox_idempotent_new_revision"
   ],
   "network_dependencies": [],
   "linguistic_review": "pending_human"
