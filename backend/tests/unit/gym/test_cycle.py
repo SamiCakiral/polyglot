@@ -172,7 +172,13 @@ def test_not_evaluable_and_h4_are_activity_without_credit_or_progression() -> No
 def test_replay_after_progression_is_idempotent_and_conflicts_are_explicit() -> None:
     cycle = _cycle()
     progressed = _complete(cycle, now=START, key="g0")
-    replayed = _complete(progressed, now=START, key="g0")
+    replayed = _complete(
+        progressed,
+        now=START,
+        key="g0",
+        context_id="context:g0",
+        scene_id="scene:g0",
+    )
 
     assert replayed == progressed
     assert len(replayed.records) == 1
@@ -184,4 +190,3 @@ def test_replay_after_progression_is_idempotent_and_conflicts_are_explicit() -> 
             context_id="changed",
         )
     assert conflict.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
-
