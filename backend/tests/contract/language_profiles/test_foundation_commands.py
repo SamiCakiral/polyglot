@@ -189,15 +189,23 @@ async def _profile_in_foundations(client: AsyncClient, csrf: str) -> tuple[str, 
 
 
 def _correct_answers() -> list[dict[str, object]]:
-    return [
-        {
-            "item_revision_id": str(item.item_revision_id),
-            "answer": {"value": item.checker_values[0] if item.checker_values else "audio"},
-            "revealed": False,
-        }
-        for block in CATALOGUE.definition.blocks
-        for item in block.items
-    ]
+    answers: list[dict[str, object]] = []
+    totals = {"ITF-F1-01": 10, "ITF-F1-02": 10, "ITF-F5-02": 5}
+    for block in CATALOGUE.definition.blocks:
+        for item in block.items:
+            for trial_ordinal in range(1, totals.get(item.item_code, 1) + 1):
+                answers.append(
+                    {
+                        "item_revision_id": str(item.item_revision_id),
+                        "trial_ordinal": trial_ordinal,
+                        "answer": {
+                            "value": item.checker_values[0] if item.checker_values else "audio"
+                        },
+                        "revealed": False,
+                    }
+                )
+    assert len(answers) == 32
+    return answers
 
 
 async def test_foundation_run_uses_published_blocks_and_completes_only_after_delayed_session(
@@ -257,8 +265,10 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
         measures = (
             await connection.execute(
                 text(
-                    "SELECT evaluable, score FROM language_profiles.foundation_measurements "
-                    "WHERE foundation_run_id = :run_id ORDER BY measured_at, item_revision_id"
+                    "SELECT item_revision_id, trial_ordinal, criterion, evaluable, score "
+                    "FROM language_profiles.foundation_measurements "
+                    "WHERE foundation_run_id = :run_id "
+                    "ORDER BY measured_at, item_revision_id, trial_ordinal"
                 ),
                 {"run_id": UUID(run_id)},
             )
@@ -292,8 +302,18 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
         )
     await engine.dispose()
     assert blocks == 5
-    assert len(measures) == 20
+    assert len(measures) == 64
     assert sum(not row.evaluable and row.score is None for row in measures) == 2
+    assert sum(row.criterion == "grapheme_sound_discrimination" for row in measures) == 20
+    assert sum(row.criterion == "targeted_reading" for row in measures) == 20
+    assert sum(row.criterion == "survival_exchange" for row in measures) == 10
+    assert {row.trial_ordinal for row in measures if row.criterion == "survival_exchange"} == {
+        1,
+        2,
+        3,
+        4,
+        5,
+    }
     assert gate_count == 2
     assert "foundation_gate_completed" in events
     assert outbox_count == 1

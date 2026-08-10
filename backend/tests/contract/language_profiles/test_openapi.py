@@ -27,6 +27,12 @@ def test_foundation_openapi_exposes_versioned_complete_workflow() -> None:
     request_model = document["components"]["schemas"][request_schema["$ref"].rsplit("/", 1)[1]]
     assert set(request_model["properties"]) == {"answers"}
     assert request_model["additionalProperties"] is False
+    answer_schema = document["components"]["schemas"]["FoundationAnswerRequest"]
+    assert set(answer_schema["required"]) == {
+        "answer",
+        "item_revision_id",
+        "trial_ordinal",
+    }
     assert complete["responses"]["200"]["headers"]["ETag"]["schema"] == {
         "type": "string"
     }

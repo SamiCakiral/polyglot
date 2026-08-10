@@ -5,6 +5,7 @@ import pytest
 
 from polyglot.modules.language_profiles.foundations import (
     FoundationBlock,
+    FoundationCriterion,
     FoundationGate,
     FoundationMeasurement,
 )
@@ -18,6 +19,7 @@ SESSION_TWO = UUID("019fe903-1000-7000-8000-000000000002")
 def measurement(
     block: FoundationBlock,
     *,
+    criterion: FoundationCriterion | None = None,
     score: int,
     maximum: int,
     session_id: UUID,
@@ -27,6 +29,7 @@ def measurement(
 ) -> FoundationMeasurement:
     return FoundationMeasurement(
         block=block,
+        criterion=criterion,
         score=score,
         maximum=maximum,
         session_id=session_id,
@@ -38,9 +41,33 @@ def measurement(
 
 def passing_measurements(*, delayed_at: datetime) -> tuple[FoundationMeasurement, ...]:
     return (
-        measurement(FoundationBlock.F1, score=8, maximum=10, session_id=SESSION_ONE, at=NOW),
         measurement(
             FoundationBlock.F1,
+            criterion=FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
+            score=8,
+            maximum=10,
+            session_id=SESSION_ONE,
+            at=NOW,
+        ),
+        measurement(
+            FoundationBlock.F1,
+            criterion=FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
+            score=8,
+            maximum=10,
+            session_id=SESSION_TWO,
+            at=delayed_at,
+        ),
+        measurement(
+            FoundationBlock.F1,
+            criterion=FoundationCriterion.TARGETED_READING,
+            score=8,
+            maximum=10,
+            session_id=SESSION_ONE,
+            at=NOW,
+        ),
+        measurement(
+            FoundationBlock.F1,
+            criterion=FoundationCriterion.TARGETED_READING,
             score=8,
             maximum=10,
             session_id=SESSION_TWO,
@@ -49,7 +76,14 @@ def passing_measurements(*, delayed_at: datetime) -> tuple[FoundationMeasurement
         measurement(FoundationBlock.F2, score=1, maximum=1, session_id=SESSION_ONE, at=NOW),
         measurement(FoundationBlock.F3, score=4, maximum=5, session_id=SESSION_ONE, at=NOW),
         measurement(FoundationBlock.F4, score=1, maximum=1, session_id=SESSION_TWO, at=delayed_at),
-        measurement(FoundationBlock.F5, score=4, maximum=5, session_id=SESSION_TWO, at=delayed_at),
+        measurement(
+            FoundationBlock.F5,
+            criterion=FoundationCriterion.SURVIVAL_EXCHANGE,
+            score=4,
+            maximum=5,
+            session_id=SESSION_TWO,
+            at=delayed_at,
+        ),
     )
 
 
@@ -75,6 +109,7 @@ def test_revealed_survival_exchange_cannot_satisfy_the_gate() -> None:
     measures = list(passing_measurements(delayed_at=NOW + timedelta(hours=24)))
     measures[-1] = measurement(
         FoundationBlock.F5,
+        criterion=FoundationCriterion.SURVIVAL_EXCHANGE,
         score=4,
         maximum=5,
         session_id=SESSION_TWO,
@@ -86,6 +121,53 @@ def test_revealed_survival_exchange_cannot_satisfy_the_gate() -> None:
 
     assert result.passed is False
     assert "repair_not_autonomous" in result.reasons
+
+
+def test_two_correct_template_items_cannot_stand_in_for_ten_distinct_trials() -> None:
+    measures = list(passing_measurements(delayed_at=NOW + timedelta(hours=24)))
+    measures[0] = measurement(
+        FoundationBlock.F1,
+        criterion=FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
+        score=2,
+        maximum=2,
+        session_id=SESSION_ONE,
+        at=NOW,
+    )
+
+    result = FoundationGate.v0().evaluate(tuple(measures))
+
+    assert result.passed is False
+    assert "grapheme_sound_discrimination_incomplete" in result.reasons
+
+
+def test_gate_applies_each_published_absolute_threshold_independently() -> None:
+    measures = list(passing_measurements(delayed_at=NOW + timedelta(hours=24)))
+    measures[3] = measurement(
+        FoundationBlock.F1,
+        criterion=FoundationCriterion.TARGETED_READING,
+        score=7,
+        maximum=10,
+        session_id=SESSION_TWO,
+        at=NOW + timedelta(hours=24),
+    )
+
+    reading = FoundationGate.v0().evaluate(tuple(measures))
+    assert reading.passed is False
+    assert "targeted_reading_incomplete" in reading.reasons
+
+    measures = list(passing_measurements(delayed_at=NOW + timedelta(hours=24)))
+    measures[-1] = measurement(
+        FoundationBlock.F5,
+        criterion=FoundationCriterion.SURVIVAL_EXCHANGE,
+        score=3,
+        maximum=5,
+        session_id=SESSION_TWO,
+        at=NOW + timedelta(hours=24),
+    )
+
+    survival = FoundationGate.v0().evaluate(tuple(measures))
+    assert survival.passed is False
+    assert "repair_not_autonomous" in survival.reasons
 
 
 def test_audio_absent_is_not_evaluable_and_never_a_success() -> None:
