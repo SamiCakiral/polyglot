@@ -7,6 +7,7 @@ from uuid import UUID
 
 from sqlalchemy import (
     ARRAY,
+    Boolean,
     CheckConstraint,
     Column,
     DateTime,
@@ -27,11 +28,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from polyglot.modules.catalogue.core.domain import (
     ContentRevisionStatus,
     FoundationCheckerKind,
+    FoundationReferenceKind,
     PublishedFoundationBlock,
     PublishedFoundationCatalogue,
     PublishedFoundationDefinition,
     PublishedFoundationGate,
     PublishedFoundationItem,
+    PublishedFoundationReference,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.json_types import JsonValue
@@ -759,6 +762,38 @@ foundation_definition_revisions = Table(
     schema="catalogue",
 )
 
+foundation_reference_revisions = Table(
+    "foundation_reference_revisions",
+    metadata,
+    Column("reference_revision_id", PG_UUID(as_uuid=True), primary_key=True),
+    Column(
+        "pack_revision_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("catalogue.language_pack_revisions.pack_revision_id", ondelete="RESTRICT"),
+        nullable=False,
+    ),
+    Column("reference_code", String(120), nullable=False),
+    Column("reference_kind", String(24), nullable=False),
+    Column("status", String(24), nullable=False),
+    Column("checksum", String(64), nullable=False),
+    CheckConstraint(
+        "catalogue.is_uuid7(reference_revision_id) AND catalogue.is_uuid7(pack_revision_id)",
+        name="ck_catalogue_foundation_reference_uuid7",
+    ),
+    CheckConstraint(
+        "reference_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$' "
+        "AND reference_kind IN ('target', 'facet', 'waiver_policy') "
+        "AND status = 'published' AND checksum ~ '^[0-9a-f]{64}$'",
+        name="ck_catalogue_foundation_reference_shape",
+    ),
+    UniqueConstraint(
+        "pack_revision_id",
+        "reference_code",
+        name="uq_catalogue_foundation_reference_code",
+    ),
+    schema="catalogue",
+)
+
 foundation_block_revisions = Table(
     "foundation_block_revisions",
     metadata,
@@ -783,7 +818,7 @@ foundation_block_revisions = Table(
     Column("component_type", String(64), nullable=False),
     Column("prerequisite_refs", ARRAY(String(120)), nullable=False),
     Column("modalities", ARRAY(String(16)), nullable=False),
-    Column("backend_criteria", JSONB, nullable=False),
+    Column("backend_criteria", ARRAY(String(120)), nullable=False),
     Column("waiver_policy_ref", String(120), nullable=False),
     Column("status", String(24), nullable=False),
     Column("checksum", String(64), nullable=False),
@@ -801,8 +836,8 @@ foundation_block_revisions = Table(
     ),
     CheckConstraint(
         "cardinality(modalities) >= 1 AND modalities <@ ARRAY['reading', 'listening', "
-        "'writing', 'speaking']::varchar[] AND jsonb_typeof(backend_criteria) = 'array' "
-        "AND jsonb_array_length(backend_criteria) >= 1 AND checksum ~ '^[0-9a-f]{64}$'",
+        "'writing', 'speaking']::varchar[] AND cardinality(backend_criteria) >= 1 "
+        "AND checksum ~ '^[0-9a-f]{64}$'",
         name="ck_catalogue_foundation_block_shape",
     ),
     UniqueConstraint(
@@ -886,9 +921,11 @@ foundation_gate_revisions = Table(
     Column("gate_code", String(120), nullable=False),
     Column("blocking_target_refs", ARRAY(String(120)), nullable=False),
     Column("blocking_facet_refs", ARRAY(String(120)), nullable=False),
+    Column("blocking_facet_minimum_status", String(24), nullable=False),
     Column("coverage_threshold", Numeric(4, 3), nullable=False),
     Column("confidence_threshold", Numeric(4, 3), nullable=False),
     Column("minimum_distinct_sessions", Integer, nullable=False),
+    Column("delayed_control_block_code", String(16), nullable=False),
     Column("delayed_control_hours", Integer, nullable=False),
     Column("grapheme_sound_minimum", Integer, nullable=False),
     Column("grapheme_sound_total", Integer, nullable=False),
@@ -896,6 +933,7 @@ foundation_gate_revisions = Table(
     Column("targeted_reading_total", Integer, nullable=False),
     Column("survival_exchange_minimum", Integer, nullable=False),
     Column("survival_exchange_total", Integer, nullable=False),
+    Column("survival_exchange_without_reveal", Boolean, nullable=False),
     Column("oral_policy", String(64), nullable=False),
     Column("status", String(24), nullable=False),
     Column("checksum", String(64), nullable=False),
@@ -906,13 +944,18 @@ foundation_gate_revisions = Table(
     ),
     CheckConstraint(
         "gate_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$' "
-        "AND cardinality(blocking_target_refs) >= 1 AND cardinality(blocking_facet_refs) >= 1 "
-        "AND coverage_threshold::numeric > 0 AND coverage_threshold::numeric <= 1 "
-        "AND confidence_threshold::numeric > 0 AND confidence_threshold::numeric <= 1 "
-        "AND minimum_distinct_sessions >= 2 AND delayed_control_hours >= 24 "
-        "AND grapheme_sound_minimum BETWEEN 1 AND grapheme_sound_total "
-        "AND targeted_reading_minimum BETWEEN 1 AND targeted_reading_total "
-        "AND survival_exchange_minimum BETWEEN 1 AND survival_exchange_total "
+        "AND cardinality(blocking_target_refs) >= 1 "
+        "AND blocking_facet_refs = ARRAY['grapheme_sound_discrimination', "
+        "'controlled_reading', 'greeting_recognition', 'functional_frame_choice', "
+        "'written_guided_repair']::varchar[] "
+        "AND blocking_facet_minimum_status = 'reliable' "
+        "AND coverage_threshold = 1.000 AND confidence_threshold = 0.600 "
+        "AND minimum_distinct_sessions = 2 AND delayed_control_block_code = 'F1' "
+        "AND delayed_control_hours = 24 "
+        "AND grapheme_sound_minimum = 8 AND grapheme_sound_total = 10 "
+        "AND targeted_reading_minimum = 8 AND targeted_reading_total = 10 "
+        "AND survival_exchange_minimum = 4 AND survival_exchange_total = 5 "
+        "AND survival_exchange_without_reveal IS TRUE "
         "AND oral_policy = 'not_evaluable_non_blocking' "
         "AND status = 'published' AND checksum ~ '^[0-9a-f]{64}$'",
         name="ck_catalogue_foundation_gate_shape",
@@ -1296,6 +1339,24 @@ class SqlCatalogueRepository:
         if len(definitions) != 1:
             return None
         definition = definitions[0]
+        references = (
+            (
+                await self._session.execute(
+                    text(
+                        "SELECT reference_revision_id, pack_revision_id, reference_code, "
+                        "reference_kind, status, checksum "
+                        "FROM catalogue.foundation_reference_revisions "
+                        "WHERE pack_revision_id = :pack_revision_id AND status = 'published' "
+                        "ORDER BY reference_code, reference_revision_id LIMIT 32"
+                    ),
+                    {"pack_revision_id": pack_revision_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        if not references or len(references) == 32:
+            return None
         blocks = (
             (
                 await self._session.execute(
@@ -1348,11 +1409,13 @@ class SqlCatalogueRepository:
                 await self._session.execute(
                     text(
                         "SELECT gate_revision_id, foundation_revision_id, pack_revision_id, "
-                        "gate_code, blocking_target_refs, blocking_facet_refs, coverage_threshold, "
-                        "confidence_threshold, "
-                        "minimum_distinct_sessions, delayed_control_hours, grapheme_sound_minimum, "
+                        "gate_code, blocking_target_refs, blocking_facet_refs, "
+                        "blocking_facet_minimum_status, coverage_threshold, confidence_threshold, "
+                        "minimum_distinct_sessions, delayed_control_block_code, "
+                        "delayed_control_hours, grapheme_sound_minimum, "
                         "grapheme_sound_total, targeted_reading_minimum, targeted_reading_total, "
-                        "survival_exchange_minimum, survival_exchange_total, oral_policy, "
+                        "survival_exchange_minimum, survival_exchange_total, "
+                        "survival_exchange_without_reveal, oral_policy, "
                         "status, checksum "
                         "FROM catalogue.foundation_gate_revisions "
                         "WHERE foundation_revision_id = :foundation_revision_id "
@@ -1415,9 +1478,11 @@ class SqlCatalogueRepository:
                 gate_code=gate["gate_code"],
                 blocking_target_refs=tuple(gate["blocking_target_refs"]),
                 blocking_facet_refs=tuple(gate["blocking_facet_refs"]),
+                blocking_facet_minimum_status=gate["blocking_facet_minimum_status"],
                 coverage_threshold=float(gate["coverage_threshold"]),
                 confidence_threshold=float(gate["confidence_threshold"]),
                 minimum_distinct_sessions=gate["minimum_distinct_sessions"],
+                delayed_control_block_code=gate["delayed_control_block_code"],
                 delayed_control_hours=gate["delayed_control_hours"],
                 grapheme_sound_minimum=gate["grapheme_sound_minimum"],
                 grapheme_sound_total=gate["grapheme_sound_total"],
@@ -1425,11 +1490,23 @@ class SqlCatalogueRepository:
                 targeted_reading_total=gate["targeted_reading_total"],
                 survival_exchange_minimum=gate["survival_exchange_minimum"],
                 survival_exchange_total=gate["survival_exchange_total"],
+                survival_exchange_without_reveal=gate["survival_exchange_without_reveal"],
                 oral_policy=gate["oral_policy"],
                 status=ContentRevisionStatus(gate["status"]),
                 checksum=gate["checksum"],
             )
             return PublishedFoundationCatalogue(
+                references=tuple(
+                    PublishedFoundationReference(
+                        reference_revision_id=item["reference_revision_id"],
+                        pack_revision_id=item["pack_revision_id"],
+                        reference_code=item["reference_code"],
+                        reference_kind=FoundationReferenceKind(item["reference_kind"]),
+                        status=ContentRevisionStatus(item["status"]),
+                        checksum=item["checksum"],
+                    )
+                    for item in references
+                ),
                 definition=PublishedFoundationDefinition(
                     foundation_id=definition["foundation_id"],
                     foundation_revision_id=definition["foundation_revision_id"],

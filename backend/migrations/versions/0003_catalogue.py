@@ -22,6 +22,15 @@ AS $function$
     SELECT value IS NOT NULL AND (get_byte(uuid_send(value), 6) >> 4) = 7
 $function$;
 
+CREATE FUNCTION catalogue.foundation_content_checksum(kind text, VARIADIC parts text[])
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+AS $function$
+    SELECT encode(
+        sha256(convert_to(array_to_string(ARRAY[kind] || parts, chr(31)), 'UTF8')),
+        'hex'
+    )
+$function$;
+
 CREATE TABLE catalogue.language_varieties (
     variety_id uuid PRIMARY KEY,
     language_tag varchar(35) NOT NULL UNIQUE,
@@ -457,6 +466,29 @@ CREATE TABLE catalogue.foundation_definition_revisions (
     CONSTRAINT uq_catalogue_pack_foundation UNIQUE (pack_revision_id, foundation_id)
 );
 
+CREATE TABLE catalogue.foundation_reference_revisions (
+    reference_revision_id uuid PRIMARY KEY,
+    pack_revision_id uuid NOT NULL
+        REFERENCES catalogue.language_pack_revisions(pack_revision_id) ON DELETE RESTRICT,
+    reference_code varchar(120) NOT NULL,
+    reference_kind varchar(24) NOT NULL,
+    status varchar(24) NOT NULL,
+    checksum varchar(64) NOT NULL,
+    CONSTRAINT ck_catalogue_foundation_reference_uuid7 CHECK (
+        catalogue.is_uuid7(reference_revision_id)
+        AND catalogue.is_uuid7(pack_revision_id)
+    ),
+    CONSTRAINT ck_catalogue_foundation_reference_shape CHECK (
+        reference_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
+        AND reference_kind IN ('target', 'facet', 'waiver_policy')
+        AND status = 'published'
+        AND checksum ~ '^[0-9a-f]{64}$'
+    ),
+    CONSTRAINT uq_catalogue_foundation_reference_code UNIQUE (
+        pack_revision_id, reference_code
+    )
+);
+
 CREATE TABLE catalogue.foundation_block_revisions (
     block_revision_id uuid PRIMARY KEY,
     foundation_revision_id uuid NOT NULL
@@ -469,7 +501,7 @@ CREATE TABLE catalogue.foundation_block_revisions (
     component_type varchar(64) NOT NULL,
     prerequisite_refs varchar(120)[] NOT NULL,
     modalities varchar(16)[] NOT NULL,
-    backend_criteria jsonb NOT NULL,
+    backend_criteria varchar(120)[] NOT NULL,
     waiver_policy_ref varchar(120) NOT NULL,
     status varchar(24) NOT NULL,
     checksum varchar(64) NOT NULL,
@@ -488,8 +520,7 @@ CREATE TABLE catalogue.foundation_block_revisions (
     CONSTRAINT ck_catalogue_foundation_block_shape CHECK (
         cardinality(modalities) >= 1
         AND modalities <@ ARRAY['reading', 'listening', 'writing', 'speaking']::varchar[]
-        AND jsonb_typeof(backend_criteria) = 'array'
-        AND jsonb_array_length(backend_criteria) >= 1
+        AND cardinality(backend_criteria) >= 1
         AND checksum ~ '^[0-9a-f]{64}$'
     ),
     CONSTRAINT uq_catalogue_foundation_block_ordinal UNIQUE (foundation_revision_id, ordinal),
@@ -543,9 +574,11 @@ CREATE TABLE catalogue.foundation_gate_revisions (
     gate_code varchar(120) NOT NULL,
     blocking_target_refs varchar(120)[] NOT NULL,
     blocking_facet_refs varchar(120)[] NOT NULL,
+    blocking_facet_minimum_status varchar(24) NOT NULL,
     coverage_threshold numeric(4, 3) NOT NULL,
     confidence_threshold numeric(4, 3) NOT NULL,
     minimum_distinct_sessions integer NOT NULL,
+    delayed_control_block_code varchar(16) NOT NULL,
     delayed_control_hours integer NOT NULL,
     grapheme_sound_minimum integer NOT NULL,
     grapheme_sound_total integer NOT NULL,
@@ -553,6 +586,7 @@ CREATE TABLE catalogue.foundation_gate_revisions (
     targeted_reading_total integer NOT NULL,
     survival_exchange_minimum integer NOT NULL,
     survival_exchange_total integer NOT NULL,
+    survival_exchange_without_reveal boolean NOT NULL,
     oral_policy varchar(64) NOT NULL,
     status varchar(24) NOT NULL,
     checksum varchar(64) NOT NULL,
@@ -564,18 +598,240 @@ CREATE TABLE catalogue.foundation_gate_revisions (
     CONSTRAINT ck_catalogue_foundation_gate_shape CHECK (
         gate_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
         AND cardinality(blocking_target_refs) >= 1
-        AND cardinality(blocking_facet_refs) >= 1
-        AND coverage_threshold > 0 AND coverage_threshold <= 1
-        AND confidence_threshold > 0 AND confidence_threshold <= 1
-        AND minimum_distinct_sessions >= 2 AND delayed_control_hours >= 24
-        AND grapheme_sound_minimum BETWEEN 1 AND grapheme_sound_total
-        AND targeted_reading_minimum BETWEEN 1 AND targeted_reading_total
-        AND survival_exchange_minimum BETWEEN 1 AND survival_exchange_total
+        AND blocking_facet_refs = ARRAY[
+            'grapheme_sound_discrimination', 'controlled_reading',
+            'greeting_recognition', 'functional_frame_choice', 'written_guided_repair'
+        ]::varchar[]
+        AND blocking_facet_minimum_status = 'reliable'
+        AND coverage_threshold = 1.000 AND confidence_threshold = 0.600
+        AND minimum_distinct_sessions = 2
+        AND delayed_control_block_code = 'F1' AND delayed_control_hours = 24
+        AND grapheme_sound_minimum = 8 AND grapheme_sound_total = 10
+        AND targeted_reading_minimum = 8 AND targeted_reading_total = 10
+        AND survival_exchange_minimum = 4 AND survival_exchange_total = 5
+        AND survival_exchange_without_reveal IS TRUE
         AND oral_policy = 'not_evaluable_non_blocking'
         AND status = 'published'
         AND checksum ~ '^[0-9a-f]{64}$'
     )
 );
+
+CREATE FUNCTION catalogue.validate_foundation_checksum() RETURNS trigger
+LANGUAGE plpgsql AS $function$
+DECLARE
+    expected_checksum text;
+    definition_code varchar;
+BEGIN
+    CASE TG_TABLE_NAME
+        WHEN 'foundation_definition_revisions' THEN
+            SELECT foundation.foundation_code INTO definition_code
+            FROM catalogue.foundation_definitions AS foundation
+            WHERE foundation.foundation_id = NEW.foundation_id;
+            expected_checksum := catalogue.foundation_content_checksum(
+                'foundation_definition_v1', NEW.foundation_revision_id::text,
+                NEW.foundation_id::text, NEW.pack_revision_id::text, definition_code,
+                NEW.revision_no::text, NEW.status
+            );
+        WHEN 'foundation_reference_revisions' THEN
+            expected_checksum := catalogue.foundation_content_checksum(
+                'foundation_reference_v1', NEW.reference_revision_id::text,
+                NEW.pack_revision_id::text, NEW.reference_code, NEW.reference_kind, NEW.status
+            );
+        WHEN 'foundation_block_revisions' THEN
+            expected_checksum := catalogue.foundation_content_checksum(
+                'foundation_block_v1', NEW.block_revision_id::text,
+                NEW.foundation_revision_id::text, NEW.pack_revision_id::text, NEW.block_code,
+                NEW.ordinal::text, NEW.component_type,
+                array_to_string(NEW.prerequisite_refs, chr(30)),
+                array_to_string(NEW.modalities, chr(30)),
+                array_to_string(NEW.backend_criteria, chr(30)),
+                NEW.waiver_policy_ref, NEW.status
+            );
+        WHEN 'foundation_item_revisions' THEN
+            expected_checksum := catalogue.foundation_content_checksum(
+                'foundation_item_v1', NEW.item_revision_id::text,
+                NEW.block_revision_id::text, NEW.pack_revision_id::text, NEW.item_code,
+                NEW.ordinal::text, array_to_string(NEW.target_refs, chr(30)),
+                NEW.response_kind, NEW.checker_kind,
+                array_to_string(NEW.checker_values, chr(30)),
+                array_to_string(NEW.modalities, chr(30)), NEW.status
+            );
+        WHEN 'foundation_gate_revisions' THEN
+            expected_checksum := catalogue.foundation_content_checksum(
+                'foundation_gate_v1', NEW.gate_revision_id::text,
+                NEW.foundation_revision_id::text, NEW.pack_revision_id::text, NEW.gate_code,
+                array_to_string(NEW.blocking_target_refs, chr(30)),
+                array_to_string(NEW.blocking_facet_refs, chr(30)),
+                NEW.blocking_facet_minimum_status,
+                trim_scale(NEW.coverage_threshold)::text,
+                trim_scale(NEW.confidence_threshold)::text,
+                NEW.minimum_distinct_sessions::text, NEW.delayed_control_block_code,
+                NEW.delayed_control_hours::text, NEW.grapheme_sound_minimum::text,
+                NEW.grapheme_sound_total::text, NEW.targeted_reading_minimum::text,
+                NEW.targeted_reading_total::text, NEW.survival_exchange_minimum::text,
+                NEW.survival_exchange_total::text,
+                lower(NEW.survival_exchange_without_reveal::text), NEW.oral_policy, NEW.status
+            );
+    END CASE;
+    IF expected_checksum IS DISTINCT FROM NEW.checksum THEN
+        RAISE EXCEPTION 'foundation checksum does not match content' USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER validate_foundation_definition_checksum
+BEFORE INSERT OR UPDATE ON catalogue.foundation_definition_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_checksum();
+CREATE TRIGGER validate_foundation_reference_checksum
+BEFORE INSERT OR UPDATE ON catalogue.foundation_reference_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_checksum();
+CREATE TRIGGER validate_foundation_block_checksum
+BEFORE INSERT OR UPDATE ON catalogue.foundation_block_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_checksum();
+CREATE TRIGGER validate_foundation_item_checksum
+BEFORE INSERT OR UPDATE ON catalogue.foundation_item_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_checksum();
+CREATE TRIGGER validate_foundation_gate_checksum
+BEFORE INSERT OR UPDATE ON catalogue.foundation_gate_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_checksum();
+
+CREATE FUNCTION catalogue.validate_foundation_references() RETURNS trigger
+LANGUAGE plpgsql AS $function$
+DECLARE
+    parent_pack_revision_id uuid;
+    requested_refs varchar[];
+    requested_kind varchar;
+    row_data jsonb := to_jsonb(NEW);
+    waiver_policy_ref varchar;
+    blocking_facet_refs varchar[];
+BEGIN
+    IF TG_TABLE_NAME = 'foundation_block_revisions' THEN
+        SELECT pack_revision_id INTO parent_pack_revision_id
+        FROM catalogue.foundation_definition_revisions
+        WHERE foundation_revision_id = (row_data->>'foundation_revision_id')::uuid;
+        requested_refs := ARRAY(
+            SELECT jsonb_array_elements_text(row_data->'prerequisite_refs')
+        );
+        waiver_policy_ref := row_data->>'waiver_policy_ref';
+        requested_kind := 'target';
+    ELSIF TG_TABLE_NAME = 'foundation_item_revisions' THEN
+        SELECT pack_revision_id INTO parent_pack_revision_id
+        FROM catalogue.foundation_block_revisions
+        WHERE block_revision_id = (row_data->>'block_revision_id')::uuid;
+        requested_refs := ARRAY(
+            SELECT jsonb_array_elements_text(row_data->'target_refs')
+        );
+        requested_kind := 'target';
+    ELSE
+        SELECT pack_revision_id INTO parent_pack_revision_id
+        FROM catalogue.foundation_definition_revisions
+        WHERE foundation_revision_id = (row_data->>'foundation_revision_id')::uuid;
+        requested_refs := ARRAY(
+            SELECT jsonb_array_elements_text(row_data->'blocking_target_refs')
+        );
+        blocking_facet_refs := ARRAY(
+            SELECT jsonb_array_elements_text(row_data->'blocking_facet_refs')
+        );
+        requested_kind := 'target';
+    END IF;
+    IF parent_pack_revision_id IS DISTINCT FROM NEW.pack_revision_id THEN
+        RAISE EXCEPTION 'foundation child does not match published pack' USING ERRCODE = '23514';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM unnest(requested_refs) AS requested(reference_code)
+        WHERE NOT EXISTS (
+            SELECT 1 FROM catalogue.foundation_reference_revisions AS reference
+            WHERE reference.pack_revision_id = NEW.pack_revision_id
+              AND reference.reference_code = requested.reference_code
+              AND reference.reference_kind = requested_kind
+              AND reference.status = 'published'
+        )
+    ) THEN
+        RAISE EXCEPTION 'foundation reference is not published' USING ERRCODE = '23503';
+    END IF;
+    IF TG_TABLE_NAME = 'foundation_block_revisions' AND NOT EXISTS (
+        SELECT 1 FROM catalogue.foundation_reference_revisions AS reference
+        WHERE reference.pack_revision_id = NEW.pack_revision_id
+          AND reference.reference_code = waiver_policy_ref
+          AND reference.reference_kind = 'waiver_policy'
+          AND reference.status = 'published'
+    ) THEN
+        RAISE EXCEPTION 'foundation reference is not published' USING ERRCODE = '23503';
+    END IF;
+    IF TG_TABLE_NAME = 'foundation_gate_revisions' AND EXISTS (
+        SELECT 1 FROM unnest(blocking_facet_refs) AS requested(reference_code)
+        WHERE NOT EXISTS (
+            SELECT 1 FROM catalogue.foundation_reference_revisions AS reference
+            WHERE reference.pack_revision_id = NEW.pack_revision_id
+              AND reference.reference_code = requested.reference_code
+              AND reference.reference_kind = 'facet'
+              AND reference.status = 'published'
+        )
+    ) THEN
+        RAISE EXCEPTION 'foundation reference is not published' USING ERRCODE = '23503';
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER validate_foundation_block_references
+BEFORE INSERT OR UPDATE ON catalogue.foundation_block_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_references();
+CREATE TRIGGER validate_foundation_item_references
+BEFORE INSERT OR UPDATE ON catalogue.foundation_item_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_references();
+CREATE TRIGGER validate_foundation_gate_references
+BEFORE INSERT OR UPDATE ON catalogue.foundation_gate_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_foundation_references();
+
+CREATE FUNCTION catalogue.reject_late_foundation_insert() RETURNS trigger
+LANGUAGE plpgsql AS $function$
+DECLARE
+    is_published boolean;
+BEGIN
+    IF TG_TABLE_NAME = 'foundation_definition_revisions' THEN
+        SELECT EXISTS (
+            SELECT 1 FROM catalogue.foundation_definition_revisions
+            WHERE pack_revision_id = NEW.pack_revision_id AND status = 'published'
+        ) INTO is_published;
+    ELSIF TG_TABLE_NAME = 'foundation_reference_revisions' THEN
+        SELECT EXISTS (
+            SELECT 1 FROM catalogue.foundation_gate_revisions
+            WHERE pack_revision_id = NEW.pack_revision_id AND status = 'published'
+        ) INTO is_published;
+    ELSIF TG_TABLE_NAME = 'foundation_block_revisions' THEN
+        SELECT EXISTS (
+            SELECT 1 FROM catalogue.foundation_gate_revisions
+            WHERE foundation_revision_id = NEW.foundation_revision_id AND status = 'published'
+        ) INTO is_published;
+    ELSE
+        SELECT EXISTS (
+            SELECT 1 FROM catalogue.foundation_gate_revisions AS gate
+            JOIN catalogue.foundation_block_revisions AS block
+              ON block.foundation_revision_id = gate.foundation_revision_id
+            WHERE block.block_revision_id = NEW.block_revision_id AND gate.status = 'published'
+        ) INTO is_published;
+    END IF;
+    IF is_published THEN
+        RAISE EXCEPTION 'published foundation is immutable' USING ERRCODE = '55000';
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER guard_late_foundation_definition
+BEFORE INSERT ON catalogue.foundation_definition_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.reject_late_foundation_insert();
+CREATE TRIGGER guard_late_foundation_reference
+BEFORE INSERT ON catalogue.foundation_reference_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.reject_late_foundation_insert();
+CREATE TRIGGER guard_late_foundation_block
+BEFORE INSERT ON catalogue.foundation_block_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.reject_late_foundation_insert();
+CREATE TRIGGER guard_late_foundation_item
+BEFORE INSERT ON catalogue.foundation_item_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.reject_late_foundation_insert();
 
 CREATE FUNCTION catalogue.reject_published_revision() RETURNS trigger
 LANGUAGE plpgsql AS $function$
@@ -604,6 +860,9 @@ BEFORE UPDATE OR DELETE ON catalogue.lexical_sense_revisions
 FOR EACH ROW EXECUTE FUNCTION catalogue.reject_published_revision();
 CREATE TRIGGER guard_published_foundation_revision
 BEFORE UPDATE OR DELETE ON catalogue.foundation_definition_revisions
+FOR EACH ROW EXECUTE FUNCTION catalogue.reject_published_revision();
+CREATE TRIGGER guard_published_foundation_reference
+BEFORE UPDATE OR DELETE ON catalogue.foundation_reference_revisions
 FOR EACH ROW EXECUTE FUNCTION catalogue.reject_published_revision();
 CREATE TRIGGER guard_published_foundation_block
 BEFORE UPDATE OR DELETE ON catalogue.foundation_block_revisions
@@ -637,6 +896,9 @@ BEGIN
             UNION ALL
             SELECT status FROM catalogue.foundation_definition_revisions
              WHERE foundation_revision_id = ANY(revision_ids)
+            UNION ALL
+            SELECT status FROM catalogue.foundation_reference_revisions
+             WHERE reference_revision_id = ANY(revision_ids)
             UNION ALL
             SELECT status FROM catalogue.foundation_block_revisions
              WHERE block_revision_id = ANY(revision_ids)
@@ -916,7 +1178,8 @@ BEGIN
     SELECT revision.pack_revision_id, definition.foundation_code
       INTO definition_pack_revision_id, definition_code
     FROM catalogue.foundation_definition_revisions AS revision
-    JOIN catalogue.foundation_definitions AS definition ON definition.foundation_id = revision.foundation_id
+    JOIN catalogue.foundation_definitions AS definition
+      ON definition.foundation_id = revision.foundation_id
     WHERE revision.foundation_revision_id = NEW.foundation_revision_id;
     IF definition_pack_revision_id IS DISTINCT FROM NEW.pack_revision_id
        OR definition_code IS DISTINCT FROM NEW.gate_code THEN
@@ -937,7 +1200,9 @@ BEGIN
              AND item.status = 'published') <> 10 THEN
         RAISE EXCEPTION 'foundation definition is incomplete' USING ERRCODE = '23514';
     END IF;
-    IF EXISTS (
+    IF cardinality(NEW.blocking_target_refs) <>
+       (SELECT count(DISTINCT target_ref) FROM unnest(NEW.blocking_target_refs) AS target_ref)
+       OR EXISTS (
         SELECT 1
         FROM unnest(NEW.blocking_target_refs) AS requested(target_ref)
         WHERE NOT EXISTS (
@@ -951,6 +1216,16 @@ BEGIN
               AND item.checker_kind <> 'not_evaluable'
               AND declared.target_ref = requested.target_ref
         )
+    ) OR EXISTS (
+        SELECT 1
+        FROM catalogue.foundation_item_revisions AS item
+        JOIN catalogue.foundation_block_revisions AS block
+          ON block.block_revision_id = item.block_revision_id
+        CROSS JOIN unnest(item.target_refs) AS declared(target_ref)
+        WHERE block.foundation_revision_id = NEW.foundation_revision_id
+          AND item.pack_revision_id = NEW.pack_revision_id
+          AND item.checker_kind <> 'not_evaluable'
+          AND NOT declared.target_ref = ANY(NEW.blocking_target_refs)
     ) THEN
         RAISE EXCEPTION 'foundation gate references missing target' USING ERRCODE = '23514';
     END IF;
@@ -978,6 +1253,10 @@ BEGIN
 END;
 $owners$;
 ALTER FUNCTION catalogue.is_uuid7(uuid) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.foundation_content_checksum(text, text[]) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.validate_foundation_checksum() OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.validate_foundation_references() OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.reject_late_foundation_insert() OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.reject_published_revision() OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.assert_published_revisions_immutable(uuid[]) OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.guard_published_child() OWNER TO polyglot_migration;

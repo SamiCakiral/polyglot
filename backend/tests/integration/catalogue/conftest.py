@@ -10,6 +10,7 @@ from polyglot.bootstrap.database import (
     database_url_from_environment,
     migration_database_url_from_environment,
 )
+from polyglot.modules.catalogue.core.domain import foundation_content_checksum
 
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 IDS = {
@@ -439,6 +440,16 @@ async def seed_catalogue(
 
 
 async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> None:
+    status = "published"
+    definition_checksum = foundation_content_checksum(
+        "foundation_definition_v1",
+        IDS["foundation_revision"],
+        IDS["foundation"],
+        IDS["pack_revision"],
+        "FOUNDATIONS_IT_V0",
+        1,
+        status,
+    )
     await session.execute(
         text(
             "INSERT INTO catalogue.foundation_definitions (foundation_id, foundation_code) "
@@ -451,14 +462,64 @@ async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> Non
             "INSERT INTO catalogue.foundation_definition_revisions "
             "(foundation_revision_id, foundation_id, pack_revision_id, "
             "revision_no, status, checksum) "
-            "VALUES (:revision, :foundation, :pack, 1, 'published', repeat('a', 64))"
+            "VALUES (:revision, :foundation, :pack, 1, 'published', :checksum)"
         ),
         {
             "revision": IDS["foundation_revision"],
             "foundation": IDS["foundation"],
             "pack": IDS["pack_revision"],
+            "checksum": definition_checksum,
         },
     )
+    reference_specs = (
+        *((code, "target") for code in (
+            "IT-PHON-001",
+            "IT-PHON-002",
+            "IT-PHON-003",
+            "IT-PHON-004",
+            "IT-PRAG-001",
+            "IT-PRAG-002",
+            "IT-ID-001",
+            "IT-GRAM-002",
+            "IT-GRAM-003",
+            "IT-GRAM-007",
+            "IT-GRAM-027",
+            "IT-POLITE-002",
+            "IT-REPAIR-001",
+        )),
+        *((code, "facet") for code in (
+            "grapheme_sound_discrimination",
+            "controlled_reading",
+            "greeting_recognition",
+            "functional_frame_choice",
+            "written_guided_repair",
+        )),
+        ("DIAGNOSTIC_WAIVER_V0", "waiver_policy"),
+    )
+    for number, (code, kind) in enumerate(reference_specs, start=1):
+        reference_revision_id = UUID(f"019fe900-5000-7000-8077-{number:012x}")
+        await session.execute(
+            text(
+                "INSERT INTO catalogue.foundation_reference_revisions "
+                "(reference_revision_id, pack_revision_id, reference_code, reference_kind, "
+                "status, checksum) VALUES (:revision, :pack, :code, :kind, "
+                "'published', :checksum)"
+            ),
+            {
+                "revision": reference_revision_id,
+                "pack": IDS["pack_revision"],
+                "code": code,
+                "kind": kind,
+                "checksum": foundation_content_checksum(
+                    "foundation_reference_v1",
+                    reference_revision_id,
+                    IDS["pack_revision"],
+                    code,
+                    kind,
+                    status,
+                ),
+            },
+        )
     block_specs = (
         ("f1", "F1", 1, "script_perception", ("listening", "reading")),
         ("f2", "F2", 2, "perception_production", ("listening", "speaking")),
@@ -467,6 +528,22 @@ async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> Non
         ("f5", "F5", 5, "repair", ("reading", "writing")),
     )
     for key, code, ordinal, component_type, modalities in block_specs:
+        block_revision_id = IDS[f"foundation_block_{key}"]
+        backend_criteria = ("deterministic",)
+        block_checksum = foundation_content_checksum(
+            "foundation_block_v1",
+            block_revision_id,
+            IDS["foundation_revision"],
+            IDS["pack_revision"],
+            code,
+            ordinal,
+            component_type,
+            (),
+            modalities,
+            backend_criteria,
+            "DIAGNOSTIC_WAIVER_V0",
+            status,
+        )
         await session.execute(
             text(
                 "INSERT INTO catalogue.foundation_block_revisions "
@@ -474,17 +551,19 @@ async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> Non
                 "block_code, ordinal, component_type, prerequisite_refs, modalities, "
                 "backend_criteria, waiver_policy_ref, status, checksum) "
                 "VALUES (:block, :foundation, :pack, :code, :ordinal, :component, "
-                "ARRAY[]::varchar[], :modalities, '[\"deterministic\"]'::jsonb, "
-                "'DIAGNOSTIC_WAIVER_V0', 'published', repeat('b', 64))"
+                "ARRAY[]::varchar[], :modalities, :backend_criteria, "
+                "'DIAGNOSTIC_WAIVER_V0', 'published', :checksum)"
             ),
             {
-                "block": IDS[f"foundation_block_{key}"],
+                "block": block_revision_id,
                 "foundation": IDS["foundation_revision"],
                 "pack": IDS["pack_revision"],
                 "code": code,
                 "ordinal": ordinal,
                 "component": component_type,
                 "modalities": list(modalities),
+                "backend_criteria": list(backend_criteria),
+                "checksum": block_checksum,
             },
         )
     item_specs = (
@@ -581,6 +660,22 @@ async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> Non
         ),
     )
     for key, block, code, ordinal, targets, checker_kind, values, modalities in item_specs:
+        item_revision_id = IDS[f"foundation_item_{key}"]
+        block_revision_id = IDS[f"foundation_block_{block}"]
+        item_checksum = foundation_content_checksum(
+            "foundation_item_v1",
+            item_revision_id,
+            block_revision_id,
+            IDS["pack_revision"],
+            code,
+            ordinal,
+            targets,
+            "raw",
+            checker_kind,
+            values,
+            modalities,
+            status,
+        )
         await session.execute(
             text(
                 "INSERT INTO catalogue.foundation_item_revisions "
@@ -588,11 +683,11 @@ async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> Non
                 "ordinal, target_refs, response_kind, checker_kind, checker_values, "
                 "modalities, status, checksum) "
                 "VALUES (:item, :block, :pack, :code, :ordinal, :targets, 'raw', :checker_kind, "
-                ":checker_values, :modalities, 'published', repeat('c', 64))"
+                ":checker_values, :modalities, 'published', :checksum)"
             ),
             {
-                "item": IDS[f"foundation_item_{key}"],
-                "block": IDS[f"foundation_block_{block}"],
+                "item": item_revision_id,
+                "block": block_revision_id,
                 "pack": IDS["pack_revision"],
                 "code": code,
                 "ordinal": ordinal,
@@ -600,40 +695,76 @@ async def _seed_foundations(session: AsyncSession, *, include_gate: bool) -> Non
                 "checker_kind": checker_kind,
                 "checker_values": list(values),
                 "modalities": list(modalities),
+                "checksum": item_checksum,
             },
         )
     if not include_gate:
         return
+    blocking_targets = (
+        "IT-PHON-001",
+        "IT-PHON-003",
+        "IT-PHON-002",
+        "IT-PRAG-001",
+        "IT-PRAG-002",
+        "IT-ID-001",
+        "IT-GRAM-002",
+        "IT-GRAM-003",
+        "IT-GRAM-007",
+        "IT-GRAM-027",
+        "IT-POLITE-002",
+        "IT-REPAIR-001",
+    )
+    blocking_facets = (
+        "grapheme_sound_discrimination",
+        "controlled_reading",
+        "greeting_recognition",
+        "functional_frame_choice",
+        "written_guided_repair",
+    )
+    gate_checksum = foundation_content_checksum(
+        "foundation_gate_v1",
+        IDS["foundation_gate"],
+        IDS["foundation_revision"],
+        IDS["pack_revision"],
+        "FOUNDATIONS_IT_V0",
+        blocking_targets,
+        blocking_facets,
+        "reliable",
+        1.0,
+        0.6,
+        2,
+        "F1",
+        24,
+        8,
+        10,
+        8,
+        10,
+        4,
+        5,
+        True,
+        "not_evaluable_non_blocking",
+        status,
+    )
     await session.execute(
         text(
             "INSERT INTO catalogue.foundation_gate_revisions "
             "(gate_revision_id, foundation_revision_id, pack_revision_id, gate_code, "
-            "blocking_target_refs, blocking_facet_refs, coverage_threshold, confidence_threshold, "
-            "minimum_distinct_sessions, delayed_control_hours, grapheme_sound_minimum, "
+            "blocking_target_refs, blocking_facet_refs, blocking_facet_minimum_status, "
+            "coverage_threshold, confidence_threshold, minimum_distinct_sessions, "
+            "delayed_control_block_code, delayed_control_hours, grapheme_sound_minimum, "
             "grapheme_sound_total, targeted_reading_minimum, targeted_reading_total, "
-            "survival_exchange_minimum, survival_exchange_total, oral_policy, status, checksum) "
+            "survival_exchange_minimum, survival_exchange_total, "
+            "survival_exchange_without_reveal, oral_policy, status, checksum) "
             "VALUES (:gate, :foundation, :pack, 'FOUNDATIONS_IT_V0', :targets, "
-            "ARRAY['grapheme_sound', 'controlled_reading', 'survival_exchange'], 0.8, 0.6, "
-            "2, 24, 8, 10, 8, 10, 4, 5, 'not_evaluable_non_blocking', 'published', "
-            "repeat('d', 64))"
+            ":facets, 'reliable', 1.0, 0.6, 2, 'F1', 24, 8, 10, 8, 10, 4, 5, TRUE, "
+            "'not_evaluable_non_blocking', 'published', :checksum)"
         ),
         {
             "gate": IDS["foundation_gate"],
             "foundation": IDS["foundation_revision"],
             "pack": IDS["pack_revision"],
-            "targets": [
-                "IT-PHON-001",
-                "IT-PHON-003",
-                "IT-PHON-002",
-                "IT-PRAG-001",
-                "IT-PRAG-002",
-                "IT-ID-001",
-                "IT-GRAM-002",
-                "IT-GRAM-003",
-                "IT-GRAM-007",
-                "IT-GRAM-027",
-                "IT-POLITE-002",
-                "IT-REPAIR-001",
-            ],
+            "targets": list(blocking_targets),
+            "facets": list(blocking_facets),
+            "checksum": gate_checksum,
         },
     )

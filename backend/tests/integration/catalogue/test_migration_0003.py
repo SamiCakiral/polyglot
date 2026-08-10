@@ -6,6 +6,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from polyglot.modules.catalogue.core.domain import foundation_content_checksum
+
 from .conftest import IDS, NOW, seed_catalogue
 
 DRAFT_IDS = {
@@ -154,6 +156,7 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
         "foundation_definitions",
         "foundation_gate_revisions",
         "foundation_item_revisions",
+        "foundation_reference_revisions",
         "form_analyses",
         "form_realizations",
         "grammar_patterns",
@@ -298,6 +301,21 @@ async def test_0003_rejects_unresolved_foundation_refs_before_publication(
         include_foundation_gate=False,
     )
 
+    item_revision_id = UUID("019fe900-5000-7000-8075-000000000098")
+    checksum = foundation_content_checksum(
+        "foundation_item_v1",
+        item_revision_id,
+        IDS["foundation_block_f1"],
+        IDS["pack_revision"],
+        "ITF-F1-03",
+        3,
+        ("IT-MISSING-999",),
+        "raw",
+        "exact_choice",
+        ("well_formed",),
+        ("reading",),
+        "published",
+    )
     with pytest.raises(DBAPIError, match="foundation reference is not published"):
         await migration_session.execute(
             text(
@@ -305,11 +323,16 @@ async def test_0003_rejects_unresolved_foundation_refs_before_publication(
                 "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
                 "ordinal, target_refs, response_kind, checker_kind, checker_values, "
                 "modalities, status, checksum) "
-                "VALUES ('019fe900-5000-7000-8075-000000000098', :block, :pack, "
+                "VALUES (:item, :block, :pack, "
                 "'ITF-F1-03', 3, ARRAY['IT-MISSING-999'], 'raw', 'exact_choice', "
-                "ARRAY['well_formed'], ARRAY['reading'], 'published', repeat('e', 64))"
+                "ARRAY['well_formed'], ARRAY['reading'], 'published', :checksum)"
             ),
-            {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+            {
+                "item": item_revision_id,
+                "block": IDS["foundation_block_f1"],
+                "pack": IDS["pack_revision"],
+                "checksum": checksum,
+            },
         )
 
 
@@ -342,6 +365,21 @@ async def test_0003_rejects_a_structurally_valid_late_item_insert(
 ) -> None:
     await seed_catalogue(migration_session, include_foundations=True)
 
+    item_revision_id = UUID("019fe900-5000-7000-8075-000000000096")
+    checksum = foundation_content_checksum(
+        "foundation_item_v1",
+        item_revision_id,
+        IDS["foundation_block_f1"],
+        IDS["pack_revision"],
+        "ITF-F1-03",
+        3,
+        ("IT-PHON-001",),
+        "raw",
+        "exact_choice",
+        ("late_but_valid",),
+        ("reading",),
+        "published",
+    )
     with pytest.raises(DBAPIError, match="published foundation is immutable"):
         await migration_session.execute(
             text(
@@ -349,51 +387,118 @@ async def test_0003_rejects_a_structurally_valid_late_item_insert(
                 "(item_revision_id, block_revision_id, pack_revision_id, item_code, "
                 "ordinal, target_refs, response_kind, checker_kind, checker_values, "
                 "modalities, status, checksum) "
-                "VALUES ('019fe900-5000-7000-8075-000000000096', :block, :pack, "
+                "VALUES (:item, :block, :pack, "
                 "'ITF-F1-03', 3, ARRAY['IT-PHON-001'], 'raw', 'exact_choice', "
-                "ARRAY['late_but_valid'], ARRAY['reading'], 'published', repeat('e', 64))"
+                "ARRAY['late_but_valid'], ARRAY['reading'], 'published', :checksum)"
             ),
-            {"block": IDS["foundation_block_f1"], "pack": IDS["pack_revision"]},
+            {
+                "item": item_revision_id,
+                "block": IDS["foundation_block_f1"],
+                "pack": IDS["pack_revision"],
+                "checksum": checksum,
+            },
         )
 
 
 @pytest.mark.parametrize(
+    "gate_change",
     (
-        "minimum_distinct_sessions",
-        "delayed_control_hours",
-        "grapheme_minimum",
-        "grapheme_total",
-        "reading_minimum",
-        "reading_total",
-        "survival_minimum",
-        "survival_total",
-    ),
-    (
-        (3, 24, 8, 10, 8, 10, 4, 5),
-        (2, 25, 8, 10, 8, 10, 4, 5),
-        (2, 24, 7, 10, 8, 10, 4, 5),
-        (2, 24, 8, 11, 8, 10, 4, 5),
-        (2, 24, 8, 10, 7, 10, 4, 5),
-        (2, 24, 8, 10, 8, 11, 4, 5),
-        (2, 24, 8, 10, 8, 10, 3, 5),
-        (2, 24, 8, 10, 8, 10, 4, 6),
+        {"minimum_distinct_sessions": 3},
+        {"delayed_control_hours": 25},
+        {"grapheme_minimum": 7},
+        {"grapheme_total": 11},
+        {"reading_minimum": 7},
+        {"reading_total": 11},
+        {"survival_minimum": 3},
+        {"survival_total": 6},
+        {"coverage_threshold": 0.9},
+        {"confidence_threshold": 0.7},
+        {"facet_minimum_status": "mastered"},
+        {"delayed_control_block_code": "F2"},
+        {"without_reveal": False},
+        {"oral_policy": "self_report_non_blocking"},
+        {
+            "facets": (
+                "controlled_reading",
+                "grapheme_sound_discrimination",
+                "greeting_recognition",
+                "functional_frame_choice",
+                "written_guided_repair",
+            )
+        },
     ),
 )
 async def test_0003_rejects_validly_shaped_non_contractual_gate_values(
     migration_session: AsyncSession,
-    minimum_distinct_sessions: int,
-    delayed_control_hours: int,
-    grapheme_minimum: int,
-    grapheme_total: int,
-    reading_minimum: int,
-    reading_total: int,
-    survival_minimum: int,
-    survival_total: int,
+    gate_change: dict[str, object],
 ) -> None:
     await seed_catalogue(
         migration_session,
         include_foundations=True,
         include_foundation_gate=False,
+    )
+    gate_revision_id = UUID("019fe900-5000-7000-8076-000000000001")
+    targets = (
+        "IT-PHON-001",
+        "IT-PHON-003",
+        "IT-PHON-002",
+        "IT-PRAG-001",
+        "IT-PRAG-002",
+        "IT-ID-001",
+        "IT-GRAM-002",
+        "IT-GRAM-003",
+        "IT-GRAM-007",
+        "IT-GRAM-027",
+        "IT-POLITE-002",
+        "IT-REPAIR-001",
+    )
+    gate_values: dict[str, object] = {
+        "facets": (
+            "grapheme_sound_discrimination",
+            "controlled_reading",
+            "greeting_recognition",
+            "functional_frame_choice",
+            "written_guided_repair",
+        ),
+        "facet_minimum_status": "reliable",
+        "coverage_threshold": 1.0,
+        "confidence_threshold": 0.6,
+        "minimum_distinct_sessions": 2,
+        "delayed_control_block_code": "F1",
+        "delayed_control_hours": 24,
+        "grapheme_minimum": 8,
+        "grapheme_total": 10,
+        "reading_minimum": 8,
+        "reading_total": 10,
+        "survival_minimum": 4,
+        "survival_total": 5,
+        "without_reveal": True,
+        "oral_policy": "not_evaluable_non_blocking",
+    }
+    gate_values.update(gate_change)
+    checksum = foundation_content_checksum(
+        "foundation_gate_v1",
+        gate_revision_id,
+        IDS["foundation_revision"],
+        IDS["pack_revision"],
+        "FOUNDATIONS_IT_V0",
+        targets,
+        gate_values["facets"],
+        gate_values["facet_minimum_status"],
+        gate_values["coverage_threshold"],
+        gate_values["confidence_threshold"],
+        gate_values["minimum_distinct_sessions"],
+        gate_values["delayed_control_block_code"],
+        gate_values["delayed_control_hours"],
+        gate_values["grapheme_minimum"],
+        gate_values["grapheme_total"],
+        gate_values["reading_minimum"],
+        gate_values["reading_total"],
+        gate_values["survival_minimum"],
+        gate_values["survival_total"],
+        gate_values["without_reveal"],
+        gate_values["oral_policy"],
+        "published",
     )
 
     with pytest.raises(DBAPIError):
@@ -401,30 +506,32 @@ async def test_0003_rejects_validly_shaped_non_contractual_gate_values(
             text(
                 "INSERT INTO catalogue.foundation_gate_revisions "
                 "(gate_revision_id, foundation_revision_id, pack_revision_id, gate_code, "
-                "blocking_target_refs, blocking_facet_refs, coverage_threshold, "
-                "confidence_threshold, minimum_distinct_sessions, delayed_control_hours, "
+                "blocking_target_refs, blocking_facet_refs, blocking_facet_minimum_status, "
+                "coverage_threshold, confidence_threshold, minimum_distinct_sessions, "
+                "delayed_control_block_code, delayed_control_hours, "
                 "grapheme_sound_minimum, grapheme_sound_total, targeted_reading_minimum, "
                 "targeted_reading_total, survival_exchange_minimum, survival_exchange_total, "
-                "oral_policy, status, checksum) VALUES "
-                "('019fe900-5000-7000-8076-000000000001', :foundation, :pack, "
-                "'FOUNDATIONS_IT_V0', :targets, :facets, 0.8, 0.6, :sessions, :hours, "
+                "survival_exchange_without_reveal, oral_policy, status, checksum) VALUES "
+                "(:gate, :foundation, :pack, 'FOUNDATIONS_IT_V0', :targets, :facets, "
+                ":facet_status, :coverage, :confidence, :sessions, :delayed_block, :hours, "
                 ":grapheme_minimum, :grapheme_total, :reading_minimum, :reading_total, "
-                ":survival_minimum, :survival_total, 'not_evaluable_non_blocking', "
-                "'published', repeat('d', 64))"
+                ":survival_minimum, :survival_total, :without_reveal, :oral_policy, "
+                "'published', :checksum)"
             ),
             {
+                "gate": gate_revision_id,
                 "foundation": IDS["foundation_revision"],
                 "pack": IDS["pack_revision"],
-                "targets": ["IT-PHON-001"],
-                "facets": ["grapheme_sound"],
-                "sessions": minimum_distinct_sessions,
-                "hours": delayed_control_hours,
-                "grapheme_minimum": grapheme_minimum,
-                "grapheme_total": grapheme_total,
-                "reading_minimum": reading_minimum,
-                "reading_total": reading_total,
-                "survival_minimum": survival_minimum,
-                "survival_total": survival_total,
+                "targets": list(targets),
+                **gate_values,
+                "facets": list(gate_values["facets"]),
+                "facet_status": gate_values["facet_minimum_status"],
+                "coverage": gate_values["coverage_threshold"],
+                "confidence": gate_values["confidence_threshold"],
+                "sessions": gate_values["minimum_distinct_sessions"],
+                "delayed_block": gate_values["delayed_control_block_code"],
+                "hours": gate_values["delayed_control_hours"],
+                "checksum": checksum,
             },
         )
 

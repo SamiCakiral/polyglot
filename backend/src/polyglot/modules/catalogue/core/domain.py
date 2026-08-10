@@ -2,6 +2,7 @@ import unicodedata
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from enum import StrEnum
+from hashlib import sha256
 from re import fullmatch
 from typing import Any
 from uuid import UUID
@@ -42,7 +43,20 @@ class FoundationCheckerKind(StrEnum):
     NOT_EVALUABLE = "not_evaluable"
 
 
+class FoundationReferenceKind(StrEnum):
+    TARGET = "target"
+    FACET = "facet"
+    WAIVER_POLICY = "waiver_policy"
+
+
 _MODALITIES = frozenset({"reading", "listening", "writing", "speaking"})
+_FOUNDATION_BLOCKING_FACETS = (
+    "grapheme_sound_discrimination",
+    "controlled_reading",
+    "greeting_recognition",
+    "functional_frame_choice",
+    "written_guided_repair",
+)
 _OPERATIONS = frozenset(
     {
         "recognize",
@@ -415,9 +429,52 @@ def _require_checksum(value: str, field: str) -> None:
         raise _invalid(f"{field} must be a lowercase SHA-256 checksum")
 
 
-def _require_threshold(value: int, total: int, field: str) -> None:
-    if total < 1 or value < 1 or value > total:
-        raise _invalid(f"{field} must be between one and its total")
+def _foundation_checksum_part(value: object) -> str:
+    if isinstance(value, StrEnum):
+        return value.value
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        return format(value, ".15g")
+    if isinstance(value, (tuple, list)):
+        return "\x1e".join(_foundation_checksum_part(item) for item in value)
+    return str(value)
+
+
+def foundation_content_checksum(kind: str, *parts: object) -> str:
+    payload = "\x1f".join((kind, *(_foundation_checksum_part(part) for part in parts)))
+    return sha256(payload.encode()).hexdigest()
+
+
+def _require_content_checksum(value: str, kind: str, *parts: object) -> None:
+    _require_checksum(value, f"{kind} checksum")
+    if value != foundation_content_checksum(kind, *parts):
+        raise _invalid("foundation checksum does not match content")
+
+
+@dataclass(frozen=True, slots=True)
+class PublishedFoundationReference:
+    reference_revision_id: UUID
+    pack_revision_id: UUID
+    reference_code: str
+    reference_kind: FoundationReferenceKind
+    status: ContentRevisionStatus
+    checksum: str
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.reference_revision_id, "reference_revision_id")
+        require_uuid7(self.pack_revision_id, "pack_revision_id")
+        require_stable_code(self.reference_code, "foundation reference_code")
+        _require_published(self.status, "foundation reference")
+        _require_content_checksum(
+            self.checksum,
+            "foundation_reference_v1",
+            self.reference_revision_id,
+            self.pack_revision_id,
+            self.reference_code,
+            self.reference_kind,
+            self.status,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -455,7 +512,21 @@ class PublishedFoundationItem:
         elif not self.checker_values:
             raise _invalid("evaluable foundation items require a deterministic checker")
         _require_published(self.status, "foundation item")
-        _require_checksum(self.checksum, "foundation item checksum")
+        _require_content_checksum(
+            self.checksum,
+            "foundation_item_v1",
+            self.item_revision_id,
+            self.block_revision_id,
+            self.pack_revision_id,
+            self.item_code,
+            self.ordinal,
+            self.target_refs,
+            self.response_kind,
+            self.checker_kind,
+            self.checker_values,
+            self.modalities,
+            self.status,
+        )
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -499,7 +570,21 @@ class PublishedFoundationBlock:
         if len(item_codes) != len(self.items) or len(ordinals) != len(self.items):
             raise _invalid("foundation item codes and ordinals must be unique per block")
         _require_published(self.status, "foundation block")
-        _require_checksum(self.checksum, "foundation block checksum")
+        _require_content_checksum(
+            self.checksum,
+            "foundation_block_v1",
+            self.block_revision_id,
+            self.foundation_revision_id,
+            self.pack_revision_id,
+            self.block_code,
+            self.ordinal,
+            self.component_type,
+            self.prerequisite_refs,
+            self.modalities,
+            self.backend_criteria,
+            self.waiver_policy_ref,
+            self.status,
+        )
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -513,9 +598,11 @@ class PublishedFoundationGate:
     gate_code: str
     blocking_target_refs: tuple[str, ...]
     blocking_facet_refs: tuple[str, ...]
+    blocking_facet_minimum_status: str
     coverage_threshold: float
     confidence_threshold: float
     minimum_distinct_sessions: int
+    delayed_control_block_code: str
     delayed_control_hours: int
     grapheme_sound_minimum: int
     grapheme_sound_total: int
@@ -523,6 +610,7 @@ class PublishedFoundationGate:
     targeted_reading_total: int
     survival_exchange_minimum: int
     survival_exchange_total: int
+    survival_exchange_without_reveal: bool
     oral_policy: str
     status: ContentRevisionStatus
     checksum: str
@@ -535,29 +623,52 @@ class PublishedFoundationGate:
             raise _invalid("foundation gate requires blocking targets and facets")
         for target_ref in self.blocking_target_refs:
             require_stable_code(target_ref, "foundation gate target_ref")
-        if not 0 < self.coverage_threshold <= 1 or not 0 < self.confidence_threshold <= 1:
-            raise _invalid("foundation gate thresholds must be in (0, 1]")
-        if self.minimum_distinct_sessions < 2 or self.delayed_control_hours < 24:
-            raise _invalid("foundation gate requires two sessions and a 24 hour control")
-        _require_threshold(
-            self.grapheme_sound_minimum,
-            self.grapheme_sound_total,
-            "grapheme sound threshold",
-        )
-        _require_threshold(
-            self.targeted_reading_minimum,
-            self.targeted_reading_total,
-            "targeted reading threshold",
-        )
-        _require_threshold(
-            self.survival_exchange_minimum,
-            self.survival_exchange_total,
-            "survival exchange threshold",
-        )
+        if self.blocking_facet_refs != _FOUNDATION_BLOCKING_FACETS:
+            raise _invalid("foundation gate must pin every blocking facet exactly")
+        if self.blocking_facet_minimum_status != "reliable":
+            raise _invalid("every blocking foundation facet must be reliable")
+        if self.coverage_threshold != 1.0 or self.confidence_threshold != 0.6:
+            raise _invalid("foundation gate aggregate thresholds are not canonical")
+        if self.minimum_distinct_sessions != 2:
+            raise _invalid("foundation gate requires exactly two distinct sessions")
+        if self.delayed_control_block_code != "F1" or self.delayed_control_hours != 24:
+            raise _invalid("foundation gate requires the F1 control after 24 hours")
+        if (self.grapheme_sound_minimum, self.grapheme_sound_total) != (8, 10):
+            raise _invalid("foundation gate requires 8/10 grapheme-sound discriminations")
+        if (self.targeted_reading_minimum, self.targeted_reading_total) != (8, 10):
+            raise _invalid("foundation gate requires 8/10 targeted readings")
+        if (self.survival_exchange_minimum, self.survival_exchange_total) != (4, 5):
+            raise _invalid("foundation gate requires 4/5 survival exchanges")
+        if self.survival_exchange_without_reveal is not True:
+            raise _invalid("survival exchanges must be completed without reveal")
         if self.oral_policy != "not_evaluable_non_blocking":
             raise _invalid("foundation oral policy is not canonical")
         _require_published(self.status, "foundation gate")
-        _require_checksum(self.checksum, "foundation gate checksum")
+        _require_content_checksum(
+            self.checksum,
+            "foundation_gate_v1",
+            self.gate_revision_id,
+            self.foundation_revision_id,
+            self.pack_revision_id,
+            self.gate_code,
+            self.blocking_target_refs,
+            self.blocking_facet_refs,
+            self.blocking_facet_minimum_status,
+            self.coverage_threshold,
+            self.confidence_threshold,
+            self.minimum_distinct_sessions,
+            self.delayed_control_block_code,
+            self.delayed_control_hours,
+            self.grapheme_sound_minimum,
+            self.grapheme_sound_total,
+            self.targeted_reading_minimum,
+            self.targeted_reading_total,
+            self.survival_exchange_minimum,
+            self.survival_exchange_total,
+            self.survival_exchange_without_reveal,
+            self.oral_policy,
+            self.status,
+        )
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -581,7 +692,16 @@ class PublishedFoundationDefinition:
         require_stable_code(self.foundation_code, "foundation_code")
         require_revision_number(self.revision_no)
         _require_published(self.status, "foundation definition")
-        _require_checksum(self.checksum, "foundation definition checksum")
+        _require_content_checksum(
+            self.checksum,
+            "foundation_definition_v1",
+            self.foundation_revision_id,
+            self.foundation_id,
+            self.pack_revision_id,
+            self.foundation_code,
+            self.revision_no,
+            self.status,
+        )
         if tuple((item.block_code, item.ordinal) for item in self.blocks) != (
             ("F1", 1),
             ("F2", 2),
@@ -609,7 +729,7 @@ class PublishedFoundationDefinition:
             if item.checker_kind is not FoundationCheckerKind.NOT_EVALUABLE
             for target_ref in item.target_refs
         }
-        if not set(self.gate.blocking_target_refs) <= targets:
+        if set(self.gate.blocking_target_refs) != targets:
             raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
 
     def as_dict(self) -> dict[str, Any]:
@@ -619,3 +739,37 @@ class PublishedFoundationDefinition:
 @dataclass(frozen=True, slots=True)
 class PublishedFoundationCatalogue:
     definition: PublishedFoundationDefinition
+    references: tuple[PublishedFoundationReference, ...]
+
+    def __post_init__(self) -> None:
+        if not self.references:
+            raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+        reference_by_code = {item.reference_code: item for item in self.references}
+        if len(reference_by_code) != len(self.references):
+            raise _invalid("foundation reference codes must be unique per pack")
+        if any(
+            item.pack_revision_id != self.definition.pack_revision_id
+            or item.status is not ContentRevisionStatus.PUBLISHED
+            for item in self.references
+        ):
+            raise _invalid("foundation references must belong to the published pack")
+
+        expected_kinds: dict[str, FoundationReferenceKind] = {}
+        for block in self.definition.blocks:
+            for reference in block.prerequisite_refs:
+                expected_kinds[reference] = FoundationReferenceKind.TARGET
+            for item in block.items:
+                for reference in item.target_refs:
+                    expected_kinds[reference] = FoundationReferenceKind.TARGET
+            expected_kinds[block.waiver_policy_ref] = FoundationReferenceKind.WAIVER_POLICY
+        for reference in self.definition.gate.blocking_target_refs:
+            expected_kinds[reference] = FoundationReferenceKind.TARGET
+        for reference in self.definition.gate.blocking_facet_refs:
+            expected_kinds[reference] = FoundationReferenceKind.FACET
+
+        if set(reference_by_code) != set(expected_kinds) or any(
+            reference_by_code[code].reference_kind is not kind
+            for code, kind in expected_kinds.items()
+            if code in reference_by_code
+        ):
+            raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)

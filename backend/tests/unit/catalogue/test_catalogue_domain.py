@@ -186,6 +186,8 @@ def test_prerequisite_traversal_is_bounded_deterministic_and_reports_truncation(
 def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot() -> None:
     required_names = (
         "FoundationCheckerKind",
+        "FoundationReferenceKind",
+        "PublishedFoundationReference",
         "PublishedFoundationItem",
         "PublishedFoundationBlock",
         "PublishedFoundationGate",
@@ -201,63 +203,148 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
     gate_type = catalogue_domain.PublishedFoundationGate
     definition_type = catalogue_domain.PublishedFoundationDefinition
     aggregate_type = catalogue_domain.PublishedFoundationCatalogue
+    reference_type = catalogue_domain.PublishedFoundationReference
+    reference_kind = catalogue_domain.FoundationReferenceKind
+    checksum = catalogue_domain.foundation_content_checksum
 
     def identifier(namespace: int, number: int) -> UUID:
         return UUID(f"019fe900-4200-7000-{namespace:04x}-{number:012x}")
 
     def item(block_number: int, item_number: int) -> object:
+        item_revision_id = identifier(0x8003 + block_number, item_number)
+        block_revision_id = identifier(0x8010 + block_number, 1)
+        item_code = f"ITF-F{block_number}-{item_number:02d}"
+        target_refs = (f"IT-TARGET-F{block_number}-{item_number:02d}",)
+        item_checker_kind = (
+            checker_kind.NOT_EVALUABLE
+            if block_number == 2 and item_number == 2
+            else checker_kind.EXACT_CHOICE
+        )
+        checker_values = () if item_checker_kind is checker_kind.NOT_EVALUABLE else ("accepted",)
+        modalities = ("reading",)
+        status = ContentRevisionStatus.PUBLISHED
         return item_type(
-            item_revision_id=identifier(0x8003 + block_number, item_number),
-            block_revision_id=identifier(0x8010 + block_number, 1),
+            item_revision_id=item_revision_id,
+            block_revision_id=block_revision_id,
             pack_revision_id=PACK_REVISION_ID,
-            item_code=f"ITF-F{block_number}-{item_number:02d}",
+            item_code=item_code,
             ordinal=item_number,
-            target_refs=(f"IT-TARGET-F{block_number}-{item_number:02d}",),
+            target_refs=target_refs,
             response_kind="raw",
-            checker_kind=(
-                checker_kind.NOT_EVALUABLE
-                if block_number == 2 and item_number == 2
-                else checker_kind.EXACT_CHOICE
+            checker_kind=item_checker_kind,
+            checker_values=checker_values,
+            modalities=modalities,
+            status=status,
+            checksum=checksum(
+                "foundation_item_v1",
+                item_revision_id,
+                block_revision_id,
+                PACK_REVISION_ID,
+                item_code,
+                item_number,
+                target_refs,
+                "raw",
+                item_checker_kind,
+                checker_values,
+                modalities,
+                status,
             ),
-            checker_values=(() if block_number == 2 and item_number == 2 else ("accepted",)),
-            modalities=("reading",),
-            status=ContentRevisionStatus.PUBLISHED,
-            checksum="a" * 64,
         )
 
-    blocks = tuple(
-        block_type(
-            block_revision_id=identifier(0x8010 + block_number, 1),
+    def block(block_number: int) -> object:
+        block_revision_id = identifier(0x8010 + block_number, 1)
+        foundation_revision_id = identifier(0x8001, 1)
+        block_code = f"F{block_number}"
+        component_type = "script_perception" if block_number == 1 else "interaction"
+        modalities = ("reading",)
+        backend_criteria = ("deterministic",)
+        waiver_policy_ref = "DIAGNOSTIC_WAIVER_V0"
+        status = ContentRevisionStatus.PUBLISHED
+        return block_type(
+            block_revision_id=block_revision_id,
             foundation_revision_id=identifier(0x8001, 1),
             pack_revision_id=PACK_REVISION_ID,
-            block_code=f"F{block_number}",
+            block_code=block_code,
             ordinal=block_number,
-            component_type=("script_perception" if block_number == 1 else "interaction"),
+            component_type=component_type,
             prerequisite_refs=(),
             items=(item(block_number, 1), item(block_number, 2)),
-            modalities=("reading",),
-            backend_criteria=("deterministic",),
-            waiver_policy_ref="DIAGNOSTIC_WAIVER_V0",
-            status=ContentRevisionStatus.PUBLISHED,
-            checksum="b" * 64,
+            modalities=modalities,
+            backend_criteria=backend_criteria,
+            waiver_policy_ref=waiver_policy_ref,
+            status=status,
+            checksum=checksum(
+                "foundation_block_v1",
+                block_revision_id,
+                foundation_revision_id,
+                PACK_REVISION_ID,
+                block_code,
+                block_number,
+                component_type,
+                (),
+                modalities,
+                backend_criteria,
+                waiver_policy_ref,
+                status,
+            ),
         )
-        for block_number in range(1, 6)
+
+    blocks = tuple(block(block_number) for block_number in range(1, 6))
+    blocking_targets = tuple(
+        item.target_refs[0]
+        for foundation_block in blocks
+        for item in foundation_block.items
+        if item.checker_kind is not checker_kind.NOT_EVALUABLE
     )
+    blocking_facets = (
+        "grapheme_sound_discrimination",
+        "controlled_reading",
+        "greeting_recognition",
+        "functional_frame_choice",
+        "written_guided_repair",
+    )
+    gate_revision_id = identifier(0x8002, 1)
+    foundation_revision_id = identifier(0x8001, 1)
+    status = ContentRevisionStatus.PUBLISHED
+
+    def gate_checksum(targets: tuple[str, ...]) -> str:
+        return checksum(
+            "foundation_gate_v1",
+            gate_revision_id,
+            foundation_revision_id,
+            PACK_REVISION_ID,
+            "FOUNDATIONS_IT_V0",
+            targets,
+            blocking_facets,
+            "reliable",
+            1.0,
+            0.6,
+            2,
+            "F1",
+            24,
+            8,
+            10,
+            8,
+            10,
+            4,
+            5,
+            True,
+            "not_evaluable_non_blocking",
+            status,
+        )
+
     gate = gate_type(
-        gate_revision_id=identifier(0x8002, 1),
-        foundation_revision_id=identifier(0x8001, 1),
+        gate_revision_id=gate_revision_id,
+        foundation_revision_id=foundation_revision_id,
         pack_revision_id=PACK_REVISION_ID,
         gate_code="FOUNDATIONS_IT_V0",
-        blocking_target_refs=tuple(
-            item.target_refs[0]
-            for block in blocks
-            for item in block.items
-            if item.checker_kind is not checker_kind.NOT_EVALUABLE
-        ),
-        blocking_facet_refs=("grapheme_sound", "controlled_reading", "survival_exchange"),
-        coverage_threshold=0.8,
+        blocking_target_refs=blocking_targets,
+        blocking_facet_refs=blocking_facets,
+        blocking_facet_minimum_status="reliable",
+        coverage_threshold=1.0,
         confidence_threshold=0.6,
         minimum_distinct_sessions=2,
+        delayed_control_block_code="F1",
         delayed_control_hours=24,
         grapheme_sound_minimum=8,
         grapheme_sound_total=10,
@@ -265,22 +352,61 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
         targeted_reading_total=10,
         survival_exchange_minimum=4,
         survival_exchange_total=5,
+        survival_exchange_without_reveal=True,
         oral_policy="not_evaluable_non_blocking",
-        status=ContentRevisionStatus.PUBLISHED,
-        checksum="c" * 64,
+        status=status,
+        checksum=gate_checksum(blocking_targets),
     )
+    foundation_id = identifier(0x8000, 1)
     definition = definition_type(
-        foundation_id=identifier(0x8000, 1),
-        foundation_revision_id=identifier(0x8001, 1),
+        foundation_id=foundation_id,
+        foundation_revision_id=foundation_revision_id,
         pack_revision_id=PACK_REVISION_ID,
         foundation_code="FOUNDATIONS_IT_V0",
         revision_no=1,
         blocks=blocks,
         gate=gate,
-        status=ContentRevisionStatus.PUBLISHED,
-        checksum="d" * 64,
+        status=status,
+        checksum=checksum(
+            "foundation_definition_v1",
+            foundation_revision_id,
+            foundation_id,
+            PACK_REVISION_ID,
+            "FOUNDATIONS_IT_V0",
+            1,
+            status,
+        ),
     )
-    aggregate = aggregate_type(definition=definition)
+    target_refs = {
+        target
+        for foundation_block in blocks
+        for foundation_item in foundation_block.items
+        for target in foundation_item.target_refs
+    }
+    reference_specs = (
+        *((code, reference_kind.TARGET) for code in sorted(target_refs)),
+        *((code, reference_kind.FACET) for code in blocking_facets),
+        ("DIAGNOSTIC_WAIVER_V0", reference_kind.WAIVER_POLICY),
+    )
+    references = tuple(
+        reference_type(
+            reference_revision_id=identifier(0x8050, number),
+            pack_revision_id=PACK_REVISION_ID,
+            reference_code=code,
+            reference_kind=kind,
+            status=status,
+            checksum=checksum(
+                "foundation_reference_v1",
+                identifier(0x8050, number),
+                PACK_REVISION_ID,
+                code,
+                kind,
+                status,
+            ),
+        )
+        for number, (code, kind) in enumerate(reference_specs, start=1)
+    )
+    aggregate = aggregate_type(definition=definition, references=references)
 
     assert tuple(block.block_code for block in aggregate.definition.blocks) == (
         "F1",
@@ -317,14 +443,16 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
         )
     assert missing_checker.value.code is ErrorCode.VALIDATION_FAILED
 
+    missing_targets = (*gate.blocking_target_refs, "IT-MISSING-999")
     with pytest.raises(DomainError) as absent_target:
         definition_type(
             **{
                 **definition_values,
                 "gate": gate_type(
                     **{
-                        **gate.as_dict(),
-                        "blocking_target_refs": (*gate.blocking_target_refs, "IT-MISSING-999"),
+                            **gate.as_dict(),
+                            "blocking_target_refs": missing_targets,
+                            "checksum": gate_checksum(missing_targets),
                     }
                 ),
             }
@@ -382,6 +510,37 @@ def test_published_foundation_aggregate_requires_the_complete_coherent_it_pilot(
 def test_foundation_gate_rejects_every_non_contractual_numeric_rule(
     field: str,
     value: int | float,
+) -> None:
+    gate = load_catalogue_fixture(FOUNDATION_FIXTURE).foundations.definition.gate
+
+    with pytest.raises(DomainError) as rejected:
+        replace(gate, **{field: value})
+
+    assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    (
+        (
+            "blocking_facet_refs",
+            (
+                "controlled_reading",
+                "grapheme_sound_discrimination",
+                "greeting_recognition",
+                "functional_frame_choice",
+                "written_guided_repair",
+            ),
+        ),
+        ("blocking_facet_minimum_status", "mastered"),
+        ("delayed_control_block_code", "F2"),
+        ("survival_exchange_without_reveal", False),
+        ("oral_policy", "self_report_non_blocking"),
+    ),
+)
+def test_foundation_gate_rejects_every_non_contractual_qualitative_rule(
+    field: str,
+    value: object,
 ) -> None:
     gate = load_catalogue_fixture(FOUNDATION_FIXTURE).foundations.definition.gate
 

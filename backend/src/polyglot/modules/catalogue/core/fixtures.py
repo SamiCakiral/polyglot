@@ -13,6 +13,7 @@ from polyglot.modules.catalogue.core.domain import (
     ContentRevisionStatus,
     FormAnalysis,
     FoundationCheckerKind,
+    FoundationReferenceKind,
     GrammarPattern,
     GrammarStructureRevision,
     LanguagePack,
@@ -27,6 +28,7 @@ from polyglot.modules.catalogue.core.domain import (
     PublishedFoundationDefinition,
     PublishedFoundationGate,
     PublishedFoundationItem,
+    PublishedFoundationReference,
     SkillPrerequisiteEdge,
     SkillRevision,
 )
@@ -200,6 +202,15 @@ class _FoundationItemData(_StrictModel):
     checksum: str
 
 
+class _FoundationReferenceData(_StrictModel):
+    reference_revision_id: UUID
+    pack_revision_id: UUID
+    reference_code: str
+    reference_kind: FoundationReferenceKind
+    status: ContentRevisionStatus
+    checksum: str
+
+
 class _FoundationBlockData(_StrictModel):
     block_revision_id: UUID
     foundation_revision_id: UUID
@@ -223,9 +234,11 @@ class _FoundationGateData(_StrictModel):
     gate_code: str
     blocking_target_refs: tuple[str, ...]
     blocking_facet_refs: tuple[str, ...]
+    blocking_facet_minimum_status: Literal["reliable"]
     coverage_threshold: float
     confidence_threshold: float
     minimum_distinct_sessions: int
+    delayed_control_block_code: Literal["F1"]
     delayed_control_hours: int
     grapheme_sound_minimum: int
     grapheme_sound_total: int
@@ -233,6 +246,7 @@ class _FoundationGateData(_StrictModel):
     targeted_reading_total: int
     survival_exchange_minimum: int
     survival_exchange_total: int
+    survival_exchange_without_reveal: bool
     oral_policy: Literal["not_evaluable_non_blocking"]
     status: ContentRevisionStatus
     checksum: str
@@ -244,6 +258,7 @@ class _FoundationData(_StrictModel):
     pack_revision_id: UUID
     foundation_code: str
     revision_no: int
+    references: tuple[_FoundationReferenceData, ...]
     blocks: tuple[_FoundationBlockData, ...]
     gate: _FoundationGateData
     status: ContentRevisionStatus
@@ -552,6 +567,17 @@ def _foundations(data: _FoundationData) -> PublishedFoundationCatalogue:
     )
     gate = data.gate
     return PublishedFoundationCatalogue(
+        references=tuple(
+            PublishedFoundationReference(
+                reference_revision_id=item.reference_revision_id,
+                pack_revision_id=item.pack_revision_id,
+                reference_code=item.reference_code,
+                reference_kind=item.reference_kind,
+                status=item.status,
+                checksum=item.checksum,
+            )
+            for item in data.references
+        ),
         definition=PublishedFoundationDefinition(
             foundation_id=data.foundation_id,
             foundation_revision_id=data.foundation_revision_id,
@@ -566,9 +592,11 @@ def _foundations(data: _FoundationData) -> PublishedFoundationCatalogue:
                 gate_code=gate.gate_code,
                 blocking_target_refs=gate.blocking_target_refs,
                 blocking_facet_refs=gate.blocking_facet_refs,
+                blocking_facet_minimum_status=gate.blocking_facet_minimum_status,
                 coverage_threshold=gate.coverage_threshold,
                 confidence_threshold=gate.confidence_threshold,
                 minimum_distinct_sessions=gate.minimum_distinct_sessions,
+                delayed_control_block_code=gate.delayed_control_block_code,
                 delayed_control_hours=gate.delayed_control_hours,
                 grapheme_sound_minimum=gate.grapheme_sound_minimum,
                 grapheme_sound_total=gate.grapheme_sound_total,
@@ -576,6 +604,7 @@ def _foundations(data: _FoundationData) -> PublishedFoundationCatalogue:
                 targeted_reading_total=gate.targeted_reading_total,
                 survival_exchange_minimum=gate.survival_exchange_minimum,
                 survival_exchange_total=gate.survival_exchange_total,
+                survival_exchange_without_reveal=gate.survival_exchange_without_reveal,
                 oral_policy=gate.oral_policy,
                 status=gate.status,
                 checksum=gate.checksum,

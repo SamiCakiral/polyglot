@@ -252,11 +252,26 @@ def test_fixture_rejects_each_unresolved_foundation_reference_kind(
         {"targeted_reading_total": 11},
         {"survival_exchange_minimum": 3},
         {"survival_exchange_total": 6},
+        {"coverage_threshold": 0.9},
+        {"confidence_threshold": 0.7},
+        {"blocking_facet_minimum_status": "mastered"},
+        {"delayed_control_block_code": "F2"},
+        {"survival_exchange_without_reveal": False},
+        {"oral_policy": "self_report_non_blocking"},
+        {
+            "blocking_facet_refs": [
+                "controlled_reading",
+                "grapheme_sound_discrimination",
+                "greeting_recognition",
+                "functional_frame_choice",
+                "written_guided_repair",
+            ]
+        },
     ),
 )
 def test_fixture_rejects_validly_shaped_but_non_contractual_gate_values(
     tmp_path: Path,
-    gate_change: dict[str, int],
+    gate_change: dict[str, object],
 ) -> None:
     fixture = _fixture_with_payload(
         tmp_path,
