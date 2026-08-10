@@ -2,8 +2,9 @@
 
 ## Statut
 
-**COMPLETE apres fix round 1.** Les constats de `task-W03-review.md` sont
-corriges dans le write set W03. Aucun code W05 ou frontend n'a ete modifie.
+**COMPLETE apres fix round 2.** Les constats de `task-W03-review.md` et
+`task-W03-rereview.md` sont corriges dans le write set W03. Aucun code W05 ou
+frontend n'a ete modifie.
 
 ## Livraison
 
@@ -12,16 +13,19 @@ corriges dans le write set W03. Aucun code W05 ou frontend n'a ete modifie.
   confiance, facette et evaluabilite depuis le correcteur W04F.
 - Les modalites sans correcteur sont persistees `not_evaluable`; elles ne
   produisent ni succes, ni echec, ni credit implicite.
-- Les runs expires sont marques `expired` avant redemarrage. P-RETOUR conserve
-  l'ancien run et permet un nouveau snapshot apres 24 heures.
+- P-RETOUR reprend exactement le meme run avant 24 heures sans insertion. A
+  l'echeance, une soumission tardive persiste `expired`; un nouveau depart
+  expire aussi l'ancien run avant de creer un nouveau snapshot.
 - Un run fondations epingle la definition publiee et materialise F1-F5. Les
   mesures par item et session sont append-only et derivees par le backend.
 - Chaque evaluation de gate est append-only. Le passage exige deux sessions,
-  un controle F1 a au moins 24 heures et les blocs autonomes requis.
+  deux controles F1 separes d'au moins 24 heures, exactement 8/10
+  discriminations, 8/10 lectures ciblees et 4/5 echanges sans revelation.
 - La decision finale, la transition `foundations -> active`, l'evenement
   `foundation_gate_completed` et son message outbox partagent une transaction.
-- Les ressources exposent `ETag`; une mutation sans `If-Match` retourne 428,
-  et une version obsolete retourne le conflit canonique.
+- Toutes les ressources et transitions exposent leur `ETag`; `If-Match` est
+  obligatoire et non nullable dans OpenAPI, son absence retourne 428 et une
+  version obsolete retourne le conflit canonique.
 - `FX-PERSONAS` couvre P-ABS, P-FAUX, P-INT et P-RETOUR. `FX-IT-FOUND` couvre
   F1-F5, la borne 24 h, l'audio absent et la revelation. Les deux bundles sont
   hashes, offline et sans credit implicite.
@@ -31,10 +35,10 @@ corriges dans le write set W03. Aucun code W05 ou frontend n'a ete modifie.
 Executee le 10 aout 2026 depuis `/tmp/polyglot-w03-final-20260810-2` contre
 une instance PostgreSQL 17 dediee et une base reconstruite.
 
-- Tests W03 unitaires, proprietes, integration et contrat : **30 passed**.
+- Tests W03 unitaires, proprietes, integration et contrat : **37 passed**.
 - Ruff W03 : **passed**.
-- mypy strict W03 : **Success, 9 source files**.
-- Alembic `0005 -> 0003 -> head` : **passed**.
+- mypy strict : **Success, 64 source files**.
+- Alembic `head -> base -> head` sur PostgreSQL 17.10 frais : **passed**.
 - `alembic check` : **No new upgrade operations detected**.
 - Export OpenAPI `--check` : **passed**.
 - Test de propriete : aucune combinaison de scores ne contourne 24 heures.
