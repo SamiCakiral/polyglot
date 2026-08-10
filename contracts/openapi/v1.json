@@ -2636,7 +2636,7 @@
           "recommendation": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/RecommendationResponse"
+                "$ref": "#/components/schemas/polyglot__interfaces__http__routes__word_bank__RecommendationResponse"
               },
               {
                 "type": "null"
@@ -2852,6 +2852,153 @@
           "reviewed_at"
         ],
         "title": "MarkCorrectionReadRequest",
+        "type": "object"
+      },
+      "MasteryFacetResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "context_count": {
+            "title": "Context Count",
+            "type": "integer"
+          },
+          "delay_band_count": {
+            "title": "Delay Band Count",
+            "type": "integer"
+          },
+          "effective_mass": {
+            "title": "Effective Mass",
+            "type": "number"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "facet_key": {
+            "title": "Facet Key",
+            "type": "string"
+          },
+          "failure_count": {
+            "title": "Failure Count",
+            "type": "integer"
+          },
+          "freshness": {
+            "title": "Freshness",
+            "type": "number"
+          },
+          "ineligibility_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ineligibility Reasons",
+            "type": "array"
+          },
+          "last_evidence_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Evidence At"
+          },
+          "mastery_base": {
+            "title": "Mastery Base",
+            "type": "number"
+          },
+          "mastery_current": {
+            "title": "Mastery Current",
+            "type": "number"
+          },
+          "modality": {
+            "title": "Modality",
+            "type": "string"
+          },
+          "next_verification_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Verification At"
+          },
+          "operation": {
+            "title": "Operation",
+            "type": "string"
+          },
+          "policy_revision": {
+            "title": "Policy Revision",
+            "type": "string"
+          },
+          "projection_version": {
+            "title": "Projection Version",
+            "type": "integer"
+          },
+          "session_count": {
+            "title": "Session Count",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "success_count": {
+            "title": "Success Count",
+            "type": "integer"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "transfer_count": {
+            "title": "Transfer Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "target_type",
+          "target_id",
+          "facet_key",
+          "modality",
+          "operation",
+          "status",
+          "mastery_base",
+          "mastery_current",
+          "confidence",
+          "freshness",
+          "effective_mass",
+          "success_count",
+          "failure_count",
+          "context_count",
+          "session_count",
+          "delay_band_count",
+          "transfer_count",
+          "last_evidence_at",
+          "next_verification_at",
+          "policy_revision",
+          "projection_version",
+          "evidence_ids",
+          "ineligibility_reasons"
+        ],
+        "title": "MasteryFacetResponse",
         "type": "object"
       },
       "MemoryPromptResponse": {
@@ -3098,6 +3245,69 @@
           "success_count"
         ],
         "title": "ModalityEvidenceResponse",
+        "type": "object"
+      },
+      "ModalityProgressResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "number"
+          },
+          "expected_facet_count": {
+            "title": "Expected Facet Count",
+            "type": "integer"
+          },
+          "freshness": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Freshness"
+          },
+          "modality": {
+            "title": "Modality",
+            "type": "string"
+          },
+          "observed_facet_count": {
+            "title": "Observed Facet Count",
+            "type": "integer"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "modality",
+          "status",
+          "score",
+          "confidence",
+          "freshness",
+          "coverage",
+          "observed_facet_count",
+          "expected_facet_count"
+        ],
+        "title": "ModalityProgressResponse",
         "type": "object"
       },
       "ModuleResponse": {
@@ -3689,6 +3899,59 @@
         "title": "ProfilesResponse",
         "type": "object"
       },
+      "ProgressOverviewResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "facets": {
+            "items": {
+              "$ref": "#/components/schemas/MasteryFacetResponse"
+            },
+            "title": "Facets",
+            "type": "array"
+          },
+          "has_global_score": {
+            "title": "Has Global Score",
+            "type": "boolean"
+          },
+          "modalities": {
+            "items": {
+              "$ref": "#/components/schemas/ModalityProgressResponse"
+            },
+            "title": "Modalities",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "policy_revision": {
+            "title": "Policy Revision",
+            "type": "string"
+          },
+          "profile_id": {
+            "format": "uuid",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id",
+          "modalities",
+          "facets",
+          "next_cursor",
+          "policy_revision",
+          "has_global_score"
+        ],
+        "title": "ProgressOverviewResponse",
+        "type": "object"
+      },
       "PublishContentRevisionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -3791,39 +4054,39 @@
         "title": "ReasonRequest",
         "type": "object"
       },
-      "RecommendationResponse": {
+      "RecommendationPageResponse": {
         "additionalProperties": false,
         "properties": {
-          "due_on": {
-            "title": "Due On",
-            "type": "string"
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/polyglot__interfaces__http__routes__progress__RecommendationResponse"
+            },
+            "title": "Items",
+            "type": "array"
           },
-          "missing_evidence": {
-            "title": "Missing Evidence",
-            "type": "string"
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
           },
-          "proposed_activity": {
-            "title": "Proposed Activity",
-            "type": "string"
-          },
-          "reason": {
-            "title": "Reason",
-            "type": "string"
-          },
-          "target_id": {
+          "profile_id": {
             "format": "uuid",
-            "title": "Target Id",
+            "title": "Profile Id",
             "type": "string"
           }
         },
         "required": [
-          "target_id",
-          "reason",
-          "missing_evidence",
-          "due_on",
-          "proposed_activity"
+          "profile_id",
+          "items",
+          "next_cursor"
         ],
-        "title": "RecommendationResponse",
+        "title": "RecommendationPageResponse",
         "type": "object"
       },
       "RequestExportRequest": {
@@ -5435,6 +5698,155 @@
           "reference_total_count"
         ],
         "title": "WordBankOverviewResponse",
+        "type": "object"
+      },
+      "polyglot__interfaces__http__routes__progress__RecommendationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "authorized_fact_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Authorized Fact Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "estimated_duration_ms": {
+            "title": "Estimated Duration Ms",
+            "type": "integer"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "facet_key": {
+            "title": "Facet Key",
+            "type": "string"
+          },
+          "missing_evidence_spec": {
+            "additionalProperties": true,
+            "title": "Missing Evidence Spec",
+            "type": "object"
+          },
+          "need_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need Id"
+          },
+          "policy_revision": {
+            "title": "Policy Revision",
+            "type": "string"
+          },
+          "priority": {
+            "title": "Priority",
+            "type": "number"
+          },
+          "proposed_activity": {
+            "additionalProperties": true,
+            "title": "Proposed Activity",
+            "type": "object"
+          },
+          "reason_code": {
+            "title": "Reason Code",
+            "type": "string"
+          },
+          "reason_params": {
+            "additionalProperties": true,
+            "title": "Reason Params",
+            "type": "object"
+          },
+          "recommendation_id": {
+            "format": "uuid",
+            "title": "Recommendation Id",
+            "type": "string"
+          },
+          "target_id": {
+            "title": "Target Id",
+            "type": "string"
+          },
+          "target_type": {
+            "title": "Target Type",
+            "type": "string"
+          },
+          "urgency": {
+            "title": "Urgency",
+            "type": "number"
+          }
+        },
+        "required": [
+          "recommendation_id",
+          "target_type",
+          "target_id",
+          "facet_key",
+          "need_id",
+          "reason_code",
+          "reason_params",
+          "missing_evidence_spec",
+          "proposed_activity",
+          "priority",
+          "urgency",
+          "estimated_duration_ms",
+          "policy_revision",
+          "authorized_fact_ids",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "RecommendationResponse",
+        "type": "object"
+      },
+      "polyglot__interfaces__http__routes__word_bank__RecommendationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "due_on": {
+            "title": "Due On",
+            "type": "string"
+          },
+          "missing_evidence": {
+            "title": "Missing Evidence",
+            "type": "string"
+          },
+          "proposed_activity": {
+            "title": "Proposed Activity",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "target_id": {
+            "format": "uuid",
+            "title": "Target Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_id",
+          "reason",
+          "missing_evidence",
+          "due_on",
+          "proposed_activity"
+        ],
+        "title": "RecommendationResponse",
         "type": "object"
       },
       "polyglot__modules__exercises__core__domain__HintLevel": {
@@ -12719,6 +13131,344 @@
           }
         ],
         "summary": "Get Language Profile"
+      }
+    },
+    "/api/v1/language-profiles/{id}/progress": {
+      "get": {
+        "operationId": "get_progress_overview",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressOverviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Locked"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Get Progress Overview"
+      }
+    },
+    "/api/v1/language-profiles/{id}/recommendations": {
+      "get": {
+        "operationId": "list_recommendations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Locked"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "List Recommendations"
       }
     },
     "/api/v1/language-profiles/{profile_id}": {

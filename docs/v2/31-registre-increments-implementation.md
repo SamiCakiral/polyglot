@@ -85,9 +85,9 @@ exact, pas seulement absence d'exception. Toute ligne cite dans sa PR les
 | `W12-T04` | `B tests/contract/sprints/test_resume_j1.py -q` perd J+1 | recodage différé, interruption/reprise | source figée, jour manqué sans duplication |
 | `W12-T05` | `B tests/contract/sprints/test_free_practice.py -q` contourne prérequis | contexte/défi/mode libre bornés | n'altère ni module ni journée |
 | `W13-T01` | `B tests/unit/progress/test_mastery_v0.py -q` diverge golden | observation vers evidence/projection | valeurs doc 10 exactes |
-| `W13-T02` | `B tests/property/progress/test_replay_order.py -q` dépend ordre/doublon | consommateurs inbox et remplacement | reconstruction même empreinte |
+| `W13-T02` | `B tests/property/progress/test_replay_properties.py -q` dépend ordre/doublon | consommateurs inbox et remplacement | reconstruction même empreinte |
 | `W13-T03` | `B tests/integration/progress/test_migration_0013.py -q` échoue | evidence, facettes, dettes, projections | ownership progress unique |
-| `W13-T04` | `B tests/contract/progress/test_four_modalities.py -q` moyenne axes | projection modale et explication | vecteur 4D, inconnus non moyennés |
+| `W13-T04` | `B tests/contract/progress/test_http.py -q` moyenne axes | projection modale et explication | vecteur 4D, inconnus non moyennés |
 | `W14-T01` | `B tests/unit/assessments/test_form_selection.py -q` ressert forme | sélection 60/20/20, quotas, graine | forme compatible non exposée |
 | `W14-T02` | `B tests/unit/assessments/test_scores.py -q` diverge grilles | score/couverture/confiance/bandes | quatre protocoles exacts |
 | `W14-T03` | `B tests/integration/assessments/test_migration_0014.py -q` échoue | runs/sections/réponses/résultats | timer serveur et snapshot figés |

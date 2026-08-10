@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-EVIDENCE",
+  "clock": "2026-08-10T12:00:00+00:00",
+  "policies": {
+    "observation": "OBSERVATION_V0",
+    "mastery": "MASTERY_V0",
+    "recommendation": "RECOMMENDATION_V0"
+  },
+  "golden_cases": [
+    {
+      "case": "single_success",
+      "values": [0.75],
+      "source": "daily_sprint",
+      "expected_mastery_base": 0.616379,
+      "expected_status": "in_progress"
+    },
+    {
+      "case": "three_immediate_successes",
+      "values": [0.75, 0.75, 0.75],
+      "source": "daily_sprint",
+      "expected_mastery_base": 0.715426,
+      "expected_status": "in_progress"
+    },
+    {
+      "case": "delayed_transfer",
+      "values": [0.75, 0.75, 0.75, 1.0],
+      "delay_bands": ["seven_days_or_more", "one_to_six_days", "one_to_six_days", "same_session"],
+      "transfer_index": 3,
+      "expected_mastery_base": 0.761161,
+      "expected_status": "reliable"
+    }
+  ],
+  "ineligible_cases": [
+    "inconclusive",
+    "answer_revealed",
+    "correction_confidence_low",
+    "correction_contested",
+    "target_not_tested",
+    "source_has_zero_weight",
+    "identical_replay"
+  ],
+  "replay_oracles": [
+    "arrival_order_does_not_change_projection",
+    "duplicate_delivery_is_idempotent",
+    "replacement_invalidates_without_deletion",
+    "reading_never_credits_listening",
+    "unknown_modality_is_not_zero",
+    "rebuild_fingerprint_matches_incremental"
+  ]
+}

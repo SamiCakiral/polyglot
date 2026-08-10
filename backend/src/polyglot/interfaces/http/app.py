@@ -27,6 +27,7 @@ from polyglot.interfaces.http.routes.exercises import exercises_router
 from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
 from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
+from polyglot.interfaces.http.routes.progress import ProgressService, progress_router
 from polyglot.interfaces.http.routes.sprints import sprints_router
 from polyglot.interfaces.http.routes.word_bank import (
     SqlWordBankService,
@@ -86,6 +87,7 @@ def create_app(
     exercise_service: ExerciseApplicationService | None = None,
     curriculum_service: CurriculumApplicationService | None = None,
     sprint_service: SprintApplicationService | None = None,
+    progress_service: ProgressService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -158,6 +160,7 @@ def create_app(
             allowed_origin=allowed_origin,
         )
     )
+    app.include_router(progress_router(progress_service, identity_service))
 
     @app.middleware("http")
     async def request_context(
@@ -225,12 +228,14 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
+    from polyglot.modules.progress.application import SqlProgressQueryService
     from polyglot.modules.sprints.persistence import SqlSprintService
 
     exchange_service = SqlExchangeService(session_factory)
     exercise_service = SqlExerciseService(session_factory)
     curriculum_service = SqlCurriculumService(session_factory)
     sprint_service = SqlSprintService(session_factory)
+    progress_service = SqlProgressQueryService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -254,5 +259,6 @@ def create_runtime_app() -> FastAPI:
         exercise_service=exercise_service,
         curriculum_service=curriculum_service,
         sprint_service=sprint_service,
+        progress_service=progress_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

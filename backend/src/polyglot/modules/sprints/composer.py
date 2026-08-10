@@ -62,6 +62,7 @@ class DailySprintComposer:
                 novelty_points=item.novelty_points,
                 modalities=item.modalities,
                 reason_codes=self._reasons(item),
+                target_refs=tuple(sorted(item.target_refs)),
                 delayed_recode_id=item.delayed_recode_id,
                 exercise_definition_revision_ids=item.exercise_definition_revision_ids,
                 content_revision_ids=item.content_revision_ids,

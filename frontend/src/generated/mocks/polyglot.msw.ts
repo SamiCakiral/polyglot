@@ -41,7 +41,9 @@ import type {
   PreferencesResponse,
   ProfileResponse,
   ProfilesResponse,
+  ProgressOverviewResponse,
   ReadyStatus,
+  RecommendationPageResponse,
   ResourceMutationResponse,
   ResourcePageResponse,
   SenseNeighborhoodResponse,
@@ -1703,6 +1705,116 @@ export const getGetLanguageProfileResponseMock = (
   target_variety_id: faker.string.uuid(),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetProgressOverviewResponseMock = (
+  overrideResponse: Partial<Extract<ProgressOverviewResponse, object>> = {},
+): ProgressOverviewResponse => ({
+  facets: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    context_count: faker.number.int(),
+    delay_band_count: faker.number.int(),
+    effective_mass: faker.number.float({ fractionDigits: 2 }),
+    evidence_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    facet_key: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    failure_count: faker.number.int(),
+    freshness: faker.number.float({ fractionDigits: 2 }),
+    ineligibility_reasons: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    last_evidence_at: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 19) + "Z",
+      null,
+    ]),
+    mastery_base: faker.number.float({ fractionDigits: 2 }),
+    mastery_current: faker.number.float({ fractionDigits: 2 }),
+    modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    next_verification_at: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 19) + "Z",
+      null,
+    ]),
+    operation: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    projection_version: faker.number.int(),
+    session_count: faker.number.int(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    success_count: faker.number.int(),
+    target_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    target_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    transfer_count: faker.number.int(),
+  })),
+  has_global_score: faker.datatype.boolean(),
+  modalities: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    coverage: faker.number.float({ fractionDigits: 2 }),
+    expected_facet_count: faker.number.int(),
+    freshness: faker.helpers.arrayElement([
+      faker.number.float({ fractionDigits: 2 }),
+      null,
+    ]),
+    modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    observed_facet_count: faker.number.int(),
+    score: faker.helpers.arrayElement([
+      faker.number.float({ fractionDigits: 2 }),
+      null,
+    ]),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  profile_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getListRecommendationsResponseMock = (
+  overrideResponse: Partial<Extract<RecommendationPageResponse, object>> = {},
+): RecommendationPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    authorized_fact_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    estimated_duration_ms: faker.number.int(),
+    expires_at: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 19) + "Z",
+      null,
+    ]),
+    facet_key: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    missing_evidence_spec: {},
+    need_id: faker.helpers.arrayElement([faker.string.uuid(), null]),
+    policy_revision: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    priority: faker.number.float({ fractionDigits: 2 }),
+    proposed_activity: {},
+    reason_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    reason_params: {},
+    recommendation_id: faker.string.uuid(),
+    target_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    target_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    urgency: faker.number.float({ fractionDigits: 2 }),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
   ...overrideResponse,
 });
 
@@ -4937,6 +5049,58 @@ export const getGetLanguageProfileMockHandler = (
   );
 };
 
+export const getGetProgressOverviewMockHandler = (
+  overrideResponse?:
+    | ProgressOverviewResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<ProgressOverviewResponse> | ProgressOverviewResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:id/progress",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetProgressOverviewResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getListRecommendationsMockHandler = (
+  overrideResponse?:
+    | RecommendationPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<RecommendationPageResponse> | RecommendationPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:id/recommendations",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListRecommendationsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getDeleteLanguageProfileMockHandler = (
   overrideResponse?:
     | ProfileResponse
@@ -6827,6 +6991,8 @@ export const getPolyglotV2APIMock = () => [
   getListLanguageProfilesMockHandler(),
   getCreateLanguageProfileMockHandler(),
   getGetLanguageProfileMockHandler(),
+  getGetProgressOverviewMockHandler(),
+  getListRecommendationsMockHandler(),
   getDeleteLanguageProfileMockHandler(),
   getComposeDailySessionMockHandler(),
   getStartDiagnosticMockHandler(),

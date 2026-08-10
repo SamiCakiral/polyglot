@@ -1011,6 +1011,7 @@ class SqlSprintService:
                     novelty_points=novelty,
                     grammar_family=grammar_family,
                     modalities=_modalities_for(family),
+                    target_refs=frozenset(target_refs),
                     requires_refs=requires,
                     teaches_refs=teaches,
                     exercise_definition_revision_ids=(_uuid(row["definition_revision_id"]),),
@@ -1246,10 +1247,10 @@ class SqlSprintService:
                         "INSERT INTO planning.session_plan_blocks "
                         "(session_plan_block_id,plan_revision_id,profile_id,ordinal,candidate_id,"
                         "family,roles,reason_codes,modalities,p50_seconds,p80_seconds,novelty_points,"
-                        "required,delayed_recode_id,exercise_definition_revision_ids,"
+                        "required,target_refs,delayed_recode_id,exercise_definition_revision_ids,"
                         "content_revision_ids,created_at) VALUES "
                         "(:block,:revision,:profile,:ordinal,:candidate,:family,:roles,:reasons,"
-                        ":modalities,:p50,:p80,:novelty,:required,:recode,:definitions,:content,:now)"
+                        ":modalities,:p50,:p80,:novelty,:required,:targets,:recode,:definitions,:content,:now)"
                     ),
                     {
                         "block": block.block_id,
@@ -1265,6 +1266,7 @@ class SqlSprintService:
                         "p80": block.p80_seconds,
                         "novelty": block.novelty_points,
                         "required": bool(block.roles & CORE_ROLES),
+                        "targets": list(block.target_refs),
                         "recode": block.delayed_recode_id,
                         "definitions": list(block.exercise_definition_revision_ids),
                         "content": list(block.content_revision_ids),
@@ -1310,6 +1312,7 @@ class SqlSprintService:
                 "novelty_points": value.novelty_points,
                 "grammar_family": value.grammar_family,
                 "modalities": sorted(value.modalities),
+                "target_refs": sorted(value.target_refs),
                 "requires_refs": sorted(value.requires_refs),
                 "teaches_refs": sorted(value.teaches_refs),
                 "delayed_recode_id": (
@@ -1593,7 +1596,7 @@ class SqlSprintService:
                 await session.execute(
                     text(
                         "SELECT session_plan_block_id,ordinal,exercise_definition_revision_ids,"
-                        "content_revision_ids FROM planning.session_plan_blocks "
+                        "content_revision_ids,target_refs FROM planning.session_plan_blocks "
                         "WHERE plan_revision_id=:revision ORDER BY ordinal"
                     ),
                     {"revision": plan.plan_revision_id},
@@ -1664,7 +1667,8 @@ class SqlSprintService:
                         "provenance_id,created_at) VALUES "
                         "(:instance,NULL,:definition,:pack,:seed,"
                         "CAST(:stimulus AS jsonb),:revision,"
-                        "'[]','[]','[]',NULL,NULL,:available,:expires,:provenance,:created)"
+                        "CAST(:targets AS jsonb),CAST(:lexical AS jsonb),CAST(:grammar AS jsonb),"
+                        "NULL,NULL,:available,:expires,:provenance,:created)"
                     ),
                     {
                         "instance": instance_id,
@@ -1673,6 +1677,21 @@ class SqlSprintService:
                         "seed": seed,
                         "stimulus": _json([str(item) for item in stimulus_ids]),
                         "revision": plan.plan_revision_id,
+                        "targets": _json(list(block["target_refs"])),
+                        "lexical": _json(
+                            [
+                                value
+                                for value in block["target_refs"]
+                                if str(value).startswith("lexical:")
+                            ]
+                        ),
+                        "grammar": _json(
+                            [
+                                value
+                                for value in block["target_refs"]
+                                if str(value).startswith("grammar:")
+                            ]
+                        ),
                         "available": now,
                         "expires": now + RUN_RETENTION,
                         "provenance": self._ids.new(),

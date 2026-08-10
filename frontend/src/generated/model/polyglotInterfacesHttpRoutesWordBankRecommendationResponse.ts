@@ -5,7 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface RecommendationResponse {
+export interface PolyglotInterfacesHttpRoutesWordBankRecommendationResponse {
   due_on: string;
   missing_evidence: string;
   proposed_activity: string;

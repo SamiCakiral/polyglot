@@ -9,7 +9,7 @@ import type { GymCreditResponse } from "./gymCreditResponse";
 import type { LexicalDebtResponse } from "./lexicalDebtResponse";
 import type { LexicalPlanResponse } from "./lexicalPlanResponse";
 import type { LexicalProjectionResponseModalities } from "./lexicalProjectionResponseModalities";
-import type { RecommendationResponse } from "./recommendationResponse";
+import type { PolyglotInterfacesHttpRoutesWordBankRecommendationResponse } from "./polyglotInterfacesHttpRoutesWordBankRecommendationResponse";
 
 export interface LexicalProjectionResponse {
   algorithm_version: string;
@@ -21,6 +21,6 @@ export interface LexicalProjectionResponse {
   learning_targets: string[];
   modalities: LexicalProjectionResponseModalities;
   plan: LexicalPlanResponse;
-  recommendation: RecommendationResponse | null;
+  recommendation: PolyglotInterfacesHttpRoutesWordBankRecommendationResponse | null;
   sprint_snapshot_frozen: boolean;
 }

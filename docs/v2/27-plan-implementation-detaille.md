@@ -899,14 +899,14 @@ revisee, oubli, contradictions et modalites separees.
 
 **Etapes TDD :**
 
-- [ ] Ecrire les golden cases `MASTERY_V0` et constater les divergences initiales.
-- [ ] Ajouter les proprietes de rejeu, ordre, doublon et isolation des modalites.
-- [ ] Implementer eligibilite des preuves, invalidation et remplacement.
-- [ ] Implementer dette et recommandations avec raisons explicites.
-- [ ] Ecrire les tests PostgreSQL, puis ajouter `0013_progress`.
-- [ ] Brancher les consommateurs d'evenements avec inbox/cursor.
-- [ ] Exposer projections et requetes d'explication paginees.
-- [ ] Reconstruire integralement depuis les faits et comparer les empreintes.
+- [x] Ecrire les golden cases `MASTERY_V0` et constater les divergences initiales.
+- [x] Ajouter les proprietes de rejeu, ordre, doublon et isolation des modalites.
+- [x] Implementer eligibilite des preuves, invalidation et remplacement.
+- [x] Implementer dette et recommandations avec raisons explicites.
+- [x] Ecrire les tests PostgreSQL, puis ajouter `0013_progress`.
+- [x] Brancher les consommateurs d'evenements avec inbox/cursor.
+- [x] Exposer projections et requetes d'explication paginees.
+- [x] Reconstruire integralement depuis les faits et comparer les empreintes.
 
 **Preuves cibles :** `uv run pytest tests/unit/progress tests/property/progress
 tests/integration/progress tests/contract/progress -q`.

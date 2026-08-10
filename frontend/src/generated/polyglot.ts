@@ -60,6 +60,7 @@ import type {
   GetExport200,
   GetImportPreviewParams,
   GetLexicalSenseParams,
+  GetProgressOverviewParams,
   GetSharedVocabularyList200,
   GetWordBankOverviewParams,
   ImportPreviewPageResponse,
@@ -72,6 +73,7 @@ import type {
   ListDueMemoryPromptsParams,
   ListLanguagePacksParams,
   ListLexicalAnnotationsParams,
+  ListRecommendationsParams,
   ListSharedVocabularyListsParams,
   ListSnapshotResponse,
   ListVocabularyListsParams,
@@ -92,10 +94,12 @@ import type {
   ProblemResponse,
   ProfileResponse,
   ProfilesResponse,
+  ProgressOverviewResponse,
   PublishContentRevisionRequest,
   PublishVocabularyListSnapshotRequest,
   ReadyStatus,
   ReasonRequest,
+  RecommendationPageResponse,
   RequestExportRequest,
   ResetMemoryPromptRequest,
   ResolveCorrectionCaseRequest,
@@ -9869,6 +9873,624 @@ export function useGetLanguageProfile<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getGetLanguageProfileQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getProgressOverviewResponse200 = {
+  data: ProgressOverviewResponse;
+  status: 200;
+};
+
+export type getProgressOverviewResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getProgressOverviewResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getProgressOverviewResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getProgressOverviewResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getProgressOverviewResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getProgressOverviewResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getProgressOverviewResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getProgressOverviewResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getProgressOverviewResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getProgressOverviewResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getProgressOverviewResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getProgressOverviewResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getProgressOverviewResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getProgressOverviewResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getProgressOverviewResponseSuccess =
+  getProgressOverviewResponse200 & {
+    headers: Headers;
+  };
+export type getProgressOverviewResponseError = (
+  | getProgressOverviewResponse401ApplicationJson
+  | getProgressOverviewResponse401ApplicationProblemJson
+  | getProgressOverviewResponse403ApplicationJson
+  | getProgressOverviewResponse403ApplicationProblemJson
+  | getProgressOverviewResponse409ApplicationJson
+  | getProgressOverviewResponse409ApplicationProblemJson
+  | getProgressOverviewResponse422ApplicationJson
+  | getProgressOverviewResponse422ApplicationProblemJson
+  | getProgressOverviewResponse423ApplicationJson
+  | getProgressOverviewResponse423ApplicationProblemJson
+  | getProgressOverviewResponse429ApplicationJson
+  | getProgressOverviewResponse429ApplicationProblemJson
+  | getProgressOverviewResponse503ApplicationJson
+  | getProgressOverviewResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getProgressOverviewResponse =
+  getProgressOverviewResponseSuccess | getProgressOverviewResponseError;
+
+export const getGetProgressOverviewUrl = (
+  id: string,
+  params?: GetProgressOverviewParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/language-profiles/${id}/progress?${stringifiedParams}`
+    : `/api/v1/language-profiles/${id}/progress`;
+};
+
+/**
+ * @summary Get Progress Overview
+ */
+export const getProgressOverview = async (
+  id: string,
+  params?: GetProgressOverviewParams,
+  options?: RequestInit,
+): Promise<getProgressOverviewResponse> => {
+  const res = await fetch(getGetProgressOverviewUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getProgressOverviewResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getProgressOverviewResponse;
+};
+
+export const getGetProgressOverviewQueryKey = (
+  id: string,
+  params?: GetProgressOverviewParams,
+) => {
+  return [
+    `/api/v1/language-profiles/${id}/progress`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetProgressOverviewQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProgressOverview>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetProgressOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getProgressOverview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetProgressOverviewQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProgressOverview>>
+  > = ({ signal }) =>
+    getProgressOverview(id, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProgressOverview>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetProgressOverviewQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProgressOverview>>
+>;
+export type GetProgressOverviewQueryError = ProblemResponse;
+
+export function useGetProgressOverview<
+  TData = Awaited<ReturnType<typeof getProgressOverview>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params: undefined | GetProgressOverviewParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getProgressOverview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProgressOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getProgressOverview>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetProgressOverview<
+  TData = Awaited<ReturnType<typeof getProgressOverview>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetProgressOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getProgressOverview>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProgressOverview>>,
+          TError,
+          Awaited<ReturnType<typeof getProgressOverview>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetProgressOverview<
+  TData = Awaited<ReturnType<typeof getProgressOverview>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetProgressOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getProgressOverview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Progress Overview
+ */
+
+export function useGetProgressOverview<
+  TData = Awaited<ReturnType<typeof getProgressOverview>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: GetProgressOverviewParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getProgressOverview>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetProgressOverviewQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type listRecommendationsResponse200 = {
+  data: RecommendationPageResponse;
+  status: 200;
+};
+
+export type listRecommendationsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listRecommendationsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listRecommendationsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listRecommendationsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listRecommendationsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listRecommendationsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listRecommendationsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listRecommendationsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listRecommendationsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listRecommendationsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listRecommendationsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listRecommendationsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listRecommendationsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listRecommendationsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listRecommendationsResponseSuccess =
+  listRecommendationsResponse200 & {
+    headers: Headers;
+  };
+export type listRecommendationsResponseError = (
+  | listRecommendationsResponse401ApplicationJson
+  | listRecommendationsResponse401ApplicationProblemJson
+  | listRecommendationsResponse403ApplicationJson
+  | listRecommendationsResponse403ApplicationProblemJson
+  | listRecommendationsResponse409ApplicationJson
+  | listRecommendationsResponse409ApplicationProblemJson
+  | listRecommendationsResponse422ApplicationJson
+  | listRecommendationsResponse422ApplicationProblemJson
+  | listRecommendationsResponse423ApplicationJson
+  | listRecommendationsResponse423ApplicationProblemJson
+  | listRecommendationsResponse429ApplicationJson
+  | listRecommendationsResponse429ApplicationProblemJson
+  | listRecommendationsResponse503ApplicationJson
+  | listRecommendationsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listRecommendationsResponse =
+  listRecommendationsResponseSuccess | listRecommendationsResponseError;
+
+export const getListRecommendationsUrl = (
+  id: string,
+  params?: ListRecommendationsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/language-profiles/${id}/recommendations?${stringifiedParams}`
+    : `/api/v1/language-profiles/${id}/recommendations`;
+};
+
+/**
+ * @summary List Recommendations
+ */
+export const listRecommendations = async (
+  id: string,
+  params?: ListRecommendationsParams,
+  options?: RequestInit,
+): Promise<listRecommendationsResponse> => {
+  const res = await fetch(getListRecommendationsUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listRecommendationsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listRecommendationsResponse;
+};
+
+export const getListRecommendationsQueryKey = (
+  id: string,
+  params?: ListRecommendationsParams,
+) => {
+  return [
+    `/api/v1/language-profiles/${id}/recommendations`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getListRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRecommendations>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: ListRecommendationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListRecommendationsQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listRecommendations>>
+  > = ({ signal }) =>
+    listRecommendations(id, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRecommendations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRecommendations>>
+>;
+export type ListRecommendationsQueryError = ProblemResponse;
+
+export function useListRecommendations<
+  TData = Awaited<ReturnType<typeof listRecommendations>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params: undefined | ListRecommendationsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecommendations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecommendations>>,
+          TError,
+          Awaited<ReturnType<typeof listRecommendations>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListRecommendations<
+  TData = Awaited<ReturnType<typeof listRecommendations>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: ListRecommendationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecommendations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRecommendations>>,
+          TError,
+          Awaited<ReturnType<typeof listRecommendations>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListRecommendations<
+  TData = Awaited<ReturnType<typeof listRecommendations>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: ListRecommendationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Recommendations
+ */
+
+export function useListRecommendations<
+  TData = Awaited<ReturnType<typeof listRecommendations>>,
+  TError = ProblemResponse,
+>(
+  id: string,
+  params?: ListRecommendationsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listRecommendations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListRecommendationsQueryOptions(id, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

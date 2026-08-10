@@ -95,6 +95,7 @@ class CandidateBlock:
     novelty_points: float = 0
     grammar_family: str | None = None
     modalities: frozenset[str] = frozenset()
+    target_refs: frozenset[str] = frozenset()
     requires_refs: frozenset[str] = frozenset()
     teaches_refs: frozenset[str] = frozenset()
     delayed_recode_id: UUID | None = None
@@ -241,6 +242,7 @@ class PlannedBlock:
     novelty_points: float
     modalities: frozenset[str]
     reason_codes: tuple[str, ...]
+    target_refs: tuple[str, ...] = ()
     delayed_recode_id: UUID | None = None
     exercise_definition_revision_ids: tuple[UUID, ...] = ()
     content_revision_ids: tuple[UUID, ...] = ()

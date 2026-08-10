@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 1013,
+  "clock": "2026-08-10T12:00:00+00:00",
+  "payloads": {
+    "evidence.json": "sha256:d799cf047077502a19ac100b99511f50773340e480015c7f32c206370cba0a15"
+  },
+  "oracles": [
+    "mastery_v0_golden_values",
+    "immutable_observation_and_evidence_facts",
+    "logical_correction_replacement",
+    "four_modalities_remain_separate",
+    "recommendations_always_explain_their_reason",
+    "full_rebuild_matches_incremental_projection"
+  ],
+  "network_dependencies": [],
+  "pedagogical_review": "pending_human"
+}
