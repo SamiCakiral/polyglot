@@ -22,10 +22,15 @@ import type {
 
 import type {
   AccountResponse,
+  CatalogueTargetPageResponse,
   ChangePasswordRequest,
   ConsentRequest,
   ConsentResponse,
   CurrentSessionResponse,
+  LanguagePackPageResponse,
+  LexiconSearchPageResponse,
+  ListCatalogueTargetsParams,
+  ListLanguagePacksParams,
   LiveStatus,
   LocalCredentialsRequest,
   OidcCredentialsRequest,
@@ -33,6 +38,7 @@ import type {
   PreferencesResponse,
   ProblemResponse,
   ReadyStatus,
+  SearchLexiconParams,
   SessionResponse,
 } from "./model";
 
@@ -653,6 +659,250 @@ export const useRegisterAccount = <
   return useMutation(getRegisterAccountMutationOptions(options), queryClient);
 };
 
+export type listCatalogueTargetsResponse200 = {
+  data: CatalogueTargetPageResponse;
+  status: 200;
+};
+
+export type listCatalogueTargetsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listCatalogueTargetsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listCatalogueTargetsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listCatalogueTargetsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listCatalogueTargetsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listCatalogueTargetsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listCatalogueTargetsResponseSuccess =
+  listCatalogueTargetsResponse200 & {
+    headers: Headers;
+  };
+export type listCatalogueTargetsResponseError = (
+  | listCatalogueTargetsResponse409ApplicationJson
+  | listCatalogueTargetsResponse409ApplicationProblemJson
+  | listCatalogueTargetsResponse422ApplicationJson
+  | listCatalogueTargetsResponse422ApplicationProblemJson
+  | listCatalogueTargetsResponse503ApplicationJson
+  | listCatalogueTargetsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listCatalogueTargetsResponse =
+  listCatalogueTargetsResponseSuccess | listCatalogueTargetsResponseError;
+
+export const getListCatalogueTargetsUrl = (
+  params: ListCatalogueTargetsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/catalogue/targets?${stringifiedParams}`
+    : `/api/v1/catalogue/targets`;
+};
+
+/**
+ * @summary List Catalogue Targets
+ */
+export const listCatalogueTargets = async (
+  params: ListCatalogueTargetsParams,
+  options?: RequestInit,
+): Promise<listCatalogueTargetsResponse> => {
+  const res = await fetch(getListCatalogueTargetsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listCatalogueTargetsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listCatalogueTargetsResponse;
+};
+
+export const getListCatalogueTargetsQueryKey = (
+  params?: ListCatalogueTargetsParams,
+) => {
+  return [`/api/v1/catalogue/targets`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCatalogueTargetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCatalogueTargets>>,
+  TError = ProblemResponse,
+>(
+  params: ListCatalogueTargetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCatalogueTargets>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListCatalogueTargetsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCatalogueTargets>>
+  > = ({ signal }) => listCatalogueTargets(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCatalogueTargets>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListCatalogueTargetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCatalogueTargets>>
+>;
+export type ListCatalogueTargetsQueryError = ProblemResponse;
+
+export function useListCatalogueTargets<
+  TData = Awaited<ReturnType<typeof listCatalogueTargets>>,
+  TError = ProblemResponse,
+>(
+  params: ListCatalogueTargetsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCatalogueTargets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCatalogueTargets>>,
+          TError,
+          Awaited<ReturnType<typeof listCatalogueTargets>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListCatalogueTargets<
+  TData = Awaited<ReturnType<typeof listCatalogueTargets>>,
+  TError = ProblemResponse,
+>(
+  params: ListCatalogueTargetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCatalogueTargets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCatalogueTargets>>,
+          TError,
+          Awaited<ReturnType<typeof listCatalogueTargets>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListCatalogueTargets<
+  TData = Awaited<ReturnType<typeof listCatalogueTargets>>,
+  TError = ProblemResponse,
+>(
+  params: ListCatalogueTargetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCatalogueTargets>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Catalogue Targets
+ */
+
+export function useListCatalogueTargets<
+  TData = Awaited<ReturnType<typeof listCatalogueTargets>>,
+  TError = ProblemResponse,
+>(
+  params: ListCatalogueTargetsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listCatalogueTargets>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListCatalogueTargetsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export type updateConsentResponse200 = {
   data: ConsentResponse;
   status: 200;
@@ -1158,6 +1408,461 @@ export function useHealthReady<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getHealthReadyQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type listLanguagePacksResponse200 = {
+  data: LanguagePackPageResponse;
+  status: 200;
+};
+
+export type listLanguagePacksResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLanguagePacksResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listLanguagePacksResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLanguagePacksResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listLanguagePacksResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLanguagePacksResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listLanguagePacksResponseSuccess = listLanguagePacksResponse200 & {
+  headers: Headers;
+};
+export type listLanguagePacksResponseError = (
+  | listLanguagePacksResponse409ApplicationJson
+  | listLanguagePacksResponse409ApplicationProblemJson
+  | listLanguagePacksResponse422ApplicationJson
+  | listLanguagePacksResponse422ApplicationProblemJson
+  | listLanguagePacksResponse503ApplicationJson
+  | listLanguagePacksResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listLanguagePacksResponse =
+  listLanguagePacksResponseSuccess | listLanguagePacksResponseError;
+
+export const getListLanguagePacksUrl = (params?: ListLanguagePacksParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/language-packs?${stringifiedParams}`
+    : `/api/v1/language-packs`;
+};
+
+/**
+ * @summary List Language Packs
+ */
+export const listLanguagePacks = async (
+  params?: ListLanguagePacksParams,
+  options?: RequestInit,
+): Promise<listLanguagePacksResponse> => {
+  const res = await fetch(getListLanguagePacksUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listLanguagePacksResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listLanguagePacksResponse;
+};
+
+export const getListLanguagePacksQueryKey = (
+  params?: ListLanguagePacksParams,
+) => {
+  return [`/api/v1/language-packs`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLanguagePacksQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLanguagePacks>>,
+  TError = ProblemResponse,
+>(
+  params?: ListLanguagePacksParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguagePacks>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListLanguagePacksQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listLanguagePacks>>
+  > = ({ signal }) => listLanguagePacks(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLanguagePacks>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLanguagePacksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLanguagePacks>>
+>;
+export type ListLanguagePacksQueryError = ProblemResponse;
+
+export function useListLanguagePacks<
+  TData = Awaited<ReturnType<typeof listLanguagePacks>>,
+  TError = ProblemResponse,
+>(
+  params: undefined | ListLanguagePacksParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguagePacks>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLanguagePacks>>,
+          TError,
+          Awaited<ReturnType<typeof listLanguagePacks>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLanguagePacks<
+  TData = Awaited<ReturnType<typeof listLanguagePacks>>,
+  TError = ProblemResponse,
+>(
+  params?: ListLanguagePacksParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguagePacks>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLanguagePacks>>,
+          TError,
+          Awaited<ReturnType<typeof listLanguagePacks>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListLanguagePacks<
+  TData = Awaited<ReturnType<typeof listLanguagePacks>>,
+  TError = ProblemResponse,
+>(
+  params?: ListLanguagePacksParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguagePacks>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Language Packs
+ */
+
+export function useListLanguagePacks<
+  TData = Awaited<ReturnType<typeof listLanguagePacks>>,
+  TError = ProblemResponse,
+>(
+  params?: ListLanguagePacksParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLanguagePacks>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListLanguagePacksQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type searchLexiconResponse200 = {
+  data: LexiconSearchPageResponse;
+  status: 200;
+};
+
+export type searchLexiconResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type searchLexiconResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type searchLexiconResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type searchLexiconResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type searchLexiconResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type searchLexiconResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type searchLexiconResponseSuccess = searchLexiconResponse200 & {
+  headers: Headers;
+};
+export type searchLexiconResponseError = (
+  | searchLexiconResponse409ApplicationJson
+  | searchLexiconResponse409ApplicationProblemJson
+  | searchLexiconResponse422ApplicationJson
+  | searchLexiconResponse422ApplicationProblemJson
+  | searchLexiconResponse503ApplicationJson
+  | searchLexiconResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type searchLexiconResponse =
+  searchLexiconResponseSuccess | searchLexiconResponseError;
+
+export const getSearchLexiconUrl = (params: SearchLexiconParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/lexicon/search?${stringifiedParams}`
+    : `/api/v1/lexicon/search`;
+};
+
+/**
+ * @summary Search Lexicon
+ */
+export const searchLexicon = async (
+  params: SearchLexiconParams,
+  options?: RequestInit,
+): Promise<searchLexiconResponse> => {
+  const res = await fetch(getSearchLexiconUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: searchLexiconResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as searchLexiconResponse;
+};
+
+export const getSearchLexiconQueryKey = (params?: SearchLexiconParams) => {
+  return [`/api/v1/lexicon/search`, ...(params ? [params] : [])] as const;
+};
+
+export const getSearchLexiconQueryOptions = <
+  TData = Awaited<ReturnType<typeof searchLexicon>>,
+  TError = ProblemResponse,
+>(
+  params: SearchLexiconParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof searchLexicon>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getSearchLexiconQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof searchLexicon>>> = ({
+    signal,
+  }) => searchLexicon(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof searchLexicon>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type SearchLexiconQueryResult = NonNullable<
+  Awaited<ReturnType<typeof searchLexicon>>
+>;
+export type SearchLexiconQueryError = ProblemResponse;
+
+export function useSearchLexicon<
+  TData = Awaited<ReturnType<typeof searchLexicon>>,
+  TError = ProblemResponse,
+>(
+  params: SearchLexiconParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof searchLexicon>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchLexicon>>,
+          TError,
+          Awaited<ReturnType<typeof searchLexicon>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useSearchLexicon<
+  TData = Awaited<ReturnType<typeof searchLexicon>>,
+  TError = ProblemResponse,
+>(
+  params: SearchLexiconParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof searchLexicon>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof searchLexicon>>,
+          TError,
+          Awaited<ReturnType<typeof searchLexicon>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useSearchLexicon<
+  TData = Awaited<ReturnType<typeof searchLexicon>>,
+  TError = ProblemResponse,
+>(
+  params: SearchLexiconParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof searchLexicon>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Search Lexicon
+ */
+
+export function useSearchLexicon<
+  TData = Awaited<ReturnType<typeof searchLexicon>>,
+  TError = ProblemResponse,
+>(
+  params: SearchLexiconParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof searchLexicon>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getSearchLexiconQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

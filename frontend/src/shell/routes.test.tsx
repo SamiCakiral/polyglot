@@ -13,8 +13,12 @@ describe("W17-T01 structural routes", () => {
   it.each(shellFixture.routes)("keeps %s accessible inside the application shell", async (path) => {
     renderShell(path);
 
-    const main = await screen.findByRole("main");
-    expect(within(main).getByRole("heading", { level: 1 })).toBeVisible();
+    const heading = await screen.findByRole("heading", { level: 1 });
+    const main = heading.closest("main");
+    if (!main) {
+      throw new Error(`Missing main landmark for ${path}`);
+    }
+    expect(heading).toBeVisible();
     expect(within(main).queryByText("Page introuvable")).not.toBeInTheDocument();
   });
 
@@ -26,7 +30,7 @@ describe("W17-T01 structural routes", () => {
     });
     const labels = within(navigation)
       .getAllByRole("link")
-      .map((link) => link.textContent?.trim());
+      .map((link) => link.textContent.trim());
 
     expect(labels).toEqual([
       "Aujourd'hui",
@@ -57,7 +61,7 @@ describe("W17-T01 structural routes", () => {
     const user = userEvent.setup();
     renderShell();
 
-    await screen.findByRole("main");
+    await screen.findByRole("heading", { level: 1, name: "Aujourd'hui" });
     await user.tab();
     const skipLink = screen.getByRole("link", { name: "Aller au contenu principal" });
     expect(skipLink).toHaveFocus();

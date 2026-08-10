@@ -58,9 +58,10 @@ it("contains an unexpected render failure in the application error boundary", as
     throw new Error("synthetic shell failure");
   }
 
-  renderWithErrorBoundary(<BrokenComponent />);
+  const { reloadApplication } = renderWithErrorBoundary(<BrokenComponent />);
 
   expect(screen.getByRole("alert")).toHaveTextContent("Une erreur inattendue est survenue");
   await user.click(screen.getByRole("button", { name: "Recharger l'application" }));
   expect(consoleError).toHaveBeenCalled();
+  expect(reloadApplication).toHaveBeenCalledOnce();
 });

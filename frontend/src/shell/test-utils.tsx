@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { RouterProvider } from "react-router-dom";
+import { vi } from "vitest";
 
 import { AppProviders } from "../app/providers";
 import { createAppRouter } from "../app/router";
@@ -26,5 +27,12 @@ export function renderShell(path = "/today") {
 
 export function renderWithErrorBoundary(element: ReactElement) {
   const queryClient = new QueryClient();
-  return render(<AppProviders queryClient={queryClient}>{element}</AppProviders>);
+  const reloadApplication = vi.fn();
+  const view = render(
+    <AppProviders queryClient={queryClient} reloadApplication={reloadApplication}>
+      {element}
+    </AppProviders>,
+  );
+
+  return { ...view, reloadApplication };
 }

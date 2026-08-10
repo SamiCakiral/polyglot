@@ -11,8 +11,11 @@ import type { RequestHandlerOptions } from "msw";
 
 import type {
   AccountResponse,
+  CatalogueTargetPageResponse,
   ConsentResponse,
   CurrentSessionResponse,
+  LanguagePackPageResponse,
+  LexiconSearchPageResponse,
   LiveStatus,
   PreferencesResponse,
   ReadyStatus,
@@ -72,6 +75,32 @@ export const getRegisterAccountResponseMock = (
   ...overrideResponse,
 });
 
+export const getListCatalogueTargetsResponseMock = (
+  overrideResponse: Partial<Extract<CatalogueTargetPageResponse, object>> = {},
+): CatalogueTargetPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    operation: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    required_prerequisite_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    skill_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    skill_id: faker.string.uuid(),
+    skill_revision_id: faker.string.uuid(),
+    skill_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    target_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  ...overrideResponse,
+});
+
 export const getUpdateConsentResponseMock = (
   overrideResponse: Partial<Extract<ConsentResponse, object>> = {},
 ): ConsentResponse => ({
@@ -103,6 +132,76 @@ export const getHealthReadyResponseMock = (
     ] as const),
   },
   status: faker.helpers.arrayElement(["ready", "unavailable"] as const),
+  ...overrideResponse,
+});
+
+export const getListLanguagePacksResponseMock = (
+  overrideResponse: Partial<Extract<LanguagePackPageResponse, object>> = {},
+): LanguagePackPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    channel: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    compatibility_range: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    pack_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    pack_id: faker.string.uuid(),
+    pack_revision_id: faker.string.uuid(),
+    revision_no: faker.number.int(),
+    support_language_tags: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    target_language_tag: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  ...overrideResponse,
+});
+
+export const getSearchLexiconResponseMock = (
+  overrideResponse: Partial<Extract<LexiconSearchPageResponse, object>> = {},
+): LexiconSearchPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    analysis: {
+      form_analysis_id: faker.string.uuid(),
+      lemma: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      morphological_features: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      part_of_speech: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      unit_revision_id: faker.string.uuid(),
+      unit_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    senses: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      definition: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      sense_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+    })),
+    surface: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  next_cursor: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   ...overrideResponse,
 });
 
@@ -265,6 +364,32 @@ export const getRegisterAccountMockHandler = (
   );
 };
 
+export const getListCatalogueTargetsMockHandler = (
+  overrideResponse?:
+    | CatalogueTargetPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<CatalogueTargetPageResponse> | CatalogueTargetPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/catalogue/targets",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListCatalogueTargetsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getUpdateConsentMockHandler = (
   overrideResponse?:
     | ConsentResponse
@@ -336,6 +461,58 @@ export const getHealthReadyMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getHealthReadyResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getListLanguagePacksMockHandler = (
+  overrideResponse?:
+    | LanguagePackPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<LanguagePackPageResponse> | LanguagePackPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-packs",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListLanguagePacksResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSearchLexiconMockHandler = (
+  overrideResponse?:
+    | LexiconSearchPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<LexiconSearchPageResponse> | LexiconSearchPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/lexicon/search",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSearchLexiconResponseMock(),
         { status: 200 },
       );
     },
@@ -420,9 +597,12 @@ export const getPolyglotV2APIMock = () => [
   getChangePasswordMockHandler(),
   getUpdateUserPreferencesMockHandler(),
   getRegisterAccountMockHandler(),
+  getListCatalogueTargetsMockHandler(),
   getUpdateConsentMockHandler(),
   getHealthLiveMockHandler(),
   getHealthReadyMockHandler(),
+  getListLanguagePacksMockHandler(),
+  getSearchLexiconMockHandler(),
   getRevokeSessionMockHandler(),
   getGetCurrentSessionMockHandler(),
   getAuthenticateSessionMockHandler(),

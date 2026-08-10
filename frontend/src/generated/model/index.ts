@@ -6,6 +6,8 @@
  */
 
 export * from "./accountResponse";
+export * from "./catalogueTargetPageResponse";
+export * from "./catalogueTargetResponse";
 export * from "./changePasswordRequest";
 export * from "./consentRequest";
 export * from "./consentRequestStatus";
@@ -15,6 +17,15 @@ export * from "./currentSessionResponse";
 export * from "./jsonPrimitive";
 export * from "./jsonValueInput";
 export * from "./jsonValueOutput";
+export * from "./languagePackPageResponse";
+export * from "./languagePackResponse";
+export * from "./lexicalAnalysisResponse";
+export * from "./lexicalAnalysisResponseMorphologicalFeatures";
+export * from "./lexicalSenseResponse";
+export * from "./lexiconSearchItemResponse";
+export * from "./lexiconSearchPageResponse";
+export * from "./listCatalogueTargetsParams";
+export * from "./listLanguagePacksParams";
 export * from "./liveStatus";
 export * from "./localCredentialsRequest";
 export * from "./oidcCredentialsRequest";
@@ -30,4 +41,5 @@ export * from "./problemResponseFieldErrors";
 export * from "./readyStatus";
 export * from "./readyStatusChecks";
 export * from "./readyStatusStatus";
+export * from "./searchLexiconParams";
 export * from "./sessionResponse";
