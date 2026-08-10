@@ -789,6 +789,46 @@ async def test_concurrent_password_change_uses_account_and_credential_cas(
     await engine.dispose()
 
 
+async def test_stale_password_change_reports_version_conflict_after_peer_commit(
+    database_url: str,
+) -> None:
+    engine = create_async_engine(database_url)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+    service = build_service(factory)
+    registered = await register_local(service)
+    first_session = await authenticate_local(service, key="password-stale-session-a")
+    second_session = await authenticate_local(service, key="password-stale-session-b")
+    module = application()
+
+    await service.change_password(
+        module.ChangePassword(
+            session_token=first_session.session_token,
+            csrf_token=first_session.csrf_token,
+            current_password="correct horse battery staple",
+            new_password="replacement password value",
+            expected_version=registered.version,
+            idempotency_key="password-stale-winner",
+            context=context(module),
+        )
+    )
+
+    with pytest.raises(DomainError) as stale:
+        await service.change_password(
+            module.ChangePassword(
+                session_token=second_session.session_token,
+                csrf_token=second_session.csrf_token,
+                current_password="correct horse battery staple",
+                new_password="another replacement value",
+                expected_version=registered.version,
+                idempotency_key="password-stale-loser",
+                context=context(module),
+            )
+        )
+
+    assert stale.value.code is ErrorCode.VERSION_CONFLICT
+    await engine.dispose()
+
+
 async def test_concurrent_consent_versions_are_serialized_across_sessions(
     database_url: str,
     migration_session: AsyncSession,
