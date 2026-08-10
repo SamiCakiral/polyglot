@@ -64,7 +64,7 @@ class SkillTargetBinding:
             _require_uuid7(value, "evidence_protocol_id")
         if not self.modalities or not self.operations:
             raise CurriculumError("module_target_uncovered")
-        if not self.role.credit_eligible and any(value == "credit" for value in self.operations):
+        if not self.role.credit_eligible and self.evidence_protocol_ids:
             raise CurriculumError("module_support_lexicon_miscredited")
 
     @property
