@@ -691,9 +691,17 @@ class SqlWordBankService:
                 stored = reservation.receipt.result_payload
                 if reservation.receipt.status != "succeeded" or stored is None:
                     raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
+                stored_resource_id = stored.get("resource_id")
+                stored_version = stored.get("version")
+                if (
+                    not isinstance(stored_resource_id, str)
+                    or not isinstance(stored_version, int)
+                    or isinstance(stored_version, bool)
+                ):
+                    raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
                 return MutationResult(
-                    UUID(str(stored["resource_id"])),
-                    int(stored["version"]),
+                    UUID(stored_resource_id),
+                    stored_version,
                     _EVENT_BY_COMMAND[command_name],
                 )
 
