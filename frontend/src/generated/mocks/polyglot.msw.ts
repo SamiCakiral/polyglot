@@ -2386,6 +2386,15 @@ export const getGetVocabularyListResponseMock = (
   ...overrideResponse,
 });
 
+export const getArchiveVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getReviseVocabularyListResponseMock = (
   overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
 ): ResourceMutationResponse => ({
@@ -4459,6 +4468,32 @@ export const getGetVocabularyListMockHandler = (
   );
 };
 
+export const getArchiveVocabularyListMockHandler = (
+  overrideResponse?:
+    | ResourceMutationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.delete>[1]>[0],
+      ) => Promise<ResourceMutationResponse> | ResourceMutationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.delete(
+    "*/api/v1/vocabulary-lists/:listId",
+    async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getArchiveVocabularyListResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getReviseVocabularyListMockHandler = (
   overrideResponse?:
     | ResourceMutationResponse
@@ -4691,6 +4726,7 @@ export const getPolyglotV2APIMock = () => [
   getGetValidationReportMockHandler(),
   getListVocabularyListsMockHandler(),
   getGetVocabularyListMockHandler(),
+  getArchiveVocabularyListMockHandler(),
   getReviseVocabularyListMockHandler(),
   getChangeListMembersMockHandler(),
   getPublishVocabularyListSnapshotMockHandler(),

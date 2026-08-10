@@ -325,6 +325,13 @@ def exchange_router(
         etag(response, result.version)
         return result
 
+    @router.delete("/api/v1/vocabulary-lists/{list_id}", operation_id="archive_vocabulary_list", response_model=ResourceMutationResponse, responses=ETAG_RESPONSES)
+    async def archive_vocabulary_list(list_id: UUID, payload: AtRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> ResourceMutationResponse:
+        current = await session_for(request, token, csrf, origin)
+        result = await generic(command_name="ArchiveVocabularyList", current=current, resource_id=list_id, payload=payload.model_dump(), idempotency_key=idempotency_key, expected_version=expected(if_match))
+        etag(response, result.version)
+        return result
+
     @router.post("/api/v1/vocabulary-lists/{list_id}/members:batch", operation_id="change_list_members", response_model=VocabularyListResponse, responses=ETAG_RESPONSES)
     async def change_list_members(list_id: UUID, payload: ChangeListMembersRequest, request: Request, response: Response, idempotency_key: IdempotencyKey, origin: OriginHeader, csrf: CsrfHeader, if_match: IfMatchHeader, token: SessionCookieToken = None) -> VocabularyListResponse:
         current = await session_for(request, token, csrf, origin)

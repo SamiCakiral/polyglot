@@ -532,6 +532,7 @@ class SqlExchangeService:
             return MutationView(created.list_id, created.version, created.status)
 
         supported = {
+            "ArchiveVocabularyList",
             "ReviseVocabularyList",
             "PublishVocabularyListSnapshot",
             "RetireSharedVocabularyList",
@@ -566,8 +567,37 @@ class SqlExchangeService:
                 session, actor_id, command_name, idempotency_key, fingerprint
             )
             if replay is not None:
-                return MutationView(replay[0], replay[1], "succeeded")
-            if command_name == "ReviseVocabularyList":
+                return MutationView(
+                    replay[0],
+                    replay[1],
+                    {
+                        "ArchiveVocabularyList": "archived",
+                        "ReviseVocabularyList": "active",
+                        "PublishVocabularyListSnapshot": "published",
+                        "RetireSharedVocabularyList": "retired",
+                        "ResolveImportConflict": "resolved",
+                        "RequestExport": "requested",
+                    }[command_name],
+                )
+            if command_name == "ArchiveVocabularyList":
+                if expected_version is None:
+                    raise DomainError(ErrorCode.VERSION_CONFLICT)
+                current = await self._load_list(session, resource_id, for_update=True)
+                if current.version != expected_version:
+                    raise DomainError(ErrorCode.VERSION_CONFLICT)
+                if current.status != "active":
+                    raise DomainError(ErrorCode.INVALID_TRANSITION)
+                version = current.version + 1
+                await session.execute(
+                    text(
+                        "UPDATE lexicon.vocabulary_lists SET status='archived',"
+                        "version=:version,updated_at=:at WHERE list_id=:list"
+                    ),
+                    {"version": version, "at": payload["at"], "list": resource_id},
+                )
+                result_id, status = resource_id, "archived"
+                result_profile_id = current.profile_id
+            elif command_name == "ReviseVocabularyList":
                 if expected_version is None:
                     raise DomainError(ErrorCode.VERSION_CONFLICT)
                 current = await self._load_list(session, resource_id, for_update=True)
@@ -816,6 +846,7 @@ class SqlExchangeService:
                 at=command_at,
                 profile_id=result_profile_id,
                 event_type={
+                    "ArchiveVocabularyList": "vocabulary_list_archived",
                     "ReviseVocabularyList": "vocabulary_list_revised",
                     "PublishVocabularyListSnapshot": "vocabulary_list_snapshot_published",
                     "RetireSharedVocabularyList": "shared_vocabulary_list_retired",

@@ -17750,6 +17750,223 @@ export function useGetVocabularyList<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export type archiveVocabularyListResponse200 = {
+  data: ResourceMutationResponse;
+  status: 200;
+};
+
+export type archiveVocabularyListResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveVocabularyListResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveVocabularyListResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveVocabularyListResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveVocabularyListResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveVocabularyListResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveVocabularyListResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveVocabularyListResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveVocabularyListResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveVocabularyListResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveVocabularyListResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type archiveVocabularyListResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type archiveVocabularyListResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveVocabularyListResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveVocabularyListResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveVocabularyListResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveVocabularyListResponseSuccess =
+  archiveVocabularyListResponse200 & {
+    headers: Headers;
+  };
+export type archiveVocabularyListResponseError = (
+  | archiveVocabularyListResponse401ApplicationJson
+  | archiveVocabularyListResponse401ApplicationProblemJson
+  | archiveVocabularyListResponse403ApplicationJson
+  | archiveVocabularyListResponse403ApplicationProblemJson
+  | archiveVocabularyListResponse409ApplicationJson
+  | archiveVocabularyListResponse409ApplicationProblemJson
+  | archiveVocabularyListResponse422ApplicationJson
+  | archiveVocabularyListResponse422ApplicationProblemJson
+  | archiveVocabularyListResponse423ApplicationJson
+  | archiveVocabularyListResponse423ApplicationProblemJson
+  | archiveVocabularyListResponse428ApplicationJson
+  | archiveVocabularyListResponse428ApplicationProblemJson
+  | archiveVocabularyListResponse429ApplicationJson
+  | archiveVocabularyListResponse429ApplicationProblemJson
+  | archiveVocabularyListResponse503ApplicationJson
+  | archiveVocabularyListResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type archiveVocabularyListResponse =
+  archiveVocabularyListResponseSuccess | archiveVocabularyListResponseError;
+
+export const getArchiveVocabularyListUrl = (listId: string) => {
+  return `/api/v1/vocabulary-lists/${listId}`;
+};
+
+/**
+ * @summary Archive Vocabulary List
+ */
+export const archiveVocabularyList = async (
+  listId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<archiveVocabularyListResponse> => {
+  const res = await fetch(getArchiveVocabularyListUrl(listId), {
+    ...options,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: archiveVocabularyListResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as archiveVocabularyListResponse;
+};
+
+export const getArchiveVocabularyListMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveVocabularyList>>,
+    TError,
+    { listId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveVocabularyList>>,
+  TError,
+  { listId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["archiveVocabularyList"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveVocabularyList>>,
+    { listId: string; data: AtRequest }
+  > = (props) => {
+    const { listId, data } = props ?? {};
+
+    return archiveVocabularyList(listId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveVocabularyListMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveVocabularyList>>
+>;
+export type ArchiveVocabularyListMutationBody = AtRequest;
+export type ArchiveVocabularyListMutationError = ProblemResponse;
+
+/**
+ * @summary Archive Vocabulary List
+ */
+export const useArchiveVocabularyList = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof archiveVocabularyList>>,
+      TError,
+      { listId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof archiveVocabularyList>>,
+  TError,
+  { listId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(
+    getArchiveVocabularyListMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type reviseVocabularyListResponse200 = {
   data: ResourceMutationResponse;
   status: 200;

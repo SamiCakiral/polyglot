@@ -5,6 +5,7 @@ from polyglot.interfaces.http.app import create_app
 COMMANDS = {
     ("post", "/api/v1/language-profiles/{profile_id}/vocabulary-lists", False),
     ("patch", "/api/v1/vocabulary-lists/{list_id}", True),
+    ("delete", "/api/v1/vocabulary-lists/{list_id}", True),
     ("post", "/api/v1/vocabulary-lists/{list_id}/members:batch", True),
     ("post", "/api/v1/vocabulary-lists/{list_id}:snapshot", True),
     ("post", "/api/v1/vocabulary-lists/{list_id}:clone", False),

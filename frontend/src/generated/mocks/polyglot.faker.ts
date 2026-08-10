@@ -2383,6 +2383,15 @@ export const getGetVocabularyListResponseMock = (
   ...overrideResponse,
 });
 
+export const getArchiveVocabularyListResponseMock = (
+  overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
+): ResourceMutationResponse => ({
+  resource_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getReviseVocabularyListResponseMock = (
   overrideResponse: Partial<Extract<ResourceMutationResponse, object>> = {},
 ): ResourceMutationResponse => ({

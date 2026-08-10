@@ -32,6 +32,7 @@
     "DeleteLexicalAnnotation",
     "CreateVocabularyList",
     "ReviseVocabularyList",
+    "ArchiveVocabularyList",
     "ChangeListMembers",
     "FreezeVocabularyList",
     "CloneVocabularyList",
@@ -463,6 +464,12 @@
       "method": "PATCH",
       "route": "/api/v1/vocabulary-lists/{list_id}",
       "idempotency": "supported"
+    },
+    {
+      "name": "ArchiveVocabularyList",
+      "method": "DELETE",
+      "route": "/api/v1/vocabulary-lists/{list_id}",
+      "idempotency": "required"
     },
     {
       "name": "ChangeListMembers",

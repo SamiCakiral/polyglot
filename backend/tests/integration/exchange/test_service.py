@@ -716,3 +716,66 @@ async def test_list_association_verifies_target_and_versions_list(
     assert association.version == 2
     assert verifier.calls == [("module_revision", target_id, PROFILE_A)]
     assert tuple(stored) == ("module_revision", target_id, "target")
+
+
+async def test_archiving_list_preserves_snapshot_and_replays_exact_status(
+    runtime_factory,
+    migration_session,
+) -> None:
+    service = SqlExchangeService(
+        runtime_factory,
+        ids=SequenceIdGenerator(uid(value) for value in range(1000, 1060)),
+    )
+    vocabulary_list = await service.create_list(
+        ACCOUNT_A,
+        PROFILE_A,
+        CreateVocabularyList(
+            variety_id=TARGET_VARIETY,
+            list_type="manual",
+            name="Archive",
+            purpose="Historique conservé",
+            ordered=True,
+            color=None,
+            tags=(),
+            query_definition=None,
+            member_sense_ids=(),
+            created_at=NOW,
+        ),
+        idempotency_key="archive-list",
+    )
+    snapshot = await service.freeze_list(
+        ACCOUNT_A,
+        vocabulary_list.list_id,
+        expected_version=1,
+        frozen_at=NOW + timedelta(minutes=1),
+        idempotency_key="archive-snapshot",
+    )
+    payload = {"at": NOW + timedelta(minutes=2)}
+    archived = await service.execute_command(
+        command_name="ArchiveVocabularyList",
+        actor_id=ACCOUNT_A,
+        resource_id=vocabulary_list.list_id,
+        payload=payload,
+        idempotency_key="archive-command",
+        expected_version=1,
+    )
+    replay = await service.execute_command(
+        command_name="ArchiveVocabularyList",
+        actor_id=ACCOUNT_A,
+        resource_id=vocabulary_list.list_id,
+        payload=payload,
+        idempotency_key="archive-command",
+        expected_version=1,
+    )
+    current = await service.get_list(ACCOUNT_A, vocabulary_list.list_id)
+    await set_actor(migration_session, ACCOUNT_A)
+    snapshot_count = await migration_session.scalar(
+        text("SELECT count(*) FROM lexicon.list_snapshots WHERE snapshot_id=:id"),
+        {"id": snapshot.snapshot_id},
+    )
+
+    assert archived == replay
+    assert archived.status == "archived"
+    assert current.status == "archived"
+    assert current.version == 2
+    assert snapshot_count == 1

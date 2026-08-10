@@ -365,6 +365,18 @@
       "idempotency": "supported"
     },
     {
+      "name": "ArchiveVocabularyList",
+      "method": "DELETE",
+      "route": "/api/v1/vocabulary-lists/{list_id}",
+      "events": [
+        "vocabulary_list_archived"
+      ],
+      "errors": [
+        "invalid_transition"
+      ],
+      "idempotency": "required"
+    },
+    {
       "name": "ChangeListMembers",
       "method": "POST",
       "route": "/api/v1/vocabulary-lists/{list_id}/members:batch",
