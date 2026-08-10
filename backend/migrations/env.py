@@ -41,6 +41,7 @@ def include_object(
         "language_profiles",
         "lexicon",
         "memory",
+        "exchange",
     }
 
 
