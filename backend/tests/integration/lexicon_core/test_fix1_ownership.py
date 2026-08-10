@@ -60,6 +60,19 @@ async def seed_same_account_profiles_and_private_senses(session) -> None:
                 "now": NOW,
             },
         )
+    await session.execute(
+        text(
+            "INSERT INTO lexicon.lexical_encounters "
+            "(encounter_id,profile_id,exact_surface,source_type,source_ref,source_revision_ref,"
+            "modality,lexical_role,operation,help_state,result_state,correction_ref,"
+            "correction_confidence,context_private,context_fingerprint,context_retention,"
+            "occurred_at,idempotency_key,request_fingerprint) VALUES "
+            "(:id,:profile,'secret','manual','test','v1','reading','stimulus','seen','none',"
+            "'not_evaluable','none',0,'private context',:fp,'private_until_deleted',:now,"
+            "'reauth-target',:fp)"
+        ),
+        {"id": uid(2999), "profile": uid(11), "fp": "e" * 64, "now": NOW},
+    )
     await session.commit()
 
 
