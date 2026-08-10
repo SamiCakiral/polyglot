@@ -34,6 +34,16 @@ _session_cookie_security = APIKeyCookie(
     name=SESSION_COOKIE, scheme_name="SessionCookie", auto_error=False
 )
 SessionCookieToken = Annotated[str | None, Security(_session_cookie_security)]
+_ETAG_OPENAPI = {
+    "headers": {
+        "ETag": {
+            "description": "Quoted optimistic concurrency version.",
+            "schema": {"type": "string"},
+        }
+    }
+}
+RESOURCE_RESPONSES = {**IDENTITY_PROBLEM_RESPONSES, 200: _ETAG_OPENAPI}
+CREATED_RESOURCE_RESPONSES = {**IDENTITY_PROBLEM_RESPONSES, 201: _ETAG_OPENAPI}
 
 
 class ClosedModel(BaseModel):
@@ -215,7 +225,7 @@ def language_profiles_router(
         operation_id="create_language_profile",
         response_model=ProfileResponse,
         status_code=status.HTTP_201_CREATED,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=CREATED_RESOURCE_RESPONSES,
     )
     async def create_language_profile(
         payload: CreateProfileRequest,
@@ -241,7 +251,7 @@ def language_profiles_router(
         "/api/v1/language-profiles/{id}",
         operation_id="get_language_profile",
         response_model=ProfileResponse,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def get_language_profile(
         id: UUID, request: Request, response: Response, session_token: SessionCookieToken = None
@@ -255,7 +265,7 @@ def language_profiles_router(
         "/api/v1/language-profiles/{profile_id}/goals",
         operation_id="update_learning_goals",
         response_model=ProfileResponse,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def update_learning_goals(
         profile_id: UUID,
@@ -285,7 +295,7 @@ def language_profiles_router(
         operation_id="start_diagnostic",
         response_model=DiagnosticResponse,
         status_code=status.HTTP_201_CREATED,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=CREATED_RESOURCE_RESPONSES,
     )
     async def start_diagnostic(
         profile_id: UUID,
@@ -316,7 +326,7 @@ def language_profiles_router(
         "/api/v1/diagnostics/{id}",
         operation_id="get_diagnostic_summary",
         response_model=DiagnosticResponse,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def get_diagnostic(
         id: UUID, request: Request, response: Response, session_token: SessionCookieToken = None
@@ -329,7 +339,7 @@ def language_profiles_router(
     @router.post(
         "/api/v1/diagnostics/{run_id}/responses",
         operation_id="submit_diagnostic_response",
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def submit_diagnostic_response(
         run_id: UUID,
@@ -359,7 +369,7 @@ def language_profiles_router(
     @router.post(
         "/api/v1/diagnostics/{run_id}:complete",
         operation_id="complete_diagnostic",
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def complete_diagnostic(
         run_id: UUID,
@@ -386,7 +396,7 @@ def language_profiles_router(
         "/api/v1/language-profiles/{profile_id}/foundation-runs",
         operation_id="start_foundation_run",
         status_code=status.HTTP_201_CREATED,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=CREATED_RESOURCE_RESPONSES,
     )
     async def start_foundation_run(
         profile_id: UUID,
@@ -416,7 +426,7 @@ def language_profiles_router(
     @router.post(
         "/api/v1/foundation-runs/{run_id}:complete",
         operation_id="complete_foundation_gate",
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def complete_foundation_gate(
         run_id: UUID,
@@ -514,14 +524,14 @@ def language_profiles_router(
             methods=[method],
             operation_id=operation_id,
             response_model=ProfileResponse,
-            responses=IDENTITY_PROBLEM_RESPONSES,
+            responses=RESOURCE_RESPONSES,
         )
 
     @router.get(
         "/api/v1/foundation-runs/{id}",
         operation_id="get_foundation_run",
         response_model=FoundationResponse,
-        responses=IDENTITY_PROBLEM_RESPONSES,
+        responses=RESOURCE_RESPONSES,
     )
     async def get_foundation_run(
         id: UUID, request: Request, response: Response, session_token: SessionCookieToken = None
