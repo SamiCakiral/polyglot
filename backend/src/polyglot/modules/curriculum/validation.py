@@ -138,6 +138,12 @@ def _grammar_findings(data: ValidationInput) -> list[ValidationFinding]:
 def _load_findings(data: ValidationInput) -> list[ValidationFinding]:
     day_by_ordinal = {item.ordinal: item for item in data.module.days}
     findings: list[ValidationFinding] = []
+    novelty_ordinals = tuple(ordinal for ordinal, _ in data.day_novelty_points)
+    expected_ordinals = tuple(item.ordinal for item in data.module.days)
+    if tuple(sorted(novelty_ordinals)) != expected_ordinals:
+        findings.append(
+            _finding("module_load_budget_exceeded", "day_novelty_points")
+        )
     for ordinal, points in data.day_novelty_points:
         day = day_by_ordinal.get(ordinal)
         if day is None:

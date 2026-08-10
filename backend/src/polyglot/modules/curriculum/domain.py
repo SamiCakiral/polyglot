@@ -85,7 +85,9 @@ class ModuleDay:
             values = tuple(getattr(self, field))
             _require_unique(values, field)
             object.__setattr__(self, field, tuple(sorted(values)))
-        object.__setattr__(self, "modality_objectives", tuple(sorted(self.modality_objectives)))
+        modality_objectives = tuple(self.modality_objectives)
+        _require_unique(modality_objectives, "modality_objectives")
+        object.__setattr__(self, "modality_objectives", tuple(sorted(modality_objectives)))
         uuid_fields = (
             "content_revision_ids",
             "exercise_definition_revision_ids",
