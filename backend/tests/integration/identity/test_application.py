@@ -112,6 +112,7 @@ async def test_registration_replays_one_account_and_conflicting_body_is_rejected
 
 async def test_concurrent_same_registration_serializes_to_one_account(
     database_url: str,
+    migration_session: AsyncSession,
 ) -> None:
     engine = create_async_engine(database_url)
     factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -120,10 +121,12 @@ async def test_concurrent_same_registration_serializes_to_one_account(
     first, second = await asyncio.gather(*(register_local(service) for service in services))
 
     assert first == second
-    async with factory() as session:
-        assert await session.scalar(text("SELECT count(*) FROM identity.accounts")) == 1
-        assert await session.scalar(text("SELECT count(*) FROM platform.domain_events")) == 1
-        assert await session.scalar(text("SELECT count(*) FROM platform.outbox_messages")) == 1
+    assert await migration_session.scalar(text("SELECT count(*) FROM identity.accounts")) == 1
+    assert await migration_session.scalar(text("SELECT count(*) FROM platform.domain_events")) == 1
+    outbox_count = await migration_session.scalar(
+        text("SELECT count(*) FROM platform.outbox_messages")
+    )
+    assert outbox_count == 1
     await engine.dispose()
 
 
@@ -223,6 +226,18 @@ async def test_role_change_and_24_hour_boundary_rotate_to_current_roles(
 
     assert role_rotated.session_token != authenticated.session_token
     assert set(role_rotated.roles) == {"learner", "author"}
+    await migration_session.execute(
+        text(
+            "UPDATE identity.auth_sessions SET last_seen_at = :last_seen_at, "
+            "idle_expires_at = :idle_expires_at WHERE session_id = :session_id"
+        ),
+        {
+            "session_id": role_rotated.session_id,
+            "last_seen_at": NOW + timedelta(hours=23, minutes=59),
+            "idle_expires_at": NOW + timedelta(hours=24, minutes=29),
+        },
+    )
+    await migration_session.commit()
     service_after_24h = build_service(factory, now=NOW + timedelta(hours=24))
     time_rotated = await service_after_24h.get_current_session(role_rotated.session_token)
     assert time_rotated.session_token != role_rotated.session_token

@@ -12,12 +12,16 @@ from starlette.types import Lifespan
 
 from polyglot.bootstrap.database import (
     create_database_engine,
+    create_session_factory,
     database_is_ready,
     database_url_from_environment,
 )
 from polyglot.bootstrap.object_storage import FilesystemObjectStorageProbe
 from polyglot.interfaces.http.dependencies import ReadinessCheck, valid_correlation_id
 from polyglot.interfaces.http.errors import register_error_handlers
+from polyglot.interfaces.http.routes.identity import identity_router
+from polyglot.modules.identity.application import IdentityApplicationService
+from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 
 
@@ -46,6 +50,8 @@ def create_app(
     readiness_checks: Sequence[ReadinessCheck] = (),
     lifespan: Lifespan[FastAPI] | None = None,
     test_mode: bool = False,
+    identity_service: IdentityApplicationService | None = None,
+    allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
         raise ValueError("readiness checks are required outside test mode")
@@ -57,6 +63,9 @@ def create_app(
         lifespan=lifespan,
     )
     register_error_handlers(app)
+    app.include_router(
+        identity_router(identity_service, allowed_origin=allowed_origin),
+    )
 
     @app.middleware("http")
     async def request_context(
@@ -103,6 +112,14 @@ def create_app(
 
 def create_runtime_app() -> FastAPI:
     engine = create_database_engine(database_url_from_environment())
+    session_factory = create_session_factory(engine)
+    identity_service = IdentityApplicationService(
+        session_factory,
+        session_secrets=SessionSecrets.from_key(
+            os.environ["POLYGLOT_SESSION_SECRET"].encode()
+        ),
+        oidc_provider=FakeOidcProvider({}),
+    )
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
@@ -116,4 +133,6 @@ def create_runtime_app() -> FastAPI:
     return create_app(
         readiness_checks=(DatabaseReadinessProbe(engine), object_storage),
         lifespan=lifespan,
+        identity_service=identity_service,
+        allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

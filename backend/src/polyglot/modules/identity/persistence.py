@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass
-from datetime import time
+from datetime import datetime, time
 from typing import cast
 from uuid import UUID
 
@@ -525,6 +525,91 @@ class SqlIdentityRepository:
             preferences=preferences,
         )
 
+    async def find_oidc_for_authentication(
+        self,
+        issuer: str,
+        subject: str,
+    ) -> IdentityAuthentication | None:
+        row = (
+            await self._session.execute(
+                text("SELECT * FROM identity.lookup_oidc_identity(:issuer, :subject)"),
+                {"issuer": issuer, "subject": subject},
+            )
+        ).mappings().one_or_none()
+        if row is None:
+            return None
+        await self.set_actor(row["account_id"])
+        preferences = await self.get_preferences(row["account_id"])
+        if preferences is None:
+            raise DomainError(ErrorCode.INTERNAL_ERROR)
+        identity = LoginIdentity(
+            identity_id=row["identity_id"],
+            account_id=row["account_id"],
+            provider_type=IdentityProviderType.OIDC,
+            normalized_identifier=None,
+            password_hash=None,
+            issuer=issuer,
+            subject=subject,
+            created_at=row["account_created_at"],
+            last_authenticated_at=row["last_authenticated_at"],
+        )
+        return IdentityAuthentication(
+            account=_account_from_row(row),
+            identity=identity,
+            preferences=preferences,
+        )
+
+    async def get_local_identity(self, account_id: UUID) -> LoginIdentity | None:
+        row = (
+            await self._session.execute(
+                select(login_identities).where(
+                    login_identities.c.account_id == account_id,
+                    login_identities.c.provider_type == "local_password",
+                    login_identities.c.revoked_at.is_(None),
+                )
+            )
+        ).mappings().one_or_none()
+        if row is None:
+            return None
+        return LoginIdentity(
+            identity_id=row["identity_id"],
+            account_id=row["account_id"],
+            provider_type=IdentityProviderType.LOCAL_PASSWORD,
+            normalized_identifier=row["normalized_identifier"],
+            password_hash=row["password_hash"],
+            issuer=None,
+            subject=None,
+            created_at=row["created_at"],
+            last_authenticated_at=row["last_authenticated_at"],
+        )
+
+    async def update_last_authenticated(self, identity_id: UUID, now: datetime) -> None:
+        await self._session.execute(
+            login_identities.update()
+            .where(login_identities.c.identity_id == identity_id)
+            .values(last_authenticated_at=now)
+        )
+
+    async def update_password(
+        self,
+        identity_id: UUID,
+        *,
+        password_hash: str,
+        now: datetime,
+    ) -> None:
+        updated = await self._session.scalar(
+            login_identities.update()
+            .where(
+                login_identities.c.identity_id == identity_id,
+                login_identities.c.provider_type == "local_password",
+                login_identities.c.revoked_at.is_(None),
+            )
+            .values(password_hash=password_hash, last_authenticated_at=now)
+            .returning(login_identities.c.identity_id)
+        )
+        if updated is None:
+            raise DomainError(ErrorCode.IDENTITY_PROVIDER_MISMATCH)
+
     async def add_session(self, session: AuthSession) -> None:
         await self.set_actor(session.account_id)
         await self._session.execute(
@@ -580,6 +665,19 @@ class SqlIdentityRepository:
             revoke_reason=row["revoke_reason"],
         )
         return SessionAuthentication(account=account, session=session)
+
+    async def touch_session(self, session: AuthSession) -> None:
+        await self._session.execute(
+            auth_sessions.update()
+            .where(
+                auth_sessions.c.session_id == session.session_id,
+                auth_sessions.c.revoked_at.is_(None),
+            )
+            .values(
+                last_seen_at=session.last_seen_at,
+                idle_expires_at=session.idle_expires_at,
+            )
+        )
 
     async def get_preferences(self, account_id: UUID) -> UserPreferences | None:
         row = (
@@ -659,11 +757,19 @@ class SqlIdentityRepository:
             latest.setdefault(row["purpose_code"], _consent_from_row(row))
         return latest
 
+    async def get_consent(self, consent_id: UUID) -> ConsentDecision | None:
+        row = (
+            await self._session.execute(
+                select(consent_grants).where(consent_grants.c.consent_id == consent_id)
+            )
+        ).mappings().one_or_none()
+        return None if row is None else _consent_from_row(row)
+
     async def revoke_session(
         self,
         session_id: UUID,
         *,
-        revoked_at: object,
+        revoked_at: datetime,
         reason: str,
     ) -> bool:
         updated = await self._session.scalar(
@@ -681,7 +787,7 @@ class SqlIdentityRepository:
         self,
         account_id: UUID,
         *,
-        now: object,
+        now: datetime,
         reason: str,
     ) -> int:
         new_version = await self._session.scalar(
