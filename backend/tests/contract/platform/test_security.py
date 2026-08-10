@@ -38,3 +38,13 @@ def test_fx_ops_is_a_synthetic_platform_only_fixture() -> None:
         "deletion_tombstone",
         "version_n_minus_1",
     }
+
+
+def test_openai_key_detection_requires_a_token_boundary() -> None:
+    from polyglot.platform.security_checks import _find_secrets
+
+    report_path = "ta" + "sk-W05-rejection-report.md"
+    synthetic_key = "s" + "k-" + ("a" * 24)
+
+    assert _find_secrets(report_path, "fixture") == []
+    assert _find_secrets(synthetic_key, "fixture") == ["fixture:openai_api_key"]
