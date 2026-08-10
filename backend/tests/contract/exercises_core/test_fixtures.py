@@ -126,13 +126,51 @@ def test_fx_executes_a_distinct_sample_typed_oracle_for_every_primitive(
 
     assert len(report.primitive_oracles) == 22
     assert len({evidence.oracle_id for evidence in report.primitive_oracles}) == 22
-    assert len({evidence.strategy for evidence in report.primitive_oracles}) >= 4
     assert all(evidence.sample_used for evidence in report.primitive_oracles)
     assert all(
-        evidence.verdicts
-        == ("correct", "incorrect", "ambiguous", "not_evaluable")
+        evidence.verdicts[0] == "correct"
+        and evidence.verdicts[1] in {"incorrect", "partially_correct"}
+        and evidence.verdicts[2:] == ("ambiguous", "not_evaluable")
         for evidence in report.primitive_oracles
     )
+    assert all(
+        evidence.declared_strategies == evidence.executed_strategies
+        for evidence in report.primitive_oracles
+    )
+    strategies = {
+        strategy
+        for evidence in report.primitive_oracles
+        for strategy in evidence.executed_strategies
+    }
+    assert {
+        "accepted_set",
+        "exact_normalized",
+        "morphological",
+        "structural_constraints",
+        "bounded_translation",
+        "rubric",
+        "self_assessment",
+        "before_after",
+    }.issubset(strategies)
+    assert all(
+        evidence.ambiguous_policy == f"{evidence.primitive_id}:ambiguous"
+        and evidence.not_evaluable_policy == f"{evidence.primitive_id}:not_evaluable"
+        for evidence in report.primitive_oracles
+    )
+
+    evidence_by_id = {
+        evidence.primitive_id: evidence for evidence in report.primitive_oracles
+    }
+    assert evidence_by_id["EX-RECALL-02"].executed_strategies == ("morphological",)
+    assert evidence_by_id["EX-RECALL-06"].executed_strategies == ("morphological",)
+    assert evidence_by_id["EX-PROD-01"].executed_strategies == (
+        "structural_constraints",
+        "rubric",
+    )
+    assert evidence_by_id["EX-PROD-02"].executed_strategies == ("rubric",)
+    assert evidence_by_id["EX-PROD-03"].executed_strategies == ("rubric",)
+    assert evidence_by_id["EX-ORAL-01"].executed_strategies == ("self_assessment",)
+    assert evidence_by_id["EX-REPAIR-01"].executed_strategies == ("before_after",)
 
     mutated = tmp_path / "FX-PRIMITIVES"
     shutil.copytree(FIXTURE, mutated)

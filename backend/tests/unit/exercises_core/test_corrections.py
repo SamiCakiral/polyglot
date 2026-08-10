@@ -48,6 +48,32 @@ def test_closed_correction_strategies_do_not_promote_ambiguous_or_unavailable_an
     assert unavailable.credit_value(operation_cap=0.75, target_weight=1.0, hint_level="h0") is None
 
 
+def test_normative_open_and_repair_strategies_execute_their_own_inputs() -> None:
+    from polyglot.modules.exercises.core.domain import (
+        CorrectionStrategy,
+        CorrectionVerdict,
+    )
+
+    translation = CorrectionStrategy.bounded_translation(
+        accepted_meanings=("hello world",), required_tokens=("hello",)
+    )
+    self_assessment = CorrectionStrategy.self_assessment(
+        required_criteria=("confidence", "fluency"), passing_score=0.75
+    )
+    repair = CorrectionStrategy.before_after(expected_after="ciao")
+
+    assert translation.correct("hello world").verdict is CorrectionVerdict.CORRECT
+    assert translation.correct("goodbye").verdict is CorrectionVerdict.INCORRECT
+    assert self_assessment.correct(
+        {"confidence": 1.0, "fluency": 0.8}
+    ).verdict is CorrectionVerdict.CORRECT
+    assert self_assessment.correct(
+        {"confidence": 0.2, "fluency": 0.4}
+    ).verdict is CorrectionVerdict.PARTIALLY_CORRECT
+    assert repair.correct("ciao", previous_value="cia").verdict is CorrectionVerdict.CORRECT
+    assert repair.correct("cia", previous_value="cia").verdict is CorrectionVerdict.INCORRECT
+
+
 def test_h4_revelation_ambiguity_and_unavailability_never_create_success_or_credit() -> None:
     from polyglot.modules.exercises.core.domain import (
         Answer,
