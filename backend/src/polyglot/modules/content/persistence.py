@@ -9,6 +9,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import (
+    BigInteger,
     CheckConstraint,
     Column,
     DateTime,
@@ -357,6 +358,35 @@ Index(
     historical_content_references.c.content_revision_id,
     historical_content_references.c.recorded_at,
     historical_content_references.c.reference_id,
+)
+
+command_contexts = Table(
+    "command_contexts",
+    metadata,
+    Column(
+        "command_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("platform.command_receipts.command_id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column("transaction_id", BigInteger, nullable=False, unique=True),
+    Column("command_type", String(120), nullable=False),
+    Column(
+        "opened_at",
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("clock_timestamp()"),
+    ),
+    CheckConstraint(
+        "content.is_uuid7(command_id)", name="ck_content_command_context_uuid7"
+    ),
+    CheckConstraint(
+        "command_type IN ('CreateContentDraft','ReviseContentDraft',"
+        "'ValidateContentRevision','ApproveContentRevision',"
+        "'PublishContentRevision','RetireContentRevision')",
+        name="ck_content_command_context_type",
+    ),
+    schema="content",
 )
 
 
