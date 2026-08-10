@@ -580,6 +580,7 @@ class IdentityApplicationService:
             return None
         if provider_type is IdentityProviderType.LOCAL_PASSWORD:
             identity: IdentityAuthentication | None = None
+            credential_shape_valid = command.identifier is not None and command.password is not None
             try:
                 normalized = (
                     normalize_identifier(command.identifier)
@@ -594,15 +595,16 @@ class IdentityApplicationService:
             if identity is not None and identity.identity.password_hash is not None:
                 encoded_hash = identity.identity.password_hash
             supplied_password = command.password or "invalid credential padding"
-            if not 12 <= len(supplied_password) <= 128 or len(
+            password_shape_valid = 12 <= len(supplied_password) <= 128 and len(
                 supplied_password.encode("utf-8")
-            ) > 512:
+            ) <= 512
+            if not password_shape_valid:
                 supplied_password = "invalid credential padding"
             try:
                 valid = self._password_hasher.verify(encoded_hash, supplied_password)
             except PasswordPolicyError:
                 valid = False
-            return identity if valid else None
+            return identity if valid and credential_shape_valid and password_shape_valid else None
         if not self._oidc_enabled:
             raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
         if command.authorization_code is None:
