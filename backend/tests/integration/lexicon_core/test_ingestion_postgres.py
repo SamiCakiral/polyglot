@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.lexicon.core.commands import (
+    CaptureLexicalGapCommand,
     LexiconCommandService,
     MentionCandidateInput,
     RecordLexicalEncounter,
@@ -143,3 +144,41 @@ async def test_rls_hides_another_users_encounter(
     visible = await migration_session.scalar(text("SELECT count(*) FROM lexicon.lexical_encounters"))
 
     assert visible == 0
+
+
+async def test_capture_lexical_gap_is_an_unresolved_query_not_mastery(
+    migration_session: AsyncSession,
+) -> None:
+    await seed_profiles(migration_session)
+    service = LexiconCommandService(migration_session)
+
+    encounter_id = await service.capture_gap(
+        CaptureLexicalGapCommand(
+            encounter_id=uid(30),
+            mention_id=uid(31),
+            profile_id=uid(11),
+            attempt_id=uid(32),
+            intended_support_text="faire doucement",
+            minimal_context="Je voulais decrire le mouvement",
+            support_language_tag="fr-FR",
+            occurred_at=NOW,
+            idempotency_key="gap-doucement",
+            request_fingerprint="d" * 64,
+        )
+    )
+    row = (
+        await migration_session.execute(
+            text(
+                "SELECT e.operation,e.result_state,count(c.candidate_id) AS candidates "
+                "FROM lexicon.lexical_encounters e "
+                "JOIN lexicon.lexical_mentions m ON m.encounter_id=e.encounter_id "
+                "LEFT JOIN lexicon.mention_candidates c ON c.mention_id=m.mention_id "
+                "WHERE e.encounter_id=:id GROUP BY e.operation,e.result_state"
+            ),
+            {"id": encounter_id},
+        )
+    ).one()
+
+    assert row.operation == "queried"
+    assert row.result_state == "not_evaluable"
+    assert row.candidates == 0
