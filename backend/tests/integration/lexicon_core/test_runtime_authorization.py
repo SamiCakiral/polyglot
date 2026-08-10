@@ -8,7 +8,7 @@ from polyglot.bootstrap.database import database_url_from_environment
 from polyglot.interfaces.http.routes.word_bank import SqlWordBankService
 from polyglot.platform.errors import DomainError, ErrorCode
 
-from .test_ingestion_postgres import NOW, seed_profiles, set_actor, uid
+from .test_ingestion_postgres import NOW, seed_profiles, uid
 
 
 async def seed_auth_session(session, *, session_id, authenticated_at: datetime) -> None:

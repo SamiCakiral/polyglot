@@ -1,5 +1,5 @@
 import asyncio
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import text
@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from polyglot.bootstrap.database import migration_database_url_from_environment
 from polyglot.interfaces.http.routes.word_bank import SqlWordBankService
 from polyglot.platform.errors import DomainError, ErrorCode
-from polyglot.platform.fingerprint import canonical_json_fingerprint
 
 from .test_ingestion_postgres import NOW, seed_profiles, set_actor, uid
 

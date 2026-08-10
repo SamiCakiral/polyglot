@@ -28,16 +28,16 @@ from polyglot.modules.identity.application import (
     IdentityApplicationService,
 )
 from polyglot.modules.identity.persistence import auth_sessions
+from polyglot.modules.lexicon.core.projection import (
+    Evidence,
+    RebuiltLexicalProjection,
+    rebuild_word_bank_projection,
+)
 from polyglot.modules.lexicon.core.queries import (
     GraphEdge,
     WordBankItem,
     bounded_neighborhood,
     paginate_word_bank,
-)
-from polyglot.modules.lexicon.core.projection import (
-    Evidence,
-    RebuiltLexicalProjection,
-    rebuild_word_bank_projection,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
