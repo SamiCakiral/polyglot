@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "exercises": [
+    {"id": "exercise:d1-exposure", "day": 1, "primitive": "EX-EXPOSE-01", "targets": ["grammar:identity"], "credit": false},
+    {"id": "exercise:d1-transform", "day": 1, "primitive": "EX-TRANSFORM-01", "targets": ["grammar:identity"], "gym_operation": "GYM-01", "credit": true},
+    {"id": "exercise:d2-contrast", "day": 2, "primitive": "EX-DISC-04", "targets": ["grammar:polite-request"], "credit": true},
+    {"id": "exercise:d2-transform", "day": 2, "primitive": "EX-TRANSFORM-01", "targets": ["grammar:polite-request"], "gym_operation": "GYM-08", "credit": true},
+    {"id": "exercise:d3-morphology", "day": 3, "primitive": "EX-RECALL-06", "targets": ["grammar:existence"], "gym_operation": "GYM-03", "credit": true},
+    {"id": "exercise:d3-repair", "day": 3, "primitive": "EX-REPAIR-01", "targets": ["skill:repair-exchange"], "credit": true},
+    {"id": "exercise:d2-shadowing", "day": 2, "primitive": "EX-ORAL-01", "targets": ["pron:shadowing-dialogue-j2"], "credit": false}
+  ]
+}

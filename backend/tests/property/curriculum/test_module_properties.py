@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from polyglot.modules.curriculum import ArcType, LearningModuleRevision, ModuleDay, ModuleStatus
 
@@ -13,19 +14,44 @@ def uid(suffix: int) -> UUID:
 
 def day(ordinal: int) -> ModuleDay:
     return ModuleDay(
-        uid(100 + ordinal), ordinal, ArcType.DISCOVERY, (f"o-{ordinal}",),
-        (("written_production", "produce"),), (f"skill:{ordinal}",),
-        (f"skill:{ordinal}",), (f"skill:{ordinal}",), 10, 3.0,
+        uid(100 + ordinal),
+        ordinal,
+        ArcType.DISCOVERY,
+        (f"o-{ordinal}",),
+        (("written_production", "produce"),),
+        (f"skill:{ordinal}",),
+        (f"skill:{ordinal}",),
+        (f"skill:{ordinal}",),
+        10,
+        3.0,
         ("explanation", "practice", "production"),
     )
 
 
 def revision(*, days: tuple[ModuleDay, ...]) -> LearningModuleRevision:
     return LearningModuleRevision(
-        uid(1), uid(2), 1, ModuleStatus.DRAFT, uid(3), uid(4), (uid(5),),
-        "autonomous exchange", uid(6), ("P-ABS", "P-FAUX", "P-INT"),
-        len(days), len(days), (uid(7),), tuple(uid(20 + item.ordinal) for item in days),
-        uid(8), uid(9), "prov:test", ("rights:test",), uid(10), 1, ">=1,<2", days,
+        uid(1),
+        uid(2),
+        1,
+        ModuleStatus.DRAFT,
+        uid(3),
+        uid(4),
+        (uid(5),),
+        "autonomous exchange",
+        uid(6),
+        ("P-ABS", "P-FAUX", "P-INT"),
+        len(days),
+        len(days),
+        (uid(7),),
+        tuple(uid(20 + item.ordinal) for item in days),
+        uid(8),
+        uid(9),
+        "prov:test",
+        ("rights:test",),
+        uid(10),
+        1,
+        ">=1,<2",
+        days,
     )
 
 

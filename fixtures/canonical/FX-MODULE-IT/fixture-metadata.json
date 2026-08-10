@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 1113,
+  "clock": "2026-08-10T09:00:00+00:00",
+  "payloads": {
+    "module.json": "sha256:6222dc47c1a4dd3c9283d49bfcd6f4d0a4f3cb5afa6b7b01a4fe9d74b4c33c6d",
+    "days.json": "sha256:2d4fa558fa0cc1206a3e6bfd2fa01b05454dccc36125fa6d33d4f09bd15952e7",
+    "bindings.json": "sha256:29804c5d4b2e94dcf4e9ce4f78bcfdebfa974e7c6e963fdad1ac55703e1400f0",
+    "dialogues.json": "sha256:9751d01a6a5a05d8b881a14ae966ee2950b49220add6ae96f8ee592b7ee7cae2",
+    "exercises.json": "sha256:f93babebaf801070fe237b9dc010529b182b06a51be9d05e8761ba40192d954c",
+    "oracles.json": "sha256:1099cc9e18b7661c83a44093d3b18cd7cde407ac4dae9b80961329f7b1942de3",
+    "revision-cases.json": "sha256:0f9f9c48469169354353873323559d176729b10e68353a2a24ce396393572b7e"
+  },
+  "network_dependencies": [],
+  "provenance": ["docs/v2/13-pack-italien-pilote.md"],
+  "rights": ["project-authored"],
+  "engine_compatibility": ">=1,<2",
+  "linguistic_review": "pending_human",
+  "pedagogical_review": "pending_human"
+}

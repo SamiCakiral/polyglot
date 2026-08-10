@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "oracles": [
+    {"id": "oracle:day-arc-and-load", "kind": "day_arc", "expected": "valid"},
+    {"id": "oracle:target-coverage", "kind": "target_coverage", "expected": "covered"},
+    {"id": "oracle:grammar-before-gym", "kind": "grammar_order", "expected": "ordered"},
+    {"id": "oracle:morphology-features", "kind": "morphology", "expected": "all_distinct"},
+    {"id": "oracle:pronunciation-evaluability", "kind": "pronunciation", "expected": "bounded_credit"},
+    {"id": "oracle:j1-recall", "kind": "recall", "expected": "1>2>3"},
+    {"id": "oracle:profile-budgets", "kind": "profiles", "expected": "15/30/60"},
+    {"id": "oracle:false-credit", "kind": "credit_scope", "expected": "support_zero"},
+    {"id": "oracle:human-gates", "kind": "human_gates", "expected": "pending_human"}
+  ]
+}

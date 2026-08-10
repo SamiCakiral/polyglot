@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "grammar": [
+    {"ref": "grammar:identity", "family": "identity", "patterns": ["Sono + nome", "Mi chiamo + nome", "Ecco + nome"], "role": "new"},
+    {"ref": "grammar:polite-request", "family": "polite-request", "patterns": ["Vorrei + nome", "Posso + infinito", "Puo + infinito"], "role": "new"},
+    {"ref": "grammar:existence", "family": "existence", "patterns": ["c'e + singolare", "ci sono + plurale"], "role": "target"}
+  ],
+  "morphology": [
+    {"ref": "form:sono", "surface": "sono", "features": {"lemma": "essere", "mood": "indicative", "tense": "present", "person": "1", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "sono", "rejected": "sei"},
+    {"ref": "form:sei", "surface": "sei", "features": {"lemma": "essere", "mood": "indicative", "tense": "present", "person": "2", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "sei", "rejected": "sono"},
+    {"ref": "form:ho", "surface": "ho", "features": {"lemma": "avere", "mood": "indicative", "tense": "present", "person": "1", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "ho", "rejected": "o"},
+    {"ref": "form:hai", "surface": "hai", "features": {"lemma": "avere", "mood": "indicative", "tense": "present", "person": "2", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "hai", "rejected": "ai"},
+    {"ref": "form:ha", "surface": "ha", "features": {"lemma": "avere", "mood": "indicative", "tense": "present", "person": "3", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "ha", "rejected": "a"},
+    {"ref": "form:vorrei", "surface": "vorrei", "features": {"lemma": "volere", "mood": "conditional", "tense": "present", "person": "1", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "vorrei", "rejected": "voglio"},
+    {"ref": "form:posso", "surface": "posso", "features": {"lemma": "potere", "mood": "indicative", "tense": "present", "person": "1", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "posso", "rejected": "puo"},
+    {"ref": "form:puo", "surface": "può", "features": {"lemma": "potere", "mood": "indicative", "tense": "present", "person": "3", "number": "singular"}, "primitive": "EX-RECALL-06", "accepted": "può", "rejected": "puo"},
+    {"ref": "form:ce", "surface": "c'è", "features": {"lemma": "esserci", "mood": "indicative", "tense": "present", "number": "singular"}, "primitive": "EX-RECALL-02", "accepted": "c'è", "rejected": "ce"},
+    {"ref": "form:ci-sono", "surface": "ci sono", "features": {"lemma": "esserci", "mood": "indicative", "tense": "present", "number": "plural"}, "primitive": "EX-RECALL-02", "accepted": "ci sono", "rejected": "c'è"}
+  ],
+  "pronunciation": [
+    {"ref": "pron:e-vs-e-accent", "transcript": "E Luca. E qui.", "media_transcript_checksum": "sha256:eb6d2a91b18172f62471b153c727708943ffaa89b7d69d1994d23f18aa8988ca", "transcript_checksum": "sha256:eb6d2a91b18172f62471b153c727708943ffaa89b7d69d1994d23f18aa8988ca", "evaluability": "perception", "role": "contrast"},
+    {"ref": "pron:shadowing-dialogue-j2", "transcript": "Buongiorno. Vorrei un caffe, per favore.", "media_transcript_checksum": "sha256:35b50ad621a7e77edd4f5e0f55657555bdb49a5f27551c9fc9ac7e654bd4efd0", "transcript_checksum": "sha256:35b50ad621a7e77edd4f5e0f55657555bdb49a5f27551c9fc9ac7e654bd4efd0", "evaluability": "not_evaluable", "role": "target"}
+  ],
+  "support_refs": ["sense:caffe", "sense:acqua", "sense:autobus", "sense:centro"],
+  "credit_eligible_refs": ["grammar:identity", "grammar:polite-request", "grammar:existence", "pron:e-vs-e-accent"]
+}

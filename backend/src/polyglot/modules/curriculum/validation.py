@@ -123,11 +123,15 @@ def _grammar_findings(data: ValidationInput) -> list[ValidationFinding]:
     for ordinal, family, operation in data.grammar_practices:
         if family not in explained_at or explained_at[family] > ordinal:
             findings.append(
-                _finding("module_new_structure_without_explanation", f"days.{ordinal}.grammar", family)
+                _finding(
+                    "module_new_structure_without_explanation", f"days.{ordinal}.grammar", family
+                )
             )
         prefix, _, number = operation.partition("-")
         if prefix != "GYM" or not number.isdigit() or not 1 <= int(number) <= 15:
-            findings.append(_finding("module_gym_without_w10_contract", f"days.{ordinal}.gym", operation))
+            findings.append(
+                _finding("module_gym_without_w10_contract", f"days.{ordinal}.gym", operation)
+            )
     return findings
 
 
@@ -139,8 +143,10 @@ def _load_findings(data: ValidationInput) -> list[ValidationFinding]:
         if day is None:
             findings.append(_finding("module_day_ordinal_gap", f"days.{ordinal}"))
             continue
-        if points < 0 or points > day.novelty_budget or (
-            day.arc_type in {ArcType.TRANSFER, ArcType.CONSOLIDATION} and points > 0
+        if (
+            points < 0
+            or points > day.novelty_budget
+            or (day.arc_type in {ArcType.TRANSFER, ArcType.CONSOLIDATION} and points > 0)
         ):
             findings.append(_finding("module_novelty_budget_exceeded", f"days.{ordinal}.novelty"))
     limits = dict(data.profile_novelty_limits)
@@ -155,17 +161,27 @@ def validate_curriculum(data: ValidationInput) -> ValidationReport:
     findings = _reference_findings(data)
     findings.extend(_grammar_findings(data))
     findings.extend(_load_findings(data))
-    for oracle in data.morphology_oracles:
-        if not oracle.oracle_available or not oracle.feature_bundle or not oracle.accepted_surface:
+    for morphology in data.morphology_oracles:
+        if (
+            not morphology.oracle_available
+            or not morphology.feature_bundle
+            or not morphology.accepted_surface
+        ):
             findings.append(
-                _finding("module_morphology_oracle_missing", f"morphology.{oracle.target_ref}")
+                _finding(
+                    "module_morphology_oracle_missing",
+                    f"morphology.{morphology.target_ref}",
+                )
             )
     credit_eligible: list[str] = []
-    for oracle in data.pronunciation_oracles:
-        path = f"pronunciation.{oracle.target_ref}"
-        if not oracle.transcript or oracle.transcript_checksum != oracle.media_transcript_checksum:
+    for pronunciation in data.pronunciation_oracles:
+        path = f"pronunciation.{pronunciation.target_ref}"
+        if (
+            not pronunciation.transcript
+            or pronunciation.transcript_checksum != pronunciation.media_transcript_checksum
+        ):
             findings.append(_finding("module_pronunciation_asset_incoherent", path))
-        if oracle.evaluability != "perception":
+        if pronunciation.evaluability != "perception":
             findings.append(
                 _finding(
                     "module_pronunciation_not_evaluable",
@@ -174,7 +190,7 @@ def validate_curriculum(data: ValidationInput) -> ValidationReport:
                 )
             )
         else:
-            credit_eligible.append(oracle.target_ref)
+            credit_eligible.append(pronunciation.target_ref)
     for gate, status in data.human_gates:
         if status is not HumanGateStatus.APPROVED:
             findings.append(_finding("module_human_review_required", f"human_gates.{gate}", gate))

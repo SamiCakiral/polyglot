@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "days": [
+    {
+      "code": "IT-PILOT-D1",
+      "ordinal": 1,
+      "arc": "discovery",
+      "objective": "saluer et s'identifier dans un mini-echange",
+      "targets": ["grammar:identity", "skill:identify-self"],
+      "encounters": ["grammar:identity", "skill:identify-self"],
+      "outputs": ["grammar:identity", "skill:identify-self"],
+      "new_grammar_families": ["identity"],
+      "explanations": ["identity"],
+      "gym": [{"family": "identity", "operation": "GYM-01"}],
+      "novelty_points": 3.5,
+      "novelty_budget": 6.0,
+      "minimum_minutes": 10,
+      "dialogue_id": "dialogue:j1-contact",
+      "recall_from": null
+    },
+    {
+      "code": "IT-PILOT-D2",
+      "ordinal": 2,
+      "arc": "guided_use",
+      "objective": "obtenir quelque chose avec une demande polie",
+      "targets": ["grammar:polite-request", "skill:request-item"],
+      "encounters": ["grammar:polite-request", "skill:request-item"],
+      "outputs": ["grammar:polite-request", "skill:request-item"],
+      "new_grammar_families": ["polite-request"],
+      "explanations": ["polite-request"],
+      "gym": [{"family": "polite-request", "operation": "GYM-08"}],
+      "novelty_points": 3.5,
+      "novelty_budget": 8.0,
+      "minimum_minutes": 10,
+      "dialogue_id": "dialogue:j2-cafe",
+      "recall_from": 1
+    },
+    {
+      "code": "IT-PILOT-D3",
+      "ordinal": 3,
+      "arc": "transfer",
+      "objective": "comprendre, verifier et reparer dans une situation nouvelle",
+      "targets": ["grammar:existence", "skill:repair-exchange"],
+      "encounters": ["grammar:existence", "skill:repair-exchange"],
+      "outputs": ["grammar:existence", "skill:repair-exchange"],
+      "new_grammar_families": [],
+      "explanations": ["existence"],
+      "gym": [{"family": "existence", "operation": "GYM-03"}],
+      "novelty_points": 0.0,
+      "novelty_budget": 0.0,
+      "minimum_minutes": 10,
+      "dialogue_id": "dialogue:j3-repair",
+      "recall_from": 2
+    }
+  ]
+}

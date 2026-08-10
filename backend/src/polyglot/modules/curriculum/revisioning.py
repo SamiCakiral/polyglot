@@ -62,16 +62,15 @@ def validate_revision_mapping(
     mapping: ModuleRevisionMapping,
 ) -> tuple[ValidationFinding, ...]:
     findings: list[ValidationFinding] = []
-    mapped = {
-        (entry.source_day_ordinal, entry.source_target_ref)
-        for entry in mapping.entries
-    }
+    mapped = {(entry.source_day_ordinal, entry.source_target_ref) for entry in mapping.entries}
     required = {
-        (item.ordinal, reference)
-        for item in source.days
-        for reference in item.primary_target_refs
+        (item.ordinal, reference) for item in source.days for reference in item.primary_target_refs
     }
-    if mapping.source_revision_id != source.module_revision_id or mapping.target_revision_id != target.module_revision_id or not required.issubset(mapped):
+    if (
+        mapping.source_revision_id != source.module_revision_id
+        or mapping.target_revision_id != target.module_revision_id
+        or not required.issubset(mapped)
+    ):
         findings.append(
             ValidationFinding(
                 "W11-REVISION-V1",

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-MODULE-IT",
+  "module_id": "019fe113-0000-7000-8000-000000000001",
+  "module_revision_id": "019fe113-0000-7000-8000-000000000002",
+  "revision_no": 1,
+  "module_code": "IT-FIRST-AUTONOMOUS-EXCHANGE",
+  "target_variety": "it-IT",
+  "support_variety": "fr-FR",
+  "profiles": ["P-ABS", "P-FAUX", "P-INT"],
+  "nominal_days": 3,
+  "max_days": 3,
+  "primary_intention": "entrer en contact, obtenir quelque chose et reparer un echange",
+  "final_mission": "mener un echange autonome en reutilisant une identification, une demande polie et une strategie de reparation",
+  "provenance": "docs/v2/13-pack-italien-pilote.md",
+  "rights": ["project-authored"],
+  "linguistic_review": "pending_human",
+  "pedagogical_review": "pending_human"
+}

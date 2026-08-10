@@ -81,7 +81,9 @@ class LexiconTargetBinding:
 
     def __post_init__(self) -> None:
         _require_uuid7(self.sense_revision_id, "sense_revision_id")
-        object.__setattr__(self, "required_form_revision_ids", tuple(self.required_form_revision_ids))
+        object.__setattr__(
+            self, "required_form_revision_ids", tuple(self.required_form_revision_ids)
+        )
         object.__setattr__(self, "usage_frame_revision_ids", tuple(self.usage_frame_revision_ids))
         _require_unique(self.required_form_revision_ids, "required_form_revision_ids")
         _require_unique(self.usage_frame_revision_ids, "usage_frame_revision_ids")
@@ -164,7 +166,9 @@ class PronunciationTargetBinding:
 
     @property
     def credit_eligible(self) -> bool:
-        return self.role.credit_eligible and self.evaluability is PronunciationEvaluability.PERCEPTION
+        return (
+            self.role.credit_eligible and self.evaluability is PronunciationEvaluability.PERCEPTION
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -196,5 +200,9 @@ class RecallSpec:
 
     def __post_init__(self) -> None:
         _require_uuid7(self.source_exercise_binding_id, "source_exercise_binding_id")
-        if not self.target_ref or self.source_day_ordinal < 1 or self.due_rule not in {"j+1", "spaced"}:
+        if (
+            not self.target_ref
+            or self.source_day_ordinal < 1
+            or self.due_rule not in {"j+1", "spaced"}
+        ):
             raise CurriculumError("module_recall_source_missing")

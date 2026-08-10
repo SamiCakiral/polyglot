@@ -14,7 +14,9 @@ from polyglot.modules.curriculum.validation import (
 from tests.unit.curriculum.test_module_contract import day, revision, uid
 
 
-def resolved(reference: str, status: ReferenceStatus = ReferenceStatus.PUBLISHED) -> ResolvedReference:
+def resolved(
+    reference: str, status: ReferenceStatus = ReferenceStatus.PUBLISHED
+) -> ResolvedReference:
     return ResolvedReference(
         reference,
         reference.partition(":")[0],
@@ -39,11 +41,16 @@ def base_input() -> ValidationInput:
             MorphologyOracle("form:sono", (("person", "1"), ("number", "singular")), "sono", True),
         ),
         pronunciation_oracles=(
-            PronunciationOracle("pron:e-accent", "È qui", f"sha256:{'b' * 64}", f"sha256:{'b' * 64}", "perception"),
+            PronunciationOracle(
+                "pron:e-accent", "È qui", f"sha256:{'b' * 64}", f"sha256:{'b' * 64}", "perception"
+            ),
         ),
         profile_novelty_limits=(("P-ABS", 6.0), ("P-FAUX", 8.0), ("P-INT", 10.0)),
         day_novelty_points=((1, 3.5), (2, 3.5), (3, 0.0)),
-        human_gates=(("P-LING", HumanGateStatus.PENDING_HUMAN), ("P-PED", HumanGateStatus.PENDING_HUMAN)),
+        human_gates=(
+            ("P-LING", HumanGateStatus.PENDING_HUMAN),
+            ("P-PED", HumanGateStatus.PENDING_HUMAN),
+        ),
     )
 
 
@@ -72,7 +79,11 @@ def test_validation_rejects_missing_morphology_oracle_and_false_oral_credit() ->
     broken_pronunciation = replace(data.pronunciation_oracles[0], evaluability="self_assessment")
 
     report = validate_curriculum(
-        replace(data, morphology_oracles=(broken_morphology,), pronunciation_oracles=(broken_pronunciation,))
+        replace(
+            data,
+            morphology_oracles=(broken_morphology,),
+            pronunciation_oracles=(broken_pronunciation,),
+        )
     )
 
     assert {finding.message_code for finding in report.findings} >= {

@@ -64,7 +64,9 @@ class ModuleDay:
             "exercise_definition_revision_ids",
             tuple(self.exercise_definition_revision_ids),
         )
-        object.__setattr__(self, "recall_source_day_ordinals", tuple(self.recall_source_day_ordinals))
+        object.__setattr__(
+            self, "recall_source_day_ordinals", tuple(self.recall_source_day_ordinals)
+        )
         if self.ordinal < 1 or not self.objective_codes or not self.modality_objectives:
             raise CurriculumError("module_exit_unmeasurable")
         if not self.primary_target_refs:
@@ -87,10 +89,7 @@ class ModuleDay:
             raise CurriculumError("module_new_structure_without_explanation")
 
     def as_dict(self) -> dict[str, object]:
-        return {
-            field: getattr(self, field)
-            for field in self.__dataclass_fields__  # type: ignore[attr-defined]
-        }
+        return {field: getattr(self, field) for field in self.__dataclass_fields__}
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,7 +141,9 @@ class LearningModuleRevision:
             _require_unique(values, field)
             for value in values:
                 _require_uuid7(value, field)
-        object.__setattr__(self, "entry_profile_codes", tuple(sorted(set(self.entry_profile_codes))))
+        object.__setattr__(
+            self, "entry_profile_codes", tuple(sorted(set(self.entry_profile_codes)))
+        )
         object.__setattr__(self, "rights_refs", tuple(sorted(set(self.rights_refs))))
         object.__setattr__(self, "days", tuple(self.days))
         if self.supersedes_revision_id is not None:
@@ -177,7 +178,9 @@ class LearningModuleRevision:
             "entry_profile_codes": sorted(self.entry_profile_codes),
             "nominal_days": self.nominal_days,
             "max_days": self.max_days,
-            "prerequisite_skill_revision_ids": sorted(map(str, self.prerequisite_skill_revision_ids)),
+            "prerequisite_skill_revision_ids": sorted(
+                map(str, self.prerequisite_skill_revision_ids)
+            ),
             "target_skill_revision_ids": sorted(map(str, self.target_skill_revision_ids)),
             "exit_policy_revision_id": str(self.exit_policy_revision_id),
             "recall_policy_revision_id": str(self.recall_policy_revision_id),
@@ -186,17 +189,24 @@ class LearningModuleRevision:
             "validator_set_revision_id": str(self.validator_set_revision_id),
             "schema_version": self.schema_version,
             "compatibility_range": self.compatibility_range,
-            "supersedes_revision_id": str(self.supersedes_revision_id) if self.supersedes_revision_id else None,
+            "supersedes_revision_id": str(self.supersedes_revision_id)
+            if self.supersedes_revision_id
+            else None,
             "days": [
-                {
-                    key: ([str(value) for value in item] if key.endswith("_ids") else item)
-                    for key, item in day.as_dict().items()
-                }
+                {key: self._json_value(item) for key, item in day.as_dict().items()}
                 for day in self.days
             ],
         }
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()
         return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+    @staticmethod
+    def _json_value(value: object) -> object:
+        if isinstance(value, UUID):
+            return str(value)
+        if isinstance(value, tuple):
+            return [LearningModuleRevision._json_value(item) for item in value]
+        return value
 
     def recanonicalized(self) -> LearningModuleRevision:
         return replace(self, payload_checksum="")
@@ -216,7 +226,5 @@ class LearningModuleRevision:
         for day in self.days:
             values.update(day.primary_target_refs)
             values.update(f"content:{value}" for value in day.content_revision_ids)
-            values.update(
-                f"exercise:{value}" for value in day.exercise_definition_revision_ids
-            )
+            values.update(f"exercise:{value}" for value in day.exercise_definition_revision_ids)
         return tuple(sorted(values))

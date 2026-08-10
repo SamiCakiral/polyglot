@@ -36,7 +36,10 @@ def test_successor_preserves_executed_prefix_and_requires_expected_revision() ->
         build_successor_revision(
             source,
             successor_revision_id=uid(51),
-            candidate_days=(replace(source.days[0], objective_codes=("mutated",)), *source.days[1:]),
+            candidate_days=(
+                replace(source.days[0], objective_codes=("mutated",)),
+                *source.days[1:],
+            ),
             executed_through_ordinal=2,
             expected_revision_no=1,
         )
@@ -52,8 +55,11 @@ def test_mapping_requires_every_day_and_target_and_explicit_enrollment_consent()
         expected_revision_no=1,
     )
     incomplete = ModuleRevisionMapping(
-        uid(60), source.module_revision_id, successor.module_revision_id,
-        (RevisionMappingEntry(1, 1, "skill:1", "skill:1"),), False,
+        uid(60),
+        source.module_revision_id,
+        successor.module_revision_id,
+        (RevisionMappingEntry(1, 1, "skill:1", "skill:1"),),
+        False,
     )
 
     findings = validate_revision_mapping(source, successor, incomplete)

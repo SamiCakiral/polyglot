@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {"id": "revision:future-only", "executed_through": 2, "past_days_equal": true, "mapping_complete": true, "expected": "accepted"},
+    {"id": "revision:past-mutation", "executed_through": 2, "past_days_equal": false, "mapping_complete": true, "expected": "module_past_day_mutated"},
+    {"id": "revision:missing-mapping", "executed_through": 1, "past_days_equal": true, "mapping_complete": false, "expected": "module_revision_mapping_incomplete"}
+  ]
+}
