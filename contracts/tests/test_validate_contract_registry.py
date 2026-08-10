@@ -32,6 +32,22 @@ class ContractRegistryValidatorTest(unittest.TestCase):
     def test_rejects_tool_without_limits(self) -> None:
         self.assert_rejected("missing-tool-limits")
 
+    def test_editorial_rejection_has_a_canonical_event(self) -> None:
+        event_catalogue = json.loads(
+            (ROOT / "contracts" / "events" / "event-catalogue.yaml").read_text()
+        )["events"]
+        commands = json.loads(
+            (ROOT / "contracts" / "registry" / "commands.yaml").read_text()
+        )["commands"]
+
+        event_names = {event["event_type"] for event in event_catalogue}
+        approve = next(
+            command for command in commands if command["name"] == "ApproveContentRevision"
+        )
+
+        self.assertIn("content_rejected", event_names)
+        self.assertIn("content_rejected", approve["events"])
+
     def assert_rejected(self, fixture_name: str) -> None:
         case = json.loads((FIXTURES / "negative" / fixture_name / "case.json").read_text())
         with tempfile.TemporaryDirectory() as temporary_directory:
