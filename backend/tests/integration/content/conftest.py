@@ -99,6 +99,20 @@ async def clean_content_tables(migration_database_url: str) -> AsyncIterator[Non
         await connection.execute(text("TRUNCATE platform.command_receipts CASCADE"))
         await connection.execute(text("TRUNCATE platform.outbox_messages CASCADE"))
         await connection.execute(text("TRUNCATE platform.provenance_records CASCADE"))
+        if await connection.scalar(text("SELECT to_regnamespace('catalogue')")) is not None:
+            tables = list(
+                (
+                    await connection.execute(
+                        text(
+                            "SELECT table_name FROM information_schema.tables "
+                            "WHERE table_schema = 'catalogue'"
+                        )
+                    )
+                ).scalars()
+            )
+            if tables:
+                quoted = ", ".join(f'catalogue."{table}"' for table in tables)
+                await connection.execute(text(f"TRUNCATE {quoted} CASCADE"))
     await engine.dispose()
     yield
 

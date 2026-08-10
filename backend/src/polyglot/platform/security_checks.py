@@ -7,7 +7,10 @@ _SECRET_PATTERNS = (
     ("aws_access_key", re.compile("A" + r"KIA[0-9A-Z]{16}")),
     ("github_token", re.compile("gh" + r"[pousr]_[A-Za-z0-9]{20,}")),
     ("google_api_key", re.compile("AI" + r"za[0-9A-Za-z_-]{30,}")),
-    ("openai_api_key", re.compile("sk" + r"-[A-Za-z0-9_-]{20,}")),
+    (
+        "openai_api_key",
+        re.compile(r"(?<![A-Za-z0-9_-])" + "sk" + r"-[A-Za-z0-9_-]{20,}"),
+    ),
     (
         "private_key",
         re.compile("-----BEGIN " + r"(?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
