@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "active_language_label": "Italien",
+  "states": ["loading", "error", "empty"],
+  "viewports": [320, 768, 1440],
+  "routes": [
+    "/today",
+    "/learn",
+    "/learn/modules/module-fixture",
+    "/practice",
+    "/practice/configure",
+    "/sprints/run-fixture",
+    "/vocabulary",
+    "/vocabulary/lists/list-fixture",
+    "/vocabulary/senses/sense-fixture",
+    "/progress",
+    "/progress/skills/skill-fixture",
+    "/assess",
+    "/assess/reading",
+    "/assess/runs/assessment-fixture",
+    "/language-profile",
+    "/settings"
+  ],
+  "keyboard_oracles": [
+    "skip_link_reaches_main",
+    "primary_navigation_uses_native_links",
+    "active_route_is_announced"
+  ]
+}

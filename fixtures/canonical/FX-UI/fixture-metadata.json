@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "synthetic": true,
+  "seed": 2017,
+  "clock": "2026-08-10T12:00:00+02:00",
+  "payloads": {
+    "shell.json": "sha256:5f85573b91182cc9ea6ce64405f2b7d54d98ba383f9f1d2a56c6d52433d59519"
+  },
+  "oracles": [
+    "structural_routes_accessible",
+    "shell_states_visible",
+    "keyboard_navigation_available",
+    "shell_has_no_serious_axe_violation"
+  ]
+}

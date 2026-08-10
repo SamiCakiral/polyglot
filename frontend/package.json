@@ -1,0 +1,49 @@
+{
+  "name": "@polyglot/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "build": "pnpm run generate:api && tsc -b --pretty false && vite build",
+    "dev": "pnpm run generate:api && vite",
+    "generate:api": "orval --config orval.config.ts",
+    "lint": "eslint . --max-warnings 0",
+    "preview": "vite preview",
+    "test": "vitest",
+    "typecheck": "tsc -b --pretty false"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.101.4",
+    "lucide-react": "1.31.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@faker-js/faker": "10.5.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.2",
+    "@testing-library/user-event": "14.6.3",
+    "@types/node": "26.2.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "axe-core": "4.13.0",
+    "eslint": "10.8.1",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.3",
+    "jsdom": "30.0.1",
+    "msw": "2.15.0",
+    "orval": "8.24.0",
+    "prettier": "3.9.6",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.66.0",
+    "vite": "8.2.1",
+    "vitest": "4.1.10"
+  }
+}
