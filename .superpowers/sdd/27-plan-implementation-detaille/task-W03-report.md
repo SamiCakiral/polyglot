@@ -1,51 +1,59 @@
-# W03 - Rapport d'implementation
+# W03 - Rapport d'implementation consolide
 
 ## Statut
 
-Implemente localement, sans push. Le lot couvre le profil de langue personnel,
-le diagnostic deterministe et son expiration a 24 h, les fondations F1-F5 et
-leur gate pure differee. Il ne cree aucune projection de maitrise, dette ou
-preuve pedagogique implicite.
+**COMPLETE apres fix round 1.** Les constats de `task-W03-review.md` sont
+corriges dans le write set W03. Aucun code W05 ou frontend n'a ete modifie.
 
-## Livrables
+## Livraison
 
-- `0004_language_profiles` : huit tables privees, contraintes UUIDv7,
-  append-only pour les reponses/resultats, index de reprise et RLS proprietaire.
-- Politique `DIAGNOSTIC_V0` et golden cases P-ABS, P-FAUX et P-INT.
-- Gate de fondations F1-F5, deux sessions, controle F1 a 24 h et audio absent
-  explicitement `not_evaluable`.
-- Service HTTP authentifie : profils, objectifs, pauses/archivage/restauration,
-  creation et consultation de diagnostic, soumission de reponse et completion.
-- Recu idempotent, version attendue, evenement/outbox personnel et controle
-  proprietaire pour les commandes implementables sans correcteur externe.
-- OpenAPI regeneree et controlee contre le registre.
+- Le diagnostic refuse les signaux normatifs client, verifie le pack publie
+  via `CatalogueReader`, verifie l'item et l'ordinal, puis derive score,
+  confiance, facette et evaluabilite depuis le correcteur W04F.
+- Les modalites sans correcteur sont persistees `not_evaluable`; elles ne
+  produisent ni succes, ni echec, ni credit implicite.
+- Les runs expires sont marques `expired` avant redemarrage. P-RETOUR conserve
+  l'ancien run et permet un nouveau snapshot apres 24 heures.
+- Un run fondations epingle la definition publiee et materialise F1-F5. Les
+  mesures par item et session sont append-only et derivees par le backend.
+- Chaque evaluation de gate est append-only. Le passage exige deux sessions,
+  un controle F1 a au moins 24 heures et les blocs autonomes requis.
+- La decision finale, la transition `foundations -> active`, l'evenement
+  `foundation_gate_completed` et son message outbox partagent une transaction.
+- Les ressources exposent `ETag`; une mutation sans `If-Match` retourne 428,
+  et une version obsolete retourne le conflit canonique.
+- `FX-PERSONAS` couvre P-ABS, P-FAUX, P-INT et P-RETOUR. `FX-IT-FOUND` couvre
+  F1-F5, la borne 24 h, l'audio absent et la revelation. Les deux bundles sont
+  hashes, offline et sans credit implicite.
 
-## Verification
+## Verification finale
 
-Execute avec PostgreSQL local :
+Executee le 10 aout 2026 depuis `/tmp/polyglot-w03-final-20260810-2` contre
+une instance PostgreSQL 17 dediee et une base reconstruite.
 
-- `pytest tests/unit/language_profiles tests/property/language_profiles tests/integration/language_profiles tests/contract/language_profiles -q` : `19 passed`.
-- `ruff check src tests` : vert.
-- `mypy src` : vert.
-- `alembic downgrade 0003_catalogue`, `alembic upgrade 0004_language_profiles`,
-  puis `alembic upgrade head` : vert.
-- `alembic check` : `No new upgrade operations detected`.
-- export OpenAPI et test de contrat plateforme : `4 passed`.
+- Tests W03 unitaires, proprietes, integration et contrat : **30 passed**.
+- Ruff W03 : **passed**.
+- mypy strict W03 : **Success, 9 source files**.
+- Alembic `0005 -> 0003 -> head` : **passed**.
+- `alembic check` : **No new upgrade operations detected**.
+- Export OpenAPI `--check` : **passed**.
+- Test de propriete : aucune combinaison de scores ne contourne 24 heures.
+- PostgreSQL reel : RLS, append-only, transaction, outbox et reprise exerces.
 
-## Commits W03
+## Matrice backend
 
-- `173deb4` `test(w03): define diagnostic policy golden cases`
-- `f960d5d` `feat(w03): add deterministic diagnostic policy`
-- `da84a44` `test(w03): define foundation gate invariants`
-- `c531f68` `feat(w03): enforce delayed foundation gate`
-- `c6d8266` `test(w03): define profile migration and rls contracts`
-- `d728257` `feat(w03): persist language profiles with rls`
-- `2bafe5b` `test(w03): define profile http contracts`
-- `010fc42` `feat(w03): expose authenticated profile onboarding`
+La commande agregee `pytest tests` n'est pas un gate vert fiable dans l'etat
+du depot : sans `--import-mode=importlib`, elle collisionne sur plusieurs noms
+de modules de test. Avec ce mode, elle atteint **331 passed**, puis les suites
+catalogue/content se contaminent via deux IDs differents pour le meme
+`pack_code`; les tests retention manquent leurs variables de connexion et les
+tests de restauration ont rencontre un disque systeme plein. Ces echecs sont
+hors W03 et reproductibles sans changement W03. La matrice cible W03 reste
+entierement verte sur base fraiche.
 
-## Limites explicites
+## Limites
 
-La correction qualifiee et la production des blocs de fondation restent les
-responsabilites des lots contenus/exercices suivants. Le W03 persiste et evalue
-seulement les mesures explicites ; il ne transforme jamais une declaration,
-une dispense ou une modalite non evaluee en credit de maitrise.
+- Aucun niveau CECR, aucune maitrise W13 et aucune preuve pedagogique implicite.
+- Aucun STT, professeur permanent, exercice W09 ou frontend.
+- La revue linguistique des fixtures reste `pending_human`.
+- Aucun push n'a ete effectue.
