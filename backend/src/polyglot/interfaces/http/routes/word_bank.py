@@ -888,7 +888,20 @@ class SqlWordBankService:
             source = tuple(WordBankItem(UUID(str(row["sense_id"])), str(row["label"]), index, ("encounter",)) for index, row in enumerate(rows, 1))
             page = paginate_word_bank(source, limit=limit, cursor=cursor)
             by_id = {UUID(str(row["sense_id"])): row for row in rows}
-            items = tuple(WordBankItemResponse(item.sense_id, item.label, int(by_id[item.sense_id]["encounters"]), by_id[item.sense_id]["first_at"].isoformat(), by_id[item.sense_id]["last_at"].isoformat(), "resolved", None, "normal", ("encountered",)) for item in page.items)
+            items = tuple(
+                WordBankItemResponse(
+                    sense_id=item.sense_id,
+                    label=item.label,
+                    encounter_count=int(by_id[item.sense_id]["encounters"]),
+                    first_encountered_at=by_id[item.sense_id]["first_at"].isoformat(),
+                    last_encountered_at=by_id[item.sense_id]["last_at"].isoformat(),
+                    analysis_state="resolved",
+                    familiarity_declaration=None,
+                    learning_preference="normal",
+                    reasons=("encountered",),
+                )
+                for item in page.items
+            )
             unresolved = int(await session.scalar(text("SELECT count(*) FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r WHERE r.mention_id=m.mention_id)"), {"profile": profile_id}) or 0)
             return WordBankOverviewResponse(items=items, next_cursor=page.next_cursor, encountered_sense_count=len(rows), unresolved_mention_count=unresolved, reference_set_code=None, reference_revision=None, reference_coverage_count=None, reference_total_count=None)
 
@@ -921,4 +934,15 @@ class SqlWordBankService:
             ).all()
             page_rows = rows[:limit]
             next_cursor = str(page_rows[-1].annotation_id) if len(rows) > limit else None
-            return LexicalAnnotationPageResponse(items=tuple(LexicalAnnotationResponse(UUID(str(row.annotation_id)), UUID(str(row.sense_id)), str(row.body), int(row.version)) for row in page_rows), next_cursor=next_cursor)
+            return LexicalAnnotationPageResponse(
+                items=tuple(
+                    LexicalAnnotationResponse(
+                        annotation_id=UUID(str(row.annotation_id)),
+                        sense_id=UUID(str(row.sense_id)),
+                        body=str(row.body),
+                        version=int(row.version),
+                    )
+                    for row in page_rows
+                ),
+                next_cursor=next_cursor,
+            )

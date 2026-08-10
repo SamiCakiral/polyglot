@@ -1,4 +1,5 @@
 import base64
+import binascii
 import hashlib
 import json
 from dataclasses import dataclass
@@ -66,7 +67,7 @@ def _decode_cursor(value: str, reference_revision: str) -> tuple[int, str]:
         if not valid:
             raise ValueError
         return position[0], position[1]
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError, base64.binascii.Error) as error:
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError, binascii.Error) as error:
         raise DomainError(ErrorCode.CURSOR_INVALID) from error
 
 
