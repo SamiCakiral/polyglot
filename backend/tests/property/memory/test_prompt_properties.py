@@ -352,3 +352,67 @@ def test_merge_in_one_direction_does_not_change_the_reverse_direction(
 
     assert merged.canonical.prompt.direction == "target_to_support"
     assert reverse == reverse_before
+
+
+@given(
+    st.sampled_from(tuple(MemoryRating)),
+    st.sampled_from(tuple(MemoryRating)),
+)
+def test_replay_rejects_every_detached_but_self_consistent_transition(
+    first_rating: MemoryRating,
+    second_rating: MemoryRating,
+) -> None:
+    scheduler = FsrsV6Scheduler()
+    policy = SchedulerPolicy.default()
+    lifecycle = MemoryLifecycle(scheduler)
+    aggregate = lifecycle.submit_review(
+        lifecycle.create(create(111, "target_to_support"), policy),
+        review(111, first_rating, NOW),
+        policy,
+    ).aggregate
+    aggregate = lifecycle.submit_review(
+        aggregate,
+        review(112, second_rating, NOW + timedelta(days=1)),
+        policy,
+    ).aggregate
+    detached_before = aggregate.reviews[0].state_before
+    detached_transition = scheduler.review(
+        detached_before,
+        second_rating,
+        NOW + timedelta(days=1),
+        policy,
+    )
+    detached = replace(
+        aggregate.reviews[1],
+        state_before=detached_transition.before,
+        state_after=detached_transition.after,
+    )
+    corrupt = replace(aggregate, reviews=(aggregate.reviews[0], detached))
+
+    with pytest.raises(DomainError) as error:
+        rebuild_schedule(corrupt, resolver(policy))
+
+    assert error.value.code is ErrorCode.VALIDATION_FAILED
+
+
+@given(st.integers(min_value=1, max_value=365))
+def test_merge_rejects_every_source_reset_before_prompt_creation(days: int) -> None:
+    scheduler = FsrsV6Scheduler()
+    policy = SchedulerPolicy.default()
+    lifecycle = MemoryLifecycle(scheduler)
+    first = lifecycle.reset(
+        lifecycle.create(create(121, "target_to_support"), policy),
+        ResetMemoryPrompt(uid(122), "source reset", NOW + timedelta(days=1)),
+        policy,
+    )
+    backdated = replace(first.resets[0], reset_at=NOW - timedelta(days=days))
+    corrupt = replace(first, resets=(backdated,))
+    second = lifecycle.create(create(123, "target_to_support"), policy)
+
+    with pytest.raises(DomainError) as error:
+        lifecycle.merge(
+            MergeMemoryPrompts(uid(124), (corrupt, second), NOW + timedelta(days=2)),
+            policy,
+        )
+
+    assert error.value.code is ErrorCode.VALIDATION_FAILED

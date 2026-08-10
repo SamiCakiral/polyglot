@@ -12,8 +12,8 @@ from polyglot.modules.lexicon.memory.application import (
     MemoryLifecycle,
     MergeMemoryPrompts,
     ResetMemoryPrompt,
-    ResumeMemoryPrompt,
     RestoreMemoryPrompt,
+    ResumeMemoryPrompt,
     SubmitMemoryReview,
 )
 from polyglot.modules.lexicon.memory.domain import MemoryAggregate, PromptStatus
@@ -606,3 +606,67 @@ def test_rebuild_rejects_broken_checkpoint_and_corrupt_provider_transition(
     with pytest.raises(DomainError) as transition:
         rebuild_schedule(corrupt_history, replay_resolver(policy))
     assert transition.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_rebuild_rejects_a_self_consistent_transition_detached_from_causal_state(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.submit_review(
+        lifecycle.create(create_command(prompt_id=151), policy),
+        review_command(review_id=152, opportunity_id=153),
+        policy,
+    ).aggregate
+    aggregate = lifecycle.submit_review(
+        aggregate,
+        review_command(
+            review_id=154,
+            opportunity_id=155,
+            rating=MemoryRating.HARD,
+            reviewed_at=NOW + timedelta(days=1),
+        ),
+        policy,
+    ).aggregate
+    detached_before = aggregate.reviews[0].state_before
+    detached_transition = FsrsV6Scheduler().review(
+        detached_before,
+        MemoryRating.HARD,
+        NOW + timedelta(days=1),
+        policy,
+    )
+    detached = replace(
+        aggregate.reviews[1],
+        state_before=detached_transition.before,
+        state_after=detached_transition.after,
+    )
+    corrupt_history = replace(
+        aggregate,
+        reviews=(aggregate.reviews[0], detached),
+    )
+
+    with pytest.raises(DomainError) as error:
+        rebuild_schedule(corrupt_history, replay_resolver(policy))
+
+    assert error.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_merge_rejects_a_source_fact_before_its_prompt_creation(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    first = lifecycle.reset(
+        lifecycle.create(create_command(prompt_id=161), policy),
+        ResetMemoryPrompt(uid(162), "source reset", NOW + timedelta(days=1)),
+        policy,
+    )
+    backdated_reset = replace(first.resets[0], reset_at=NOW - timedelta(days=1))
+    corrupt_source = replace(first, resets=(backdated_reset,))
+    second = lifecycle.create(create_command(prompt_id=163), policy)
+
+    with pytest.raises(DomainError) as error:
+        lifecycle.merge(
+            MergeMemoryPrompts(uid(164), (corrupt_source, second), NOW + timedelta(days=2)),
+            policy,
+        )
+
+    assert error.value.code is ErrorCode.VALIDATION_FAILED
