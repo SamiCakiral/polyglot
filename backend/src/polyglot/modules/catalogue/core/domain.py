@@ -2,6 +2,7 @@ import unicodedata
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from enum import StrEnum
+from re import fullmatch
 from typing import Any
 from uuid import UUID
 
@@ -78,8 +79,8 @@ def require_revision_number(value: int) -> None:
 
 
 def require_stable_code(value: str, field: str) -> None:
-    if not value or len(value) > 120 or any(character.isspace() for character in value):
-        raise _invalid(f"{field} must be a non-empty stable code")
+    if fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{2,119}", value) is None:
+        raise _invalid(f"{field} must match the canonical stable code format")
 
 
 @dataclass(frozen=True, slots=True)

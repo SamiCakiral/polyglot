@@ -67,6 +67,10 @@ async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_gran
     assert {
         "ck_catalogue_pack_revision_status",
         "ck_catalogue_skill_revision_status",
+        "ck_catalogue_skill_type_code",
+        "ck_catalogue_structure_code",
+        "ck_catalogue_pattern_code",
+        "ck_catalogue_sense_code",
         "ck_catalogue_edge_type",
         "ck_catalogue_form_surface",
         "uq_catalogue_pack_revision",
@@ -120,6 +124,15 @@ async def test_database_rejects_published_rewrite_duplicate_publication_and_requ
                 "revision": IDS["pack_revision"],
                 "now": NOW,
             },
+        )
+    await migration_session.rollback()
+
+    with pytest.raises(IntegrityError):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.language_packs (pack_id, pack_code) "
+                "VALUES ('019fe900-5000-7000-8002-000000000002', 'pack-é')"
+            )
         )
     await migration_session.rollback()
 
@@ -193,18 +206,22 @@ async def test_database_rejects_update_and_delete_of_every_child_owned_by_publis
     }
 
     with pytest.raises(DBAPIError, match="published revision is immutable"):
-        await migration_session.execute(text(f"UPDATE catalogue.{table} SET {update} WHERE {where}"), parameters)
+        await migration_session.execute(
+            text(f"UPDATE catalogue.{table} SET {update} WHERE {where}"), parameters
+        )
     await migration_session.rollback()
 
     with pytest.raises(DBAPIError, match="published revision is immutable"):
-        await migration_session.execute(text(f"DELETE FROM catalogue.{table} WHERE {where}"), parameters)
+        await migration_session.execute(
+            text(f"DELETE FROM catalogue.{table} WHERE {where}"), parameters
+        )
     await migration_session.rollback()
 
 
 async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_links(
     migration_session: AsyncSession,
 ) -> None:
-    await seed_catalogue(migration_session)
+    await seed_catalogue(migration_session, publish_lexical=False)
 
     with pytest.raises(DBAPIError, match="form realization must match its form analysis unit"):
         await migration_session.execute(
@@ -218,6 +235,46 @@ async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_
                 "unit": IDS["unit_revision_piano"],
                 "sense": IDS["sense_revision_piano_slow"],
             },
+        )
+    await migration_session.rollback()
+
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.language_pack_revisions "
+            "(pack_revision_id, pack_id, revision_no, target_variety_id, status, "
+            "engine_min_version, engine_max_version, capability_manifest, checksum_manifest, "
+            "license_refs, provenance_id, published_at) VALUES "
+            "('019fe900-5000-7000-8003-000000000100', :pack, 2, :target, 'approved', "
+            "'2.0.0', '2.0.x', '{\"schema_version\": 1}'::jsonb, "
+            "jsonb_build_object('catalogue.json', repeat('a', 64)), ARRAY['CC-BY-4.0'], "
+            ":provenance, NULL)"
+        ),
+        {
+            "pack": IDS["pack"],
+            "target": IDS["target_variety"],
+            "provenance": IDS["provenance"],
+        },
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.lexical_sense_revisions "
+            "(sense_revision_id, sense_id, pack_revision_id, revision_no, definition, "
+            "domains, register, status, provenance_id) VALUES "
+            "('019fe900-5000-7000-8023-000000000100', :sense, "
+            "'019fe900-5000-7000-8003-000000000100', 2, 'autre pack', "
+            "ARRAY[]::varchar[], NULL, 'approved', :provenance)"
+        ),
+        {"sense": IDS["sense_potere"], "provenance": IDS["provenance"]},
+    )
+    with pytest.raises(DBAPIError, match="form realization references a different pack revision"):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.form_realizations "
+                "(realization_id, form_analysis_id, unit_revision_id, sense_revision_id) "
+                "VALUES ('019fe900-5000-7000-8025-000000000102', :form, :unit, "
+                "'019fe900-5000-7000-8023-000000000100')"
+            ),
+            {"form": IDS["form_puo"], "unit": IDS["unit_revision_potere"]},
         )
     await migration_session.rollback()
 
@@ -236,7 +293,10 @@ async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_
         )
     await migration_session.rollback()
 
-    with pytest.raises(DBAPIError, match="expression components require a multiword expression root"):
+    with pytest.raises(
+        DBAPIError,
+        match="expression components require a multiword expression root",
+    ):
         await migration_session.execute(
             text(
                 "INSERT INTO catalogue.expression_components "
@@ -251,7 +311,10 @@ async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_
     await migration_session.rollback()
 
     await migration_session.execute(
-        text("UPDATE catalogue.lexical_units SET variety_id = :support WHERE lexical_unit_id = :unit"),
+        text(
+            "UPDATE catalogue.lexical_units SET variety_id = :support "
+            "WHERE lexical_unit_id = :unit"
+        ),
         {"support": IDS["support_variety"], "unit": IDS["unit_piano"]},
     )
     with pytest.raises(DBAPIError, match="expression components must share pack and variety"):
@@ -298,7 +361,8 @@ async def test_required_dag_mutations_are_serialized_across_transactions(
             second.execute(
                 text(
                     "INSERT INTO catalogue.skill_prerequisite_edges "
-                    "(edge_id, from_skill_revision_id, to_skill_revision_id, edge_type, provenance_id) "
+                    "(edge_id, from_skill_revision_id, to_skill_revision_id, edge_type, "
+                    "provenance_id) "
                     "VALUES ('019fe900-5000-7000-8012-000000000101', :source, :target, "
                     "'required', :provenance)"
                 ),

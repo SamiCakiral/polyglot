@@ -171,6 +171,10 @@ CREATE TABLE catalogue.skill_revisions (
         operation IN ('recognize', 'recall', 'discriminate', 'transform',
                       'produce', 'interact', 'repair', 'transfer')
     ),
+    CONSTRAINT ck_catalogue_skill_type_code CHECK (
+        skill_type ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
+        AND target_ref ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
+    ),
     CONSTRAINT ck_catalogue_skill_json CHECK (
         jsonb_typeof(scope) = 'object' AND jsonb_typeof(load_profile) = 'object'
     ),
@@ -214,6 +218,9 @@ CREATE TABLE catalogue.grammar_structures (
         REFERENCES catalogue.skills(skill_id) ON DELETE RESTRICT,
     CONSTRAINT ck_catalogue_structure_uuid7 CHECK (
         catalogue.is_uuid7(structure_id) AND catalogue.is_uuid7(function_skill_id)
+    ),
+    CONSTRAINT ck_catalogue_structure_code CHECK (
+        structure_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
     )
 );
 
@@ -265,6 +272,9 @@ CREATE TABLE catalogue.grammar_patterns (
     CONSTRAINT ck_catalogue_pattern_uuid7 CHECK (catalogue.is_uuid7(pattern_id)),
     CONSTRAINT ck_catalogue_pattern_json CHECK (
         jsonb_typeof(slots) = 'array' AND jsonb_typeof(instantiation_rules) = 'object'
+    ),
+    CONSTRAINT ck_catalogue_pattern_code CHECK (
+        pattern_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
     ),
     CONSTRAINT uq_catalogue_pattern UNIQUE (structure_revision_id, pattern_code)
 );
@@ -323,6 +333,9 @@ CREATE TABLE catalogue.lexical_senses (
     sense_code varchar(120) NOT NULL,
     CONSTRAINT ck_catalogue_sense_uuid7 CHECK (
         catalogue.is_uuid7(sense_id) AND catalogue.is_uuid7(lexical_unit_id)
+    ),
+    CONSTRAINT ck_catalogue_sense_code CHECK (
+        sense_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'
     ),
     CONSTRAINT uq_catalogue_sense_code UNIQUE (lexical_unit_id, sense_code)
 );
@@ -438,6 +451,169 @@ CREATE TRIGGER guard_published_sense_revision
 BEFORE UPDATE OR DELETE ON catalogue.lexical_sense_revisions
 FOR EACH ROW EXECUTE FUNCTION catalogue.reject_published_revision();
 
+CREATE FUNCTION catalogue.assert_published_revisions_immutable(revision_ids uuid[])
+RETURNS void LANGUAGE plpgsql AS $function$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM (
+            SELECT status FROM catalogue.language_pack_revisions
+             WHERE pack_revision_id = ANY(revision_ids)
+            UNION ALL
+            SELECT status FROM catalogue.skill_revisions
+             WHERE skill_revision_id = ANY(revision_ids)
+            UNION ALL
+            SELECT status FROM catalogue.grammar_structure_revisions
+             WHERE structure_revision_id = ANY(revision_ids)
+            UNION ALL
+            SELECT status FROM catalogue.lexical_unit_revisions
+             WHERE unit_revision_id = ANY(revision_ids)
+            UNION ALL
+            SELECT status FROM catalogue.lexical_sense_revisions
+             WHERE sense_revision_id = ANY(revision_ids)
+        ) AS revisions
+        WHERE status = 'published'
+    ) THEN
+        RAISE EXCEPTION 'published revision is immutable' USING ERRCODE = '55000';
+    END IF;
+END;
+$function$;
+
+CREATE FUNCTION catalogue.guard_published_child() RETURNS trigger
+LANGUAGE plpgsql AS $function$
+DECLARE
+    owner_id uuid;
+    form_owner_id uuid;
+    related_revisions uuid[];
+BEGIN
+    IF TG_TABLE_NAME = 'language_pack_support_varieties' THEN
+        related_revisions := ARRAY[
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.pack_revision_id ELSE NEW.pack_revision_id END
+        ];
+    ELSIF TG_TABLE_NAME = 'grammar_patterns' THEN
+        related_revisions := ARRAY[
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.structure_revision_id ELSE NEW.structure_revision_id END
+        ];
+    ELSIF TG_TABLE_NAME = 'form_analyses' THEN
+        related_revisions := ARRAY[
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.unit_revision_id ELSE NEW.unit_revision_id END
+        ];
+    ELSIF TG_TABLE_NAME = 'form_realizations' THEN
+        owner_id := CASE WHEN TG_OP = 'DELETE' THEN OLD.form_analysis_id ELSE NEW.form_analysis_id END;
+        SELECT unit_revision_id INTO form_owner_id
+        FROM catalogue.form_analyses WHERE form_analysis_id = owner_id;
+        related_revisions := ARRAY[
+            form_owner_id,
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.unit_revision_id ELSE NEW.unit_revision_id END,
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.sense_revision_id ELSE NEW.sense_revision_id END
+        ];
+    ELSIF TG_TABLE_NAME = 'expression_components' THEN
+        related_revisions := ARRAY[
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.expression_unit_revision_id ELSE NEW.expression_unit_revision_id END,
+            CASE WHEN TG_OP = 'DELETE' THEN OLD.component_unit_revision_id ELSE NEW.component_unit_revision_id END
+        ];
+    ELSE
+        RAISE EXCEPTION 'unknown catalogue child table %', TG_TABLE_NAME USING ERRCODE = 'XX000';
+    END IF;
+    PERFORM catalogue.assert_published_revisions_immutable(related_revisions);
+    RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NEW END;
+END;
+$function$;
+
+CREATE TRIGGER guard_published_pack_support_variety
+BEFORE INSERT OR UPDATE OR DELETE ON catalogue.language_pack_support_varieties
+FOR EACH ROW EXECUTE FUNCTION catalogue.guard_published_child();
+CREATE TRIGGER guard_published_grammar_pattern
+BEFORE INSERT OR UPDATE OR DELETE ON catalogue.grammar_patterns
+FOR EACH ROW EXECUTE FUNCTION catalogue.guard_published_child();
+CREATE TRIGGER guard_published_form_analysis
+BEFORE INSERT OR UPDATE OR DELETE ON catalogue.form_analyses
+FOR EACH ROW EXECUTE FUNCTION catalogue.guard_published_child();
+CREATE TRIGGER guard_published_form_realization
+BEFORE INSERT OR UPDATE OR DELETE ON catalogue.form_realizations
+FOR EACH ROW EXECUTE FUNCTION catalogue.guard_published_child();
+CREATE TRIGGER guard_published_expression_component
+BEFORE INSERT OR UPDATE OR DELETE ON catalogue.expression_components
+FOR EACH ROW EXECUTE FUNCTION catalogue.guard_published_child();
+
+CREATE FUNCTION catalogue.validate_form_realization() RETURNS trigger
+LANGUAGE plpgsql AS $function$
+DECLARE
+    analysis_unit_id uuid;
+    analysis_pack_revision_id uuid;
+    unit_lexical_unit_id uuid;
+    sense_lexical_unit_id uuid;
+    sense_pack_revision_id uuid;
+BEGIN
+    SELECT analysis.unit_revision_id, unit_revision.pack_revision_id,
+           unit_revision.lexical_unit_id
+      INTO analysis_unit_id, analysis_pack_revision_id, unit_lexical_unit_id
+    FROM catalogue.form_analyses AS analysis
+    JOIN catalogue.lexical_unit_revisions AS unit_revision
+      ON unit_revision.unit_revision_id = analysis.unit_revision_id
+    WHERE analysis.form_analysis_id = NEW.form_analysis_id;
+    IF analysis_unit_id IS DISTINCT FROM NEW.unit_revision_id THEN
+        RAISE EXCEPTION 'form realization must match its form analysis unit'
+            USING ERRCODE = '23514';
+    END IF;
+    IF NEW.sense_revision_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    SELECT sense.lexical_unit_id, sense_revision.pack_revision_id
+      INTO sense_lexical_unit_id, sense_pack_revision_id
+    FROM catalogue.lexical_sense_revisions AS sense_revision
+    JOIN catalogue.lexical_senses AS sense ON sense.sense_id = sense_revision.sense_id
+    WHERE sense_revision.sense_revision_id = NEW.sense_revision_id;
+    IF sense_lexical_unit_id IS DISTINCT FROM unit_lexical_unit_id THEN
+        RAISE EXCEPTION 'form realization sense must belong to its unit'
+            USING ERRCODE = '23514';
+    END IF;
+    IF sense_pack_revision_id IS DISTINCT FROM analysis_pack_revision_id THEN
+        RAISE EXCEPTION 'form realization references a different pack revision'
+            USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE FUNCTION catalogue.validate_expression_component() RETURNS trigger
+LANGUAGE plpgsql AS $function$
+DECLARE
+    expression_type varchar;
+    expression_pack_revision_id uuid;
+    expression_variety_id uuid;
+    component_pack_revision_id uuid;
+    component_variety_id uuid;
+BEGIN
+    SELECT unit.unit_type, revision.pack_revision_id, unit.variety_id
+      INTO expression_type, expression_pack_revision_id, expression_variety_id
+    FROM catalogue.lexical_unit_revisions AS revision
+    JOIN catalogue.lexical_units AS unit ON unit.lexical_unit_id = revision.lexical_unit_id
+    WHERE revision.unit_revision_id = NEW.expression_unit_revision_id;
+    IF expression_type IS DISTINCT FROM 'multiword_expression' THEN
+        RAISE EXCEPTION 'expression components require a multiword expression root'
+            USING ERRCODE = '23514';
+    END IF;
+    SELECT revision.pack_revision_id, unit.variety_id
+      INTO component_pack_revision_id, component_variety_id
+    FROM catalogue.lexical_unit_revisions AS revision
+    JOIN catalogue.lexical_units AS unit ON unit.lexical_unit_id = revision.lexical_unit_id
+    WHERE revision.unit_revision_id = NEW.component_unit_revision_id;
+    IF expression_pack_revision_id IS DISTINCT FROM component_pack_revision_id
+       OR expression_variety_id IS DISTINCT FROM component_variety_id THEN
+        RAISE EXCEPTION 'expression components must share pack and variety'
+            USING ERRCODE = '23514';
+    END IF;
+    RETURN NEW;
+END;
+$function$;
+
+CREATE TRIGGER validate_form_realization
+BEFORE INSERT OR UPDATE ON catalogue.form_realizations
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_form_realization();
+CREATE TRIGGER validate_expression_component
+BEFORE INSERT OR UPDATE ON catalogue.expression_components
+FOR EACH ROW EXECUTE FUNCTION catalogue.validate_expression_component();
+
 CREATE FUNCTION catalogue.guard_prerequisite_edge() RETURNS trigger
 LANGUAGE plpgsql AS $function$
 DECLARE
@@ -462,27 +638,39 @@ $function$;
 
 CREATE FUNCTION catalogue.reject_required_prerequisite_cycle() RETURNS trigger
 LANGUAGE plpgsql AS $function$
+DECLARE
+    current_frontier uuid[] := ARRAY[NEW.to_skill_revision_id];
+    next_frontier uuid[];
+    visited uuid[] := ARRAY[NEW.to_skill_revision_id];
+    depth integer := 0;
+    max_depth constant integer := 64;
+    max_nodes constant integer := 4096;
 BEGIN
     IF NEW.edge_type <> 'required' THEN
         RETURN NEW;
     END IF;
-    IF NEW.from_skill_revision_id = NEW.to_skill_revision_id OR EXISTS (
-        WITH RECURSIVE reachable(skill_revision_id) AS (
-            SELECT NEW.to_skill_revision_id
-            UNION
-            SELECT edge.to_skill_revision_id
-            FROM catalogue.skill_prerequisite_edges AS edge
-            JOIN reachable
-              ON reachable.skill_revision_id = edge.from_skill_revision_id
-            WHERE edge.edge_type = 'required'
-              AND edge.edge_id <> NEW.edge_id
-        )
-        SELECT 1 FROM reachable
-        WHERE skill_revision_id = NEW.from_skill_revision_id
-    ) THEN
-        RAISE EXCEPTION 'prerequisite_cycle' USING ERRCODE = '23514';
-    END IF;
-    RETURN NEW;
+    PERFORM pg_advisory_xact_lock(742910171);
+    LOOP
+        IF NEW.from_skill_revision_id = ANY(current_frontier) THEN
+            RAISE EXCEPTION 'prerequisite_cycle' USING ERRCODE = '23514';
+        END IF;
+        SELECT COALESCE(array_agg(DISTINCT edge.to_skill_revision_id), ARRAY[]::uuid[])
+          INTO next_frontier
+        FROM catalogue.skill_prerequisite_edges AS edge
+        WHERE edge.edge_type = 'required'
+          AND edge.edge_id <> NEW.edge_id
+          AND edge.from_skill_revision_id = ANY(current_frontier)
+          AND NOT edge.to_skill_revision_id = ANY(visited);
+        IF cardinality(next_frontier) = 0 THEN
+            RETURN NEW;
+        END IF;
+        depth := depth + 1;
+        IF depth > max_depth OR cardinality(visited) + cardinality(next_frontier) > max_nodes THEN
+            RAISE EXCEPTION 'prerequisite_graph_limit' USING ERRCODE = '54000';
+        END IF;
+        visited := visited || next_frontier;
+        current_frontier := next_frontier;
+    END LOOP;
 END;
 $function$;
 
@@ -533,6 +721,10 @@ END;
 $owners$;
 ALTER FUNCTION catalogue.is_uuid7(uuid) OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.reject_published_revision() OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.assert_published_revisions_immutable(uuid[]) OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.guard_published_child() OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.validate_form_realization() OWNER TO polyglot_migration;
+ALTER FUNCTION catalogue.validate_expression_component() OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.guard_prerequisite_edge() OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.reject_required_prerequisite_cycle() OWNER TO polyglot_migration;
 ALTER FUNCTION catalogue.validate_pack_publication() OWNER TO polyglot_migration;

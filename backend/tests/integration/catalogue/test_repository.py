@@ -1,4 +1,7 @@
+from uuid import UUID
+
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from polyglot.modules.catalogue.core.persistence import SqlCatalogueRepository
@@ -72,7 +75,36 @@ async def test_lexicon_search_applies_cursor_and_limit_in_sql(
     session: AsyncSession,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    await seed_catalogue(migration_session)
+    await seed_catalogue(migration_session, publish_lexical=False)
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.form_analyses "
+            "(form_analysis_id, unit_revision_id, surface, morphological_features, "
+            "pronunciation_refs, normalization_key) VALUES "
+            "('019fe900-5000-7000-8024-000000000100', :unit, 'piano', "
+            "'{\"alternate\": true}'::jsonb, ARRAY[]::uuid[], 'piano')"
+        ),
+        {"unit": IDS["unit_revision_piano"]},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.form_realizations "
+            "(realization_id, form_analysis_id, unit_revision_id, sense_revision_id) "
+            "VALUES ('019fe900-5000-7000-8025-000000000100', "
+            "'019fe900-5000-7000-8024-000000000100', :unit, :sense)"
+        ),
+        {
+            "unit": IDS["unit_revision_piano"],
+            "sense": IDS["sense_revision_piano_slow"],
+        },
+    )
+    await migration_session.execute(
+        text("UPDATE catalogue.lexical_unit_revisions SET status = 'published'")
+    )
+    await migration_session.execute(
+        text("UPDATE catalogue.lexical_sense_revisions SET status = 'published'")
+    )
+    await migration_session.commit()
     repository = SqlCatalogueRepository(session)
     executed: list[tuple[str, object]] = []
     original_execute = session.execute
@@ -83,16 +115,23 @@ async def test_lexicon_search_applies_cursor_and_limit_in_sql(
 
     monkeypatch.setattr(session, "execute", observe)
     first = await repository.search_lexicon(
-        query="piano", language_tag="it-IT", limit=1, cursor=None
+        query="piano",
+        language_tag="it-IT",
+        limit=1,
+        cursor=None,
     )
     assert first.next_cursor is not None
-    await repository.search_lexicon(
+    second = await repository.search_lexicon(
         query="piano", language_tag="it-IT", limit=1, cursor=first.next_cursor
     )
+    assert [item.analysis.form_analysis_id for item in first.items] == [IDS["form_piano"]]
+    assert [item.analysis.form_analysis_id for item in second.items] == [
+        UUID("019fe900-5000-7000-8024-000000000100")
+    ]
 
     statement, parameters = executed[-1]
     assert "LIMIT :query_limit" in statement
-    assert "(form.surface, form.form_analysis_id)" in statement
+    assert "(surface, form_analysis_id) >" in statement
     assert parameters == {
         "language_tag": "it-IT",
         "query": "piano",

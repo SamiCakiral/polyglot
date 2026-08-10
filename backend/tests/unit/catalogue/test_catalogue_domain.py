@@ -1,5 +1,6 @@
 """Catalogue domain contracts."""
 
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -96,6 +97,13 @@ def test_revision_schema_requires_uuid7_support_language_and_publish_timestamp()
     with pytest.raises(DomainError) as missing_timestamp:
         LanguagePackRevision(**{**values.as_dict(), "published_at": None})
     assert missing_timestamp.value.code is ErrorCode.VALIDATION_FAILED
+
+
+def test_stable_codes_use_the_same_ascii_contract_as_postgresql() -> None:
+    values = skill_revision(1, "IT-PRAG-001")
+    with pytest.raises(DomainError) as invalid:
+        replace(values, skill_code="IT-PRAG-é01")
+    assert invalid.value.code is ErrorCode.VALIDATION_FAILED
 
 
 def test_published_revision_is_immutable_and_retirement_creates_a_successor() -> None:

@@ -261,6 +261,11 @@ skill_revisions = Table(
         name="ck_catalogue_skill_operation",
     ),
     CheckConstraint(
+        "skill_type ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$' "
+        "AND target_ref ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'",
+        name="ck_catalogue_skill_type_code",
+    ),
+    CheckConstraint(
         "jsonb_typeof(scope) = 'object' AND jsonb_typeof(load_profile) = 'object'",
         name="ck_catalogue_skill_json",
     ),
@@ -338,6 +343,10 @@ grammar_structures = Table(
     CheckConstraint(
         "catalogue.is_uuid7(structure_id) AND catalogue.is_uuid7(function_skill_id)",
         name="ck_catalogue_structure_uuid7",
+    ),
+    CheckConstraint(
+        "structure_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'",
+        name="ck_catalogue_structure_code",
     ),
     schema="catalogue",
 )
@@ -423,6 +432,10 @@ grammar_patterns = Table(
     CheckConstraint(
         "jsonb_typeof(slots) = 'array' AND jsonb_typeof(instantiation_rules) = 'object'",
         name="ck_catalogue_pattern_json",
+    ),
+    CheckConstraint(
+        "pattern_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'",
+        name="ck_catalogue_pattern_code",
     ),
     UniqueConstraint(
         "structure_revision_id",
@@ -527,6 +540,10 @@ lexical_senses = Table(
     CheckConstraint(
         "catalogue.is_uuid7(sense_id) AND catalogue.is_uuid7(lexical_unit_id)",
         name="ck_catalogue_sense_uuid7",
+    ),
+    CheckConstraint(
+        "sense_code ~ '^[A-Za-z0-9][A-Za-z0-9._-]{2,119}$'",
+        name="ck_catalogue_sense_code",
     ),
     UniqueConstraint("lexical_unit_id", "sense_code", name="uq_catalogue_sense_code"),
     schema="catalogue",
@@ -916,11 +933,10 @@ class SqlCatalogueRepository:
         rows = (
             await self._session.execute(
                 text(
-                    "SELECT form.surface, form.form_analysis_id, form.unit_revision_id, "
+                    "WITH matching_forms AS ("
+                    "SELECT DISTINCT form.surface, form.form_analysis_id, form.unit_revision_id, "
                     "form.morphological_features, unit_revision.lemma, unit.unit_type, "
-                    "unit_revision.part_of_speech, sense.sense_id, "
-                    "sense_revision.sense_revision_id, sense.sense_code, "
-                    "sense_revision.definition "
+                    "unit_revision.part_of_speech "
                     "FROM catalogue.form_analyses AS form "
                     "JOIN catalogue.lexical_unit_revisions AS unit_revision "
                     "ON unit_revision.unit_revision_id = form.unit_revision_id "
@@ -934,16 +950,38 @@ class SqlCatalogueRepository:
                     "ON realization.form_analysis_id = form.form_analysis_id "
                     "JOIN catalogue.lexical_sense_revisions AS sense_revision "
                     "ON sense_revision.sense_revision_id = realization.sense_revision_id "
-                    "JOIN catalogue.lexical_senses AS sense "
-                    "ON sense.sense_id = sense_revision.sense_id "
                     "WHERE publication.retired_at IS NULL "
                     "AND unit_revision.status = 'published' "
                     "AND sense_revision.status = 'published' "
                     "AND variety.language_tag = :language_tag "
-                    "AND form.normalization_key = :query "
+                    "AND form.normalization_key = :query"
+                    "), paged_forms AS ("
+                    "SELECT * FROM matching_forms "
+                    "WHERE (CAST(:after_surface AS text) IS NULL "
+                    "OR (surface, form_analysis_id) > "
+                    "(CAST(:after_surface AS text), CAST(:after_id AS uuid))) "
+                    "ORDER BY surface, form_analysis_id LIMIT :query_limit"
+                    ") "
+                    "SELECT form.surface, form.form_analysis_id, form.unit_revision_id, "
+                    "form.morphological_features, form.lemma, form.unit_type, "
+                    "form.part_of_speech, sense.sense_id, sense_revision.sense_revision_id, "
+                    "sense.sense_code, sense_revision.definition "
+                    "FROM paged_forms AS form "
+                    "JOIN catalogue.form_realizations AS realization "
+                    "ON realization.form_analysis_id = form.form_analysis_id "
+                    "JOIN catalogue.lexical_sense_revisions AS sense_revision "
+                    "ON sense_revision.sense_revision_id = realization.sense_revision_id "
+                    "JOIN catalogue.lexical_senses AS sense "
+                    "ON sense.sense_id = sense_revision.sense_id "
                     "ORDER BY form.surface, form.form_analysis_id, sense.sense_code"
                 ),
-                {"language_tag": language_tag, "query": normalize_search_key(query)},
+                {
+                    "language_tag": language_tag,
+                    "query": normalize_search_key(query),
+                    "after_surface": None if after is None else after[0],
+                    "after_id": None if after is None else after[1],
+                    "query_limit": limit + 1,
+                },
             )
         ).mappings().all()
         grouped: list[LexiconSearchItem] = []
@@ -982,12 +1020,6 @@ class SqlCatalogueRepository:
                     senses=(sense,),
                 )
             )
-        if after is not None:
-            grouped = [
-                item
-                for item in grouped
-                if (item.surface, str(item.analysis.form_analysis_id)) > after
-            ]
         visible = grouped[:limit]
         next_cursor = None
         if len(grouped) > limit:

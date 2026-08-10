@@ -159,6 +159,11 @@ class _FormData(_StrictModel):
     normalization_key: str
 
 
+class _ComponentData(_StrictModel):
+    unit_revision_id: UUID
+    lemma: str
+
+
 class _LexicalUnitData(_StrictModel):
     unit_revision_id: UUID
     lexical_unit_id: UUID
@@ -169,7 +174,7 @@ class _LexicalUnitData(_StrictModel):
     register_value: str | None = Field(alias="register")
     senses: tuple[_SenseData, ...]
     forms: tuple[_FormData, ...]
-    components: tuple[str, ...]
+    components: tuple[_ComponentData, ...]
     status: ContentRevisionStatus
     provenance_id: UUID
 
@@ -433,7 +438,7 @@ def _lexical_unit(data: _LexicalUnitData) -> LexicalUnitRevision:
         register=data.register_value,
         senses=tuple(sorted(senses, key=lambda item: item.sense_code)),
         forms=tuple(sorted(forms, key=lambda item: (item.surface, item.features))),
-        components=data.components,
+        components=tuple(component.lemma for component in data.components),
         status=data.status,
         provenance_id=data.provenance_id,
     )
@@ -443,17 +448,92 @@ def _validate_references(
     functions: tuple[CommunicativeFunctionRevision, ...],
     structures: tuple[GrammarStructureRevision, ...],
     lexical_units: tuple[LexicalUnitRevision, ...],
+    skills: tuple[SkillRevision, ...],
+    payload_units: tuple[_LexicalUnitData, ...],
 ) -> None:
+    identity_values = (
+        *(item.function_id for item in functions),
+        *(item.function_revision_id for item in functions),
+        *(item.structure_id for item in structures),
+        *(item.structure_revision_id for item in structures),
+        *(pattern.pattern_id for item in structures for pattern in item.patterns),
+        *(item.skill_id for item in skills),
+        *(item.skill_revision_id for item in skills),
+        *(item.lexical_unit_id for item in lexical_units),
+        *(item.unit_revision_id for item in lexical_units),
+        *(sense.sense_id for item in lexical_units for sense in item.senses),
+        *(sense.sense_revision_id for item in lexical_units for sense in item.senses),
+        *(form.form_analysis_id for item in lexical_units for form in item.forms),
+    )
+    if len(set(identity_values)) != len(identity_values):
+        raise _validation_error("fixture identities must be globally unique")
     function_codes = {item.function_code for item in functions}
+    structure_codes = {item.structure_code for item in structures}
+    if len(function_codes) != len(functions) or len(structure_codes) != len(structures):
+        raise _validation_error("fixture content codes must be unique")
+    pattern_codes = {pattern.pattern_code for item in structures for pattern in item.patterns}
+    sense_codes = {sense.sense_code for item in lexical_units for sense in item.senses}
+    content_code_values = (
+        *(item.function_code for item in functions),
+        *(item.structure_code for item in structures),
+        *(pattern.pattern_code for item in structures for pattern in item.patterns),
+        *(sense.sense_code for item in lexical_units for sense in item.senses),
+    )
+    if (
+        len(pattern_codes) != sum(len(item.patterns) for item in structures)
+        or len(sense_codes) != sum(len(item.senses) for item in lexical_units)
+        or len(set(content_code_values)) != len(content_code_values)
+    ):
+        raise _validation_error("fixture content codes must be globally unique")
+    if function_codes & structure_codes:
+        raise _validation_error("fixture content code namespaces must not collide")
     if any(item.function_code not in function_codes for item in structures):
         raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+    skill_codes = {item.skill_code for item in skills}
+    if len(skill_codes) != len(skills):
+        raise _validation_error("fixture skill codes must be unique")
+    allowed_target_refs = {
+        "communicative_function": function_codes,
+        "grammar_structure": structure_codes,
+    }
+    if any(
+        skill.skill_type not in allowed_target_refs
+        or skill.target_ref not in allowed_target_refs[skill.skill_type]
+        for skill in skills
+    ):
+        raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+
+    unit_by_revision_id = {item.unit_revision_id: item for item in payload_units}
+    if len(unit_by_revision_id) != len(payload_units):
+        raise _validation_error("fixture lexical unit revision ids must be unique")
     lemmas = {item.lemma for item in lexical_units}
-    if any(component not in lemmas for item in lexical_units for component in item.components):
+    if len(lemmas) != len(lexical_units):
+        raise _validation_error("fixture lexical lemmas must be unique in the pilot")
+    if any(
+        component.unit_revision_id not in unit_by_revision_id
+        or unit_by_revision_id[component.unit_revision_id].lemma != component.lemma
+        or component.unit_revision_id == item.unit_revision_id
+        for item in payload_units
+        for component in item.components
+    ):
+        raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
+    if any(
+        sense.status is not ContentRevisionStatus.PUBLISHED
+        for item in payload_units
+        for sense in item.senses
+    ):
+        raise _validation_error("canonical fixture nested senses must be published")
+    if any(
+        component.lemma not in lemmas
+        for item in payload_units
+        for component in item.components
+    ):
         raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
     unpublished = (
         any(item.status is not ContentRevisionStatus.PUBLISHED for item in functions)
         or any(item.status is not ContentRevisionStatus.PUBLISHED for item in structures)
         or any(item.status is not ContentRevisionStatus.PUBLISHED for item in lexical_units)
+        or any(item.status is not ContentRevisionStatus.PUBLISHED for item in skills)
     )
     if unpublished:
         raise _validation_error("canonical fixture revisions must be published")
@@ -534,7 +614,13 @@ def load_catalogue_fixture(root: Path) -> CatalogueFixture:
             skills,
             tuple(_edge(item) for item in positive_payload.prerequisites),
         )
-        _validate_references(functions, structures, lexical_units)
+        _validate_references(
+            functions,
+            structures,
+            lexical_units,
+            skills,
+            positive_payload.lexical_units,
+        )
         return CatalogueFixture(
             fixture_id=positive_payload.fixture_id,
             pack=pack,

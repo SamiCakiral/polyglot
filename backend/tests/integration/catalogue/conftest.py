@@ -115,7 +115,12 @@ async def clean_catalogue_tables(migration_database_url: str) -> AsyncIterator[N
     yield
 
 
-async def seed_catalogue(session: AsyncSession, *, publish_skills: bool = True) -> None:
+async def seed_catalogue(
+    session: AsyncSession,
+    *,
+    publish_skills: bool = True,
+    publish_lexical: bool = True,
+) -> None:
     await session.execute(
         text(
             "INSERT INTO platform.provenance_records "
@@ -381,8 +386,13 @@ async def seed_catalogue(session: AsyncSession, *, publish_skills: bool = True) 
     await session.execute(
         text("UPDATE catalogue.grammar_structure_revisions SET status = 'published'")
     )
-    await session.execute(text("UPDATE catalogue.lexical_unit_revisions SET status = 'published'"))
-    await session.execute(text("UPDATE catalogue.lexical_sense_revisions SET status = 'published'"))
+    if publish_lexical:
+        await session.execute(
+            text("UPDATE catalogue.lexical_unit_revisions SET status = 'published'")
+        )
+        await session.execute(
+            text("UPDATE catalogue.lexical_sense_revisions SET status = 'published'")
+        )
     await session.execute(
         text(
             "UPDATE catalogue.language_pack_revisions "
