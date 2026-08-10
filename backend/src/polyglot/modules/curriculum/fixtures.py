@@ -23,6 +23,7 @@ from .bindings import (
     SkillTargetBinding,
 )
 from .domain import ArcType, LearningModuleRevision, ModuleDay, ModuleStatus
+from .italian_pilot_catalog import NORMATIVE_CHECKSUMS
 from .ports import ReferenceExpectation, ReferenceStatus, ResolvedReference
 from .revisioning import (
     ModuleRevisionMapping,
@@ -118,12 +119,24 @@ def _load_json(path: Path) -> dict[str, Any]:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
         raise _error("fixture_path_or_size_invalid")
     try:
-        value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_pairs_no_duplicates)
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        value = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=_pairs_no_duplicates,
+            parse_constant=_reject_json_constant,
+        )
+    except (OSError, UnicodeError, json.JSONDecodeError, InvalidJsonConstant) as exc:
         raise _error("fixture_json_invalid") from exc
     if not isinstance(value, dict) or _depth(value) > MAX_DEPTH:
         raise _error("fixture_schema_invalid")
     return cast(dict[str, Any], value)
+
+
+class InvalidJsonConstant(ValueError):
+    pass
+
+
+def _reject_json_constant(value: str) -> None:
+    raise InvalidJsonConstant(value)
 
 
 def _expect_keys(value: dict[str, Any], keys: Iterable[str], path: str) -> None:
@@ -224,6 +237,7 @@ def _validate_days(
                 "arc",
                 "objective",
                 "targets",
+                "secondary_targets",
                 "encounters",
                 "outputs",
                 "new_grammar_families",
@@ -261,6 +275,54 @@ def _validate_days(
                 raise _error("module_j1_not_scheduled")
             recalls.append((source, int(day["ordinal"])))
     return days, tuple(recalls)
+
+
+def _semantic_checksum(value: object) -> str:
+    encoded = json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _validate_normative_catalog(payloads: dict[str, dict[str, Any]]) -> None:
+    bindings = payloads["bindings.json"]
+    module = payloads["module.json"]
+    categories: dict[str, dict[str, object]] = {
+        "exercise": {
+            str(item["id"]): item
+            for item in cast(list[dict[str, Any]], payloads["exercises.json"]["exercises"])
+        },
+        "morphology": {
+            str(item["ref"]): item
+            for item in cast(list[dict[str, Any]], bindings["morphology"])
+        },
+        "pronunciation": {
+            str(item["ref"]): item
+            for item in cast(list[dict[str, Any]], bindings["pronunciation"])
+        },
+        "dialogue": {
+            str(item["id"]): item
+            for item in cast(
+                list[dict[str, Any]], payloads["dialogues.json"]["dialogues"]
+            )
+        },
+        "budget": {
+            str(item["key"]): item
+            for item in cast(list[dict[str, Any]], module["budget_plans"])
+        },
+        "lexicon": {
+            str(sense["ref"]): {"set_code": item["set_code"], **sense}
+            for item in cast(list[dict[str, Any]], bindings["lexicon_sets"])
+            for sense in cast(list[dict[str, Any]], item["senses"])
+        },
+    }
+    for category, expected in NORMATIVE_CHECKSUMS.items():
+        actual = categories[category]
+        if set(actual) != set(expected):
+            raise _error(f"fixture_normative_semantic_mismatch:{category}:set")
+        for key, expected_checksum in expected.items():
+            if _semantic_checksum(actual[key]) != expected_checksum:
+                raise _error(f"fixture_normative_semantic_mismatch:{category}:{key}")
 
 
 def _validate_bindings(
@@ -422,11 +484,6 @@ def _production_validation_input(
         day_exercises = tuple(
             exercise for exercise in exercise_items if int(exercise["day"]) == ordinal
         )
-        exercise_targets = {
-            str(target)
-            for exercise in day_exercises
-            for target in cast(list[str], exercise["targets"])
-        }
         exercise_bindings = tuple(
             ExerciseBinding(
                 UUID(str(exercise["definition_revision_id"])),
@@ -477,7 +534,7 @@ def _production_validation_input(
                 ),
                 context_revision_ids=(_fixture_uuid(8200, ordinal),),
                 secondary_target_refs=tuple(
-                    sorted(exercise_targets - set(cast(list[str], item["targets"])))
+                    cast(list[str], item["secondary_targets"])
                 ),
                 skill_bindings=tuple(
                     SkillTargetBinding(
@@ -927,6 +984,7 @@ def _execute_oracles(
 def load_italian_curriculum_fixture(root: Path) -> ItalianCurriculumFixtureReport:
     safe = _safe_root(root)
     metadata, payloads = _validate_manifest(safe)
+    _validate_normative_catalog(payloads)
     module = payloads["module.json"]
     _expect_keys(
         module,

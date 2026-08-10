@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -387,7 +388,8 @@ def _load_findings(data: ValidationInput) -> list[ValidationFinding]:
             findings.append(_finding("module_day_ordinal_gap", f"days.{ordinal}"))
             continue
         if (
-            points < 0
+            not math.isfinite(points)
+            or points < 0
             or points > day.novelty_budget
             or (day.arc_type in {ArcType.TRANSFER, ArcType.CONSOLIDATION} and points > 0)
         ):

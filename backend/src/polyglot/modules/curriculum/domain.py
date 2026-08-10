@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from uuid import UUID
@@ -132,7 +133,7 @@ class ModuleDay:
             raise CurriculumError("module_target_uncovered")
         if self.minimum_useful_minutes < 10 or self.minimum_useful_minutes > 60:
             raise CurriculumError("module_load_budget_exceeded")
-        if self.novelty_budget < 0 or (
+        if not math.isfinite(self.novelty_budget) or self.novelty_budget < 0 or (
             self.arc_type in {ArcType.TRANSFER, ArcType.CONSOLIDATION} and self.novelty_budget > 0
         ):
             raise CurriculumError("module_novelty_budget_exceeded")
