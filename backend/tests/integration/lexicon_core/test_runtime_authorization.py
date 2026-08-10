@@ -54,7 +54,12 @@ async def test_delete_private_context_accepts_only_recent_real_session(
             "(:id,:profile,'secret','manual','test','v1','reading','stimulus','seen','none',"
             "'not_evaluable','none',0,'private',:fp,'private_until_deleted',:now,'delete-real',:fp)"
         ),
-        {"id": uid(5000), "profile": uid(11), "fp": "a" * 64, "now": NOW},
+        {
+            "id": uid(5000),
+            "profile": uid(11),
+            "fp": "a" * 64,
+            "now": datetime.now(UTC) - timedelta(minutes=1),
+        },
     )
     recent_session = uid(5001)
     await seed_auth_session(
@@ -92,7 +97,12 @@ async def test_delete_private_context_rejects_stale_real_session(migration_sessi
             "(:id,:profile,'secret','manual','test','v1','reading','stimulus','seen','none',"
             "'not_evaluable','none',0,'private',:fp,'private_until_deleted',:now,'delete-stale',:fp)"
         ),
-        {"id": uid(5999), "profile": uid(11), "fp": "b" * 64, "now": NOW},
+        {
+            "id": uid(5999),
+            "profile": uid(11),
+            "fp": "b" * 64,
+            "now": datetime.now(UTC) - timedelta(minutes=7),
+        },
     )
     stale_session = uid(5010)
     await seed_auth_session(
@@ -124,7 +134,8 @@ async def seed_open_attempt_and_support_language(session) -> None:
             "INSERT INTO catalogue.language_varieties "
             "(variety_id,language_tag,script_codes,text_direction,segmentation_policy_revision_id,"
             "media_capabilities,normalization_policy_revision_id) VALUES "
-            "(:variety,'fr-FR',ARRAY['Latn'],'ltr',:segment,'{\"schema_version\":\"1\"}',:normal)"
+            "(:variety,'fr-FR',ARRAY['Latn'],'ltr',:segment,'{\"schema_version\":\"1\"}',:normal) "
+            "ON CONFLICT (variety_id) DO NOTHING"
         ),
         {"variety": uid(5100), "segment": uid(5101), "normal": uid(5102)},
     )

@@ -529,9 +529,9 @@ class SqlAttemptLexicalGapAuthorizer:
         support_allowed = await session.scalar(
             text(
                 "SELECT EXISTS (SELECT 1 FROM catalogue.language_varieties variety "
-                "JOIN language_profiles.support_language_authorizations authorization "
-                "ON authorization.variety_id=variety.variety_id "
-                "WHERE authorization.profile_id=:profile AND authorization.revoked_at IS NULL "
+                "JOIN language_profiles.support_language_authorizations authz "
+                "ON authz.variety_id=variety.variety_id "
+                "WHERE authz.profile_id=:profile AND authz.revoked_at IS NULL "
                 "AND variety.language_tag=:language_tag)"
             ),
             {"profile": profile_id, "language_tag": support_language_tag},
