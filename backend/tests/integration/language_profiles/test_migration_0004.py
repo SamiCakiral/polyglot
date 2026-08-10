@@ -6,7 +6,6 @@ from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
 ACCOUNT_A = UUID("019fe903-2000-7000-8000-000000000001")
 ACCOUNT_B = UUID("019fe903-2000-7000-8000-000000000002")
 PROFILE_A = UUID("019fe903-2000-7000-8000-000000000003")
@@ -108,11 +107,20 @@ async def test_runtime_rls_cannot_read_another_owner_profile(
     await seed_profile(migration_session, PROFILE_B, ACCOUNT_B)
     await migration_session.commit()
 
-    await session.execute(text("SELECT set_config('app.user_id', :account_id, true)"), {"account_id": str(ACCOUNT_A)})
+    await session.execute(
+        text("SELECT set_config('app.user_id', :account_id, true)"), {"account_id": str(ACCOUNT_A)}
+    )
     visible = (
-        await session.execute(
-            text("SELECT profile_id FROM language_profiles.learner_language_profiles ORDER BY profile_id")
+        (
+            await session.execute(
+                text(
+                    "SELECT profile_id FROM language_profiles.learner_language_profiles "
+                    "ORDER BY profile_id"
+                )
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     assert visible == [PROFILE_A]

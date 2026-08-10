@@ -48,5 +48,8 @@ async def clean_language_profiles_database() -> AsyncIterator[None]:
                 await connection.execute(
                     text(f'TRUNCATE TABLE language_profiles."{table_name}" CASCADE')
                 )
+        identity_schema = await connection.scalar(text("SELECT to_regnamespace('identity')"))
+        if identity_schema is not None:
+            await connection.execute(text("TRUNCATE TABLE identity.accounts CASCADE"))
     await engine.dispose()
     yield
