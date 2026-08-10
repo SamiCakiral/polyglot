@@ -8,6 +8,109 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from .conftest import IDS, NOW, seed_catalogue
 
+DRAFT_IDS = {
+    "pack_revision": UUID("019fe900-5000-7000-8003-000000000200"),
+    "structure_revision": UUID("019fe900-5000-7000-8014-000000000200"),
+    "unit_revision_potere": UUID("019fe900-5000-7000-8021-000000000200"),
+    "unit_revision_per_favore": UUID("019fe900-5000-7000-8021-000000000201"),
+    "sense_revision_potere": UUID("019fe900-5000-7000-8023-000000000200"),
+    "form_potere": UUID("019fe900-5000-7000-8024-000000000200"),
+}
+
+
+async def seed_draft_catalogue_owners(session: AsyncSession) -> None:
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.language_pack_revisions "
+            "(pack_revision_id, pack_id, revision_no, target_variety_id, status, "
+            "engine_min_version, engine_max_version, capability_manifest, checksum_manifest, "
+            "license_refs, provenance_id, published_at) VALUES "
+            "(:revision, :pack, 2, :target, 'draft', '2.0.0', '2.0.x', "
+            "'{\"schema_version\": 1}'::jsonb, "
+            "jsonb_build_object('catalogue.json', repeat('b', 64)), "
+            "ARRAY['CC-BY-4.0'], :provenance, NULL)"
+        ),
+        {
+            "revision": DRAFT_IDS["pack_revision"],
+            "pack": IDS["pack"],
+            "target": IDS["target_variety"],
+            "provenance": IDS["provenance"],
+        },
+    )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.grammar_structure_revisions "
+            "(structure_revision_id, structure_id, pack_revision_id, revision_no, "
+            "constraints, contrasts, typical_errors, variants, status, provenance_id) "
+            "VALUES (:revision, :structure, :pack_revision, 2, '{}'::jsonb, '[]'::jsonb, "
+            "'[]'::jsonb, '[]'::jsonb, 'draft', :provenance)"
+        ),
+        {
+            "revision": DRAFT_IDS["structure_revision"],
+            "structure": IDS["structure"],
+            "pack_revision": DRAFT_IDS["pack_revision"],
+            "provenance": IDS["provenance"],
+        },
+    )
+    for revision, unit, lemma, part_of_speech in (
+        (
+            DRAFT_IDS["unit_revision_potere"],
+            IDS["unit_potere"],
+            "potere",
+            "verb",
+        ),
+        (
+            DRAFT_IDS["unit_revision_per_favore"],
+            IDS["unit_per_favore"],
+            "per favore",
+            "expression",
+        ),
+    ):
+        await session.execute(
+            text(
+                "INSERT INTO catalogue.lexical_unit_revisions "
+                "(unit_revision_id, lexical_unit_id, pack_revision_id, revision_no, lemma, "
+                "part_of_speech, register, status, provenance_id) VALUES "
+                "(:revision, :unit, :pack_revision, 2, :lemma, :part_of_speech, NULL, "
+                "'draft', :provenance)"
+            ),
+            {
+                "revision": revision,
+                "unit": unit,
+                "pack_revision": DRAFT_IDS["pack_revision"],
+                "lemma": lemma,
+                "part_of_speech": part_of_speech,
+                "provenance": IDS["provenance"],
+            },
+        )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.lexical_sense_revisions "
+            "(sense_revision_id, sense_id, pack_revision_id, revision_no, definition, "
+            "domains, register, status, provenance_id) VALUES "
+            "(:revision, :sense, :pack_revision, 2, 'brouillon', ARRAY[]::varchar[], "
+            "NULL, 'draft', :provenance)"
+        ),
+        {
+            "revision": DRAFT_IDS["sense_revision_potere"],
+            "sense": IDS["sense_potere"],
+            "pack_revision": DRAFT_IDS["pack_revision"],
+            "provenance": IDS["provenance"],
+        },
+    )
+    await session.execute(
+        text(
+            "INSERT INTO catalogue.form_analyses "
+            "(form_analysis_id, unit_revision_id, surface, morphological_features, "
+            "pronunciation_refs, normalization_key) VALUES "
+            "(:form, :unit_revision, 'potrebbe', '{}'::jsonb, ARRAY[]::uuid[], 'potrebbe')"
+        ),
+        {
+            "form": DRAFT_IDS["form_potere"],
+            "unit_revision": DRAFT_IDS["unit_revision_potere"],
+        },
+    )
+
 
 async def test_0003_creates_versioned_catalogue_tables_constraints_and_read_grants(
     migration_session: AsyncSession,
@@ -216,6 +319,70 @@ async def test_database_rejects_update_and_delete_of_every_child_owned_by_publis
             text(f"DELETE FROM catalogue.{table} WHERE {where}"), parameters
         )
     await migration_session.rollback()
+
+
+@pytest.mark.parametrize(
+    ("family", "statement"),
+    (
+        (
+            "language_pack_support_varieties",
+            "UPDATE catalogue.language_pack_support_varieties "
+            "SET pack_revision_id = :draft_pack_revision "
+            "WHERE pack_revision_id = :published_pack_revision",
+        ),
+        (
+            "grammar_patterns",
+            "UPDATE catalogue.grammar_patterns "
+            "SET structure_revision_id = :draft_structure_revision "
+            "WHERE pattern_id = :pattern",
+        ),
+        (
+            "form_analyses",
+            "UPDATE catalogue.form_analyses SET unit_revision_id = :draft_unit_revision "
+            "WHERE form_analysis_id = :form",
+        ),
+        (
+            "form_realizations",
+            "UPDATE catalogue.form_realizations "
+            "SET form_analysis_id = :draft_form, unit_revision_id = :draft_unit_revision, "
+            "sense_revision_id = :draft_sense_revision WHERE realization_id = :realization",
+        ),
+        (
+            "expression_components",
+            "UPDATE catalogue.expression_components "
+            "SET expression_unit_revision_id = :draft_expression_revision, "
+            "component_unit_revision_id = :draft_unit_revision "
+            "WHERE expression_unit_revision_id = :published_expression_revision",
+        ),
+    ),
+)
+async def test_database_rejects_reparenting_child_from_published_to_draft_revision(
+    migration_session: AsyncSession,
+    family: str,
+    statement: str,
+) -> None:
+    await seed_catalogue(migration_session)
+    await seed_draft_catalogue_owners(migration_session)
+    parameters = {
+        "published_pack_revision": IDS["pack_revision"],
+        "draft_pack_revision": DRAFT_IDS["pack_revision"],
+        "draft_structure_revision": DRAFT_IDS["structure_revision"],
+        "pattern": IDS["pattern"],
+        "draft_unit_revision": DRAFT_IDS["unit_revision_potere"],
+        "form": IDS["form_puo"],
+        "draft_form": DRAFT_IDS["form_potere"],
+        "draft_sense_revision": DRAFT_IDS["sense_revision_potere"],
+        "realization": IDS["realization_puo"],
+        "draft_expression_revision": DRAFT_IDS["unit_revision_per_favore"],
+        "published_expression_revision": IDS["unit_revision_per_favore"],
+    }
+
+    with pytest.raises(
+        DBAPIError,
+        match="published revision is immutable",
+        check=lambda error: family in statement and error.orig is not None,
+    ):
+        await migration_session.execute(text(statement), parameters)
 
 
 async def test_database_rejects_cross_unit_cross_pack_and_invalid_mwe_component_links(
