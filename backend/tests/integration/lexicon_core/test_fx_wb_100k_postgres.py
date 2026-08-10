@@ -41,7 +41,7 @@ async def test_fx_wb_loads_real_100k_and_meets_bounded_sql_p95(migration_session
     )
     graph_sql = text(
         "EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) WITH RECURSIVE walk(node,depth) AS ("
-        "VALUES (:root::uuid,0) UNION SELECT relation.target_sense_id,walk.depth+1 "
+        "VALUES (CAST(:root AS uuid),0) UNION SELECT relation.target_sense_id,walk.depth+1 "
         "FROM walk JOIN lexicon.personal_lexical_relations relation "
         "ON relation.profile_id=:profile AND relation.source_sense_id=walk.node "
         "WHERE walk.depth<2) SELECT node,min(depth) FROM walk GROUP BY node "
