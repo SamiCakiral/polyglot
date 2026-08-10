@@ -71,3 +71,40 @@ def test_support_skill_cannot_carry_an_evidence_protocol() -> None:
             ("produce",),
             (uid(21),),
         )
+
+
+def test_binding_collections_reject_duplicates_instead_of_normalizing_them() -> None:
+    with pytest.raises(CurriculumError, match="duplicate_reference"):
+        SkillTargetBinding(
+            uid(30),
+            BindingRole.TARGET,
+            ("written_production", "written_production"),
+            ("produce",),
+            (),
+        )
+    with pytest.raises(CurriculumError, match="duplicate_reference"):
+        GrammarTargetBinding(
+            uid(31),
+            (uid(32),),
+            uid(33),
+            BindingRole.TARGET,
+            "identity",
+            ("GYM-01", "GYM-01"),
+        )
+    with pytest.raises(CurriculumError, match="duplicate_reference"):
+        MorphologyTargetBinding(
+            uid(34),
+            "essere.ind.pres",
+            (("person", "1"),),
+            BindingRole.TARGET,
+            ("EX-RECALL-06", "EX-RECALL-06"),
+        )
+    with pytest.raises(CurriculumError, match="duplicate_reference"):
+        ExerciseBinding(
+            uid(35),
+            "EX-TRANSFORM-01",
+            ("grammar:identity", "grammar:identity"),
+            uid(36),
+            500,
+            900,
+        )

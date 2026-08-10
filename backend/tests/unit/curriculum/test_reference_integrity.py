@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
+
+from polyglot.modules.curriculum import CurriculumError
 from polyglot.modules.curriculum.ports import ReferenceManifest
 from polyglot.modules.curriculum.validation import validate_curriculum
 from tests.unit.curriculum.test_validation import base_input
@@ -71,5 +74,29 @@ def test_reference_manifest_is_bound_to_the_module_revision_checksum() -> None:
     report = validate_curriculum(replace(data, reference_manifest=hostile_manifest))
 
     assert "module_reference_manifest_mismatch" in {
+        item.message_code for item in report.findings
+    }
+
+
+def test_manifest_and_resolver_reject_duplicate_reference_rows() -> None:
+    data = base_input()
+    with pytest.raises(CurriculumError, match="duplicate_reference"):
+        ReferenceManifest(
+            source_catalog_id="duplicate-catalogue",
+            entries=(data.reference_manifest.entries[0],) * 2,
+        )
+
+    report = validate_curriculum(
+        replace(
+            data,
+            resolved_references=(
+                data.resolved_references[0],
+                data.resolved_references[0],
+                *data.resolved_references[1:],
+            ),
+        )
+    )
+
+    assert "module_reference_duplicate" in {
         item.message_code for item in report.findings
     }
