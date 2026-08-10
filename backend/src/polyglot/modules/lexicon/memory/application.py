@@ -11,8 +11,10 @@ from polyglot.modules.lexicon.memory.domain import (
     MemoryPromptLineage,
     MemoryReview,
     MemoryScheduleReset,
-    MemoryScheduleState,
+    MemoryScheduleResumption,
     PromptStatus,
+    ResumptionKind,
+    schedule_projection,
 )
 from polyglot.modules.lexicon.memory.policy import (
     HintLevel,
@@ -23,7 +25,12 @@ from polyglot.modules.lexicon.memory.policy import (
 from polyglot.modules.lexicon.memory.ports import (
     MemoryRating,
     MemorySchedulerPort,
-    ScheduledState,
+)
+from polyglot.modules.lexicon.memory.rebuild import (
+    MemoryReplayBinding,
+    MemoryReplayResolver,
+    StaticMemoryReplayResolver,
+    rebuild_schedule,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 
@@ -87,12 +94,19 @@ class ResetMemoryPrompt:
 
 
 @dataclass(frozen=True, slots=True)
+class ResumeMemoryPrompt:
+    resumption_id: UUID
+    resumed_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
 class ArchiveMemoryPrompt:
     archived_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
 class RestoreMemoryPrompt:
+    resumption_id: UUID
     restored_at: datetime
     target_revision_available: bool
 
@@ -123,44 +137,15 @@ class MergeResult:
     sources: tuple[MemoryAggregate, ...]
 
 
-def _projection(
-    *,
-    prompt_id: UUID,
-    state: ScheduledState,
-    policy: SchedulerPolicy,
-    scheduler: MemorySchedulerPort,
-    projection_version: int,
-    computed_at: datetime,
-    last_rating: MemoryRating | None,
-    last_review_id: UUID | None,
-    checkpoint: str,
-) -> MemoryScheduleState:
-    return MemoryScheduleState(
-        prompt_id=prompt_id,
-        scheduler_kind=scheduler.identity.kind,
-        scheduler_version=scheduler.identity.version,
-        parameter_set_id=policy.parameter_set_id,
-        policy_revision=policy.revision,
-        state=state.state,
-        difficulty=state.difficulty,
-        stability=state.stability,
-        desired_retention=policy.desired_retention,
-        last_review_at=state.last_review_at,
-        due_at=state.due_at,
-        reps=state.reps,
-        lapses=state.lapses,
-        last_rating=last_rating,
-        last_review_id=last_review_id,
-        projection_version=projection_version,
-        computed_at=_utc(computed_at),
-        causal_checkpoint=checkpoint,
-        step=state.step,
-    )
-
-
 class MemoryLifecycle:
-    def __init__(self, scheduler: MemorySchedulerPort) -> None:
+    def __init__(
+        self,
+        scheduler: MemorySchedulerPort,
+        *,
+        replay_resolver: MemoryReplayResolver | None = None,
+    ) -> None:
         self._scheduler = scheduler
+        self._replay_resolver = replay_resolver
 
     def create(self, command: CreateMemoryPrompt, policy: SchedulerPolicy) -> MemoryAggregate:
         created_at = _utc(command.created_at)
@@ -192,7 +177,7 @@ class MemoryLifecycle:
             updated_at=created_at,
         )
         initial = self._scheduler.initial_state(policy, created_at)
-        schedule = _projection(
+        schedule = schedule_projection(
             prompt_id=prompt.prompt_id,
             state=initial,
             policy=policy,
@@ -201,7 +186,7 @@ class MemoryLifecycle:
             computed_at=created_at,
             last_rating=None,
             last_review_id=None,
-            checkpoint="created",
+            checkpoint=prompt.creation_checkpoint,
         )
         return MemoryAggregate(prompt, schedule)
 
@@ -270,8 +255,9 @@ class MemoryLifecycle:
             certified_protocol_id=command.certified_protocol_id,
             certified_protocol_revision=command.certified_protocol_revision,
             certified_target_revision_id=command.certified_target_revision_id,
+            previous_checkpoint=aggregate.schedule.causal_checkpoint,
         )
-        schedule = _projection(
+        schedule = schedule_projection(
             prompt_id=aggregate.prompt.prompt_id,
             state=transition.after,
             policy=policy,
@@ -303,26 +289,45 @@ class MemoryLifecycle:
     def resume(
         self,
         aggregate: MemoryAggregate,
-        at: datetime,
+        command: ResumeMemoryPrompt,
         policy: SchedulerPolicy,
     ) -> MemoryAggregate:
         self._require_status(aggregate, {PromptStatus.SUSPENDED})
-        resumed = self._scheduler.resume(aggregate.schedule.scheduled_state(), at, policy)
-        schedule = _projection(
+        self._require_binding(aggregate, policy)
+        resumed_at = _utc(command.resumed_at)
+        self._require_not_backdated(aggregate, resumed_at)
+        before = aggregate.schedule.scheduled_state()
+        resumed = self._scheduler.resume(before, resumed_at, policy)
+        identity = self._scheduler.identity
+        fact = MemoryScheduleResumption(
+            resumption_id=command.resumption_id,
+            prompt_id=aggregate.prompt.prompt_id,
+            kind=ResumptionKind.RESUME,
+            resumed_at=resumed_at,
+            previous_checkpoint=aggregate.schedule.causal_checkpoint,
+            scheduler_kind=identity.kind,
+            scheduler_version=identity.version,
+            parameter_set_id=policy.parameter_set_id,
+            policy_revision=policy.revision,
+            state_before=before,
+            state_after=resumed,
+        )
+        schedule = schedule_projection(
             prompt_id=aggregate.prompt.prompt_id,
             state=resumed,
             policy=policy,
             scheduler=self._scheduler,
             projection_version=aggregate.schedule.projection_version + 1,
-            computed_at=at,
+            computed_at=resumed_at,
             last_rating=aggregate.schedule.last_rating,
             last_review_id=aggregate.schedule.last_review_id,
-            checkpoint=aggregate.schedule.causal_checkpoint,
+            checkpoint=fact.checkpoint,
         )
         return replace(
             aggregate,
-            prompt=aggregate.prompt.transition(PromptStatus.ACTIVE, at),
+            prompt=aggregate.prompt.transition(PromptStatus.ACTIVE, resumed_at),
             schedule=schedule,
+            resumptions=(*aggregate.resumptions, fact),
         )
 
     def reset(
@@ -332,31 +337,39 @@ class MemoryLifecycle:
         policy: SchedulerPolicy,
     ) -> MemoryAggregate:
         self._require_status(aggregate, {PromptStatus.ACTIVE, PromptStatus.SUSPENDED})
+        self._require_binding(aggregate, policy)
+        reset_at = _utc(command.reset_at)
+        self._require_not_backdated(aggregate, reset_at)
+        identity = self._scheduler.identity
         fact = MemoryScheduleReset(
             reset_id=command.reset_id,
             prompt_id=aggregate.prompt.prompt_id,
             reason=command.reason,
-            reset_at=command.reset_at,
+            reset_at=reset_at,
             previous_checkpoint=aggregate.schedule.causal_checkpoint,
+            scheduler_kind=identity.kind,
+            scheduler_version=identity.version,
+            parameter_set_id=policy.parameter_set_id,
+            policy_revision=policy.revision,
         )
-        initial = self._scheduler.initial_state(policy, command.reset_at)
-        schedule = _projection(
+        initial = self._scheduler.initial_state(policy, reset_at)
+        schedule = schedule_projection(
             prompt_id=aggregate.prompt.prompt_id,
             state=initial,
             policy=policy,
             scheduler=self._scheduler,
             projection_version=aggregate.schedule.projection_version + 1,
-            computed_at=command.reset_at,
+            computed_at=reset_at,
             last_rating=None,
             last_review_id=None,
-            checkpoint=f"reset:{command.reset_id}",
+            checkpoint=fact.checkpoint,
         )
         return replace(
             aggregate,
             prompt=replace(
                 aggregate.prompt,
                 version=aggregate.prompt.version + 1,
-                updated_at=_utc(command.reset_at),
+                updated_at=reset_at,
             ),
             schedule=schedule,
             resets=(*aggregate.resets, fact),
@@ -382,26 +395,45 @@ class MemoryLifecycle:
         self._require_status(aggregate, {PromptStatus.ARCHIVED})
         if not command.target_revision_available:
             raise DomainError(ErrorCode.TARGET_REVISION_UNAVAILABLE)
+        self._require_binding(aggregate, policy)
+        restored_at = _utc(command.restored_at)
+        self._require_not_backdated(aggregate, restored_at)
+        before = aggregate.schedule.scheduled_state()
         resumed = self._scheduler.resume(
-            aggregate.schedule.scheduled_state(),
-            command.restored_at,
+            before,
+            restored_at,
             policy,
         )
-        schedule = _projection(
+        identity = self._scheduler.identity
+        fact = MemoryScheduleResumption(
+            resumption_id=command.resumption_id,
+            prompt_id=aggregate.prompt.prompt_id,
+            kind=ResumptionKind.RESTORE,
+            resumed_at=restored_at,
+            previous_checkpoint=aggregate.schedule.causal_checkpoint,
+            scheduler_kind=identity.kind,
+            scheduler_version=identity.version,
+            parameter_set_id=policy.parameter_set_id,
+            policy_revision=policy.revision,
+            state_before=before,
+            state_after=resumed,
+        )
+        schedule = schedule_projection(
             prompt_id=aggregate.prompt.prompt_id,
             state=resumed,
             policy=policy,
             scheduler=self._scheduler,
             projection_version=aggregate.schedule.projection_version + 1,
-            computed_at=command.restored_at,
+            computed_at=restored_at,
             last_rating=aggregate.schedule.last_rating,
             last_review_id=aggregate.schedule.last_review_id,
-            checkpoint=aggregate.schedule.causal_checkpoint,
+            checkpoint=fact.checkpoint,
         )
         return replace(
             aggregate,
-            prompt=aggregate.prompt.transition(PromptStatus.ACTIVE, command.restored_at),
+            prompt=aggregate.prompt.transition(PromptStatus.ACTIVE, restored_at),
             schedule=schedule,
+            resumptions=(*aggregate.resumptions, fact),
         )
 
     def delete(
@@ -436,76 +468,78 @@ class MemoryLifecycle:
         ):
             raise DomainError(ErrorCode.INCOMPATIBLE_PROTOCOLS)
 
-        reviews = self._deduplicated_reviews(command.sources)
+        merged_at = _utc(command.merged_at)
+        if any(
+            merged_at < source.prompt.updated_at or merged_at < source.schedule.computed_at
+            for source in command.sources
+        ):
+            raise DomainError(ErrorCode.VALIDATION_FAILED, detail="merge is backdated")
+        identity = self._scheduler.identity
+        if identity.parameter_set_id != policy.parameter_set_id:
+            raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
+        reviews = tuple(review for source in command.sources for review in source.reviews)
+        resets = tuple(reset for source in command.sources for reset in source.resets)
+        resumptions = tuple(
+            resumption for source in command.sources for resumption in source.resumptions
+        )
         canonical_prompt = replace(
             first.prompt,
             prompt_id=command.canonical_prompt_id,
+            scheduler_kind=identity.kind,
+            scheduler_version=identity.version,
+            parameter_set_id=policy.parameter_set_id,
+            policy_revision=policy.revision,
             status=PromptStatus.ACTIVE,
             version=1,
-            created_at=_utc(command.merged_at),
-            updated_at=_utc(command.merged_at),
+            created_at=min(source.prompt.created_at for source in command.sources),
+            updated_at=merged_at,
         )
+        facts: tuple[
+            MemoryReview | MemoryScheduleReset | MemoryScheduleResumption,
+            ...,
+        ] = (*reviews, *resets, *resumptions)
+        source_prompt_ids = {fact.prompt_id for fact in facts}
+        source_prompt_ids.update(source.prompt.prompt_id for source in command.sources)
         lineages = tuple(
             MemoryPromptLineage(
-                source_prompt_id=source.prompt.prompt_id,
+                source_prompt_id=source_prompt_id,
                 canonical_prompt_id=command.canonical_prompt_id,
-                merged_at=command.merged_at,
+                merged_at=merged_at,
             )
-            for source in command.sources
+            for source_prompt_id in sorted(source_prompt_ids, key=lambda item: item.int)
         )
         initial = self._scheduler.initial_state(policy, canonical_prompt.created_at)
-        state = initial
-        for review in reviews:
-            state = self._scheduler.review(state, review.rating, review.reviewed_at, policy).after
-        last = reviews[-1] if reviews else None
-        schedule = _projection(
+        schedule = schedule_projection(
             prompt_id=canonical_prompt.prompt_id,
-            state=state,
+            state=initial,
             policy=policy,
             scheduler=self._scheduler,
-            projection_version=1 + len(reviews),
-            computed_at=canonical_prompt.created_at if last is None else last.reviewed_at,
-            last_rating=None if last is None else last.rating,
-            last_review_id=None if last is None else last.review_id,
-            checkpoint="merged" if last is None else f"review:{last.review_id}",
+            projection_version=1,
+            computed_at=merged_at,
+            last_rating=None,
+            last_review_id=None,
+            checkpoint=f"merge:{canonical_prompt.prompt_id}",
         )
         canonical = MemoryAggregate(
             prompt=canonical_prompt,
             schedule=schedule,
             reviews=reviews,
-            resets=tuple(reset for source in command.sources for reset in source.resets),
+            resets=resets,
+            resumptions=resumptions,
             lineages=lineages,
+        )
+        canonical = replace(
+            canonical,
+            schedule=rebuild_schedule(canonical, self._resolver_for(policy)),
         )
         sources = tuple(
             replace(
                 source,
-                prompt=source.prompt.transition(PromptStatus.SUPERSEDED, command.merged_at),
+                prompt=source.prompt.transition(PromptStatus.SUPERSEDED, merged_at),
             )
             for source in command.sources
         )
         return MergeResult(canonical, sources)
-
-    @staticmethod
-    def _deduplicated_reviews(
-        sources: tuple[MemoryAggregate, ...],
-    ) -> tuple[MemoryReview, ...]:
-        ordered = sorted(
-            (review for source in sources for review in source.reviews),
-            key=lambda review: (review.reviewed_at, review.review_id.int),
-        )
-        seen_opportunities: set[UUID] = set()
-        seen_receipts: set[str] = set()
-        result: list[MemoryReview] = []
-        for review in ordered:
-            if (
-                review.opportunity_id in seen_opportunities
-                or review.idempotency_key in seen_receipts
-            ):
-                continue
-            seen_opportunities.add(review.opportunity_id)
-            seen_receipts.add(review.idempotency_key)
-            result.append(review)
-        return tuple(result)
 
     @staticmethod
     def _require_status(
@@ -537,6 +571,22 @@ class MemoryLifecycle:
             raise DomainError(
                 ErrorCode.DEPENDENCY_UNAVAILABLE,
                 detail="pinned scheduler policy is unavailable",
+            )
+
+    def _resolver_for(self, policy: SchedulerPolicy) -> MemoryReplayResolver:
+        if self._replay_resolver is not None:
+            return self._replay_resolver
+        return StaticMemoryReplayResolver((MemoryReplayBinding(self._scheduler, policy),))
+
+    @staticmethod
+    def _require_not_backdated(
+        aggregate: MemoryAggregate,
+        occurred_at: datetime,
+    ) -> None:
+        if occurred_at < aggregate.schedule.computed_at:
+            raise DomainError(
+                ErrorCode.REVIEW_CONFLICT,
+                detail="schedule fact predates the current causal checkpoint",
             )
 
     @staticmethod
