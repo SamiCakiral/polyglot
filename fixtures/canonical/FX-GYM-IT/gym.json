@@ -10,7 +10,9 @@
       "accepted_output": "Vorrei un biglietto", "rejected_output": "Voglio un biglietto",
       "prerequisites": ["it:frame:vorrei"], "invariants": ["polite_request"],
       "grammar_target_id": "it:grammar:vorrei", "lexical_support_ids": ["it:lexicon:biglietto"],
-      "scenarios": ["vorrei"]
+      "scenarios": ["vorrei"],
+      "semantic_kind": "lexical_substitution", "prerequisite_kind": "compatible_usage_frame", "invariant_kind": "structure",
+      "semantic_parameters": {"slot_id": "object", "before_form": "un caffè", "after_form": "un biglietto"}
     },
     {
       "operation_id": "GYM-02", "case_id": "it:gym:02", "revision_id": "it:gym:02:v1",
@@ -18,7 +20,9 @@
       "accepted_output": "Può entrare?", "rejected_output": "Puoi entrare?",
       "prerequisites": ["it:paradigm:potere"], "invariants": ["permission_request"],
       "grammar_target_id": "it:grammar:person", "lexical_support_ids": ["it:lexicon:entrare"],
-      "scenarios": ["puo_posso"]
+      "scenarios": ["puo_posso"],
+      "semantic_kind": "person", "prerequisite_kind": "required_paradigm", "invariant_kind": "intention",
+      "semantic_parameters": {"from_person": "first_singular", "to_person": "third_singular", "before_form": "Posso", "after_form": "Può"}
     },
     {
       "operation_id": "GYM-03", "case_id": "it:gym:03", "revision_id": "it:gym:03:v1",
@@ -26,7 +30,9 @@
       "accepted_output": "Ci sono due camere", "rejected_output": "C'è due camere",
       "prerequisites": ["it:agreement:existence"], "invariants": ["existence"],
       "grammar_target_id": "it:grammar:ce-ci-sono", "lexical_support_ids": ["it:lexicon:camera"],
-      "scenarios": ["ce_ci_sono"]
+      "scenarios": ["ce_ci_sono"],
+      "semantic_kind": "number_or_gender", "prerequisite_kind": "required_agreement", "invariant_kind": "referent",
+      "semantic_parameters": {"from_number": "singular", "to_number": "plural", "before_form": "C'è una camera", "after_form": "Ci sono due camere"}
     },
     {
       "operation_id": "GYM-04", "case_id": "it:gym:04", "revision_id": "it:gym:04:v1",
@@ -34,7 +40,9 @@
       "accepted_output": "Non ho un biglietto", "rejected_output": "No ho un biglietto",
       "prerequisites": ["it:negation:non"], "invariants": ["ticket_possession"],
       "grammar_target_id": "it:grammar:negation", "lexical_support_ids": ["it:lexicon:biglietto"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "polarity", "prerequisite_kind": "acquired_negation", "invariant_kind": "proposition",
+      "semantic_parameters": {"marker": "Non", "before_form": "Ho", "after_form": "Non ho"}
     },
     {
       "operation_id": "GYM-05", "case_id": "it:gym:05", "revision_id": "it:gym:05:v1",
@@ -42,7 +50,9 @@
       "accepted_output": "Quando parte il treno?", "rejected_output": "Quando il treno parte?",
       "prerequisites": ["it:question:quando"], "invariants": ["train_departure"],
       "grammar_target_id": "it:grammar:question", "lexical_support_ids": ["it:lexicon:treno"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "interrogation", "prerequisite_kind": "acquired_question_type", "invariant_kind": "requested_info",
+      "semantic_parameters": {"question_type": "when", "before_form": "Il treno parte", "after_form": "Quando parte il treno?"}
     },
     {
       "operation_id": "GYM-06", "case_id": "it:gym:06", "revision_id": "it:gym:06:v1",
@@ -50,7 +60,9 @@
       "accepted_output": "Ho preso il treno", "rejected_output": "Ho prenduto il treno",
       "prerequisites": ["it:tense:present-perfect"], "invariants": ["train_event"],
       "grammar_target_id": "it:grammar:past", "lexical_support_ids": ["it:lexicon:treno"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "tense_or_aspect", "prerequisite_kind": "two_acquired_forms", "invariant_kind": "event",
+      "semantic_parameters": {"from_tense": "present", "to_tense": "past", "before_form": "Prendo", "after_form": "Ho preso"}
     },
     {
       "operation_id": "GYM-07", "case_id": "it:gym:07", "revision_id": "it:gym:07:v1",
@@ -58,7 +70,9 @@
       "accepted_output": "Devo prendere il treno", "rejected_output": "Devo prendo il treno",
       "prerequisites": ["it:modal:dovere"], "invariants": ["central_action"],
       "grammar_target_id": "it:grammar:modality", "lexical_support_ids": ["it:lexicon:treno"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "modality", "prerequisite_kind": "acquired_modal_frames", "invariant_kind": "central_action",
+      "semantic_parameters": {"from_modality": "assertion", "to_modality": "obligation", "before_form": "Prendo", "after_form": "Devo prendere"}
     },
     {
       "operation_id": "GYM-08", "case_id": "it:gym:08", "revision_id": "it:gym:08:v1",
@@ -66,7 +80,9 @@
       "accepted_output": "Può entrare?", "rejected_output": "Voglio entrare",
       "prerequisites": ["it:register:formal"], "invariants": ["permission_request"],
       "grammar_target_id": "it:grammar:politeness", "lexical_support_ids": ["it:lexicon:entrare"],
-      "scenarios": ["puo_posso"]
+      "scenarios": ["puo_posso"],
+      "semantic_kind": "register_or_politeness", "prerequisite_kind": "acquired_pragmatic_contrast", "invariant_kind": "request",
+      "semantic_parameters": {"from_register": "informal", "to_register": "formal", "before_form": "Posso", "after_form": "Può"}
     },
     {
       "operation_id": "GYM-09", "case_id": "it:gym:09", "revision_id": "it:gym:09:v1",
@@ -74,7 +90,9 @@
       "accepted_output": "Lei cerca il binario", "rejected_output": "Lei cerco il binario",
       "prerequisites": ["it:deictic:person"], "invariants": ["search_situation"],
       "grammar_target_id": "it:grammar:viewpoint", "lexical_support_ids": ["it:lexicon:binario"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "point_of_view", "prerequisite_kind": "acquired_persons_and_deictics", "invariant_kind": "situation",
+      "semantic_parameters": {"from_viewpoint": "speaker", "to_viewpoint": "addressee", "before_form": "Io cerco", "after_form": "Lei cerca"}
     },
     {
       "operation_id": "GYM-10", "case_id": "it:gym:10", "revision_id": "it:gym:10:v1",
@@ -82,7 +100,9 @@
       "accepted_output": "Lo prendo", "rejected_output": "Le prendo",
       "prerequisites": ["it:complement:direct"], "invariants": ["ticket_referent"],
       "grammar_target_id": "it:grammar:clitic", "lexical_support_ids": ["it:lexicon:biglietto"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "pronominalization", "prerequisite_kind": "acquired_complement_function", "invariant_kind": "referent",
+      "semantic_parameters": {"from_reference": "noun_phrase", "to_reference": "clitic", "before_form": "Prendo il biglietto", "after_form": "Lo prendo"}
     },
     {
       "operation_id": "GYM-11", "case_id": "it:gym:11", "revision_id": "it:gym:11:v1",
@@ -90,7 +110,9 @@
       "accepted_output": "Ho un biglietto, quindi salgo sul treno", "rejected_output": "Ho un biglietto salgo sul treno",
       "prerequisites": ["it:connector:quindi"], "invariants": ["two_propositions"],
       "grammar_target_id": "it:grammar:combination", "lexical_support_ids": ["it:lexicon:treno"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "combination", "prerequisite_kind": "acquired_connector_or_relative", "invariant_kind": "two_propositions",
+      "semantic_parameters": {"connector_id": "quindi", "before_form": ". Salgo", "after_form": ", quindi salgo"}
     },
     {
       "operation_id": "GYM-12", "case_id": "it:gym:12", "revision_id": "it:gym:12:v1",
@@ -98,7 +120,9 @@
       "accepted_output": "Vorrei un biglietto per Roma, per favore", "rejected_output": "Un biglietto Roma",
       "prerequisites": ["it:variant:expanded-request"], "invariants": ["semantic_core"],
       "grammar_target_id": "it:grammar:expansion", "lexical_support_ids": ["it:lexicon:roma"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "reduction_or_expansion", "prerequisite_kind": "acquired_variant", "invariant_kind": "semantic_core",
+      "semantic_parameters": {"direction": "expansion", "before_form": "un biglietto", "after_form": "un biglietto per Roma, per favore"}
     },
     {
       "operation_id": "GYM-13", "case_id": "it:gym:13", "revision_id": "it:gym:13:v1",
@@ -106,7 +130,9 @@
       "accepted_output": "Ecco Sami", "rejected_output": "Sami ecco",
       "prerequisites": ["it:contrast:sono-ecco"], "invariants": ["identity"],
       "grammar_target_id": "it:grammar:identity", "lexical_support_ids": ["it:lexicon:name"],
-      "scenarios": ["sono_ecco"]
+      "scenarios": ["sono_ecco"],
+      "semantic_kind": "idiomatic_reformulation", "prerequisite_kind": "published_contrast", "invariant_kind": "intention",
+      "semantic_parameters": {"source_frame": "sono_identity", "target_frame": "ecco_identification", "before_form": "Sono Sami", "after_form": "Ecco Sami"}
     },
     {
       "operation_id": "GYM-14", "case_id": "it:gym:14", "revision_id": "it:gym:14:v1",
@@ -114,7 +140,9 @@
       "accepted_output": "Sto per prendere il treno", "rejected_output": "Vado a prendere il treno",
       "prerequisites": ["it:error:andare-infinitive"], "invariants": ["near_future"],
       "grammar_target_id": "it:grammar:near-future", "lexical_support_ids": ["it:lexicon:treno"],
-      "scenarios": ["andare_infinitive_calque"]
+      "scenarios": ["andare_infinitive_calque"],
+      "semantic_kind": "calque_repair", "prerequisite_kind": "published_typed_error", "invariant_kind": "l1_intention",
+      "semantic_parameters": {"calque_id": "andare_infinitive", "repair_frame": "stare_per_infinitive", "before_form": "Vado prendere", "after_form": "Sto per prendere"}
     },
     {
       "operation_id": "GYM-15", "case_id": "it:gym:15", "revision_id": "it:gym:15:v1",
@@ -122,7 +150,9 @@
       "accepted_output": "Vorrei un biglietto per Roma, per favore", "rejected_output": "Voglio biglietto Roma",
       "prerequisites": ["it:chain:polite-expanded-request"], "invariants": ["request", "destination"],
       "grammar_target_id": "it:grammar:controlled-chain", "lexical_support_ids": ["it:lexicon:roma"],
-      "scenarios": []
+      "scenarios": [],
+      "semantic_kind": "controlled_chain", "prerequisite_kind": "all_steps_acquired", "invariant_kind": "declared_invariants",
+      "semantic_parameters": {"step_operation_ids": "GYM-08,GYM-12"}
     }
   ],
   "cycle": [

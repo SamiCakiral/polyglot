@@ -27,18 +27,63 @@ def _definition() -> ExerciseDefinition:
 
 
 def _case(index: int, operation_id: str) -> TransformationCase:
+    from polyglot.modules.exercises.gym.domain import OperationSemantics, operation_spec
+
+    values = {
+        "GYM-01": (
+            "Vorrei un caffe",
+            ("un caffe", "un biglietto"),
+            "Vorrei un biglietto",
+            {"slot_id": "object", "before_form": "un caffe", "after_form": "un biglietto"},
+        ),
+        "GYM-04": (
+            "Ho fame",
+            ("Ho", "Non ho"),
+            "Non ho fame",
+            {"marker": "Non", "before_form": "Ho", "after_form": "Non ho"},
+        ),
+        "GYM-08": (
+            "Posso entrare?",
+            ("Posso", "Puo"),
+            "Puo entrare?",
+            {
+                "from_register": "informal",
+                "to_register": "formal",
+                "before_form": "Posso",
+                "after_form": "Puo",
+            },
+        ),
+        "GYM-12": (
+            "Vorrei un biglietto",
+            ("un biglietto", "un biglietto per Roma"),
+            "Vorrei un biglietto per Roma",
+            {
+                "direction": "expansion",
+                "before_form": "un biglietto",
+                "after_form": "un biglietto per Roma",
+            },
+        ),
+    }
+    source, edit, output, parameters = values[operation_id]
+    spec = operation_spec(operation_id)
     return TransformationCase.published(
         case_id=f"case:{index}",
         revision_id=f"revision:case:{index}:v1",
         operation_id=operation_id,
-        source_text=f"source {index}",
-        edits=((f"source {index}", f"output {index}"),),
-        accepted_outputs=(f"output {index}",),
+        source_text=source,
+        edits=(edit,),
+        accepted_outputs=(output,),
         rejected_outputs=(f"wrong {index}",),
         required_prerequisites=(f"prerequisite:{index}",),
         invariants=("intention",),
         grammar_target_id="grammar:target",
         lexical_support_ids=(f"lexicon:{index}",),
+        semantics=OperationSemantics.create(
+            kind=spec.name,
+            prerequisite_kind=spec.prerequisite_kind,
+            invariant_kind=spec.primary_invariant,
+            parameters=parameters,
+        ),
     )
 
 

@@ -11,6 +11,9 @@ FIXTURE = Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-GYM-IT"
 
 
 def _case() -> TransformationCase:
+    from polyglot.modules.exercises.gym.domain import OperationSemantics, operation_spec
+
+    spec = operation_spec("GYM-01")
     return TransformationCase.published(
         case_id="it:vorrei:substitution",
         revision_id="it:vorrei:substitution:v1",
@@ -23,6 +26,16 @@ def _case() -> TransformationCase:
         invariants=("polite_request",),
         grammar_target_id="it:grammar:vorrei",
         lexical_support_ids=("it:lexicon:biglietto",),
+        semantics=OperationSemantics.create(
+            kind=spec.name,
+            prerequisite_kind=spec.prerequisite_kind,
+            invariant_kind=spec.primary_invariant,
+            parameters={
+                "slot_id": "object",
+                "before_form": "un caffe",
+                "after_form": "un biglietto",
+            },
+        ),
     )
 
 
@@ -138,6 +151,8 @@ def test_fx_gym_it_executes_all_operations_and_cycle_oracles_offline(
     assert report.executed_positive == report.operation_ids
     assert report.executed_negative == report.operation_ids
     assert report.executed_missing_prerequisite == report.operation_ids
+    assert report.executed_semantic_negative == report.operation_ids
+    assert report.executed_semantic_constraints == report.operation_ids
     assert report.cycle_stages == ("g0", "g1", "g2", "g3", "g4")
     assert report.cycle_credits == (0.0, 0.65, 0.55, 0.65, 1.0)
     assert report.network_dependencies == ()

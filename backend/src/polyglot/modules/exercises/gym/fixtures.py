@@ -14,8 +14,10 @@ from polyglot.modules.exercises.gym.correction import TargetRole, correct_transf
 from polyglot.modules.exercises.gym.cycle import GymCycle, GymStage
 from polyglot.modules.exercises.gym.domain import (
     GYM_OPERATION_IDS,
+    OperationSemantics,
     PrerequisiteGrant,
     TransformationCase,
+    operation_spec,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 
@@ -54,6 +56,10 @@ class _Operation(_StrictModel):
     grammar_target_id: str
     lexical_support_ids: tuple[str, ...]
     scenarios: tuple[str, ...]
+    semantic_kind: str
+    prerequisite_kind: str
+    invariant_kind: str
+    semantic_parameters: dict[str, str]
 
 
 class _CycleOracle(_StrictModel):
@@ -81,6 +87,8 @@ class GymFixtureReport:
     executed_positive: tuple[str, ...]
     executed_negative: tuple[str, ...]
     executed_missing_prerequisite: tuple[str, ...]
+    executed_semantic_negative: tuple[str, ...]
+    executed_semantic_constraints: tuple[str, ...]
     cycle_stages: tuple[str, ...]
     cycle_credits: tuple[float, ...]
     network_dependencies: tuple[str, ...]
@@ -113,7 +121,20 @@ def _load(root: Path) -> tuple[_Metadata, _Payload]:
     return metadata, payload
 
 
-def _case(item: _Operation) -> TransformationCase:
+def _semantics(item: _Operation) -> OperationSemantics:
+    return OperationSemantics.create(
+        kind=item.semantic_kind,
+        prerequisite_kind=item.prerequisite_kind,
+        invariant_kind=item.invariant_kind,
+        parameters=item.semantic_parameters,
+    )
+
+
+def _case(
+    item: _Operation,
+    *,
+    semantics: OperationSemantics | None = None,
+) -> TransformationCase:
     return TransformationCase.published(
         case_id=item.case_id,
         revision_id=item.revision_id,
@@ -126,6 +147,7 @@ def _case(item: _Operation) -> TransformationCase:
         invariants=item.invariants,
         grammar_target_id=item.grammar_target_id,
         lexical_support_ids=item.lexical_support_ids,
+        semantics=_semantics(item) if semantics is None else semantics,
     )
 
 
@@ -160,6 +182,36 @@ def _validate_operation(item: _Operation) -> None:
             raise
     else:
         raise _failed(f"{item.operation_id} missing prerequisite was accepted")
+    operation_index = GYM_OPERATION_IDS.index(item.operation_id)
+    hostile_spec = operation_spec(GYM_OPERATION_IDS[(operation_index + 1) % 15])
+    hostile_semantics = OperationSemantics.create(
+        kind=hostile_spec.name,
+        prerequisite_kind=hostile_spec.prerequisite_kind,
+        invariant_kind=hostile_spec.primary_invariant,
+        parameters=item.semantic_parameters,
+    )
+    try:
+        _case(item, semantics=hostile_semantics)
+    except DomainError as semantic_error:
+        if semantic_error.code is not ErrorCode.VALIDATION_FAILED:
+            raise
+    else:
+        raise _failed(f"{item.operation_id} accepted another operation's semantics")
+    incomplete_parameters = dict(item.semantic_parameters)
+    incomplete_parameters.pop(next(iter(incomplete_parameters)))
+    incomplete_semantics = OperationSemantics.create(
+        kind=item.semantic_kind,
+        prerequisite_kind=item.prerequisite_kind,
+        invariant_kind=item.invariant_kind,
+        parameters=incomplete_parameters,
+    )
+    try:
+        _case(item, semantics=incomplete_semantics)
+    except DomainError as constraint_error:
+        if constraint_error.code is not ErrorCode.VALIDATION_FAILED:
+            raise
+    else:
+        raise _failed(f"{item.operation_id} accepted incomplete semantic constraints")
 
     roles = _roles(item)
     positive = correct_transformation(
@@ -265,6 +317,8 @@ def validate_gym_fixture(root: Path) -> GymFixtureReport:
         executed_positive=operation_ids,
         executed_negative=operation_ids,
         executed_missing_prerequisite=operation_ids,
+        executed_semantic_negative=operation_ids,
+        executed_semantic_constraints=operation_ids,
         cycle_stages=stages,
         cycle_credits=credits,
         network_dependencies=metadata.network_dependencies,

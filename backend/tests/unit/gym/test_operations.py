@@ -6,7 +6,49 @@ from polyglot.platform.errors import DomainError, ErrorCode
 
 
 def _case(operation: str, source: str, edits: tuple[tuple[str, str], ...], output: str):
-    from polyglot.modules.exercises.gym.domain import TransformationCase
+    from polyglot.modules.exercises.gym.domain import (
+        OperationSemantics,
+        TransformationCase,
+        operation_spec,
+    )
+
+    before, after = edits[0]
+    parameters = {
+        "GYM-01": {"slot_id": "object", "before_form": before, "after_form": after},
+        "GYM-02": {
+            "from_person": "first",
+            "to_person": "third",
+            "before_form": before,
+            "after_form": after,
+        },
+        "GYM-04": {"marker": "Non", "before_form": before, "after_form": after},
+        "GYM-06": {
+            "from_tense": "present",
+            "to_tense": "past",
+            "before_form": before,
+            "after_form": after,
+        },
+        "GYM-08": {
+            "from_register": "informal",
+            "to_register": "formal",
+            "before_form": before,
+            "after_form": after,
+        },
+        "GYM-12": {"direction": "expansion", "before_form": before, "after_form": after},
+        "GYM-13": {
+            "source_frame": "sono",
+            "target_frame": "ecco",
+            "before_form": before,
+            "after_form": after,
+        },
+        "GYM-14": {
+            "calque_id": "andare_infinitive",
+            "repair_frame": "stare_per",
+            "before_form": before,
+            "after_form": after,
+        },
+    }[operation]
+    spec = operation_spec(operation)
 
     return TransformationCase.published(
         case_id=f"case:{operation.lower()}",
@@ -20,6 +62,12 @@ def _case(operation: str, source: str, edits: tuple[tuple[str, str], ...], outpu
         invariants=("communicative_intention",),
         grammar_target_id="grammar:target",
         lexical_support_ids=("lexicon:support",),
+        semantics=OperationSemantics.create(
+            kind=spec.name,
+            prerequisite_kind=spec.prerequisite_kind,
+            invariant_kind=spec.primary_invariant,
+            parameters=parameters,
+        ),
     )
 
 
@@ -71,9 +119,7 @@ def test_published_transformations_execute_their_declared_edits(
 
     result = execute_transformation(
         case,
-        grants=(
-            PrerequisiteGrant.acquired(f"prerequisite:{operation.lower()}"),
-        ),
+        grants=(PrerequisiteGrant.acquired(f"prerequisite:{operation.lower()}"),),
     )
 
     assert result.output_text == expected
@@ -119,10 +165,16 @@ def test_explicit_non_evaluated_support_satisfies_a_prerequisite() -> None:
 
 
 def test_case_is_deeply_immutable_and_rejects_unpublished_output() -> None:
-    from polyglot.modules.exercises.gym.domain import PrerequisiteGrant, TransformationCase
+    from polyglot.modules.exercises.gym.domain import (
+        OperationSemantics,
+        PrerequisiteGrant,
+        TransformationCase,
+        operation_spec,
+    )
 
     edits = [["Sono Sami", "Ecco Sami"]]
     outputs = ["Ecco Sami"]
+    spec = operation_spec("GYM-13")
     case = TransformationCase.published(
         case_id="case:immutable",
         revision_id="revision:immutable:v1",
@@ -135,6 +187,17 @@ def test_case_is_deeply_immutable_and_rejects_unpublished_output() -> None:
         invariants=("identity",),
         grammar_target_id="grammar:identity",
         lexical_support_ids=(),
+        semantics=OperationSemantics.create(
+            kind=spec.name,
+            prerequisite_kind=spec.prerequisite_kind,
+            invariant_kind=spec.primary_invariant,
+            parameters={
+                "source_frame": "sono",
+                "target_frame": "ecco",
+                "before_form": "Sono Sami",
+                "after_form": "Ecco Sami",
+            },
+        ),
     )
 
     edits[0][1] = "corrupted"
@@ -169,4 +232,3 @@ def test_calque_repair_rejects_the_forbidden_andare_plus_infinitive_output() -> 
         )
 
     assert rejected.value.code is ErrorCode.VALIDATION_FAILED
-

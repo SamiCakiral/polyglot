@@ -4,10 +4,11 @@
   "seed": 1010,
   "clock": "2026-08-10T09:00:00+00:00",
   "payloads": {
-    "gym.json": "sha256:7518446b0fc109b2bcd008905a093ee9b661cfcb53af6b0dba55a98475464f04"
+    "gym.json": "sha256:0bbb9edf0d9d77b43965d8ac968db28be2e6a14383da14ea21b40e92a346be22"
   },
   "oracles": [
     "all_gym_01_15_positive_negative_and_missing_prerequisite",
+    "all_gym_01_15_semantic_family_and_constraint_negatives",
     "g0_g4_frozen_clock_and_credit_caps",
     "h4_ambiguity_unavailable_and_lexical_support_zero_credit",
     "deterministic_offline_replay"
