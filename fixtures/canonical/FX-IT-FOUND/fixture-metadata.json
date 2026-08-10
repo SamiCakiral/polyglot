@@ -4,9 +4,14 @@
   "seed": 3004,
   "clock": "2026-08-10T12:00:00+00:00",
   "payloads": {
-    "foundations.json": "sha256:a50c49503b19e08a234adfb2df7deb4c92ec70c2fcb7921c5fe9d94ef7ea7112"
+    "foundations.json": "sha256:841e2d7501d289a9c4ed4837106a869d593819a79bcf2937dbf9a49ee4fc16a2"
   },
-  "oracles": ["F1-F5", "audio-absent", "gate-24h", "revelation"],
+  "oracles": [
+    "F1-F5",
+    "audio-absent",
+    "gate-24h",
+    "revelation"
+  ],
   "network_dependencies": [],
   "linguistic_review": "pending_human"
 }

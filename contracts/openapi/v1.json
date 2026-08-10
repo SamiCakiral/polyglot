@@ -759,17 +759,10 @@
             "default": false,
             "title": "Revealed",
             "type": "boolean"
-          },
-          "trial_ordinal": {
-            "maximum": 10.0,
-            "minimum": 1.0,
-            "title": "Trial Ordinal",
-            "type": "integer"
           }
         },
         "required": [
           "item_revision_id",
-          "trial_ordinal",
           "answer"
         ],
         "title": "FoundationAnswerRequest",

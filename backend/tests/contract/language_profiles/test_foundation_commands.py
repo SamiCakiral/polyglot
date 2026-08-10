@@ -153,7 +153,8 @@ async def _profile_in_foundations(client: AsyncClient, csrf: str) -> tuple[str, 
     )
     assert diagnostic.status_code == 201
     selected = (
-        *CATALOGUE.definition.blocks[0].items,
+        CATALOGUE.definition.blocks[0].items[0],
+        CATALOGUE.definition.blocks[0].items[10],
         *CATALOGUE.definition.blocks[2].items,
         *CATALOGUE.definition.blocks[3].items,
     )

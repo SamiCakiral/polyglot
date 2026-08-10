@@ -4,7 +4,7 @@
   "seed": 2004,
   "clock": "2026-01-15T12:00:00+00:00",
   "payloads": {
-    "catalogue.json": "sha256:9c178b39c5d2c0966fbb7f301a2bd469d231972d424df98775a27d8f80132aad"
+    "catalogue.json": "sha256:473f2d27a8f1502d19bb803a099aa657b6e3a8a26bbcee0edba9666b2a19925b"
   },
   "oracles": [
     "published_revisions_immutable",

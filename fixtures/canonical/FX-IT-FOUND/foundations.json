@@ -7,10 +7,21 @@
     {
       "id": "F1-F5",
       "oracle": {
-        "block_codes": ["F1", "F2", "F3", "F4", "F5"],
-        "published_item_count": 10,
+        "block_codes": [
+          "F1",
+          "F2",
+          "F3",
+          "F4",
+          "F5"
+        ],
+        "published_item_count": 32,
         "all_references_resolved": true,
-        "implicit_mastery_credit": false
+        "implicit_mastery_credit": false,
+        "distinct_normative_stimuli": {
+          "grapheme_sound_discrimination": 10,
+          "targeted_reading": 10,
+          "survival_exchange": 5
+        }
       }
     },
     {

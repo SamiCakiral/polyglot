@@ -1081,7 +1081,7 @@ class LanguageProfileApplicationService:
         *,
         run_id: UUID,
         account_id: UUID,
-        answers: tuple[tuple[UUID, int, dict[str, JsonValue], bool], ...],
+        answers: tuple[tuple[UUID, dict[str, JsonValue], bool], ...],
         expected_version: int,
         idempotency_key: str,
         context: RequestContext,
@@ -1121,26 +1121,10 @@ class LanguageProfileApplicationService:
                 for block in definition.blocks
                 for item in block.items
             }
-            required_trials = {
-                item.item_revision_id: {
-                    "ITF-F1-01": 10,
-                    "ITF-F1-02": 10,
-                    "ITF-F5-02": 5,
-                }.get(item.item_code, 1)
-                for block in definition.blocks
-                for item in block.items
-            }
-            submitted_trials = [
-                (item_id, trial_ordinal) for item_id, trial_ordinal, _, _ in answers
-            ]
-            expected_trials = {
-                (item_id, trial_ordinal)
-                for item_id, total in required_trials.items()
-                for trial_ordinal in range(1, total + 1)
-            }
-            if len(submitted_trials) != len(set(submitted_trials)) or set(
-                submitted_trials
-            ) != expected_trials:
+            submitted_ids = [item_id for item_id, _, _ in answers]
+            if len(submitted_ids) != len(set(submitted_ids)) or set(submitted_ids) != set(
+                published_items
+            ):
                 raise DomainError(ErrorCode.RESPONSE_CONFLICT)
 
             receipt = self._receipt(
@@ -1154,11 +1138,10 @@ class LanguageProfileApplicationService:
                         "answers": [
                             {
                                 "item_revision_id": str(item_id),
-                                "trial_ordinal": trial_ordinal,
                                 "answer": answer,
                                 "revealed": revealed,
                             }
-                            for item_id, trial_ordinal, answer, revealed in answers
+                            for item_id, answer, revealed in answers
                         ],
                     }
                 ),
@@ -1185,12 +1168,20 @@ class LanguageProfileApplicationService:
             if set(block_rows) != {item.block_revision_id for item in definition.blocks}:
                 raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
             session_id = self._id_generator.new()
-            criteria = {
-                "ITF-F1-01": FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
-                "ITF-F1-02": FoundationCriterion.TARGETED_READING,
-                "ITF-F5-02": FoundationCriterion.SURVIVAL_EXCHANGE,
-            }
-            for item_id, trial_ordinal, answer, revealed in answers:
+            def criterion_for(item_code: str) -> FoundationCriterion | None:
+                for prefix, criterion in (
+                    (
+                        "ITF-F1-01",
+                        FoundationCriterion.GRAPHEME_SOUND_DISCRIMINATION,
+                    ),
+                    ("ITF-F1-02", FoundationCriterion.TARGETED_READING),
+                    ("ITF-F5-02", FoundationCriterion.SURVIVAL_EXCHANGE),
+                ):
+                    if item_code == prefix or item_code.startswith(f"{prefix}-S"):
+                        return criterion
+                return None
+
+            for item_id, answer, revealed in answers:
                 block, item = published_items[item_id]
                 score, evaluable = self._score_item(item, answer)
                 await session.execute(
@@ -1202,8 +1193,7 @@ class LanguageProfileApplicationService:
                         ],
                         item_revision_id=item_id,
                         session_id=session_id,
-                        trial_ordinal=trial_ordinal,
-                        criterion=criteria.get(item.item_code),
+                        criterion=criterion_for(item.item_code),
                         answer=answer,
                         score=score,
                         evaluable=evaluable,
