@@ -172,6 +172,56 @@ async def test_mutating_existing_resource_without_if_match_returns_428(
     assert response.status_code == 428
 
 
+async def test_profile_transition_routes_return_the_new_resource_etag(
+    services: tuple[IdentityApplicationService, object],
+) -> None:
+    async with await _client(services) as client:
+        _, csrf = await _login(client, "w03-transition-etags@example.test")
+        profile = await client.post(
+            "/api/v1/language-profiles",
+            headers={
+                "Origin": ORIGIN,
+                "X-CSRF-Token": csrf,
+                "Idempotency-Key": "create-transition-etags",
+            },
+            json={"target_variety_id": TARGET, "native_variety_id": NATIVE},
+        )
+        profile_id = profile.json()["profile_id"]
+        engine = create_async_engine(migration_database_url_from_environment())
+        async with engine.begin() as connection:
+            await connection.execute(
+                text(
+                    "UPDATE language_profiles.learner_language_profiles "
+                    "SET status = 'active', current_phase = 'module_learning' "
+                    "WHERE profile_id = :profile_id"
+                ),
+                {"profile_id": UUID(profile_id)},
+            )
+        await engine.dispose()
+
+        transitions = (
+            ("pause", "POST"),
+            ("restore", "POST"),
+            ("archive", "POST"),
+            ("", "DELETE"),
+        )
+        for version, (suffix, method) in enumerate(transitions, start=1):
+            separator = ":" if suffix else ""
+            response = await client.request(
+                method,
+                f"/api/v1/language-profiles/{profile_id}{separator}{suffix}",
+                headers={
+                    "Origin": ORIGIN,
+                    "X-CSRF-Token": csrf,
+                    "If-Match": f'"{version}"',
+                    "Idempotency-Key": f"transition-etag-{version}",
+                },
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["version"] == version + 1
+            assert response.headers["etag"] == f'"{version + 1}"'
+
+
 async def test_diagnostic_is_resumable_for_exactly_twenty_four_hours_without_credit(
     services: tuple[IdentityApplicationService, object],
 ) -> None:
