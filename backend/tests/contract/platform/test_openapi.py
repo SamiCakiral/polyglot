@@ -45,8 +45,11 @@ def test_openapi_exports_the_implemented_w01_and_w02_surface() -> None:
         "/api/v1/account/preferences",
         "/api/v1/accounts",
         "/api/v1/consents/{purpose}",
+        "/api/v1/catalogue/targets",
         "/api/v1/health/live",
         "/api/v1/health/ready",
+        "/api/v1/language-packs",
+        "/api/v1/lexicon/search",
         "/api/v1/session",
     }
     validate_registry_compatibility(document, ROOT / "contracts/registry")
