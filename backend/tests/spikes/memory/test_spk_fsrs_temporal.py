@@ -8,7 +8,6 @@ from zoneinfo import ZoneInfo
 import fsrs
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[4]
 START = datetime(2026, 1, 5, 9, tzinfo=UTC)
 

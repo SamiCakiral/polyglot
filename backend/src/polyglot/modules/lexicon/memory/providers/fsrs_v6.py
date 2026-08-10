@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
+from math import isfinite
 from threading import Lock
 from typing import Protocol, cast
 
@@ -220,11 +221,16 @@ class FsrsV6Scheduler:
         )
         try:
             value = self._scheduler(policy).get_card_retrievability(card, current)
+            if not isfinite(value) or not 0 <= value <= 1:
+                raise DomainError(
+                    ErrorCode.DEPENDENCY_UNAVAILABLE,
+                    detail="FSRS retrievability out of bounds",
+                )
+            return Decimal(str(value))
         except DomainError:
             raise
         except Exception as error:
             raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE) from error
-        return Decimal(str(value))
 
     @staticmethod
     def _validate(state: ScheduledState) -> None:

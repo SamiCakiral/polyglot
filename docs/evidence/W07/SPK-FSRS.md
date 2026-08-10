@@ -21,6 +21,18 @@ Les deux directions terminent avec les mêmes valeurs de calendrier mais des
 identités distinctes. Le rejeu trié est stable. Une date naïve est refusée par
 la bibliothèque. Le reset ne reprend ni difficulté, ni stabilité, ni historique.
 
+Les cas temporels sont exécutés dans `test_spk_fsrs_temporal.py` et comparés à
+des constantes du JSON brut :
+
+| Cas | Review | Due golden | Stabilité golden |
+|---|---|---|---|
+| anticipée | `2026-01-06T09:10:00Z`, avant due initiale | `2026-01-12T09:10:00Z` | `7.319186097840142` |
+| retardée | `2026-01-25T09:10:00Z`, après due initiale | `2026-02-25T09:10:00Z` | `32.80902069289039` |
+| Europe/Rome | `2026-03-29T09:00:00+02:00` | normalisée `2026-03-29T07:10:00Z` | `2.3065` |
+
+Le harness prouve aussi que le fournisseur refuse directement la date Rome ;
+seule sa normalisation explicite en UTC est acceptée.
+
 ## Décision
 
 `adopt`
