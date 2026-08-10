@@ -1,5 +1,5 @@
 import pytest
-from sqlalchemy import Table, select
+from sqlalchemy import Table, select, text
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -451,3 +451,84 @@ async def test_runtime_cannot_extend_terminal_child_collections(
     with pytest.raises(DBAPIError, match="terminal proof cannot be extended"):
         await session.execute(statement)
     await session.rollback()
+
+
+async def test_service_actor_cannot_open_editorial_command_context(
+    migration_session: AsyncSession,
+    session: AsyncSession,
+) -> None:
+    from polyglot.platform.persistence.models import command_receipts
+
+    await migration_session.execute(
+        command_receipts.insert().values(
+            command_id=IDS["command"],
+            command_type="CreateContentDraft",
+            actor_id=IDS["author"],
+            aggregate_type="content_item",
+            aggregate_id=IDS["content"],
+            idempotency_key="service-cycle",
+            request_fingerprint="a" * 64,
+            expected_version=None,
+            received_at=NOW,
+            result_ref=None,
+            result_payload=None,
+            status="started",
+            expires_at=NOW,
+        )
+    )
+    await migration_session.commit()
+
+    with pytest.raises(DBAPIError, match="human account command context required"):
+        await session.execute(
+            text(
+                "SELECT content.begin_command(:command_id, 'service', :session_id, :pack_id)"
+            ),
+            {
+                "command_id": IDS["command"],
+                "session_id": IDS["session"],
+                "pack_id": IDS["pack"],
+            },
+        )
+
+
+async def test_passed_report_cannot_receive_blocking_finding_in_same_transaction(
+    migration_session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import validation_findings
+
+    await _insert_validated_revision(migration_session)
+    with pytest.raises(DBAPIError, match="sealed validation report"):
+        await migration_session.execute(
+            validation_findings.insert().values(
+                finding_id="019fe003-0000-7000-800b-000000000002",
+                report_id=IDS["report"],
+                ordinal=1,
+                validator_code="sql.late",
+                severity="blocking",
+                path="$.late",
+                message_code="sql.late",
+                redacted_value=None,
+                resolved_by_revision_id=None,
+            )
+        )
+
+
+async def test_published_manifest_cannot_receive_entry_in_same_transaction(
+    migration_session: AsyncSession,
+) -> None:
+    from polyglot.modules.content.persistence import publication_manifest_entries
+
+    await _insert_complete_audit_chain(migration_session)
+    with pytest.raises(DBAPIError, match="sealed publication manifest"):
+        await migration_session.execute(
+            publication_manifest_entries.insert().values(
+                publication_manifest_id=IDS["manifest"],
+                ordinal=2,
+                referenced_revision_id=IDS["replacement"],
+                reference_kind="skill_revision",
+                reference_checksum="f" * 64,
+                reference_provenance_id=IDS["provenance"],
+                reference_rights_ref="CC-BY-4.0",
+                reference_status="published",
+            )
+        )

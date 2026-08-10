@@ -78,6 +78,7 @@ async def _client(identity: object, service: ContentApplicationService) -> Async
 
 def _create_payload(text: str = "Ciao.") -> dict[str, object]:
     return {
+        "pack_id": str(IDS["pack"]),
         "content_type": "dialogue",
         "variety_id": str(VARIETY_ID),
         "payload": {"schema_version": 1, "text": text},
@@ -274,3 +275,50 @@ async def test_http_rejection_is_closed_replayable_and_blocks_publication(http_s
     assert invalid.status_code == 422 and invalid.json()["code"] == "validation_failed"
     for response in (conflict, publish, invalid):
         assert response.headers["content-type"].startswith("application/problem+json")
+
+
+async def test_http_enforces_pack_scope_for_author_reviewer_and_admin(http_services) -> None:
+    identity, service = http_services
+    async with await _client(identity, service) as client:
+        identity.account_id = IDS["replacement"]
+        identity.roles = ("author",)
+        author_denied = await client.post(
+            "/api/v1/authoring/drafts",
+            headers=_headers(key="scope-author-denied"),
+            json=_create_payload(),
+        )
+
+        identity.account_id = IDS["author"]
+        created = await client.post(
+            "/api/v1/authoring/drafts",
+            headers=_headers(key="scope-author-create"),
+            json=_create_payload(),
+        )
+        draft_id = created.json()["content_revision_id"]
+
+        identity.account_id = IDS["replacement"]
+        identity.roles = ("reviewer",)
+        reviewer_read_denied = await client.get(
+            f"/api/v1/authoring/drafts/{draft_id}"
+        )
+        reviewer_validate_denied = await client.post(
+            f"/api/v1/authoring/drafts/{draft_id}:validate",
+            headers=_headers(key="scope-reviewer-denied", version=1),
+            json={"validator_set_revision_id": str(IDS["validator_set"])},
+        )
+
+        identity.roles = ("admin",)
+        admin_read_denied = await client.get(f"/api/v1/authoring/drafts/{draft_id}")
+
+        identity.account_id = IDS["reviewer"]
+        identity.roles = ("reviewer",)
+        reviewer_read_allowed = await client.get(
+            f"/api/v1/authoring/drafts/{draft_id}"
+        )
+
+    assert author_denied.status_code == 403
+    assert created.status_code == 201
+    assert reviewer_read_denied.status_code == 404
+    assert reviewer_validate_denied.status_code == 403
+    assert admin_read_denied.status_code == 404
+    assert reviewer_read_allowed.status_code == 200

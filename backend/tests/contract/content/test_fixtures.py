@@ -94,6 +94,18 @@ def test_fx_content_positive_fixture_covers_editorial_and_failure_oracles() -> N
     assert all(decision.author_id != decision.reviewer_id for decision in fixture.review_decisions)
     assert all(item.source_ref.startswith("FX-CONTENT") for item in fixture.provenance)
 
+    metadata = json.loads((FIXTURE / "fixture-metadata.json").read_text())
+    assert {
+        "idempotent_replay_single_effect",
+        "concurrent_if_match_conflict",
+        "injected_failure_rolls_back",
+        "service_actor_forbidden",
+        "pack_scope_enforced",
+        "sealed_validation_report",
+        "sealed_publication_manifest",
+        "rejection_event_outbox_idempotent_new_revision",
+    } <= set(metadata["oracles"])
+
 
 @pytest.mark.parametrize(
     ("folder", "error_code"),
