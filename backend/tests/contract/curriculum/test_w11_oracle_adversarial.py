@@ -48,7 +48,10 @@ def test_dialogue_lines_and_references_are_executed_not_counted(tmp_path: Path) 
     payload["dialogues"][0]["lexicon_refs"] = ["sense:missing"]
     rewrite_payload(target, "dialogues.json", payload)
 
-    with pytest.raises(CurriculumError, match="module_target_unresolved"):
+    with pytest.raises(
+        CurriculumError,
+        match="fixture_normative_semantic_mismatch:dialogue:dialogue:j1-contact",
+    ):
         load_italian_curriculum_fixture(target)
 
 

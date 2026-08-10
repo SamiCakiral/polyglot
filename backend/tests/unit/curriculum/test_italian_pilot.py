@@ -9,7 +9,13 @@ FIXTURE = Path(__file__).parents[4] / "fixtures" / "canonical" / "FX-MODULE-IT"
 
 def test_pilot_orders_explanation_before_gym_and_j1_recall() -> None:
     report = load_italian_curriculum_fixture(FIXTURE)
-    assert report.grammar_families == ("existence", "identity", "polite-request")
+    assert report.grammar_families == (
+        "existence",
+        "formal-request",
+        "identity",
+        "need",
+        "polite-request",
+    )
     assert report.gym_operations == ("GYM-01", "GYM-03", "GYM-08")
     assert report.recall_edges == ((1, 2), (2, 3))
 
