@@ -4,7 +4,7 @@
   "seed": 9009,
   "clock": "2026-08-10T12:00:00+00:00",
   "payloads": {
-    "primitives.json": "sha256:ff75a6e753868dfef67491019dd22e5ed17e606f7c33651cd61ca1526d9c80ae"
+    "primitives.json": "sha256:936d77e37ca84dc6b488338af3b07b412f07258f6e1906a4317a5f5957a6de18"
   },
   "oracles": [
     "all_core_primitives_closed_contract",

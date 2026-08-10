@@ -77,7 +77,7 @@ def test_core_registry_is_closed_and_fixture_covers_every_core_primitive() -> No
         assert item["answer_kinds"] == [kind.value for kind in spec.answer_kinds]
         assert item["a11y"]["keyboard"] is True
         assert item["a11y"]["screen_reader"] is True
-        assert item["paths"] == ["positive", "negative", "ambiguous", "not_evaluable"]
+        assert {"positive", "negative", "ambiguous", "not_evaluable"}.issubset(item["case_ids"])
 
 
 def test_fixture_payload_is_hash_locked_for_offline_replay() -> None:

@@ -109,6 +109,46 @@ def _freeze(value: JsonValue) -> JsonValue:
     return value
 
 
+@dataclass(frozen=True, slots=True)
+class IdempotencyReceipt:
+    key: str
+    command: str
+    payload: tuple[object, ...]
+
+    def __post_init__(self) -> None:
+        if not self.key:
+            raise _invalid("idempotent commands require a key")
+        object.__setattr__(self, "payload", tuple(self.payload))
+
+
+def _is_replay(
+    receipts: tuple[IdempotencyReceipt, ...],
+    *,
+    key: str,
+    command: str,
+    payload: tuple[object, ...],
+) -> bool:
+    if not key:
+        raise _invalid("idempotent commands require a key")
+    for receipt in receipts:
+        if receipt.key != key:
+            continue
+        if receipt.command == command and receipt.payload == payload:
+            return True
+        raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
+    return False
+
+
+def _receipt(
+    receipts: tuple[IdempotencyReceipt, ...],
+    *,
+    key: str,
+    command: str,
+    payload: tuple[object, ...],
+) -> tuple[IdempotencyReceipt, ...]:
+    return (*receipts, IdempotencyReceipt(key, command, payload))
+
+
 def _normalize(value: str) -> str:
     return " ".join(unicodedata.normalize("NFC", value).casefold().strip().split()).rstrip(".,;:!?")
 
@@ -183,6 +223,17 @@ class ExerciseDefinition:
     status: str = "published"
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "response_kinds", tuple(self.response_kinds))
+        object.__setattr__(
+            self, "language_certification_ids", tuple(self.language_certification_ids)
+        )
+        object.__setattr__(self, "modes", tuple(self.modes))
+        object.__setattr__(
+            self,
+            "target_weights",
+            tuple((str(target), float(weight)) for target, weight in self.target_weights),
+        )
+        object.__setattr__(self, "accessibility_features", tuple(self.accessibility_features))
         _require_uuid7(self.definition_id, "definition_id")
         _require_uuid7(self.revision_id, "revision_id")
         if self.revision_no < 1 or self.status != "published":
@@ -221,6 +272,7 @@ class ExerciseInstance:
     session_plan_revision_id: UUID | None = None
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "stimulus_revision_ids", tuple(self.stimulus_revision_ids))
         _require_uuid7(self.instance_id, "instance_id")
         _require_uuid7(self.language_pack_revision_id, "language_pack_revision_id")
         if self.session_plan_revision_id is not None:
@@ -306,8 +358,18 @@ class CorrectionResult:
     target_coverage: float
     explanation: str
     strategy: str = "manual"
+    criteria_scores: tuple[tuple[str, float], ...] = ()
+    alternatives: tuple[str, ...] = ()
+    errors: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "criteria_scores",
+            tuple((str(criterion), float(score)) for criterion, score in self.criteria_scores),
+        )
+        object.__setattr__(self, "alternatives", tuple(self.alternatives))
+        object.__setattr__(self, "errors", tuple(self.errors))
         if not 0.0 <= self.confidence <= 1.0 or not 0.0 <= self.target_coverage <= 1.0:
             raise _invalid("correction confidence and coverage must be bounded")
 
@@ -360,6 +422,16 @@ class CorrectionStrategy:
     required_criteria: tuple[str, ...] = ()
     passing_score: float = 1.0
     always_ambiguous: bool = False
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "expected", tuple(self.expected))
+        object.__setattr__(
+            self,
+            "expected_traits",
+            tuple((str(name), str(value)) for name, value in self.expected_traits),
+        )
+        object.__setattr__(self, "required_tokens", tuple(self.required_tokens))
+        object.__setattr__(self, "required_criteria", tuple(self.required_criteria))
 
     @classmethod
     def exact_normalized(cls, expected: str) -> CorrectionStrategy:
@@ -499,8 +571,16 @@ class Attempt:
     corrections: tuple[tuple[UUID, CorrectionResult], ...] = ()
     terminal_reason: TerminalReason = TerminalReason.NONE
     idempotency_key: str | None = None
+    idempotency_receipts: tuple[IdempotencyReceipt, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "hint_uses", tuple(self.hint_uses))
+        object.__setattr__(
+            self,
+            "corrections",
+            tuple((correction_id, result) for correction_id, result in self.corrections),
+        )
+        object.__setattr__(self, "idempotency_receipts", tuple(self.idempotency_receipts))
         _require_uuid7(self.attempt_id, "attempt_id")
         _require_uuid7(self.profile_id, "profile_id")
         if self.attempt_no < 1 or self.started_at.tzinfo is None:
@@ -522,41 +602,88 @@ class Attempt:
     ) -> Attempt:
         return cls(ids.new(), instance, profile_id, attempt_no, AttemptStatus.DRAFT, clock.now())
 
-    def use_hint(self, level: HintLevel, *, reason: str, clock: Clock) -> Attempt:
+    def use_hint(
+        self, level: HintLevel, *, reason: str, clock: Clock, idempotency_key: str
+    ) -> Attempt:
+        payload = (level, reason)
+        if _is_replay(
+            self.idempotency_receipts,
+            key=idempotency_key,
+            command="use_hint",
+            payload=payload,
+        ):
+            return self
         if self.status is not AttemptStatus.DRAFT:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
-        return replace(self, hint_uses=(*self.hint_uses, HintUse(level, reason, clock.now())))
+        return replace(
+            self,
+            hint_uses=(*self.hint_uses, HintUse(level, reason, clock.now())),
+            idempotency_receipts=_receipt(
+                self.idempotency_receipts,
+                key=idempotency_key,
+                command="use_hint",
+                payload=payload,
+            ),
+        )
 
-    def reveal(self, *, reason: str, clock: Clock) -> Attempt:
-        return self.use_hint(HintLevel.H4, reason=reason, clock=clock)
+    def reveal(self, *, reason: str, clock: Clock, idempotency_key: str) -> Attempt:
+        return self.use_hint(
+            HintLevel.H4,
+            reason=reason,
+            clock=clock,
+            idempotency_key=idempotency_key,
+        )
 
     def submit(self, *, answer: Answer, idempotency_key: str) -> Attempt:
-        if not idempotency_key:
-            raise _invalid("submission requires an idempotency key")
+        payload = (answer,)
+        if _is_replay(
+            self.idempotency_receipts,
+            key=idempotency_key,
+            command="submit",
+            payload=payload,
+        ):
+            return self
         if self.status is AttemptStatus.SUBMITTED:
-            if self.idempotency_key == idempotency_key and self.answer == answer:
-                return self
             raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
         if self.status is not AttemptStatus.DRAFT:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         if answer.kind not in self.instance.definition.response_kinds:
             raise DomainError(ErrorCode.ANSWER_SHAPE_INVALID)
         return replace(
-            self, status=AttemptStatus.SUBMITTED, answer=answer, idempotency_key=idempotency_key
+            self,
+            status=AttemptStatus.SUBMITTED,
+            answer=answer,
+            idempotency_key=idempotency_key,
+            idempotency_receipts=_receipt(
+                self.idempotency_receipts,
+                key=idempotency_key,
+                command="submit",
+                payload=payload,
+            ),
         )
 
     def force_submit(self, *, reason: TerminalReason, idempotency_key: str) -> Attempt:
-        if (
-            reason is TerminalReason.NONE
-            or not idempotency_key
-            or self.status is not AttemptStatus.DRAFT
+        payload = (reason,)
+        if _is_replay(
+            self.idempotency_receipts,
+            key=idempotency_key,
+            command="force_submit",
+            payload=payload,
         ):
+            return self
+        if reason is TerminalReason.NONE or self.status is not AttemptStatus.DRAFT:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
         return replace(
             self,
             status=AttemptStatus.NOT_EVALUABLE,
             terminal_reason=reason,
             idempotency_key=idempotency_key,
+            idempotency_receipts=_receipt(
+                self.idempotency_receipts,
+                key=idempotency_key,
+                command="force_submit",
+                payload=payload,
+            ),
         )
 
     def start_correction(self) -> Attempt:
@@ -565,17 +692,39 @@ class Attempt:
         return replace(self, status=AttemptStatus.CORRECTING)
 
     def complete_correction(
-        self, *, correction_id: UUID, result: CorrectionResult, clock: Clock
+        self,
+        *,
+        correction_id: UUID,
+        result: CorrectionResult,
+        clock: Clock,
+        idempotency_key: str,
     ) -> Attempt:
         _require_uuid7(correction_id, "correction_id")
+        payload = (correction_id, result)
+        if _is_replay(
+            self.idempotency_receipts,
+            key=idempotency_key,
+            command="complete_correction",
+            payload=payload,
+        ):
+            return self
         if self.status is not AttemptStatus.CORRECTING:
+            if self.corrections:
+                raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
             raise DomainError(ErrorCode.INVALID_TRANSITION)
+        receipts = _receipt(
+            self.idempotency_receipts,
+            key=idempotency_key,
+            command="complete_correction",
+            payload=payload,
+        )
         if result.verdict is CorrectionVerdict.AMBIGUOUS:
             return replace(
                 self,
                 status=AttemptStatus.NOT_EVALUABLE,
                 terminal_reason=TerminalReason.CORRECTION_AMBIGUOUS,
                 corrections=(*self.corrections, (correction_id, result)),
+                idempotency_receipts=receipts,
             )
         if result.verdict is CorrectionVerdict.NOT_EVALUABLE:
             return replace(
@@ -583,6 +732,7 @@ class Attempt:
                 status=AttemptStatus.NOT_EVALUABLE,
                 terminal_reason=TerminalReason.CORRECTION_UNAVAILABLE,
                 corrections=(*self.corrections, (correction_id, result)),
+                idempotency_receipts=receipts,
             )
         if result.verdict is CorrectionVerdict.INVALID_ANSWER:
             return replace(
@@ -590,11 +740,13 @@ class Attempt:
                 status=AttemptStatus.NOT_EVALUABLE,
                 terminal_reason=TerminalReason.ANSWER_INVALID,
                 corrections=(*self.corrections, (correction_id, result)),
+                idempotency_receipts=receipts,
             )
         return replace(
             self,
             status=AttemptStatus.CORRECTED,
             corrections=(*self.corrections, (correction_id, result)),
+            idempotency_receipts=receipts,
         )
 
     def current_credit(self, *, operation_cap: float, target_weight: float) -> float | None:
@@ -621,8 +773,10 @@ class ExerciseBlockRun:
     block_id: UUID
     status: BlockStatus = BlockStatus.PENDING
     reason: str | None = None
+    idempotency_receipts: tuple[IdempotencyReceipt, ...] = ()
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "idempotency_receipts", tuple(self.idempotency_receipts))
         _require_uuid7(self.block_id, "block_id")
 
     @classmethod
@@ -638,14 +792,59 @@ class ExerciseBlockRun:
     def complete(self) -> ExerciseBlockRun:
         return self._transition(BlockStatus.IN_PROGRESS, BlockStatus.COMPLETED)
 
-    def skip(self, *, reason: str) -> ExerciseBlockRun:
-        return self._transition(BlockStatus.AVAILABLE, BlockStatus.SKIPPED, reason)
+    def skip(self, *, reason: str, idempotency_key: str) -> ExerciseBlockRun:
+        return self._idempotent_transition(
+            BlockStatus.AVAILABLE,
+            BlockStatus.SKIPPED,
+            command="skip",
+            key=idempotency_key,
+            reason=reason,
+        )
 
-    def abandon(self) -> ExerciseBlockRun:
-        return self._transition(BlockStatus.IN_PROGRESS, BlockStatus.ABANDONED)
+    def abandon(self, *, idempotency_key: str) -> ExerciseBlockRun:
+        return self._idempotent_transition(
+            BlockStatus.IN_PROGRESS,
+            BlockStatus.ABANDONED,
+            command="abandon",
+            key=idempotency_key,
+        )
 
-    def mark_unavailable(self, *, reason: str) -> ExerciseBlockRun:
-        return self._transition(BlockStatus.AVAILABLE, BlockStatus.UNAVAILABLE, reason)
+    def mark_unavailable(self, *, reason: str, idempotency_key: str) -> ExerciseBlockRun:
+        return self._idempotent_transition(
+            BlockStatus.AVAILABLE,
+            BlockStatus.UNAVAILABLE,
+            command="mark_unavailable",
+            key=idempotency_key,
+            reason=reason,
+        )
+
+    def _idempotent_transition(
+        self,
+        source: BlockStatus,
+        target: BlockStatus,
+        *,
+        command: str,
+        key: str,
+        reason: str | None = None,
+    ) -> ExerciseBlockRun:
+        payload = (reason,)
+        if _is_replay(
+            self.idempotency_receipts,
+            key=key,
+            command=command,
+            payload=payload,
+        ):
+            return self
+        transitioned = self._transition(source, target, reason)
+        return replace(
+            transitioned,
+            idempotency_receipts=_receipt(
+                self.idempotency_receipts,
+                key=key,
+                command=command,
+                payload=payload,
+            ),
+        )
 
     def _transition(
         self, source: BlockStatus, target: BlockStatus, reason: str | None = None
@@ -664,6 +863,7 @@ class CorrectionCase:
     reason: str | None = None
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "correction_history", tuple(self.correction_history))
         for field, value in (("case_id", self.case_id), ("attempt_id", self.attempt_id)):
             _require_uuid7(value, field)
         if not self.correction_history:
