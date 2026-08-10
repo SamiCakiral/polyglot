@@ -19,6 +19,16 @@ def _find_secrets(content: str, scope: str) -> list[str]:
     return [f"{scope}:{label}" for label, pattern in _SECRET_PATTERNS if pattern.search(content)]
 
 
+def _patch_content(patch: str) -> str:
+    content_lines: list[str] = []
+    for line in patch.splitlines():
+        if line.startswith(("+++ ", "--- ")):
+            continue
+        if line.startswith(("+", "-")):
+            content_lines.append(line[1:])
+    return "\n".join(content_lines)
+
+
 def scan_git_repository(root: Path) -> list[str]:
     tracked = subprocess.run(
         ["git", "ls-files", "-z"],
@@ -39,7 +49,7 @@ def scan_git_repository(root: Path) -> list[str]:
             continue
         findings.extend(_find_secrets(content, f"tracked:{relative}"))
 
-    history = subprocess.run(
+    history_patch = subprocess.run(
         ["git", "log", "--format=", "--all", "-p", "--", "."],
         cwd=root,
         capture_output=True,
@@ -47,7 +57,7 @@ def scan_git_repository(root: Path) -> list[str]:
         check=True,
         timeout=30,
     ).stdout
-    findings.extend(_find_secrets(history, "history"))
+    findings.extend(_find_secrets(_patch_content(history_patch), "history"))
     return sorted(set(findings))
 
 
