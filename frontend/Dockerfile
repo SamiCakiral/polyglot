@@ -5,6 +5,7 @@ WORKDIR /workspace
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml /workspace/frontend/
 RUN pnpm --dir frontend install --frozen-lockfile
 COPY contracts /workspace/contracts
+COPY fixtures /workspace/fixtures
 COPY frontend /workspace/frontend
 RUN pnpm --dir frontend build
 
