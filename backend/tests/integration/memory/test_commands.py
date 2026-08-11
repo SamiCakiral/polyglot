@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import replace
 from uuid import UUID
 
 import pytest
@@ -119,6 +120,56 @@ async def test_two_reviews_on_same_version_yield_one_success_and_one_conflict(
     outcomes = await asyncio.gather(invoke(0), invoke(1))
     assert sum(not isinstance(outcome, ErrorCode) for outcome in outcomes) == 1
     assert ErrorCode.VERSION_CONFLICT in outcomes
+
+
+async def test_self_reported_recognition_persists_a_low_confidence_fsrs_review(
+    runtime_factory,
+    migration_session: AsyncSession,
+    review_command,
+) -> None:
+    service = SqlMemoryService(runtime_factory, FsrsV6Scheduler())
+    policy = SchedulerPolicy.default()
+    prompt = await service.create(
+        ACCOUNT_A,
+        replace(
+            create_command(uid(325)),
+            operation="recognition",
+            protocol_id="practice-stack-self-recall",
+        ),
+        policy,
+        idempotency_key="recognition-create",
+    )
+    command = replace(
+        review_command(uid(326), target_revision_id=uid(302)),
+        self_reported=True,
+        certified_operation="recognition",
+        certified_protocol_id="practice-stack-self-recall",
+    )
+
+    reviewed = await service.submit_review(
+        ACCOUNT_A,
+        prompt.prompt.prompt_id,
+        command,
+        policy,
+        expected_version=prompt.prompt.version,
+        idempotency_key="recognition-review",
+    )
+
+    assert reviewed.prompt.version == 2
+    assert reviewed.schedule.reps == 1
+    assert reviewed.reviews[0].low_confidence is True
+    await migration_session.execute(
+        text("SELECT set_config('app.user_id', :account_id, false)"),
+        {"account_id": str(ACCOUNT_A)},
+    )
+    assert await migration_session.scalar(
+        text(
+            "SELECT count(*) FROM memory.memory_reviews "
+            "WHERE prompt_id=:prompt "
+            "AND (payload->>'low_confidence')::boolean IS TRUE"
+        ),
+        {"prompt": prompt.prompt.prompt_id},
+    ) == 1
 
 
 async def test_uncertified_review_is_idempotent_without_learning_event(

@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarRange, Route } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 
+import { useActiveProfile } from "../../app/profile-state";
 import {
   ErrorRegion,
   LoadingRegion,
@@ -12,6 +13,7 @@ import { queryFetch } from "../../lib/api";
 import { modulePresentation } from "./module-presentation";
 
 export function LearnPage() {
+  const { activePack } = useActiveProfile();
   const query = useListLearningModules({
     fetch: queryFetch(),
     query: { retry: false },
@@ -22,7 +24,11 @@ export function LearnPage() {
   return (
     <div className="page-flow">
       <PageHeader
-        eyebrow="Curriculum italien"
+        eyebrow={
+          activePack
+            ? `Curriculum · ${activePack.target_language_tag}`
+            : "Curriculum"
+        }
         title="Apprendre"
         description="Des missions cohérentes sur plusieurs jours, reliées au vocabulaire et aux structures à consolider."
       />
@@ -74,8 +80,8 @@ export function LearnPage() {
           <section className="empty-panel">
             <h2>Aucun module publié</h2>
             <p>
-              Le catalogue est prêt, mais aucun parcours italien n'est encore
-              disponible.
+              Le catalogue est prêt, mais aucun parcours n'est encore
+              disponible pour cette langue.
             </p>
           </section>
         ) : null}
@@ -86,6 +92,10 @@ export function LearnPage() {
 
 export function ModuleDetailPage() {
   const { moduleId = "" } = useParams();
+  const { activePack } = useActiveProfile();
+  const moduleEyebrow = activePack
+    ? `Module · ${activePack.target_language_tag}`
+    : "Module";
   const query = useListLearningModules({
     fetch: queryFetch(),
     query: { retry: false },
@@ -97,7 +107,7 @@ export function ModuleDetailPage() {
     return (
       <div className="page-flow page-flow--narrow">
         <PageHeader
-          eyebrow="Module italien"
+          eyebrow={moduleEyebrow}
           title="Module indisponible"
           description="Ce module n'existe pas dans la révision publiée du catalogue."
         />
@@ -114,7 +124,7 @@ export function ModuleDetailPage() {
   return (
     <div className="page-flow page-flow--narrow">
       <PageHeader
-        eyebrow="Module italien"
+        eyebrow={moduleEyebrow}
         title={presentation.title}
         description={presentation.description}
         action={<StatusPill tone="good">Publié</StatusPill>}

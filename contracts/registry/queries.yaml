@@ -203,6 +203,22 @@
     {
       "method": "GET",
       "route": "/media/tts/capabilities"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/practice-stacks"
+    },
+    {
+      "method": "GET",
+      "route": "/practice-stacks/{stack_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/practice-presets"
+    },
+    {
+      "method": "GET",
+      "route": "/practice-runs/{run_id}"
     }
   ],
   "application_query_names": [

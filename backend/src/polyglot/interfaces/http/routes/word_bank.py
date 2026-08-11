@@ -108,10 +108,20 @@ class RecommendationResponse(ClosedModel):
     proposed_activity: str
 
 
+class KnowledgeStateResponse(ClosedModel):
+    stage: str
+    encounter_count: int
+    recognition_success_count: int
+    recall_success_count: int
+    guided_reuse_success_count: int
+    autonomous_reuse_success_count: int
+
+
 class LexicalProjectionResponse(ClosedModel):
     algorithm_version: str
     modalities: dict[str, ModalityEvidenceResponse]
     gap_reasons: tuple[str, ...]
+    knowledge: KnowledgeStateResponse
     plan: LexicalPlanResponse
     sprint_snapshot_frozen: bool
     debt: LexicalDebtResponse | None
@@ -137,11 +147,21 @@ class WordBankItemResponse(ClosedModel):
     projection: LexicalProjectionResponse | None = None
 
 
+class MentionCandidateResponse(ClosedModel):
+    candidate_id: UUID
+    sense_id: UUID
+    sense_revision_id: UUID
+    label: str
+    definition: str
+    confidence: float
+
+
 class UnresolvedMentionResponse(ClosedModel):
     mention_id: UUID
     encounter_id: UUID
     exact_surface: str
     created_at: str
+    candidates: tuple[MentionCandidateResponse, ...] = ()
 
 
 class WordBankOverviewResponse(ClosedModel):
@@ -346,6 +366,7 @@ def word_bank_router(
             )
 
         if versioned:
+
             async def versioned_endpoint(
                 request: Request,
                 response: Response,
@@ -367,8 +388,10 @@ def word_bank_router(
                     if_match,
                     session_token,
                 )
+
             endpoint: Callable[..., Awaitable[MutationResponse]] = versioned_endpoint
         else:
+
             async def unversioned_endpoint(
                 request: Request,
                 response: Response,
@@ -389,6 +412,7 @@ def word_bank_router(
                     None,
                     session_token,
                 )
+
             endpoint = unversioned_endpoint
 
         endpoint.__name__ = operation_id
@@ -420,19 +444,110 @@ def word_bank_router(
         )
 
     command_specs = (
-        ("POST", "/api/v1/language-profiles/{profile_id}/encounters", "record_lexical_encounter", "RecordLexicalEncounter", "lexical_encounter_recorded", False),
-        ("POST", "/api/v1/lexical-mentions/{mention_id}:resolve", "resolve_mention", "ResolveMention", "mention_resolved", False),
-        ("POST", "/api/v1/language-profiles/{profile_id}/private-lexicon", "add_private_lexical_unit", "AddPrivateLexicalUnit", "private_lexical_unit_added", False),
-        ("POST", "/api/v1/lexical-senses/{sense_id}/personal-relations", "assert_lexical_relation", "AssertLexicalRelation", "lexical_relation_asserted", False),
-        ("POST", "/api/v1/personal-lexical-relations/{relation_id}:retract", "retract_lexical_relation", "RetractLexicalRelation", "lexical_relation_retracted", False),
-        ("POST", "/api/v1/language-profiles/{profile_id}/private-lexicon:merge", "merge_lexical_units", "MergeLexicalUnits", "lexical_units_merged", False),
-        ("POST", "/api/v1/lexical-senses/{sense_id}:split-private", "split_lexical_sense", "SplitLexicalSense", "lexical_sense_split", False),
-        ("DELETE", "/api/v1/lexical-encounters/{encounter_id}/private-context", "delete_private_context", "DeletePrivateContext", "private_context_deleted", False),
-        ("POST", "/api/v1/attempts/{attempt_id}/lexical-gaps", "capture_lexical_gap", "CaptureLexicalGap", "lexical_gap_captured", False),
-        ("PUT", "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration", "declare_lexical_familiarity", "DeclareLexicalFamiliarity", "lexical_familiarity_declared", False),
-        ("PUT", "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference", "set_lexical_learning_preference", "SetLexicalLearningPreference", "lexical_learning_preference_set", True),
-        ("PUT", "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation", "upsert_lexical_annotation", "UpsertLexicalAnnotation", "lexical_annotation_upserted", True),
-        ("DELETE", "/api/v1/lexical-annotations/{annotation_id}", "delete_lexical_annotation", "DeleteLexicalAnnotation", "lexical_annotation_deleted", True),
+        (
+            "POST",
+            "/api/v1/language-profiles/{profile_id}/encounters",
+            "record_lexical_encounter",
+            "RecordLexicalEncounter",
+            "lexical_encounter_recorded",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/lexical-mentions/{mention_id}:resolve",
+            "resolve_mention",
+            "ResolveMention",
+            "mention_resolved",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/language-profiles/{profile_id}/private-lexicon",
+            "add_private_lexical_unit",
+            "AddPrivateLexicalUnit",
+            "private_lexical_unit_added",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/lexical-senses/{sense_id}/personal-relations",
+            "assert_lexical_relation",
+            "AssertLexicalRelation",
+            "lexical_relation_asserted",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/personal-lexical-relations/{relation_id}:retract",
+            "retract_lexical_relation",
+            "RetractLexicalRelation",
+            "lexical_relation_retracted",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/language-profiles/{profile_id}/private-lexicon:merge",
+            "merge_lexical_units",
+            "MergeLexicalUnits",
+            "lexical_units_merged",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/lexical-senses/{sense_id}:split-private",
+            "split_lexical_sense",
+            "SplitLexicalSense",
+            "lexical_sense_split",
+            False,
+        ),
+        (
+            "DELETE",
+            "/api/v1/lexical-encounters/{encounter_id}/private-context",
+            "delete_private_context",
+            "DeletePrivateContext",
+            "private_context_deleted",
+            False,
+        ),
+        (
+            "POST",
+            "/api/v1/attempts/{attempt_id}/lexical-gaps",
+            "capture_lexical_gap",
+            "CaptureLexicalGap",
+            "lexical_gap_captured",
+            False,
+        ),
+        (
+            "PUT",
+            "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/declaration",
+            "declare_lexical_familiarity",
+            "DeclareLexicalFamiliarity",
+            "lexical_familiarity_declared",
+            False,
+        ),
+        (
+            "PUT",
+            "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/preference",
+            "set_lexical_learning_preference",
+            "SetLexicalLearningPreference",
+            "lexical_learning_preference_set",
+            True,
+        ),
+        (
+            "PUT",
+            "/api/v1/language-profiles/{profile_id}/lexical-senses/{sense_id}/annotation",
+            "upsert_lexical_annotation",
+            "UpsertLexicalAnnotation",
+            "lexical_annotation_upserted",
+            True,
+        ),
+        (
+            "DELETE",
+            "/api/v1/lexical-annotations/{annotation_id}",
+            "delete_lexical_annotation",
+            "DeleteLexicalAnnotation",
+            "lexical_annotation_deleted",
+            True,
+        ),
     )
     for spec in command_specs:
         mutation_route(*spec[:5], versioned=bool(spec[5]))
@@ -631,9 +746,7 @@ class SqlWordBankService:
         self._session_factory = session_factory
         self._ids = ids or Uuid7Generator()
         self._attempt_authorizer = attempt_authorizer or SqlAttemptLexicalGapAuthorizer()
-        self._recent_reauth_verifier = (
-            recent_reauth_verifier or SqlRecentReauthenticationVerifier()
-        )
+        self._recent_reauth_verifier = recent_reauth_verifier or SqlRecentReauthenticationVerifier()
 
     async def _set_actor(self, session: AsyncSession, account_id: UUID) -> None:
         await session.execute(
@@ -924,6 +1037,58 @@ class SqlWordBankService:
                         "created": occurred_at,
                     },
                 )
+            if not payload.get("candidates"):
+                automatic_candidates = (
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT DISTINCT ON (sense.sense_id) sense.sense_id "
+                                "FROM language_profiles.learner_language_profiles profile "
+                                "JOIN catalogue.language_pack_revisions pack "
+                                "ON pack.target_variety_id=profile.target_variety_id "
+                                "JOIN catalogue.lexical_unit_revisions unit_revision "
+                                "ON unit_revision.pack_revision_id=pack.pack_revision_id "
+                                "JOIN catalogue.lexical_senses sense "
+                                "ON sense.lexical_unit_id=unit_revision.lexical_unit_id "
+                                "JOIN catalogue.lexical_sense_revisions sense_revision "
+                                "ON sense_revision.sense_id=sense.sense_id "
+                                "AND sense_revision.pack_revision_id=pack.pack_revision_id "
+                                "WHERE profile.profile_id=:profile "
+                                "AND lower(unit_revision.lemma)=lower(:surface) "
+                                "AND pack.status='published' "
+                                "AND unit_revision.status='published' "
+                                "AND sense_revision.status='published' "
+                                "ORDER BY sense.sense_id,pack.revision_no DESC,"
+                                "unit_revision.revision_no DESC,sense_revision.revision_no DESC LIMIT 10"
+                            ),
+                            {
+                                "profile": profile_id,
+                                "surface": str(payload.get("exact_surface", "")),
+                            },
+                        )
+                    )
+                    .scalars()
+                    .all()
+                )
+                confidence = 1.0 if len(automatic_candidates) == 1 else 0.8
+                for sense_id in automatic_candidates:
+                    await session.execute(
+                        text(
+                            "INSERT INTO lexicon.mention_candidates "
+                            "(candidate_id,profile_id,mention_id,sense_id,sense_scope,confidence,"
+                            "source,created_at) VALUES "
+                            "(:candidate,:profile,:mention,:sense,'shared',:confidence,"
+                            "'catalogue_exact_lemma',:created)"
+                        ),
+                        {
+                            "candidate": self._ids.new(),
+                            "profile": profile_id,
+                            "mention": mention_id,
+                            "sense": sense_id,
+                            "confidence": confidence,
+                            "created": occurred_at,
+                        },
+                    )
             return encounter_id, 1
         if command_name == "ResolveMention":
             candidate_id = self._uuid(payload, "candidate_id")
@@ -938,7 +1103,11 @@ class SqlWordBankService:
             ).one_or_none()
             if candidate is None:
                 raise DomainError(ErrorCode.SENSE_AMBIGUOUS)
-            result_id = self._uuid(payload, "resolution_id") if "resolution_id" in payload else self._ids.new()
+            result_id = (
+                self._uuid(payload, "resolution_id")
+                if "resolution_id" in payload
+                else self._ids.new()
+            )
             await session.execute(
                 text(
                     "INSERT INTO lexicon.mention_resolutions "
@@ -946,11 +1115,24 @@ class SqlWordBankService:
                     "confidence,supersedes_resolution_id,created_at,idempotency_key,request_fingerprint) "
                     "VALUES (:id,:profile,:mention,:candidate,:sense,'user',1,NULL,:now,:key,:fp)"
                 ),
-                {"id": result_id, "profile": profile_id, "mention": resource_id, "candidate": candidate_id, "sense": candidate.sense_id, "now": now, "key": idempotency_key, "fp": fingerprint},
+                {
+                    "id": result_id,
+                    "profile": profile_id,
+                    "mention": resource_id,
+                    "candidate": candidate_id,
+                    "sense": candidate.sense_id,
+                    "now": now,
+                    "key": idempotency_key,
+                    "fp": fingerprint,
+                },
             )
             return result_id, 1
         if command_name == "AddPrivateLexicalUnit":
-            result_id = self._uuid(payload, "lexical_unit_id") if "lexical_unit_id" in payload else self._ids.new()
+            result_id = (
+                self._uuid(payload, "lexical_unit_id")
+                if "lexical_unit_id" in payload
+                else self._ids.new()
+            )
             await session.execute(
                 text(
                     "INSERT INTO lexicon.private_lexical_units "
@@ -958,11 +1140,21 @@ class SqlWordBankService:
                     "components,provenance_ref,version,created_at) VALUES "
                     "(:id,:profile,:variety,:type,:lemma,lower(:lemma),:components,'user',1,:now)"
                 ),
-                {"id": result_id, "profile": profile_id, "variety": self._uuid(payload, "variety_id"), "type": str(payload.get("unit_type", "word")), "lemma": str(payload.get("lemma", "")), "components": [UUID(str(item)) for item in payload.get("components", [])], "now": now},
+                {
+                    "id": result_id,
+                    "profile": profile_id,
+                    "variety": self._uuid(payload, "variety_id"),
+                    "type": str(payload.get("unit_type", "word")),
+                    "lemma": str(payload.get("lemma", "")),
+                    "components": [UUID(str(item)) for item in payload.get("components", [])],
+                    "now": now,
+                },
             )
             return result_id, 1
         if command_name == "AssertLexicalRelation":
-            result_id = self._uuid(payload, "relation_id") if "relation_id" in payload else self._ids.new()
+            result_id = (
+                self._uuid(payload, "relation_id") if "relation_id" in payload else self._ids.new()
+            )
             target_sense_id = self._uuid(payload, "target_sense_id")
             await self._assert_sense_visible(session, profile_id, resource_id)
             await self._assert_sense_visible(session, profile_id, target_sense_id)
@@ -973,7 +1165,16 @@ class SqlWordBankService:
                     "direction,provenance_ref,confidence,created_at,version) VALUES "
                     "(:id,:profile,:source,:target,:type,:direction,'user',:confidence,:now,1)"
                 ),
-                {"id": result_id, "profile": profile_id, "source": resource_id, "target": target_sense_id, "type": str(payload.get("relation_type", "association")), "direction": str(payload.get("direction", "directed")), "confidence": float(payload.get("confidence", 1.0)), "now": now},
+                {
+                    "id": result_id,
+                    "profile": profile_id,
+                    "source": resource_id,
+                    "target": target_sense_id,
+                    "type": str(payload.get("relation_type", "association")),
+                    "direction": str(payload.get("direction", "directed")),
+                    "confidence": float(payload.get("confidence", 1.0)),
+                    "now": now,
+                },
             )
             return result_id, 1
         if command_name == "RetractLexicalRelation":
@@ -984,7 +1185,15 @@ class SqlWordBankService:
                     "(retraction_id,profile_id,relation_id,reason,retracted_at,idempotency_key,"
                     "request_fingerprint) VALUES (:id,:profile,:relation,:reason,:now,:key,:fp)"
                 ),
-                {"id": result_id, "profile": profile_id, "relation": resource_id, "reason": str(payload.get("reason", "user_request")), "now": now, "key": idempotency_key, "fp": fingerprint},
+                {
+                    "id": result_id,
+                    "profile": profile_id,
+                    "relation": resource_id,
+                    "reason": str(payload.get("reason", "user_request")),
+                    "now": now,
+                    "key": idempotency_key,
+                    "fp": fingerprint,
+                },
             )
             return resource_id, 1
         if command_name == "MergeLexicalUnits":
@@ -1057,9 +1266,7 @@ class SqlWordBankService:
                 else self._ids.new()
             )
             mention_id = (
-                self._uuid(payload, "mention_id")
-                if "mention_id" in payload
-                else self._ids.new()
+                self._uuid(payload, "mention_id") if "mention_id" in payload else self._ids.new()
             )
             intention = str(payload.get("intended_support_text", "")).strip()
             if not intention:
@@ -1108,11 +1315,7 @@ class SqlWordBankService:
             return encounter_id, 1
         if command_name == "DeclareLexicalFamiliarity":
             result_id = self._ids.new()
-            sense_id = (
-                resource_id
-                if resource_is_path_target
-                else self._uuid(payload, "sense_id")
-            )
+            sense_id = resource_id if resource_is_path_target else self._uuid(payload, "sense_id")
             await self._assert_sense_visible(session, profile_id, sense_id)
             await session.execute(
                 text(
@@ -1121,18 +1324,24 @@ class SqlWordBankService:
                     "supersedes_declaration_id,idempotency_key,request_fingerprint) "
                     "VALUES (:id,:profile,:sense,:value,:now,NULL,:key,:fp)"
                 ),
-                {"id": result_id, "profile": profile_id, "sense": sense_id, "value": str(payload.get("familiarity", "seen")), "now": now, "key": idempotency_key, "fp": fingerprint},
+                {
+                    "id": result_id,
+                    "profile": profile_id,
+                    "sense": sense_id,
+                    "value": str(payload.get("familiarity", "seen")),
+                    "now": now,
+                    "key": idempotency_key,
+                    "fp": fingerprint,
+                },
             )
             return result_id, 1
         if command_name == "SetLexicalLearningPreference":
-            sense_id = (
-                resource_id
-                if resource_is_path_target
-                else self._uuid(payload, "sense_id")
-            )
+            sense_id = resource_id if resource_is_path_target else self._uuid(payload, "sense_id")
             await self._assert_sense_visible(session, profile_id, sense_id)
             current = await session.scalar(
-                text("SELECT version FROM lexicon.lexical_preferences WHERE profile_id=:profile AND sense_id=:sense FOR UPDATE"),
+                text(
+                    "SELECT version FROM lexicon.lexical_preferences WHERE profile_id=:profile AND sense_id=:sense FOR UPDATE"
+                ),
                 {"profile": profile_id, "sense": sense_id},
             )
             current_version = 0 if current is None else int(current)
@@ -1149,27 +1358,48 @@ class SqlWordBankService:
                     "version=EXCLUDED.version,set_at=EXCLUDED.set_at,idempotency_key=EXCLUDED.idempotency_key,"
                     "request_fingerprint=EXCLUDED.request_fingerprint"
                 ),
-                {"id": result_id, "profile": profile_id, "sense": sense_id, "value": str(payload.get("preference", "normal")), "version": version, "now": now, "key": idempotency_key, "fp": fingerprint},
+                {
+                    "id": result_id,
+                    "profile": profile_id,
+                    "sense": sense_id,
+                    "value": str(payload.get("preference", "normal")),
+                    "version": version,
+                    "now": now,
+                    "key": idempotency_key,
+                    "fp": fingerprint,
+                },
             )
             return result_id, version
         if command_name == "UpsertLexicalAnnotation":
             adapted = (
-                {**payload, "sense_id": str(resource_id)}
-                if resource_is_path_target
-                else payload
+                {**payload, "sense_id": str(resource_id)} if resource_is_path_target else payload
             )
             await self._assert_sense_visible(session, profile_id, self._uuid(adapted, "sense_id"))
-            return await self._upsert_annotation(session, profile_id, adapted, expected_version, idempotency_key, fingerprint, now)
+            return await self._upsert_annotation(
+                session, profile_id, adapted, expected_version, idempotency_key, fingerprint, now
+            )
         if command_name == "DeleteLexicalAnnotation":
-            current = await session.scalar(text("SELECT version FROM lexicon.lexical_annotations WHERE annotation_id=:id AND profile_id=:profile FOR UPDATE"), {"id": resource_id, "profile": profile_id})
+            current = await session.scalar(
+                text(
+                    "SELECT version FROM lexicon.lexical_annotations WHERE annotation_id=:id AND profile_id=:profile FOR UPDATE"
+                ),
+                {"id": resource_id, "profile": profile_id},
+            )
             if current is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             if expected_version != int(current):
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
             version = int(current) + 1
-            await session.execute(text("UPDATE lexicon.lexical_annotations SET version=:version,updated_at=:now,deleted_at=:now WHERE annotation_id=:id"), {"version": version, "now": now, "id": resource_id})
+            await session.execute(
+                text(
+                    "UPDATE lexicon.lexical_annotations SET version=:version,updated_at=:now,deleted_at=:now WHERE annotation_id=:id"
+                ),
+                {"version": version, "now": now, "id": resource_id},
+            )
             return resource_id, version
-        raise DomainError(ErrorCode.VALIDATION_FAILED, detail=f"{command_name} payload adapter pending")
+        raise DomainError(
+            ErrorCode.VALIDATION_FAILED, detail=f"{command_name} payload adapter pending"
+        )
 
     async def _assert_sense_visible(
         self, session: AsyncSession, profile_id: UUID, sense_id: UUID
@@ -1186,10 +1416,24 @@ class SqlWordBankService:
         if visible is not True:
             raise DomainError(ErrorCode.NOT_FOUND)
 
-    async def _upsert_annotation(self, session: AsyncSession, profile_id: UUID, payload: dict[str, Any], expected_version: int | None, idempotency_key: str, fingerprint: str, now: datetime) -> tuple[UUID, int]:
+    async def _upsert_annotation(
+        self,
+        session: AsyncSession,
+        profile_id: UUID,
+        payload: dict[str, Any],
+        expected_version: int | None,
+        idempotency_key: str,
+        fingerprint: str,
+        now: datetime,
+    ) -> tuple[UUID, int]:
         sense_id = self._uuid(payload, "sense_id")
         row = (
-            await session.execute(text("SELECT annotation_id,version FROM lexicon.lexical_annotations WHERE profile_id=:profile AND sense_id=:sense FOR UPDATE"), {"profile": profile_id, "sense": sense_id})
+            await session.execute(
+                text(
+                    "SELECT annotation_id,version FROM lexicon.lexical_annotations WHERE profile_id=:profile AND sense_id=:sense FOR UPDATE"
+                ),
+                {"profile": profile_id, "sense": sense_id},
+            )
         ).one_or_none()
         current_version = 0 if row is None else int(row.version)
         if expected_version != current_version:
@@ -1197,31 +1441,65 @@ class SqlWordBankService:
         annotation_id = self._ids.new() if row is None else UUID(str(row.annotation_id))
         version = current_version + 1
         if row is None:
-            await session.execute(text("INSERT INTO lexicon.lexical_annotations (annotation_id,profile_id,sense_id,version,created_at,updated_at) VALUES (:id,:profile,:sense,:version,:now,:now)"), {"id": annotation_id, "profile": profile_id, "sense": sense_id, "version": version, "now": now})
+            await session.execute(
+                text(
+                    "INSERT INTO lexicon.lexical_annotations (annotation_id,profile_id,sense_id,version,created_at,updated_at) VALUES (:id,:profile,:sense,:version,:now,:now)"
+                ),
+                {
+                    "id": annotation_id,
+                    "profile": profile_id,
+                    "sense": sense_id,
+                    "version": version,
+                    "now": now,
+                },
+            )
         else:
-            await session.execute(text("UPDATE lexicon.lexical_annotations SET version=:version,updated_at=:now,deleted_at=NULL WHERE annotation_id=:id"), {"version": version, "now": now, "id": annotation_id})
-        await session.execute(text("INSERT INTO lexicon.lexical_annotation_revisions (annotation_revision_id,profile_id,annotation_id,version,body,created_at,idempotency_key,request_fingerprint) VALUES (:revision,:profile,:annotation,:version,:body,:now,:key,:fp)"), {"revision": self._ids.new(), "profile": profile_id, "annotation": annotation_id, "version": version, "body": str(payload.get("body", "")), "now": now, "key": idempotency_key, "fp": fingerprint})
+            await session.execute(
+                text(
+                    "UPDATE lexicon.lexical_annotations SET version=:version,updated_at=:now,deleted_at=NULL WHERE annotation_id=:id"
+                ),
+                {"version": version, "now": now, "id": annotation_id},
+            )
+        await session.execute(
+            text(
+                "INSERT INTO lexicon.lexical_annotation_revisions (annotation_revision_id,profile_id,annotation_id,version,body,created_at,idempotency_key,request_fingerprint) VALUES (:revision,:profile,:annotation,:version,:body,:now,:key,:fp)"
+            ),
+            {
+                "revision": self._ids.new(),
+                "profile": profile_id,
+                "annotation": annotation_id,
+                "version": version,
+                "body": str(payload.get("body", "")),
+                "now": now,
+                "key": idempotency_key,
+                "fp": fingerprint,
+            },
+        )
         return annotation_id, version
 
     async def _projection_evidence(
         self, session: AsyncSession, profile_id: UUID
     ) -> tuple[Evidence, ...]:
         rows = (
-            await session.execute(
-                text(
-                    "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
-                    "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
-                    "ORDER BY mention_id,created_at DESC,resolution_id DESC) "
-                    "SELECT latest.sense_id,e.lexical_role,e.modality,e.operation,e.help_state,"
-                    "e.result_state,e.source_ref,e.correction_ref,e.correction_confidence "
-                    "FROM latest JOIN lexicon.lexical_mentions m ON m.profile_id=:profile "
-                    "AND m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e "
-                    "ON e.profile_id=:profile AND e.encounter_id=m.encounter_id "
-                    "ORDER BY e.occurred_at,e.encounter_id,latest.sense_id"
-                ),
-                {"profile": profile_id},
+            (
+                await session.execute(
+                    text(
+                        "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
+                        "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
+                        "ORDER BY mention_id,created_at DESC,resolution_id DESC) "
+                        "SELECT latest.sense_id,e.lexical_role,e.modality,e.operation,e.help_state,"
+                        "e.result_state,e.source_ref,e.correction_ref,e.correction_confidence "
+                        "FROM latest JOIN lexicon.lexical_mentions m ON m.profile_id=:profile "
+                        "AND m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e "
+                        "ON e.profile_id=:profile AND e.encounter_id=m.encounter_id "
+                        "ORDER BY e.occurred_at,e.encounter_id,latest.sense_id"
+                    ),
+                    {"profile": profile_id},
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         states_by_sense: dict[UUID, set[str]] = {}
         for row in rows:
             states_by_sense.setdefault(UUID(str(row["sense_id"])), set()).add(
@@ -1246,8 +1524,7 @@ class SqlWordBankService:
                 retention_correct=(
                     str(row["result_state"]) == "success"
                     and str(row["help_state"]) == "none"
-                    and str(row["operation"])
-                    in {"recall", "retrieval", "inversion"}
+                    and str(row["operation"]) in {"recall", "retrieval", "inversion"}
                 ),
                 contradiction=len(states_by_sense[UUID(str(row["sense_id"]))]) > 1,
             )
@@ -1269,14 +1546,22 @@ class SqlWordBankService:
                 for modality, value in rebuilt.projection.modalities.items()
             },
             gap_reasons=rebuilt.projection.gap_reasons,
-            plan=LexicalPlanResponse(
-                role=rebuilt.plan.role, reason=rebuilt.plan.reason
+            knowledge=KnowledgeStateResponse(
+                stage=rebuilt.projection.knowledge.stage,
+                encounter_count=rebuilt.projection.knowledge.encounter_count,
+                recognition_success_count=(rebuilt.projection.knowledge.recognition_success_count),
+                recall_success_count=rebuilt.projection.knowledge.recall_success_count,
+                guided_reuse_success_count=(
+                    rebuilt.projection.knowledge.guided_reuse_success_count
+                ),
+                autonomous_reuse_success_count=(
+                    rebuilt.projection.knowledge.autonomous_reuse_success_count
+                ),
             ),
+            plan=LexicalPlanResponse(role=rebuilt.plan.role, reason=rebuilt.plan.reason),
             sprint_snapshot_frozen=rebuilt.sprint_snapshot.frozen,
             debt=(
-                LexicalDebtResponse(
-                    due_on=rebuilt.debt.due_on, resolved=rebuilt.debt.resolved
-                )
+                LexicalDebtResponse(due_on=rebuilt.debt.due_on, resolved=rebuilt.debt.resolved)
                 if rebuilt.debt is not None
                 else None
             ),
@@ -1303,7 +1588,15 @@ class SqlWordBankService:
             ),
         )
 
-    async def get_word_bank(self, *, account_id: UUID, profile_id: UUID, limit: int, cursor: str | None, reference_set_code: str | None) -> WordBankOverviewResponse:
+    async def get_word_bank(
+        self,
+        *,
+        account_id: UUID,
+        profile_id: UUID,
+        limit: int,
+        cursor: str | None,
+        reference_set_code: str | None,
+    ) -> WordBankOverviewResponse:
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
             await self._assert_owner(session, account_id, profile_id)
@@ -1320,36 +1613,40 @@ class SqlWordBankService:
                 if reference is None:
                     raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
                 rows = (
-                    await session.execute(
-                        text(
-                            "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
-                            "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
-                            "ORDER BY mention_id,created_at DESC,resolution_id DESC), observed AS ("
-                            "SELECT latest.sense_id,count(*) AS encounters,min(e.occurred_at) AS first_at,"
-                            "max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m "
-                            "ON m.profile_id=:profile AND m.mention_id=latest.mention_id "
-                            "JOIN lexicon.lexical_encounters e ON e.profile_id=:profile "
-                            "AND e.encounter_id=m.encounter_id GROUP BY latest.sense_id) "
-                            "SELECT entry.sense_id,entry.label,entry.ordinal,observed.encounters,"
-                            "(SELECT sense_revision_id FROM catalogue.lexical_sense_revisions "
-                            "WHERE sense_id=entry.sense_id AND status='published' "
-                            "ORDER BY revision_no DESC LIMIT 1) AS sense_revision_id,"
-                            "(SELECT definition FROM catalogue.lexical_sense_revisions "
-                            "WHERE sense_id=entry.sense_id AND status='published' "
-                            "ORDER BY revision_no DESC LIMIT 1) AS definition,"
-                            "observed.first_at,observed.last_at,(SELECT familiarity FROM "
-                            "lexicon.lexical_declarations declaration WHERE declaration.profile_id=:profile "
-                            "AND declaration.sense_id=entry.sense_id ORDER BY declaration.declared_at DESC,"
-                            "declaration.declaration_id DESC LIMIT 1) AS familiarity,(SELECT preference "
-                            "FROM lexicon.lexical_preferences preference WHERE preference.profile_id=:profile "
-                            "AND preference.sense_id=entry.sense_id) AS preference "
-                            "FROM lexicon.lexical_reference_entries entry "
-                            "LEFT JOIN observed ON observed.sense_id=entry.sense_id "
-                            "WHERE entry.reference_set_id=:reference ORDER BY entry.ordinal,entry.sense_id"
-                        ),
-                        {"profile": profile_id, "reference": reference.reference_set_id},
+                    (
+                        await session.execute(
+                            text(
+                                "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
+                                "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
+                                "ORDER BY mention_id,created_at DESC,resolution_id DESC), observed AS ("
+                                "SELECT latest.sense_id,count(*) AS encounters,min(e.occurred_at) AS first_at,"
+                                "max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m "
+                                "ON m.profile_id=:profile AND m.mention_id=latest.mention_id "
+                                "JOIN lexicon.lexical_encounters e ON e.profile_id=:profile "
+                                "AND e.encounter_id=m.encounter_id GROUP BY latest.sense_id) "
+                                "SELECT entry.sense_id,entry.label,entry.ordinal,observed.encounters,"
+                                "(SELECT sense_revision_id FROM catalogue.lexical_sense_revisions "
+                                "WHERE sense_id=entry.sense_id AND status='published' "
+                                "ORDER BY revision_no DESC LIMIT 1) AS sense_revision_id,"
+                                "(SELECT definition FROM catalogue.lexical_sense_revisions "
+                                "WHERE sense_id=entry.sense_id AND status='published' "
+                                "ORDER BY revision_no DESC LIMIT 1) AS definition,"
+                                "observed.first_at,observed.last_at,(SELECT familiarity FROM "
+                                "lexicon.lexical_declarations declaration WHERE declaration.profile_id=:profile "
+                                "AND declaration.sense_id=entry.sense_id ORDER BY declaration.declared_at DESC,"
+                                "declaration.declaration_id DESC LIMIT 1) AS familiarity,(SELECT preference "
+                                "FROM lexicon.lexical_preferences preference WHERE preference.profile_id=:profile "
+                                "AND preference.sense_id=entry.sense_id) AS preference "
+                                "FROM lexicon.lexical_reference_entries entry "
+                                "LEFT JOIN observed ON observed.sense_id=entry.sense_id "
+                                "WHERE entry.reference_set_id=:reference ORDER BY entry.ordinal,entry.sense_id"
+                            ),
+                            {"profile": profile_id, "reference": reference.reference_set_id},
+                        )
                     )
-                ).mappings().all()
+                    .mappings()
+                    .all()
+                )
                 source = tuple(
                     WordBankItem(
                         UUID(str(row["sense_id"])),
@@ -1400,17 +1697,13 @@ class SqlWordBankService:
                             else "unobserved"
                         ),
                         familiarity_declaration=by_id[item.sense_id]["familiarity"],
-                        learning_preference=str(
-                            by_id[item.sense_id]["preference"] or "normal"
-                        ),
+                        learning_preference=str(by_id[item.sense_id]["preference"] or "normal"),
                         reasons=(
                             ("encountered",)
                             if by_id[item.sense_id]["encounters"] is not None
                             else ("absence_of_evidence",)
                         ),
-                        projection=self._projection_response(
-                            rebuilt_by_id[item.sense_id]
-                        ),
+                        projection=self._projection_response(rebuilt_by_id[item.sense_id]),
                     )
                     for item in page.items
                 )
@@ -1426,20 +1719,62 @@ class SqlWordBankService:
                     reference_coverage_count=coverage,
                     reference_total_count=len(rows),
                     unresolved_mentions=unresolved_mentions,
-                    projection_contracts=tuple(
-                        f"WB-{number:02d}" for number in range(1, 13)
-                    ),
+                    projection_contracts=tuple(f"WB-{number:02d}" for number in range(1, 13)),
                 )
             rows = (
-                await session.execute(text("WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id FROM lexicon.mention_resolutions WHERE profile_id=:profile ORDER BY mention_id,created_at DESC,resolution_id DESC) SELECT latest.sense_id,min(e.exact_surface) AS label,count(*) AS encounters,min(e.occurred_at) AS first_at,max(e.occurred_at) AS last_at FROM latest JOIN lexicon.lexical_mentions m ON m.mention_id=latest.mention_id JOIN lexicon.lexical_encounters e ON e.encounter_id=m.encounter_id GROUP BY latest.sense_id ORDER BY min(e.exact_surface),latest.sense_id"), {"profile": profile_id})
-            ).mappings().all()
-            source = tuple(WordBankItem(UUID(str(row["sense_id"])), str(row["label"]), index, ("encounter",)) for index, row in enumerate(rows, 1))
+                (
+                    await session.execute(
+                        text(
+                            "WITH latest AS (SELECT DISTINCT ON (mention_id) mention_id,sense_id "
+                            "FROM lexicon.mention_resolutions WHERE profile_id=:profile "
+                            "ORDER BY mention_id,created_at DESC,resolution_id DESC) "
+                            "SELECT latest.sense_id,min(e.exact_surface) AS label,count(*) AS encounters,"
+                            "min(e.occurred_at) AS first_at,max(e.occurred_at) AS last_at,"
+                            "catalogue_revision.sense_revision_id,catalogue_revision.definition "
+                            "FROM latest JOIN lexicon.lexical_mentions m "
+                            "ON m.profile_id=:profile AND m.mention_id=latest.mention_id "
+                            "JOIN lexicon.lexical_encounters e "
+                            "ON e.profile_id=:profile AND e.encounter_id=m.encounter_id "
+                            "LEFT JOIN LATERAL (SELECT revision.sense_revision_id,revision.definition "
+                            "FROM catalogue.lexical_sense_revisions revision "
+                            "WHERE revision.sense_id=latest.sense_id AND revision.status='published' "
+                            "ORDER BY revision.revision_no DESC LIMIT 1) catalogue_revision ON true "
+                            "GROUP BY latest.sense_id,catalogue_revision.sense_revision_id,"
+                            "catalogue_revision.definition ORDER BY min(e.exact_surface),latest.sense_id"
+                        ),
+                        {"profile": profile_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            source = tuple(
+                WordBankItem(UUID(str(row["sense_id"])), str(row["label"]), index, ("encounter",))
+                for index, row in enumerate(rows, 1)
+            )
             page = paginate_word_bank(source, limit=limit, cursor=cursor)
             by_id = {UUID(str(row["sense_id"])): row for row in rows}
+            evidence = await self._projection_evidence(session, profile_id)
+            rebuilt_by_id = {
+                item.projection.sense_id: item
+                for item in rebuild_word_bank_projection(
+                    tuple(by_id), evidence, as_of=datetime.now(UTC).date()
+                )
+            }
             items = tuple(
                 WordBankItemResponse(
                     sense_id=item.sense_id,
+                    sense_revision_id=(
+                        UUID(str(by_id[item.sense_id]["sense_revision_id"]))
+                        if by_id[item.sense_id]["sense_revision_id"] is not None
+                        else None
+                    ),
                     label=item.label,
+                    definition=(
+                        str(by_id[item.sense_id]["definition"])
+                        if by_id[item.sense_id]["definition"] is not None
+                        else None
+                    ),
                     encounter_count=int(by_id[item.sense_id]["encounters"]),
                     first_encountered_at=by_id[item.sense_id]["first_at"].isoformat(),
                     last_encountered_at=by_id[item.sense_id]["last_at"].isoformat(),
@@ -1447,59 +1782,145 @@ class SqlWordBankService:
                     familiarity_declaration=None,
                     learning_preference="normal",
                     reasons=("encountered",),
+                    projection=self._projection_response(rebuilt_by_id[item.sense_id]),
                 )
                 for item in page.items
             )
             unresolved_mentions = await self._unresolved_mentions(session, profile_id)
-            return WordBankOverviewResponse(items=items, next_cursor=page.next_cursor, encountered_sense_count=len(rows), unresolved_mention_count=len(unresolved_mentions), reference_set_code=None, reference_revision=None, reference_coverage_count=None, reference_total_count=None, unresolved_mentions=unresolved_mentions)
+            return WordBankOverviewResponse(
+                items=items,
+                next_cursor=page.next_cursor,
+                encountered_sense_count=len(rows),
+                unresolved_mention_count=len(unresolved_mentions),
+                reference_set_code=None,
+                reference_revision=None,
+                reference_coverage_count=None,
+                reference_total_count=None,
+                unresolved_mentions=unresolved_mentions,
+            )
 
     async def _unresolved_mentions(
         self, session: AsyncSession, profile_id: UUID
     ) -> tuple[UnresolvedMentionResponse, ...]:
         rows = (
-            await session.execute(
-                text(
-                    "SELECT m.mention_id,m.encounter_id,m.exact_surface,m.created_at "
-                    "FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile "
-                    "AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r "
-                    "WHERE r.profile_id=:profile AND r.mention_id=m.mention_id) "
-                    "ORDER BY m.created_at,m.mention_id LIMIT 100"
-                ),
-                {"profile": profile_id},
+            (
+                await session.execute(
+                    text(
+                        "SELECT m.mention_id,m.encounter_id,m.exact_surface,m.created_at "
+                        "FROM lexicon.lexical_mentions m WHERE m.profile_id=:profile "
+                        "AND NOT EXISTS (SELECT 1 FROM lexicon.mention_resolutions r "
+                        "WHERE r.profile_id=:profile AND r.mention_id=m.mention_id) "
+                        "ORDER BY m.created_at,m.mention_id LIMIT 100"
+                    ),
+                    {"profile": profile_id},
+                )
             )
-        ).mappings().all()
-        return tuple(
-            UnresolvedMentionResponse(
-                mention_id=UUID(str(row["mention_id"])),
-                encounter_id=UUID(str(row["encounter_id"])),
-                exact_surface=str(row["exact_surface"]),
-                created_at=row["created_at"].isoformat(),
-            )
-            for row in rows
+            .mappings()
+            .all()
         )
+        result: list[UnresolvedMentionResponse] = []
+        for row in rows:
+            candidate_rows = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT candidate.candidate_id,candidate.sense_id,candidate.confidence,"
+                            "sense_revision.sense_revision_id,unit_revision.lemma,"
+                            "sense_revision.definition FROM lexicon.mention_candidates candidate "
+                            "JOIN catalogue.lexical_senses sense "
+                            "ON sense.sense_id=candidate.sense_id "
+                            "JOIN LATERAL (SELECT revision.sense_revision_id,revision.definition "
+                            "FROM catalogue.lexical_sense_revisions revision "
+                            "WHERE revision.sense_id=sense.sense_id AND revision.status='published' "
+                            "ORDER BY revision.revision_no DESC LIMIT 1) sense_revision ON true "
+                            "JOIN LATERAL (SELECT revision.lemma "
+                            "FROM catalogue.lexical_unit_revisions revision "
+                            "WHERE revision.lexical_unit_id=sense.lexical_unit_id "
+                            "AND revision.status='published' "
+                            "ORDER BY revision.revision_no DESC LIMIT 1) unit_revision ON true "
+                            "WHERE candidate.profile_id=:profile AND candidate.mention_id=:mention "
+                            "ORDER BY candidate.confidence DESC,candidate.candidate_id LIMIT 10"
+                        ),
+                        {"profile": profile_id, "mention": row["mention_id"]},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            result.append(
+                UnresolvedMentionResponse(
+                    mention_id=UUID(str(row["mention_id"])),
+                    encounter_id=UUID(str(row["encounter_id"])),
+                    exact_surface=str(row["exact_surface"]),
+                    created_at=row["created_at"].isoformat(),
+                    candidates=tuple(
+                        MentionCandidateResponse(
+                            candidate_id=UUID(str(candidate["candidate_id"])),
+                            sense_id=UUID(str(candidate["sense_id"])),
+                            sense_revision_id=UUID(str(candidate["sense_revision_id"])),
+                            label=str(candidate["lemma"]),
+                            definition=str(candidate["definition"]),
+                            confidence=float(candidate["confidence"]),
+                        )
+                        for candidate in candidate_rows
+                    ),
+                )
+            )
+        return tuple(result)
 
-    async def get_sense(self, *, account_id: UUID, profile_id: UUID, sense_id: UUID, depth: int, edge_types: tuple[str, ...], max_nodes: int) -> SenseNeighborhoodResponse:
+    async def get_sense(
+        self,
+        *,
+        account_id: UUID,
+        profile_id: UUID,
+        sense_id: UUID,
+        depth: int,
+        edge_types: tuple[str, ...],
+        max_nodes: int,
+    ) -> SenseNeighborhoodResponse:
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
             await self._assert_owner(session, account_id, profile_id)
             row = (
-                await session.execute(text("SELECT sense.sense_id,revision.definition,unit_revision.lemma FROM catalogue.lexical_senses sense JOIN catalogue.lexical_sense_revisions revision ON revision.sense_id=sense.sense_id JOIN catalogue.lexical_unit_revisions unit_revision ON unit_revision.lexical_unit_id=sense.lexical_unit_id WHERE sense.sense_id=:sense ORDER BY revision.revision_no DESC,unit_revision.revision_no DESC LIMIT 1"), {"sense": sense_id})
-            ).mappings().one_or_none()
-            if row is None:
-                row = (
-                    await session.execute(text("SELECT sense_id,definition,(SELECT lemma FROM lexicon.private_lexical_units unit WHERE unit.profile_id=:profile AND unit.lexical_unit_id=sense.lexical_unit_id) AS lemma FROM lexicon.private_lexical_senses sense WHERE profile_id=:profile AND sense_id=:sense"), {"profile": profile_id, "sense": sense_id})
-                ).mappings().one_or_none()
-            if row is None:
-                row = (
+                (
                     await session.execute(
                         text(
-                            "SELECT sense_id,definition,label AS lemma FROM "
-                            "lexicon.lexical_reference_entries WHERE sense_id=:sense "
-                            "ORDER BY reference_set_id LIMIT 1"
+                            "SELECT sense.sense_id,revision.definition,unit_revision.lemma FROM catalogue.lexical_senses sense JOIN catalogue.lexical_sense_revisions revision ON revision.sense_id=sense.sense_id JOIN catalogue.lexical_unit_revisions unit_revision ON unit_revision.lexical_unit_id=sense.lexical_unit_id WHERE sense.sense_id=:sense ORDER BY revision.revision_no DESC,unit_revision.revision_no DESC LIMIT 1"
                         ),
                         {"sense": sense_id},
                     )
-                ).mappings().one_or_none()
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if row is None:
+                row = (
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT sense_id,definition,(SELECT lemma FROM lexicon.private_lexical_units unit WHERE unit.profile_id=:profile AND unit.lexical_unit_id=sense.lexical_unit_id) AS lemma FROM lexicon.private_lexical_senses sense WHERE profile_id=:profile AND sense_id=:sense"
+                            ),
+                            {"profile": profile_id, "sense": sense_id},
+                        )
+                    )
+                    .mappings()
+                    .one_or_none()
+                )
+            if row is None:
+                row = (
+                    (
+                        await session.execute(
+                            text(
+                                "SELECT sense_id,definition,label AS lemma FROM "
+                                "lexicon.lexical_reference_entries WHERE sense_id=:sense "
+                                "ORDER BY reference_set_id LIMIT 1"
+                            ),
+                            {"sense": sense_id},
+                        )
+                    )
+                    .mappings()
+                    .one_or_none()
+                )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             node_rows = (
@@ -1537,17 +1958,48 @@ class SqlWordBankService:
                     {"profile": profile_id, "nodes": list(nodes), "types": list(edge_types)},
                 )
             ).all()
-            graph = tuple(GraphEdge(UUID(str(item.source_sense_id)), UUID(str(item.target_sense_id)), str(item.relation_type)) for item in edge_rows)
-            neighborhood = bounded_neighborhood(sense_id, graph, depth=depth, edge_types=frozenset(edge_types), max_nodes=max_nodes)
-            return SenseNeighborhoodResponse(sense_id=sense_id, label=str(row["lemma"]), definition=str(row["definition"]), nodes=nodes, edges=tuple({"source": str(edge.source_sense_id), "target": str(edge.target_sense_id), "type": edge.edge_type} for edge in neighborhood.edges), truncated=len(nodes) == max_nodes or neighborhood.truncated, version=1)
+            graph = tuple(
+                GraphEdge(
+                    UUID(str(item.source_sense_id)),
+                    UUID(str(item.target_sense_id)),
+                    str(item.relation_type),
+                )
+                for item in edge_rows
+            )
+            neighborhood = bounded_neighborhood(
+                sense_id, graph, depth=depth, edge_types=frozenset(edge_types), max_nodes=max_nodes
+            )
+            return SenseNeighborhoodResponse(
+                sense_id=sense_id,
+                label=str(row["lemma"]),
+                definition=str(row["definition"]),
+                nodes=nodes,
+                edges=tuple(
+                    {
+                        "source": str(edge.source_sense_id),
+                        "target": str(edge.target_sense_id),
+                        "type": edge.edge_type,
+                    }
+                    for edge in neighborhood.edges
+                ),
+                truncated=len(nodes) == max_nodes or neighborhood.truncated,
+                version=1,
+            )
 
-    async def list_annotations(self, *, account_id: UUID, profile_id: UUID, limit: int, cursor: str | None) -> LexicalAnnotationPageResponse:
+    async def list_annotations(
+        self, *, account_id: UUID, profile_id: UUID, limit: int, cursor: str | None
+    ) -> LexicalAnnotationPageResponse:
         async with self._session_factory() as session:
             await self._set_actor(session, account_id)
             await self._assert_owner(session, account_id, profile_id)
             after = None if cursor is None else UUID(cursor)
             rows = (
-                await session.execute(text("SELECT annotation.annotation_id,annotation.sense_id,annotation.version,revision.body FROM lexicon.lexical_annotations annotation JOIN LATERAL (SELECT body FROM lexicon.lexical_annotation_revisions WHERE annotation_id=annotation.annotation_id ORDER BY version DESC LIMIT 1) revision ON true WHERE annotation.profile_id=:profile AND annotation.deleted_at IS NULL AND (:after::uuid IS NULL OR annotation.annotation_id>:after) ORDER BY annotation.annotation_id LIMIT :fetch"), {"profile": profile_id, "after": after, "fetch": limit + 1})
+                await session.execute(
+                    text(
+                        "SELECT annotation.annotation_id,annotation.sense_id,annotation.version,revision.body FROM lexicon.lexical_annotations annotation JOIN LATERAL (SELECT body FROM lexicon.lexical_annotation_revisions WHERE annotation_id=annotation.annotation_id ORDER BY version DESC LIMIT 1) revision ON true WHERE annotation.profile_id=:profile AND annotation.deleted_at IS NULL AND (:after::uuid IS NULL OR annotation.annotation_id>:after) ORDER BY annotation.annotation_id LIMIT :fetch"
+                    ),
+                    {"profile": profile_id, "after": after, "fetch": limit + 1},
+                )
             ).all()
             page_rows = rows[:limit]
             next_cursor = str(page_rows[-1].annotation_id) if len(rows) > limit else None

@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
+from enum import StrEnum
 from types import MappingProxyType
 from uuid import UUID
 
@@ -48,12 +49,81 @@ class ModalityEvidence:
     success_count: int
 
 
+class KnowledgeStage(StrEnum):
+    UNENCOUNTERED = "unencountered"
+    ENCOUNTERED = "encountered"
+    RECOGNIZED = "recognized"
+    RECALLED = "recalled"
+    GUIDED_REUSE = "guided_reuse"
+    AUTONOMOUS_REUSE = "autonomous_reuse"
+
+
+@dataclass(frozen=True, slots=True)
+class KnowledgeState:
+    stage: KnowledgeStage
+    encounter_count: int
+    recognition_success_count: int
+    recall_success_count: int
+    guided_reuse_success_count: int
+    autonomous_reuse_success_count: int
+
+
 @dataclass(frozen=True, slots=True)
 class LexicalProjection:
     sense_id: UUID
     algorithm_version: str
     modalities: Mapping[str, ModalityEvidence]
     gap_reasons: tuple[str, ...]
+    knowledge: KnowledgeState
+
+
+_RECOGNITION_OPERATIONS = frozenset(
+    {"recognize", "recognized", "recognition", "match", "select", "comprehend"}
+)
+_RECALL_OPERATIONS = frozenset({"recall", "retrieval", "inversion"})
+_REUSE_OPERATIONS = frozenset(
+    {"produce", "production", "transform", "gym", "conjugate", "translate"}
+)
+
+
+def _knowledge_state(items: tuple[Evidence, ...]) -> KnowledgeState:
+    successful = tuple(item for item in items if item.result_state == "success")
+    recognition = sum(
+        item.operation in _RECOGNITION_OPERATIONS and item.help_state == "none"
+        for item in successful
+    )
+    recall = sum(
+        item.operation in _RECALL_OPERATIONS and item.help_state == "none"
+        for item in successful
+    )
+    guided_reuse = sum(
+        item.operation in _REUSE_OPERATIONS and item.help_state != "none"
+        for item in successful
+    )
+    autonomous_reuse = sum(
+        item.operation in _REUSE_OPERATIONS and item.help_state == "none"
+        for item in successful
+    )
+    if autonomous_reuse:
+        stage = KnowledgeStage.AUTONOMOUS_REUSE
+    elif guided_reuse:
+        stage = KnowledgeStage.GUIDED_REUSE
+    elif recall:
+        stage = KnowledgeStage.RECALLED
+    elif recognition:
+        stage = KnowledgeStage.RECOGNIZED
+    elif items:
+        stage = KnowledgeStage.ENCOUNTERED
+    else:
+        stage = KnowledgeStage.UNENCOUNTERED
+    return KnowledgeState(
+        stage=stage,
+        encounter_count=len(items),
+        recognition_success_count=recognition,
+        recall_success_count=recall,
+        guided_reuse_success_count=guided_reuse,
+        autonomous_reuse_success_count=autonomous_reuse,
+    )
 
 
 def _gap_reasons(items: tuple[Evidence, ...]) -> tuple[str, ...]:
@@ -107,6 +177,7 @@ def project_reference(
                 algorithm_version,
                 MappingProxyType(modalities),
                 _gap_reasons(facts),
+                _knowledge_state(facts),
             )
         )
     return tuple(result)

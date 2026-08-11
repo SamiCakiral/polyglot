@@ -1,6 +1,7 @@
 import { BookOpenCheck, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { useActiveProfile } from "../../app/profile-state";
 import type {
   CurrentSessionResponse,
   DueMemoryPromptResponse,
@@ -30,6 +31,7 @@ export function DailyVocabulary({
   profileId: string;
   session: CurrentSessionResponse;
 }) {
+  const { activePack } = useActiveProfile();
   const [words, setWords] = useState<WordBankItemResponse[]>([]);
   const [due, setDue] = useState<DueMemoryPromptResponse[]>([]);
   const [promptTargets, setPromptTargets] = useState<Set<string>>(new Set());
@@ -44,7 +46,7 @@ export function DailyVocabulary({
     const [bankResponse, dueResponse, promptsResponse] = await Promise.all([
       getWordBankOverview(
         profileId,
-        { limit: 100, reference_set_code: "it-pilot-core" },
+        { limit: 100 },
         queryFetch(),
       ),
       listDueMemoryPrompts(
@@ -108,7 +110,7 @@ export function DailyVocabulary({
           profileId,
           {
             created_at: new Date().toISOString(),
-            direction: "it-fr",
+            direction: `${activePack?.target_language_tag ?? "target"}->${activePack?.support_language_tags[0] ?? "support"}`,
             modality: "reading",
             operation: "recall",
             prompt_id: uuid7(),
@@ -156,7 +158,7 @@ export function DailyVocabulary({
         certified_operation: current.prompt.operation,
         certified_protocol_id: current.prompt.protocol_id,
         certified_protocol_revision: current.prompt.protocol_revision,
-        certified_recall: recalled,
+        certified_recall: true,
         certified_target_revision_id: current.prompt.target_revision_id,
         exposure_only: false,
         highest_hint: 0,
@@ -174,6 +176,11 @@ export function DailyVocabulary({
     const problem = responseProblem(response);
     if (problem) {
       setError(problem);
+      setBusy(false);
+      return;
+    }
+    if (response.status !== 200 || response.data.version <= current.prompt.version) {
+      setError("La révision n'a pas produit de nouvelle planification.");
       setBusy(false);
       return;
     }

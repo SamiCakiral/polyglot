@@ -74,6 +74,44 @@ def test_wb_04_distinguishes_gap_causes() -> None:
     assert {"help_used", "form_gap", "contradiction"} <= set(item.gap_reasons)
 
 
+def test_word_knowledge_progresses_from_encounter_to_autonomous_reuse() -> None:
+    result = project_reference(
+        (uid(1), uid(2)),
+        (
+            evidence(operation="queried"),
+            evidence(operation="recognize"),
+            evidence(operation="recall"),
+            evidence(operation="produce", modality="writing", help_state="hint"),
+            evidence(operation="produce", modality="writing"),
+        ),
+        algorithm_version="wb-v2",
+    )
+
+    assert result[0].knowledge.stage == "autonomous_reuse"
+    assert result[0].knowledge.encounter_count == 5
+    assert result[0].knowledge.recognition_success_count == 1
+    assert result[0].knowledge.recall_success_count == 1
+    assert result[0].knowledge.guided_reuse_success_count == 1
+    assert result[0].knowledge.autonomous_reuse_success_count == 1
+    assert result[1].knowledge.stage == "unencountered"
+
+
+def test_failed_or_helped_recall_does_not_overstate_knowledge() -> None:
+    result = project_reference(
+        (uid(1),),
+        (
+            evidence(operation="recognize"),
+            evidence(operation="recall", help_state="hint"),
+            evidence(operation="produce", result_state="failure"),
+        ),
+        algorithm_version="wb-v2",
+    )[0]
+
+    assert result.knowledge.stage == "recognized"
+    assert result.knowledge.recall_success_count == 0
+    assert result.knowledge.autonomous_reuse_success_count == 0
+
+
 def test_wb_05_plan_roles_are_bounded_and_explained() -> None:
     item = LexicalPlanItem(uid(1), "due", "retrieval_due")
     assert item.reason == "retrieval_due"

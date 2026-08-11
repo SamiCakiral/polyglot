@@ -1211,6 +1211,78 @@
         "job_not_cancellable"
       ],
       "idempotency": "required"
+    },
+    {
+      "name": "CreatePracticeStack",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/practice-stacks",
+      "events": ["practice.stack.created"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CombinePracticeStacks",
+      "method": "POST",
+      "route": "/api/v1/practice-stacks:combine",
+      "events": ["practice.stack.created"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "InjectPracticeStack",
+      "method": "POST",
+      "route": "/api/v1/practice-stacks/{stack_id}:inject-next-sprint",
+      "events": ["practice.stack.injected"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreatePracticePreset",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/practice-presets",
+      "events": ["practice.preset.created"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "StartPracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-presets/{preset_id}/runs",
+      "events": ["practice.run.started"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "AdvancePracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:advance",
+      "events": ["practice.run.advanced"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "InterruptPracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:interrupt",
+      "events": ["practice.run.interrupted"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "ResumePracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:resume",
+      "events": ["practice.run.resumed"],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "AbandonPracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:abandon",
+      "events": ["practice.run.abandoned"],
+      "errors": [],
+      "idempotency": "required"
     }
   ]
 }

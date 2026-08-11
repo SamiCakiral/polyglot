@@ -107,6 +107,166 @@ async def test_encounter_materializes_candidate_then_resolve_is_api_reachable(
     assert outbox_count == 2
 
 
+async def test_manual_exact_lemma_discovers_published_catalogue_candidates(
+    service_factory,
+    migration_session,
+) -> None:
+    service, factory = service_factory
+    catalogue_ids = {
+        "provenance": uid(1060),
+        "target": uid(1061),
+        "pack": uid(1062),
+        "pack_revision": uid(1063),
+        "unit": uid(1064),
+        "unit_revision": uid(1065),
+        "sense_slow": uid(1066),
+        "sense_floor": uid(1067),
+        "sense_revision_slow": uid(1068),
+        "sense_revision_floor": uid(1069),
+    }
+    await migration_session.execute(
+        text(
+            "INSERT INTO platform.provenance_records "
+            "(provenance_id,source_type,source_ref,transformation_chain,"
+            "input_fingerprint,created_at) "
+            "VALUES (:id,'fixture','word-bank-auto-candidate','[]'::jsonb,:fingerprint,:now) "
+            "ON CONFLICT DO NOTHING"
+        ),
+        {
+            "id": catalogue_ids["provenance"],
+            "fingerprint": "e" * 64,
+            "now": NOW,
+        },
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.language_varieties "
+            "(variety_id,language_tag,region_code,script_codes,text_direction,"
+            "segmentation_policy_revision_id,media_capabilities,normalization_policy_revision_id) "
+            "VALUES (:id,'qa-QA','QA',ARRAY['Latn'],'ltr',:id,"
+            "jsonb_build_object('schema_version',1),:id) ON CONFLICT DO NOTHING"
+        ),
+        {"id": catalogue_ids["target"]},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.language_packs (pack_id,pack_code) "
+            "VALUES (:id,'word-bank-auto-candidate') ON CONFLICT DO NOTHING"
+        ),
+        {"id": catalogue_ids["pack"]},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.language_pack_revisions "
+            "(pack_revision_id,pack_id,revision_no,target_variety_id,status,engine_min_version,"
+            "engine_max_version,capability_manifest,checksum_manifest,license_refs,provenance_id,"
+            "published_at) VALUES (:revision,:pack,1,:target,'published','2.0.0','2.0.x',"
+            "jsonb_build_object('schema_version',1),"
+            "jsonb_build_object('fixture',repeat('a',64)),"
+            "ARRAY['test'],:provenance,:now) ON CONFLICT DO NOTHING"
+        ),
+        {
+            "revision": catalogue_ids["pack_revision"],
+            "pack": catalogue_ids["pack"],
+            "target": catalogue_ids["target"],
+            "provenance": catalogue_ids["provenance"],
+            "now": NOW,
+        },
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.lexical_units "
+            "(lexical_unit_id,variety_id,unit_type,visibility,owner_profile_id) "
+            "VALUES (:unit,:target,'word','shared',NULL) ON CONFLICT DO NOTHING"
+        ),
+        {"unit": catalogue_ids["unit"], "target": catalogue_ids["target"]},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO catalogue.lexical_unit_revisions "
+            "(unit_revision_id,lexical_unit_id,pack_revision_id,revision_no,lemma,part_of_speech,"
+            "register,status,provenance_id) VALUES "
+            "(:revision,:unit,:pack,1,'piano','adverb',NULL,'published',:provenance) "
+            "ON CONFLICT DO NOTHING"
+        ),
+        {
+            "unit": catalogue_ids["unit"],
+            "revision": catalogue_ids["unit_revision"],
+            "pack": catalogue_ids["pack_revision"],
+            "provenance": catalogue_ids["provenance"],
+        },
+    )
+    for sense_key, revision_key, code, definition in (
+        ("sense_slow", "sense_revision_slow", "slowly", "lentement"),
+        ("sense_floor", "sense_revision_floor", "floor", "étage"),
+    ):
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.lexical_senses (sense_id,lexical_unit_id,sense_code) "
+                "VALUES (:sense,:unit,:code) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "sense": catalogue_ids[sense_key],
+                "unit": catalogue_ids["unit"],
+                "code": code,
+            },
+        )
+        await migration_session.execute(
+            text(
+                "INSERT INTO catalogue.lexical_sense_revisions "
+                "(sense_revision_id,sense_id,pack_revision_id,revision_no,definition,domains,"
+                "register,status,provenance_id) VALUES "
+                "(:revision,:sense,:pack,1,:definition,ARRAY[]::varchar[],NULL,'published',"
+                ":provenance) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "sense": catalogue_ids[sense_key],
+                "revision": catalogue_ids[revision_key],
+                "pack": catalogue_ids["pack_revision"],
+                "definition": definition,
+                "provenance": catalogue_ids["provenance"],
+            },
+        )
+    await set_actor(migration_session, uid(1))
+    await migration_session.execute(
+        text(
+            "UPDATE language_profiles.learner_language_profiles "
+            "SET target_variety_id=:target WHERE profile_id=:profile"
+        ),
+        {"profile": uid(11), "target": catalogue_ids["target"]},
+    )
+    await migration_session.commit()
+    payload = encounter_payload(encounter=1050, mention=1051)
+    payload["candidates"] = []
+
+    await service.execute(
+        command_name="RecordLexicalEncounter",
+        account_id=uid(1),
+        resource_id=uid(11),
+        payload=payload,
+        idempotency_key="fix1-auto-candidates",
+        expected_version=None,
+    )
+
+    async with factory() as session:
+        await set_actor(session, uid(1))
+        candidates = tuple(
+            (
+                await session.execute(
+                    text(
+                        "SELECT source,confidence FROM lexicon.mention_candidates "
+                        "WHERE mention_id=:mention ORDER BY candidate_id"
+                    ),
+                    {"mention": uid(1051)},
+                )
+            ).all()
+        )
+
+    assert len(candidates) == 2
+    assert {row.source for row in candidates} == {"catalogue_exact_lemma"}
+    assert {float(row.confidence) for row in candidates} == {0.8}
+
+
 async def test_failed_resolution_rolls_back_receipt_event_and_outbox(service_factory) -> None:
     service, factory = service_factory
     with pytest.raises(DomainError) as error:

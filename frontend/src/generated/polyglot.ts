@@ -34,6 +34,7 @@ import type {
   ChangePasswordRequest,
   ChoosePlacementRequest,
   CloneVocabularyListRequest,
+  CombinePracticeStacksRequest,
   CommandPayload,
   CommitImportRequest,
   CompleteEnrollmentRequest,
@@ -50,6 +51,8 @@ import type {
   CreateContentDraftRequest,
   CreateImportRequest,
   CreateMemoryPromptRequest,
+  CreatePracticePresetRequest,
+  CreatePracticeStackRequest,
   CreateProfileRequest,
   CreateVocabularyListRequest,
   CurrentSessionResponse,
@@ -74,6 +77,7 @@ import type {
   GetWordBankOverviewParams,
   ImportPreviewPageResponse,
   ImportRunResponse,
+  InjectPracticeStackRequest,
   InvokeToolRequest,
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
@@ -103,6 +107,11 @@ import type {
   OpenAttemptRequest,
   PauseEnrollmentRequest,
   PlacementManifestResponse,
+  PracticePresetPageResponse,
+  PracticePresetResponse,
+  PracticeRunResponse,
+  PracticeStackPageResponse,
+  PracticeStackResponse,
   PreferencesRequest,
   PreferencesResponse,
   PrepareAssessmentRequest,
@@ -141,9 +150,11 @@ import type {
   SessionPlanResponse,
   SessionResponse,
   SprintRunResponse,
+  StackInjectionResponse,
   StartDiagnosticRequest,
   StartFoundationRunRequest,
   StartOnboardingRequest,
+  StartPracticeRunRequest,
   StartRunRequest,
   SubmitAttemptRequest,
   SubmitDiagnosticResponseRequest,
@@ -19872,6 +19883,930 @@ export const useChoosePlacement = <
   return useMutation(getChoosePlacementMutationOptions(options), queryClient);
 };
 
+export type listPracticePresetsResponse200 = {
+  data: PracticePresetPageResponse;
+  status: 200;
+};
+
+export type listPracticePresetsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listPracticePresetsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listPracticePresetsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listPracticePresetsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listPracticePresetsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listPracticePresetsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listPracticePresetsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listPracticePresetsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listPracticePresetsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listPracticePresetsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listPracticePresetsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listPracticePresetsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listPracticePresetsResponseSuccess =
+  listPracticePresetsResponse200 & {
+    headers: Headers;
+  };
+export type listPracticePresetsResponseError = (
+  | listPracticePresetsResponse401ApplicationJson
+  | listPracticePresetsResponse401ApplicationProblemJson
+  | listPracticePresetsResponse403ApplicationJson
+  | listPracticePresetsResponse403ApplicationProblemJson
+  | listPracticePresetsResponse409ApplicationJson
+  | listPracticePresetsResponse409ApplicationProblemJson
+  | listPracticePresetsResponse422ApplicationJson
+  | listPracticePresetsResponse422ApplicationProblemJson
+  | listPracticePresetsResponse428ApplicationJson
+  | listPracticePresetsResponse428ApplicationProblemJson
+  | listPracticePresetsResponse503ApplicationJson
+  | listPracticePresetsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listPracticePresetsResponse =
+  listPracticePresetsResponseSuccess | listPracticePresetsResponseError;
+
+export const getListPracticePresetsUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/practice-presets`;
+};
+
+/**
+ * @summary List Practice Presets
+ */
+export const listPracticePresets = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<listPracticePresetsResponse> => {
+  const res = await fetch(getListPracticePresetsUrl(profileId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listPracticePresetsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listPracticePresetsResponse;
+};
+
+export const getListPracticePresetsQueryKey = (profileId: string) => {
+  return [`/api/v1/language-profiles/${profileId}/practice-presets`] as const;
+};
+
+export const getListPracticePresetsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPracticePresets>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticePresets>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPracticePresetsQueryKey(profileId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPracticePresets>>
+  > = ({ signal }) =>
+    listPracticePresets(profileId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPracticePresets>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListPracticePresetsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPracticePresets>>
+>;
+export type ListPracticePresetsQueryError = ProblemResponse;
+
+export function useListPracticePresets<
+  TData = Awaited<ReturnType<typeof listPracticePresets>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticePresets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPracticePresets>>,
+          TError,
+          Awaited<ReturnType<typeof listPracticePresets>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListPracticePresets<
+  TData = Awaited<ReturnType<typeof listPracticePresets>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticePresets>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPracticePresets>>,
+          TError,
+          Awaited<ReturnType<typeof listPracticePresets>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListPracticePresets<
+  TData = Awaited<ReturnType<typeof listPracticePresets>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticePresets>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Practice Presets
+ */
+
+export function useListPracticePresets<
+  TData = Awaited<ReturnType<typeof listPracticePresets>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticePresets>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListPracticePresetsQueryOptions(profileId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createPracticePresetResponse201 = {
+  data: PracticePresetResponse;
+  status: 201;
+};
+
+export type createPracticePresetResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createPracticePresetResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createPracticePresetResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createPracticePresetResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createPracticePresetResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createPracticePresetResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createPracticePresetResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createPracticePresetResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createPracticePresetResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createPracticePresetResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createPracticePresetResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createPracticePresetResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createPracticePresetResponseSuccess =
+  createPracticePresetResponse201 & {
+    headers: Headers;
+  };
+export type createPracticePresetResponseError = (
+  | createPracticePresetResponse401ApplicationJson
+  | createPracticePresetResponse401ApplicationProblemJson
+  | createPracticePresetResponse403ApplicationJson
+  | createPracticePresetResponse403ApplicationProblemJson
+  | createPracticePresetResponse409ApplicationJson
+  | createPracticePresetResponse409ApplicationProblemJson
+  | createPracticePresetResponse422ApplicationJson
+  | createPracticePresetResponse422ApplicationProblemJson
+  | createPracticePresetResponse428ApplicationJson
+  | createPracticePresetResponse428ApplicationProblemJson
+  | createPracticePresetResponse503ApplicationJson
+  | createPracticePresetResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createPracticePresetResponse =
+  createPracticePresetResponseSuccess | createPracticePresetResponseError;
+
+export const getCreatePracticePresetUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/practice-presets`;
+};
+
+/**
+ * @summary Create Practice Preset
+ */
+export const createPracticePreset = async (
+  profileId: string,
+  createPracticePresetRequest: CreatePracticePresetRequest,
+  options?: RequestInit,
+): Promise<createPracticePresetResponse> => {
+  const res = await fetch(getCreatePracticePresetUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPracticePresetRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createPracticePresetResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createPracticePresetResponse;
+};
+
+export const getCreatePracticePresetMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPracticePreset>>,
+    TError,
+    { profileId: string; data: CreatePracticePresetRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPracticePreset>>,
+  TError,
+  { profileId: string; data: CreatePracticePresetRequest },
+  TContext
+> => {
+  const mutationKey = ["createPracticePreset"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPracticePreset>>,
+    { profileId: string; data: CreatePracticePresetRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return createPracticePreset(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePracticePresetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPracticePreset>>
+>;
+export type CreatePracticePresetMutationBody = CreatePracticePresetRequest;
+export type CreatePracticePresetMutationError = ProblemResponse;
+
+/**
+ * @summary Create Practice Preset
+ */
+export const useCreatePracticePreset = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createPracticePreset>>,
+      TError,
+      { profileId: string; data: CreatePracticePresetRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createPracticePreset>>,
+  TError,
+  { profileId: string; data: CreatePracticePresetRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreatePracticePresetMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type listPracticeStacksResponse200 = {
+  data: PracticeStackPageResponse;
+  status: 200;
+};
+
+export type listPracticeStacksResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listPracticeStacksResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listPracticeStacksResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listPracticeStacksResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listPracticeStacksResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listPracticeStacksResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listPracticeStacksResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listPracticeStacksResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listPracticeStacksResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listPracticeStacksResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listPracticeStacksResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listPracticeStacksResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listPracticeStacksResponseSuccess =
+  listPracticeStacksResponse200 & {
+    headers: Headers;
+  };
+export type listPracticeStacksResponseError = (
+  | listPracticeStacksResponse401ApplicationJson
+  | listPracticeStacksResponse401ApplicationProblemJson
+  | listPracticeStacksResponse403ApplicationJson
+  | listPracticeStacksResponse403ApplicationProblemJson
+  | listPracticeStacksResponse409ApplicationJson
+  | listPracticeStacksResponse409ApplicationProblemJson
+  | listPracticeStacksResponse422ApplicationJson
+  | listPracticeStacksResponse422ApplicationProblemJson
+  | listPracticeStacksResponse428ApplicationJson
+  | listPracticeStacksResponse428ApplicationProblemJson
+  | listPracticeStacksResponse503ApplicationJson
+  | listPracticeStacksResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listPracticeStacksResponse =
+  listPracticeStacksResponseSuccess | listPracticeStacksResponseError;
+
+export const getListPracticeStacksUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/practice-stacks`;
+};
+
+/**
+ * @summary List Practice Stacks
+ */
+export const listPracticeStacks = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<listPracticeStacksResponse> => {
+  const res = await fetch(getListPracticeStacksUrl(profileId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listPracticeStacksResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listPracticeStacksResponse;
+};
+
+export const getListPracticeStacksQueryKey = (profileId: string) => {
+  return [`/api/v1/language-profiles/${profileId}/practice-stacks`] as const;
+};
+
+export const getListPracticeStacksQueryOptions = <
+  TData = Awaited<ReturnType<typeof listPracticeStacks>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticeStacks>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListPracticeStacksQueryKey(profileId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listPracticeStacks>>
+  > = ({ signal }) =>
+    listPracticeStacks(profileId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listPracticeStacks>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListPracticeStacksQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listPracticeStacks>>
+>;
+export type ListPracticeStacksQueryError = ProblemResponse;
+
+export function useListPracticeStacks<
+  TData = Awaited<ReturnType<typeof listPracticeStacks>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticeStacks>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPracticeStacks>>,
+          TError,
+          Awaited<ReturnType<typeof listPracticeStacks>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListPracticeStacks<
+  TData = Awaited<ReturnType<typeof listPracticeStacks>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticeStacks>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPracticeStacks>>,
+          TError,
+          Awaited<ReturnType<typeof listPracticeStacks>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListPracticeStacks<
+  TData = Awaited<ReturnType<typeof listPracticeStacks>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticeStacks>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Practice Stacks
+ */
+
+export function useListPracticeStacks<
+  TData = Awaited<ReturnType<typeof listPracticeStacks>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listPracticeStacks>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListPracticeStacksQueryOptions(profileId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createPracticeStackResponse201 = {
+  data: PracticeStackResponse;
+  status: 201;
+};
+
+export type createPracticeStackResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createPracticeStackResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createPracticeStackResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createPracticeStackResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createPracticeStackResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createPracticeStackResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createPracticeStackResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createPracticeStackResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createPracticeStackResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createPracticeStackResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createPracticeStackResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createPracticeStackResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createPracticeStackResponseSuccess =
+  createPracticeStackResponse201 & {
+    headers: Headers;
+  };
+export type createPracticeStackResponseError = (
+  | createPracticeStackResponse401ApplicationJson
+  | createPracticeStackResponse401ApplicationProblemJson
+  | createPracticeStackResponse403ApplicationJson
+  | createPracticeStackResponse403ApplicationProblemJson
+  | createPracticeStackResponse409ApplicationJson
+  | createPracticeStackResponse409ApplicationProblemJson
+  | createPracticeStackResponse422ApplicationJson
+  | createPracticeStackResponse422ApplicationProblemJson
+  | createPracticeStackResponse428ApplicationJson
+  | createPracticeStackResponse428ApplicationProblemJson
+  | createPracticeStackResponse503ApplicationJson
+  | createPracticeStackResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createPracticeStackResponse =
+  createPracticeStackResponseSuccess | createPracticeStackResponseError;
+
+export const getCreatePracticeStackUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/practice-stacks`;
+};
+
+/**
+ * @summary Create Practice Stack
+ */
+export const createPracticeStack = async (
+  profileId: string,
+  createPracticeStackRequest: CreatePracticeStackRequest,
+  options?: RequestInit,
+): Promise<createPracticeStackResponse> => {
+  const res = await fetch(getCreatePracticeStackUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createPracticeStackRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createPracticeStackResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createPracticeStackResponse;
+};
+
+export const getCreatePracticeStackMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createPracticeStack>>,
+    TError,
+    { profileId: string; data: CreatePracticeStackRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createPracticeStack>>,
+  TError,
+  { profileId: string; data: CreatePracticeStackRequest },
+  TContext
+> => {
+  const mutationKey = ["createPracticeStack"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createPracticeStack>>,
+    { profileId: string; data: CreatePracticeStackRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return createPracticeStack(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreatePracticeStackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createPracticeStack>>
+>;
+export type CreatePracticeStackMutationBody = CreatePracticeStackRequest;
+export type CreatePracticeStackMutationError = ProblemResponse;
+
+/**
+ * @summary Create Practice Stack
+ */
+export const useCreatePracticeStack = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createPracticeStack>>,
+      TError,
+      { profileId: string; data: CreatePracticeStackRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createPracticeStack>>,
+  TError,
+  { profileId: string; data: CreatePracticeStackRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreatePracticeStackMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type addPrivateLexicalUnitResponse200 = {
   data: MutationResponse;
   status: 200;
@@ -28347,6 +29282,1859 @@ export const useRetractLexicalRelation = <
 > => {
   return useMutation(
     getRetractLexicalRelationMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type startPracticeRunResponse201 = {
+  data: PracticeRunResponse;
+  status: 201;
+};
+
+export type startPracticeRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startPracticeRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startPracticeRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startPracticeRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startPracticeRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startPracticeRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startPracticeRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startPracticeRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startPracticeRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startPracticeRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type startPracticeRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startPracticeRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startPracticeRunResponseSuccess = startPracticeRunResponse201 & {
+  headers: Headers;
+};
+export type startPracticeRunResponseError = (
+  | startPracticeRunResponse401ApplicationJson
+  | startPracticeRunResponse401ApplicationProblemJson
+  | startPracticeRunResponse403ApplicationJson
+  | startPracticeRunResponse403ApplicationProblemJson
+  | startPracticeRunResponse409ApplicationJson
+  | startPracticeRunResponse409ApplicationProblemJson
+  | startPracticeRunResponse422ApplicationJson
+  | startPracticeRunResponse422ApplicationProblemJson
+  | startPracticeRunResponse428ApplicationJson
+  | startPracticeRunResponse428ApplicationProblemJson
+  | startPracticeRunResponse503ApplicationJson
+  | startPracticeRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startPracticeRunResponse =
+  startPracticeRunResponseSuccess | startPracticeRunResponseError;
+
+export const getStartPracticeRunUrl = (presetId: string) => {
+  return `/api/v1/practice-presets/${presetId}/runs`;
+};
+
+/**
+ * @summary Start Practice Run
+ */
+export const startPracticeRun = async (
+  presetId: string,
+  startPracticeRunRequest: StartPracticeRunRequest,
+  options?: RequestInit,
+): Promise<startPracticeRunResponse> => {
+  const res = await fetch(getStartPracticeRunUrl(presetId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startPracticeRunRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startPracticeRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startPracticeRunResponse;
+};
+
+export const getStartPracticeRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startPracticeRun>>,
+    TError,
+    { presetId: string; data: StartPracticeRunRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startPracticeRun>>,
+  TError,
+  { presetId: string; data: StartPracticeRunRequest },
+  TContext
+> => {
+  const mutationKey = ["startPracticeRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startPracticeRun>>,
+    { presetId: string; data: StartPracticeRunRequest }
+  > = (props) => {
+    const { presetId, data } = props ?? {};
+
+    return startPracticeRun(presetId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartPracticeRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startPracticeRun>>
+>;
+export type StartPracticeRunMutationBody = StartPracticeRunRequest;
+export type StartPracticeRunMutationError = ProblemResponse;
+
+/**
+ * @summary Start Practice Run
+ */
+export const useStartPracticeRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startPracticeRun>>,
+      TError,
+      { presetId: string; data: StartPracticeRunRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startPracticeRun>>,
+  TError,
+  { presetId: string; data: StartPracticeRunRequest },
+  TContext
+> => {
+  return useMutation(getStartPracticeRunMutationOptions(options), queryClient);
+};
+
+export type getPracticeRunResponse200 = {
+  data: PracticeRunResponse;
+  status: 200;
+};
+
+export type getPracticeRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getPracticeRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getPracticeRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getPracticeRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getPracticeRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getPracticeRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getPracticeRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getPracticeRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getPracticeRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getPracticeRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getPracticeRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getPracticeRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getPracticeRunResponseSuccess = getPracticeRunResponse200 & {
+  headers: Headers;
+};
+export type getPracticeRunResponseError = (
+  | getPracticeRunResponse401ApplicationJson
+  | getPracticeRunResponse401ApplicationProblemJson
+  | getPracticeRunResponse403ApplicationJson
+  | getPracticeRunResponse403ApplicationProblemJson
+  | getPracticeRunResponse409ApplicationJson
+  | getPracticeRunResponse409ApplicationProblemJson
+  | getPracticeRunResponse422ApplicationJson
+  | getPracticeRunResponse422ApplicationProblemJson
+  | getPracticeRunResponse428ApplicationJson
+  | getPracticeRunResponse428ApplicationProblemJson
+  | getPracticeRunResponse503ApplicationJson
+  | getPracticeRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getPracticeRunResponse =
+  getPracticeRunResponseSuccess | getPracticeRunResponseError;
+
+export const getGetPracticeRunUrl = (runId: string) => {
+  return `/api/v1/practice-runs/${runId}`;
+};
+
+/**
+ * @summary Get Practice Run
+ */
+export const getPracticeRun = async (
+  runId: string,
+  options?: RequestInit,
+): Promise<getPracticeRunResponse> => {
+  const res = await fetch(getGetPracticeRunUrl(runId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getPracticeRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getPracticeRunResponse;
+};
+
+export const getGetPracticeRunQueryKey = (runId: string) => {
+  return [`/api/v1/practice-runs/${runId}`] as const;
+};
+
+export const getGetPracticeRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPracticeRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPracticeRun>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPracticeRunQueryKey(runId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPracticeRun>>> = ({
+    signal,
+  }) => getPracticeRun(runId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: runId !== null && runId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPracticeRun>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetPracticeRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPracticeRun>>
+>;
+export type GetPracticeRunQueryError = ProblemResponse;
+
+export function useGetPracticeRun<
+  TData = Awaited<ReturnType<typeof getPracticeRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPracticeRun>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPracticeRun>>,
+          TError,
+          Awaited<ReturnType<typeof getPracticeRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetPracticeRun<
+  TData = Awaited<ReturnType<typeof getPracticeRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPracticeRun>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPracticeRun>>,
+          TError,
+          Awaited<ReturnType<typeof getPracticeRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetPracticeRun<
+  TData = Awaited<ReturnType<typeof getPracticeRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPracticeRun>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Practice Run
+ */
+
+export function useGetPracticeRun<
+  TData = Awaited<ReturnType<typeof getPracticeRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getPracticeRun>>, TError, TData>
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetPracticeRunQueryOptions(runId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type abandonPracticeRunResponse200 = {
+  data: PracticeRunResponse;
+  status: 200;
+};
+
+export type abandonPracticeRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type abandonPracticeRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type abandonPracticeRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type abandonPracticeRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type abandonPracticeRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type abandonPracticeRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type abandonPracticeRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type abandonPracticeRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type abandonPracticeRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type abandonPracticeRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type abandonPracticeRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type abandonPracticeRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type abandonPracticeRunResponseSuccess =
+  abandonPracticeRunResponse200 & {
+    headers: Headers;
+  };
+export type abandonPracticeRunResponseError = (
+  | abandonPracticeRunResponse401ApplicationJson
+  | abandonPracticeRunResponse401ApplicationProblemJson
+  | abandonPracticeRunResponse403ApplicationJson
+  | abandonPracticeRunResponse403ApplicationProblemJson
+  | abandonPracticeRunResponse409ApplicationJson
+  | abandonPracticeRunResponse409ApplicationProblemJson
+  | abandonPracticeRunResponse422ApplicationJson
+  | abandonPracticeRunResponse422ApplicationProblemJson
+  | abandonPracticeRunResponse428ApplicationJson
+  | abandonPracticeRunResponse428ApplicationProblemJson
+  | abandonPracticeRunResponse503ApplicationJson
+  | abandonPracticeRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type abandonPracticeRunResponse =
+  abandonPracticeRunResponseSuccess | abandonPracticeRunResponseError;
+
+export const getAbandonPracticeRunUrl = (runId: string) => {
+  return `/api/v1/practice-runs/${runId}:abandon`;
+};
+
+/**
+ * @summary Command
+ */
+export const abandonPracticeRun = async (
+  runId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<abandonPracticeRunResponse> => {
+  const res = await fetch(getAbandonPracticeRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: abandonPracticeRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as abandonPracticeRunResponse;
+};
+
+export const getAbandonPracticeRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof abandonPracticeRun>>,
+    TError,
+    { runId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof abandonPracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["abandonPracticeRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof abandonPracticeRun>>,
+    { runId: string; data: AtRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return abandonPracticeRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AbandonPracticeRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof abandonPracticeRun>>
+>;
+export type AbandonPracticeRunMutationBody = AtRequest;
+export type AbandonPracticeRunMutationError = ProblemResponse;
+
+/**
+ * @summary Command
+ */
+export const useAbandonPracticeRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof abandonPracticeRun>>,
+      TError,
+      { runId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof abandonPracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(
+    getAbandonPracticeRunMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type advancePracticeRunResponse200 = {
+  data: PracticeRunResponse;
+  status: 200;
+};
+
+export type advancePracticeRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type advancePracticeRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type advancePracticeRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type advancePracticeRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type advancePracticeRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type advancePracticeRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type advancePracticeRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type advancePracticeRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type advancePracticeRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type advancePracticeRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type advancePracticeRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type advancePracticeRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type advancePracticeRunResponseSuccess =
+  advancePracticeRunResponse200 & {
+    headers: Headers;
+  };
+export type advancePracticeRunResponseError = (
+  | advancePracticeRunResponse401ApplicationJson
+  | advancePracticeRunResponse401ApplicationProblemJson
+  | advancePracticeRunResponse403ApplicationJson
+  | advancePracticeRunResponse403ApplicationProblemJson
+  | advancePracticeRunResponse409ApplicationJson
+  | advancePracticeRunResponse409ApplicationProblemJson
+  | advancePracticeRunResponse422ApplicationJson
+  | advancePracticeRunResponse422ApplicationProblemJson
+  | advancePracticeRunResponse428ApplicationJson
+  | advancePracticeRunResponse428ApplicationProblemJson
+  | advancePracticeRunResponse503ApplicationJson
+  | advancePracticeRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type advancePracticeRunResponse =
+  advancePracticeRunResponseSuccess | advancePracticeRunResponseError;
+
+export const getAdvancePracticeRunUrl = (runId: string) => {
+  return `/api/v1/practice-runs/${runId}:advance`;
+};
+
+/**
+ * @summary Command
+ */
+export const advancePracticeRun = async (
+  runId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<advancePracticeRunResponse> => {
+  const res = await fetch(getAdvancePracticeRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: advancePracticeRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as advancePracticeRunResponse;
+};
+
+export const getAdvancePracticeRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof advancePracticeRun>>,
+    TError,
+    { runId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof advancePracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["advancePracticeRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof advancePracticeRun>>,
+    { runId: string; data: AtRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return advancePracticeRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdvancePracticeRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof advancePracticeRun>>
+>;
+export type AdvancePracticeRunMutationBody = AtRequest;
+export type AdvancePracticeRunMutationError = ProblemResponse;
+
+/**
+ * @summary Command
+ */
+export const useAdvancePracticeRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof advancePracticeRun>>,
+      TError,
+      { runId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof advancePracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(
+    getAdvancePracticeRunMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type interruptPracticeRunResponse200 = {
+  data: PracticeRunResponse;
+  status: 200;
+};
+
+export type interruptPracticeRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type interruptPracticeRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type interruptPracticeRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type interruptPracticeRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type interruptPracticeRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type interruptPracticeRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type interruptPracticeRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type interruptPracticeRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type interruptPracticeRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type interruptPracticeRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type interruptPracticeRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type interruptPracticeRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type interruptPracticeRunResponseSuccess =
+  interruptPracticeRunResponse200 & {
+    headers: Headers;
+  };
+export type interruptPracticeRunResponseError = (
+  | interruptPracticeRunResponse401ApplicationJson
+  | interruptPracticeRunResponse401ApplicationProblemJson
+  | interruptPracticeRunResponse403ApplicationJson
+  | interruptPracticeRunResponse403ApplicationProblemJson
+  | interruptPracticeRunResponse409ApplicationJson
+  | interruptPracticeRunResponse409ApplicationProblemJson
+  | interruptPracticeRunResponse422ApplicationJson
+  | interruptPracticeRunResponse422ApplicationProblemJson
+  | interruptPracticeRunResponse428ApplicationJson
+  | interruptPracticeRunResponse428ApplicationProblemJson
+  | interruptPracticeRunResponse503ApplicationJson
+  | interruptPracticeRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type interruptPracticeRunResponse =
+  interruptPracticeRunResponseSuccess | interruptPracticeRunResponseError;
+
+export const getInterruptPracticeRunUrl = (runId: string) => {
+  return `/api/v1/practice-runs/${runId}:interrupt`;
+};
+
+/**
+ * @summary Command
+ */
+export const interruptPracticeRun = async (
+  runId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<interruptPracticeRunResponse> => {
+  const res = await fetch(getInterruptPracticeRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: interruptPracticeRunResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as interruptPracticeRunResponse;
+};
+
+export const getInterruptPracticeRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof interruptPracticeRun>>,
+    TError,
+    { runId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof interruptPracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["interruptPracticeRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof interruptPracticeRun>>,
+    { runId: string; data: AtRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return interruptPracticeRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InterruptPracticeRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof interruptPracticeRun>>
+>;
+export type InterruptPracticeRunMutationBody = AtRequest;
+export type InterruptPracticeRunMutationError = ProblemResponse;
+
+/**
+ * @summary Command
+ */
+export const useInterruptPracticeRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof interruptPracticeRun>>,
+      TError,
+      { runId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof interruptPracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(
+    getInterruptPracticeRunMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type resumePracticeRunResponse200 = {
+  data: PracticeRunResponse;
+  status: 200;
+};
+
+export type resumePracticeRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumePracticeRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type resumePracticeRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumePracticeRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type resumePracticeRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumePracticeRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type resumePracticeRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumePracticeRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type resumePracticeRunResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumePracticeRunResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type resumePracticeRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumePracticeRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type resumePracticeRunResponseSuccess = resumePracticeRunResponse200 & {
+  headers: Headers;
+};
+export type resumePracticeRunResponseError = (
+  | resumePracticeRunResponse401ApplicationJson
+  | resumePracticeRunResponse401ApplicationProblemJson
+  | resumePracticeRunResponse403ApplicationJson
+  | resumePracticeRunResponse403ApplicationProblemJson
+  | resumePracticeRunResponse409ApplicationJson
+  | resumePracticeRunResponse409ApplicationProblemJson
+  | resumePracticeRunResponse422ApplicationJson
+  | resumePracticeRunResponse422ApplicationProblemJson
+  | resumePracticeRunResponse428ApplicationJson
+  | resumePracticeRunResponse428ApplicationProblemJson
+  | resumePracticeRunResponse503ApplicationJson
+  | resumePracticeRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type resumePracticeRunResponse =
+  resumePracticeRunResponseSuccess | resumePracticeRunResponseError;
+
+export const getResumePracticeRunUrl = (runId: string) => {
+  return `/api/v1/practice-runs/${runId}:resume`;
+};
+
+/**
+ * @summary Command
+ */
+export const resumePracticeRun = async (
+  runId: string,
+  atRequest: AtRequest,
+  options?: RequestInit,
+): Promise<resumePracticeRunResponse> => {
+  const res = await fetch(getResumePracticeRunUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(atRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: resumePracticeRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as resumePracticeRunResponse;
+};
+
+export const getResumePracticeRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resumePracticeRun>>,
+    TError,
+    { runId: string; data: AtRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resumePracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  const mutationKey = ["resumePracticeRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resumePracticeRun>>,
+    { runId: string; data: AtRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return resumePracticeRun(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResumePracticeRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resumePracticeRun>>
+>;
+export type ResumePracticeRunMutationBody = AtRequest;
+export type ResumePracticeRunMutationError = ProblemResponse;
+
+/**
+ * @summary Command
+ */
+export const useResumePracticeRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof resumePracticeRun>>,
+      TError,
+      { runId: string; data: AtRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof resumePracticeRun>>,
+  TError,
+  { runId: string; data: AtRequest },
+  TContext
+> => {
+  return useMutation(getResumePracticeRunMutationOptions(options), queryClient);
+};
+
+export type getPracticeStackResponse200 = {
+  data: PracticeStackResponse;
+  status: 200;
+};
+
+export type getPracticeStackResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getPracticeStackResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getPracticeStackResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getPracticeStackResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getPracticeStackResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getPracticeStackResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getPracticeStackResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getPracticeStackResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getPracticeStackResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getPracticeStackResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getPracticeStackResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getPracticeStackResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getPracticeStackResponseSuccess = getPracticeStackResponse200 & {
+  headers: Headers;
+};
+export type getPracticeStackResponseError = (
+  | getPracticeStackResponse401ApplicationJson
+  | getPracticeStackResponse401ApplicationProblemJson
+  | getPracticeStackResponse403ApplicationJson
+  | getPracticeStackResponse403ApplicationProblemJson
+  | getPracticeStackResponse409ApplicationJson
+  | getPracticeStackResponse409ApplicationProblemJson
+  | getPracticeStackResponse422ApplicationJson
+  | getPracticeStackResponse422ApplicationProblemJson
+  | getPracticeStackResponse428ApplicationJson
+  | getPracticeStackResponse428ApplicationProblemJson
+  | getPracticeStackResponse503ApplicationJson
+  | getPracticeStackResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getPracticeStackResponse =
+  getPracticeStackResponseSuccess | getPracticeStackResponseError;
+
+export const getGetPracticeStackUrl = (stackId: string) => {
+  return `/api/v1/practice-stacks/${stackId}`;
+};
+
+/**
+ * @summary Get Practice Stack
+ */
+export const getPracticeStack = async (
+  stackId: string,
+  options?: RequestInit,
+): Promise<getPracticeStackResponse> => {
+  const res = await fetch(getGetPracticeStackUrl(stackId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getPracticeStackResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getPracticeStackResponse;
+};
+
+export const getGetPracticeStackQueryKey = (stackId: string) => {
+  return [`/api/v1/practice-stacks/${stackId}`] as const;
+};
+
+export const getGetPracticeStackQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPracticeStack>>,
+  TError = ProblemResponse,
+>(
+  stackId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPracticeStack>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPracticeStackQueryKey(stackId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPracticeStack>>
+  > = ({ signal }) => getPracticeStack(stackId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: stackId !== null && stackId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPracticeStack>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetPracticeStackQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPracticeStack>>
+>;
+export type GetPracticeStackQueryError = ProblemResponse;
+
+export function useGetPracticeStack<
+  TData = Awaited<ReturnType<typeof getPracticeStack>>,
+  TError = ProblemResponse,
+>(
+  stackId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPracticeStack>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPracticeStack>>,
+          TError,
+          Awaited<ReturnType<typeof getPracticeStack>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetPracticeStack<
+  TData = Awaited<ReturnType<typeof getPracticeStack>>,
+  TError = ProblemResponse,
+>(
+  stackId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPracticeStack>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPracticeStack>>,
+          TError,
+          Awaited<ReturnType<typeof getPracticeStack>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetPracticeStack<
+  TData = Awaited<ReturnType<typeof getPracticeStack>>,
+  TError = ProblemResponse,
+>(
+  stackId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPracticeStack>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Practice Stack
+ */
+
+export function useGetPracticeStack<
+  TData = Awaited<ReturnType<typeof getPracticeStack>>,
+  TError = ProblemResponse,
+>(
+  stackId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPracticeStack>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetPracticeStackQueryOptions(stackId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type injectPracticeStackIntoNextSprintResponse201 = {
+  data: StackInjectionResponse;
+  status: 201;
+};
+
+export type injectPracticeStackIntoNextSprintResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type injectPracticeStackIntoNextSprintResponse401ApplicationProblemJson =
+  {
+    data: ProblemResponse;
+    status: 401;
+  };
+
+export type injectPracticeStackIntoNextSprintResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type injectPracticeStackIntoNextSprintResponse403ApplicationProblemJson =
+  {
+    data: ProblemResponse;
+    status: 403;
+  };
+
+export type injectPracticeStackIntoNextSprintResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type injectPracticeStackIntoNextSprintResponse409ApplicationProblemJson =
+  {
+    data: ProblemResponse;
+    status: 409;
+  };
+
+export type injectPracticeStackIntoNextSprintResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type injectPracticeStackIntoNextSprintResponse422ApplicationProblemJson =
+  {
+    data: ProblemResponse;
+    status: 422;
+  };
+
+export type injectPracticeStackIntoNextSprintResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type injectPracticeStackIntoNextSprintResponse428ApplicationProblemJson =
+  {
+    data: ProblemResponse;
+    status: 428;
+  };
+
+export type injectPracticeStackIntoNextSprintResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type injectPracticeStackIntoNextSprintResponse503ApplicationProblemJson =
+  {
+    data: ProblemResponse;
+    status: 503;
+  };
+
+export type injectPracticeStackIntoNextSprintResponseSuccess =
+  injectPracticeStackIntoNextSprintResponse201 & {
+    headers: Headers;
+  };
+export type injectPracticeStackIntoNextSprintResponseError = (
+  | injectPracticeStackIntoNextSprintResponse401ApplicationJson
+  | injectPracticeStackIntoNextSprintResponse401ApplicationProblemJson
+  | injectPracticeStackIntoNextSprintResponse403ApplicationJson
+  | injectPracticeStackIntoNextSprintResponse403ApplicationProblemJson
+  | injectPracticeStackIntoNextSprintResponse409ApplicationJson
+  | injectPracticeStackIntoNextSprintResponse409ApplicationProblemJson
+  | injectPracticeStackIntoNextSprintResponse422ApplicationJson
+  | injectPracticeStackIntoNextSprintResponse422ApplicationProblemJson
+  | injectPracticeStackIntoNextSprintResponse428ApplicationJson
+  | injectPracticeStackIntoNextSprintResponse428ApplicationProblemJson
+  | injectPracticeStackIntoNextSprintResponse503ApplicationJson
+  | injectPracticeStackIntoNextSprintResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type injectPracticeStackIntoNextSprintResponse =
+  | injectPracticeStackIntoNextSprintResponseSuccess
+  | injectPracticeStackIntoNextSprintResponseError;
+
+export const getInjectPracticeStackIntoNextSprintUrl = (stackId: string) => {
+  return `/api/v1/practice-stacks/${stackId}:inject-next-sprint`;
+};
+
+/**
+ * @summary Inject Practice Stack
+ */
+export const injectPracticeStackIntoNextSprint = async (
+  stackId: string,
+  injectPracticeStackRequest: InjectPracticeStackRequest,
+  options?: RequestInit,
+): Promise<injectPracticeStackIntoNextSprintResponse> => {
+  const res = await fetch(getInjectPracticeStackIntoNextSprintUrl(stackId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(injectPracticeStackRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: injectPracticeStackIntoNextSprintResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as injectPracticeStackIntoNextSprintResponse;
+};
+
+export const getInjectPracticeStackIntoNextSprintMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof injectPracticeStackIntoNextSprint>>,
+    TError,
+    { stackId: string; data: InjectPracticeStackRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof injectPracticeStackIntoNextSprint>>,
+  TError,
+  { stackId: string; data: InjectPracticeStackRequest },
+  TContext
+> => {
+  const mutationKey = ["injectPracticeStackIntoNextSprint"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof injectPracticeStackIntoNextSprint>>,
+    { stackId: string; data: InjectPracticeStackRequest }
+  > = (props) => {
+    const { stackId, data } = props ?? {};
+
+    return injectPracticeStackIntoNextSprint(stackId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type InjectPracticeStackIntoNextSprintMutationResult = NonNullable<
+  Awaited<ReturnType<typeof injectPracticeStackIntoNextSprint>>
+>;
+export type InjectPracticeStackIntoNextSprintMutationBody =
+  InjectPracticeStackRequest;
+export type InjectPracticeStackIntoNextSprintMutationError = ProblemResponse;
+
+/**
+ * @summary Inject Practice Stack
+ */
+export const useInjectPracticeStackIntoNextSprint = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof injectPracticeStackIntoNextSprint>>,
+      TError,
+      { stackId: string; data: InjectPracticeStackRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof injectPracticeStackIntoNextSprint>>,
+  TError,
+  { stackId: string; data: InjectPracticeStackRequest },
+  TContext
+> => {
+  return useMutation(
+    getInjectPracticeStackIntoNextSprintMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type combinePracticeStacksResponse201 = {
+  data: PracticeStackResponse;
+  status: 201;
+};
+
+export type combinePracticeStacksResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type combinePracticeStacksResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type combinePracticeStacksResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type combinePracticeStacksResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type combinePracticeStacksResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type combinePracticeStacksResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type combinePracticeStacksResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type combinePracticeStacksResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type combinePracticeStacksResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type combinePracticeStacksResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type combinePracticeStacksResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type combinePracticeStacksResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type combinePracticeStacksResponseSuccess =
+  combinePracticeStacksResponse201 & {
+    headers: Headers;
+  };
+export type combinePracticeStacksResponseError = (
+  | combinePracticeStacksResponse401ApplicationJson
+  | combinePracticeStacksResponse401ApplicationProblemJson
+  | combinePracticeStacksResponse403ApplicationJson
+  | combinePracticeStacksResponse403ApplicationProblemJson
+  | combinePracticeStacksResponse409ApplicationJson
+  | combinePracticeStacksResponse409ApplicationProblemJson
+  | combinePracticeStacksResponse422ApplicationJson
+  | combinePracticeStacksResponse422ApplicationProblemJson
+  | combinePracticeStacksResponse428ApplicationJson
+  | combinePracticeStacksResponse428ApplicationProblemJson
+  | combinePracticeStacksResponse503ApplicationJson
+  | combinePracticeStacksResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type combinePracticeStacksResponse =
+  combinePracticeStacksResponseSuccess | combinePracticeStacksResponseError;
+
+export const getCombinePracticeStacksUrl = () => {
+  return `/api/v1/practice-stacks:combine`;
+};
+
+/**
+ * @summary Combine Practice Stacks
+ */
+export const combinePracticeStacks = async (
+  combinePracticeStacksRequest: CombinePracticeStacksRequest,
+  options?: RequestInit,
+): Promise<combinePracticeStacksResponse> => {
+  const res = await fetch(getCombinePracticeStacksUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(combinePracticeStacksRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: combinePracticeStacksResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as combinePracticeStacksResponse;
+};
+
+export const getCombinePracticeStacksMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof combinePracticeStacks>>,
+    TError,
+    { data: CombinePracticeStacksRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof combinePracticeStacks>>,
+  TError,
+  { data: CombinePracticeStacksRequest },
+  TContext
+> => {
+  const mutationKey = ["combinePracticeStacks"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof combinePracticeStacks>>,
+    { data: CombinePracticeStacksRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return combinePracticeStacks(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CombinePracticeStacksMutationResult = NonNullable<
+  Awaited<ReturnType<typeof combinePracticeStacks>>
+>;
+export type CombinePracticeStacksMutationBody = CombinePracticeStacksRequest;
+export type CombinePracticeStacksMutationError = ProblemResponse;
+
+/**
+ * @summary Combine Practice Stacks
+ */
+export const useCombinePracticeStacks = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof combinePracticeStacks>>,
+      TError,
+      { data: CombinePracticeStacksRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof combinePracticeStacks>>,
+  TError,
+  { data: CombinePracticeStacksRequest },
+  TContext
+> => {
+  return useMutation(
+    getCombinePracticeStacksMutationOptions(options),
     queryClient,
   );
 };

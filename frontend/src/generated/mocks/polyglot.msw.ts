@@ -16,6 +16,9 @@ import {
   LanguageRelationship,
   PlacementBand,
   PlacementChoice,
+  PracticeDirection,
+  PracticeMode,
+  PracticeStackKind,
   SelfAssessedBand,
   SkillDimension,
 } from "../model";
@@ -56,6 +59,11 @@ import type {
   MutationResponse,
   OnboardingResponse,
   PlacementManifestResponse,
+  PracticePresetPageResponse,
+  PracticePresetResponse,
+  PracticeRunResponse,
+  PracticeStackPageResponse,
+  PracticeStackResponse,
   PreferencesResponse,
   ProfileResponse,
   ProfilesResponse,
@@ -68,6 +76,7 @@ import type {
   SessionPlanResponse,
   SessionResponse,
   SprintRunResponse,
+  StackInjectionResponse,
   ToolDefinitionResponse,
   ToolResultResponse,
   TtsCapabilitiesResponse,
@@ -3917,6 +3926,146 @@ export const getChoosePlacementResponseMock = (
   ...overrideResponse,
 });
 
+export const getListPracticePresetsResponseMock = (
+  overrideResponse: Partial<Extract<PracticePresetPageResponse, object>> = {},
+): PracticePresetPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+    mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    preset_id: faker.string.uuid(),
+    preset_revision_id: faker.string.uuid(),
+    profile_id: faker.string.uuid(),
+    revision_no: faker.number.int(),
+    settings: {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    stack_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreatePracticePresetResponseMock = (
+  overrideResponse: Partial<Extract<PracticePresetResponse, object>> = {},
+): PracticePresetResponse => ({
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  settings: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
+  stack_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getListPracticeStacksResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackPageResponse, object>> = {},
+): PracticeStackPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    language_pack_revision_id: faker.string.uuid(),
+    members: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    })),
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    pedagogical_day: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 10),
+      null,
+    ]),
+    profile_id: faker.string.uuid(),
+    source_refs: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    stack_id: faker.string.uuid(),
+    stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreatePracticeStackResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackResponse, object>> = {},
+): PracticeStackResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  language_pack_revision_id: faker.string.uuid(),
+  members: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+    label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    sense_id: faker.string.uuid(),
+    sense_revision_id: faker.string.uuid(),
+    source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+    source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+  })),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  source_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  stack_id: faker.string.uuid(),
+  stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
+  ...overrideResponse,
+});
+
 export const getAddPrivateLexicalUnitResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
 ): MutationResponse => ({
@@ -4048,6 +4197,14 @@ export const getGetWordBankOverviewResponseMock = (
             structure: faker.datatype.boolean(),
             support_lexicon: faker.datatype.boolean(),
           },
+          knowledge: {
+            autonomous_reuse_success_count: faker.number.int(),
+            encounter_count: faker.number.int(),
+            guided_reuse_success_count: faker.number.int(),
+            recall_success_count: faker.number.int(),
+            recognition_success_count: faker.number.int(),
+            stage: faker.string.alpha({ length: { min: 10, max: 20 } }),
+          },
           learning_targets: Array.from(
             { length: faker.number.int({ min: 1, max: 10 }) },
             (_, i) => i + 1,
@@ -4118,6 +4275,17 @@ export const getGetWordBankOverviewResponseMock = (
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
   ).map(() => ({
+    candidates: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      candidate_id: faker.string.uuid(),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      definition: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      label: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+    })),
     created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
     encounter_id: faker.string.uuid(),
     exact_surface: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -5017,6 +5185,280 @@ export const getRetractLexicalRelationResponseMock = (
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getAbandonPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getAdvancePracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getInterruptPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResumePracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetPracticeStackResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackResponse, object>> = {},
+): PracticeStackResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  language_pack_revision_id: faker.string.uuid(),
+  members: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+    label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    sense_id: faker.string.uuid(),
+    sense_revision_id: faker.string.uuid(),
+    source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+    source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+  })),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  source_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  stack_id: faker.string.uuid(),
+  stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
+  ...overrideResponse,
+});
+
+export const getInjectPracticeStackIntoNextSprintResponseMock = (
+  overrideResponse: Partial<Extract<StackInjectionResponse, object>> = {},
+): StackInjectionResponse => ({
+  injection_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  requested_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  stack_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCombinePracticeStacksResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackResponse, object>> = {},
+): PracticeStackResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  language_pack_revision_id: faker.string.uuid(),
+  members: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+    label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    sense_id: faker.string.uuid(),
+    sense_revision_id: faker.string.uuid(),
+    source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+    source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+  })),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  source_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  stack_id: faker.string.uuid(),
+  stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
   ...overrideResponse,
 });
 
@@ -8211,6 +8653,110 @@ export const getChoosePlacementMockHandler = (
   );
 };
 
+export const getListPracticePresetsMockHandler = (
+  overrideResponse?:
+    | PracticePresetPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PracticePresetPageResponse> | PracticePresetPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:profileId/practice-presets",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListPracticePresetsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCreatePracticePresetMockHandler = (
+  overrideResponse?:
+    | PracticePresetResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticePresetResponse> | PracticePresetResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/practice-presets",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCreatePracticePresetResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getListPracticeStacksMockHandler = (
+  overrideResponse?:
+    | PracticeStackPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PracticeStackPageResponse> | PracticeStackPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:profileId/practice-stacks",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListPracticeStacksResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCreatePracticeStackMockHandler = (
+  overrideResponse?:
+    | PracticeStackResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeStackResponse> | PracticeStackResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/practice-stacks",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCreatePracticeStackResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
 export const getAddPrivateLexicalUnitMockHandler = (
   overrideResponse?:
     | MutationResponse
@@ -9142,6 +9688,240 @@ export const getRetractLexicalRelationMockHandler = (
   );
 };
 
+export const getStartPracticeRunMockHandler = (
+  overrideResponse?:
+    | PracticeRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeRunResponse> | PracticeRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-presets/:presetId/runs",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getStartPracticeRunResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetPracticeRunMockHandler = (
+  overrideResponse?:
+    | PracticeRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PracticeRunResponse> | PracticeRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/practice-runs/:runId",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetPracticeRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getAbandonPracticeRunMockHandler = (
+  overrideResponse?:
+    | PracticeRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeRunResponse> | PracticeRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-runs/:runId\\:abandon",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getAbandonPracticeRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getAdvancePracticeRunMockHandler = (
+  overrideResponse?:
+    | PracticeRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeRunResponse> | PracticeRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-runs/:runId\\:advance",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getAdvancePracticeRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getInterruptPracticeRunMockHandler = (
+  overrideResponse?:
+    | PracticeRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeRunResponse> | PracticeRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-runs/:runId\\:interrupt",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getInterruptPracticeRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getResumePracticeRunMockHandler = (
+  overrideResponse?:
+    | PracticeRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeRunResponse> | PracticeRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-runs/:runId\\:resume",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getResumePracticeRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetPracticeStackMockHandler = (
+  overrideResponse?:
+    | PracticeStackResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PracticeStackResponse> | PracticeStackResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/practice-stacks/:stackId",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetPracticeStackResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getInjectPracticeStackIntoNextSprintMockHandler = (
+  overrideResponse?:
+    | StackInjectionResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<StackInjectionResponse> | StackInjectionResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-stacks/:stackId\\:inject-next-sprint",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getInjectPracticeStackIntoNextSprintResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCombinePracticeStacksMockHandler = (
+  overrideResponse?:
+    | PracticeStackResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PracticeStackResponse> | PracticeStackResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/practice-stacks\\:combine",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCombinePracticeStacksResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
 export const getRevokeSessionMockHandler = (
   overrideResponse?:
     | void
@@ -10002,6 +10782,10 @@ export const getPolyglotV2APIMock = () => [
   getStartOnboardingMockHandler(),
   getRecordPlacementProfileMockHandler(),
   getChoosePlacementMockHandler(),
+  getListPracticePresetsMockHandler(),
+  getCreatePracticePresetMockHandler(),
+  getListPracticeStacksMockHandler(),
+  getCreatePracticeStackMockHandler(),
   getAddPrivateLexicalUnitMockHandler(),
   getMergeLexicalUnitsMockHandler(),
   getCreateVocabularyListMockHandler(),
@@ -10038,6 +10822,15 @@ export const getPolyglotV2APIMock = () => [
   getPauseModuleEnrollmentMockHandler(),
   getListLearningModulesMockHandler(),
   getRetractLexicalRelationMockHandler(),
+  getStartPracticeRunMockHandler(),
+  getGetPracticeRunMockHandler(),
+  getAbandonPracticeRunMockHandler(),
+  getAdvancePracticeRunMockHandler(),
+  getInterruptPracticeRunMockHandler(),
+  getResumePracticeRunMockHandler(),
+  getGetPracticeStackMockHandler(),
+  getInjectPracticeStackIntoNextSprintMockHandler(),
+  getCombinePracticeStacksMockHandler(),
   getRevokeSessionMockHandler(),
   getGetCurrentSessionMockHandler(),
   getAuthenticateSessionMockHandler(),

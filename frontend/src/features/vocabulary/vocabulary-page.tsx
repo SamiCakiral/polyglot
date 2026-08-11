@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useActiveProfile } from "../../app/profile-state";
 import { useSession } from "../../app/session-context";
@@ -21,11 +21,14 @@ import {
 } from "../../components/product-ui";
 import {
   useCreateVocabularyList,
+  useCreatePracticeStack,
+  useFreezeVocabularyList,
   useGetLexicalSense,
   useGetVocabularyList,
   useGetWordBankOverview,
   useListVocabularyLists,
   useRecordLexicalEncounter,
+  useResolveMention,
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
@@ -44,6 +47,15 @@ const reasonLabels: Record<string, string> = {
 const listStatusLabels: Record<string, string> = {
   active: "Active",
   archived: "Archivée",
+};
+
+const knowledgeLabels: Record<string, string> = {
+  unencountered: "Non rencontré",
+  encountered: "Rencontré",
+  recognized: "Reconnu",
+  recalled: "Rappelé",
+  guided_reuse: "Réutilisé avec aide",
+  autonomous_reuse: "Réutilisé seul",
 };
 
 function wordCountLabel(count: number): string {
@@ -76,19 +88,22 @@ function vocabularyLists(data: unknown): VocabularyListSummary[] {
 }
 
 export function VocabularyPage() {
-  const { activeProfile } = useActiveProfile();
+  const { activePack, activeProfile } = useActiveProfile();
   const session = useSession();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
+  const [creatingStack, setCreatingStack] = useState(false);
   const [addingWord, setAddingWord] = useState(false);
   const [manualSurface, setManualSurface] = useState("");
   const [name, setName] = useState("");
+  const [stackName, setStackName] = useState("");
   const [error, setError] = useState("");
   const profileId = activeProfile?.profile_id ?? "";
   const query = useGetWordBankOverview(
     profileId,
-    { limit: 100, reference_set_code: "it-pilot-core" },
+    { limit: 100 },
     {
       fetch: queryFetch(),
       query: { enabled: Boolean(activeProfile), retry: false },
@@ -102,9 +117,11 @@ export function VocabularyPage() {
     },
   );
   const createList = useCreateVocabularyList({ fetch: commandFetch(session) });
+  const createStack = useCreatePracticeStack({ fetch: commandFetch(session) });
   const recordEncounter = useRecordLexicalEncounter({
     fetch: commandFetch(session),
   });
+  const resolveMention = useResolveMention({ fetch: commandFetch(session) });
   const overview = query.data?.status === 200 ? query.data.data : null;
   const unresolvedMentions = overview?.unresolved_mentions ?? [];
   const lists =
@@ -115,10 +132,10 @@ export function VocabularyPage() {
     () =>
       overview?.items.filter((item) =>
         item.label
-          .toLocaleLowerCase("it")
-          .includes(filter.toLocaleLowerCase("it")),
+          .toLocaleLowerCase(activePack?.target_language_tag)
+          .includes(filter.toLocaleLowerCase(activePack?.target_language_tag)),
       ) ?? [],
-    [filter, overview],
+    [activePack?.target_language_tag, filter, overview],
   );
   if (!activeProfile) return <NoProfile />;
   if (query.isPending || listsQuery.isPending)
@@ -201,6 +218,71 @@ export function VocabularyPage() {
     await query.refetch();
   }
 
+  async function createTrainingStack() {
+    if (!stackName.trim() || !activePack) return;
+    const members = (overview?.items ?? [])
+      .filter(
+        (item) =>
+          selected.has(item.sense_id) &&
+          item.sense_revision_id &&
+          item.definition,
+      )
+      .map((item) => ({
+        definition: item.definition ?? "",
+        label: item.label,
+        sense_id: item.sense_id,
+        sense_revision_id: item.sense_revision_id ?? "",
+        source_kind: "word_bank_selection",
+        source_ref: `word_bank:${item.sense_id}`,
+      }));
+    if (!members.length) {
+      setError("Sélectionnez au moins un sens identifié.");
+      return;
+    }
+    const response = await createStack.mutateAsync({
+      profileId,
+      data: {
+        created_at: new Date().toISOString(),
+        language_pack_revision_id: activePack.pack_revision_id,
+        members,
+        name: stackName.trim(),
+        source_refs: ["word_bank:selection"],
+        stack_kind: "selection",
+      },
+    });
+    const problem = responseProblem(response);
+    if (problem || response.status !== 201) {
+      setError(problem || "La pile n'a pas pu être créée.");
+      return;
+    }
+    setSelected(new Set());
+    setStackName("");
+    setCreatingStack(false);
+    void navigate("/practice");
+  }
+
+  async function resolveManualMention(
+    mentionId: string,
+    candidateId: string,
+  ) {
+    setError("");
+    const response = await resolveMention.mutateAsync({
+      mentionId,
+      data: {
+        data: {
+          candidate_id: candidateId,
+          resolution_id: uuid7(),
+        },
+      },
+    });
+    const problem = responseProblem(response);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    await query.refetch();
+  }
+
   return (
     <div className="page-flow">
       <PageHeader
@@ -227,6 +309,15 @@ export function VocabularyPage() {
             >
               <ListPlus aria-hidden="true" size={18} /> Nouvelle liste
             </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setCreatingStack((value) => !value);
+              }}
+            >
+              <FolderOpen aria-hidden="true" size={18} /> Nouvelle pile
+            </button>
           </div>
         }
       />
@@ -252,13 +343,15 @@ export function VocabularyPage() {
           <div>
             <p className="eyebrow">Ajout manuel</p>
             <h2>Ajouter un mot rencontré ailleurs</h2>
-            <p>Le sens restera à clarifier tant qu'il n'aura pas été identifié.</p>
+            <p>
+              Le sens restera à clarifier tant qu'il n'aura pas été identifié.
+            </p>
           </div>
           <label>
-            Mot ou expression en italien
+            Mot ou expression en langue cible
             <input
               autoFocus
-              lang="it"
+              lang={activePack?.target_language_tag}
               maxLength={200}
               value={manualSurface}
               onChange={(event) => {
@@ -331,6 +424,48 @@ export function VocabularyPage() {
           </div>
         </section>
       ) : null}
+      {creatingStack ? (
+        <section className="list-composer">
+          <div>
+            <p className="eyebrow">Pile d'entraînement</p>
+            <h2>Figer une sélection de mots</h2>
+            <p>{selected.size} sens sélectionnés dans votre Word Bank</p>
+          </div>
+          <label>
+            Nom de la pile
+            <input
+              autoFocus
+              maxLength={200}
+              value={stackName}
+              onChange={(event) => {
+                setStackName(event.target.value);
+              }}
+            />
+          </label>
+          {error ? <ErrorRegion message={error} /> : null}
+          <div>
+            <button
+              className="icon-button secondary-button"
+              aria-label="Annuler"
+              type="button"
+              onClick={() => {
+                setCreatingStack(false);
+              }}
+            >
+              <X aria-hidden="true" />
+            </button>
+            <button
+              disabled={
+                !stackName.trim() || !selected.size || createStack.isPending
+              }
+              type="button"
+              onClick={() => void createTrainingStack()}
+            >
+              Créer la pile
+            </button>
+          </div>
+        </section>
+      ) : null}
       {lists.length ? (
         <section className="vocabulary-lists">
           <div className="section-heading">
@@ -362,18 +497,40 @@ export function VocabularyPage() {
               <p className="eyebrow">À identifier</p>
               <h2>Mentions à clarifier</h2>
             </div>
-            <StatusPill tone="warn">
-              {unresolvedMentions.length}
-            </StatusPill>
+            <StatusPill tone="warn">{unresolvedMentions.length}</StatusPill>
           </div>
           <div>
             {unresolvedMentions.map((mention) => (
-              <div key={mention.mention_id}>
+              <div className="unresolved-mention" key={mention.mention_id}>
                 <BookMarked aria-hidden="true" size={20} />
                 <span>
-                  <strong lang="it">{mention.exact_surface}</strong>
+                  <strong lang={activePack?.target_language_tag}>
+                    {mention.exact_surface}
+                  </strong>
                   <small>Ajouté manuellement · sens non identifié</small>
                 </span>
+                {(mention.candidates ?? []).length ? (
+                  <div className="mention-candidates">
+                    {(mention.candidates ?? []).map((candidate) => (
+                      <button
+                        className="secondary-button"
+                        disabled={resolveMention.isPending}
+                        key={candidate.candidate_id}
+                        type="button"
+                        onClick={() =>
+                          void resolveManualMention(
+                            mention.mention_id,
+                            candidate.candidate_id,
+                          )
+                        }
+                      >
+                        Confirmer {candidate.label} : {candidate.definition}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <small>Aucun sens du catalogue ne correspond exactement.</small>
+                )}
               </div>
             ))}
           </div>
@@ -402,7 +559,7 @@ export function VocabularyPage() {
         </div>
         {items.map((item) => (
           <div className="data-table__row" role="row" key={item.sense_id}>
-            {creating ? (
+            {creating || creatingStack ? (
               <label className="word-selection">
                 <input
                   aria-label={`Sélectionner ${item.label}`}
@@ -415,7 +572,10 @@ export function VocabularyPage() {
               </label>
             ) : null}
             <span className="word-label" role="cell">
-              <Link lang="it" to={`/vocabulary/senses/${item.sense_id}`}>
+              <Link
+                lang={activePack?.target_language_tag}
+                to={`/vocabulary/senses/${item.sense_id}`}
+              >
                 {item.label}
               </Link>
               <small>{item.definition}</small>
@@ -423,7 +583,9 @@ export function VocabularyPage() {
             <span role="cell">{item.encounter_count}</span>
             <span role="cell">
               <StatusPill tone={item.projection?.debt ? "warn" : "neutral"}>
-                {analysisLabels[item.analysis_state] ?? item.analysis_state}
+                {knowledgeLabels[item.projection?.knowledge.stage ?? ""] ??
+                  analysisLabels[item.analysis_state] ??
+                  item.analysis_state}
               </StatusPill>
             </span>
             <span role="cell">
@@ -453,19 +615,29 @@ export function VocabularyPage() {
 
 export function VocabularyListDetailPage() {
   const { listId = "" } = useParams();
-  const { activeProfile } = useActiveProfile();
+  const { activePack, activeProfile } = useActiveProfile();
+  const session = useSession();
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const profileId = activeProfile?.profile_id ?? "";
   const listQuery = useGetVocabularyList(listId, {
     fetch: queryFetch(),
     query: { retry: false },
   });
   const bankQuery = useGetWordBankOverview(
     activeProfile?.profile_id ?? "",
-    { limit: 100, reference_set_code: "it-pilot-core" },
+    { limit: 100 },
     {
       fetch: queryFetch(),
       query: { enabled: Boolean(activeProfile), retry: false },
     },
   );
+  const listVersion =
+    listQuery.data?.status === 200 ? listQuery.data.data.version : undefined;
+  const freezeList = useFreezeVocabularyList({
+    fetch: commandFetch(session, listVersion),
+  });
+  const createStack = useCreatePracticeStack({ fetch: commandFetch(session) });
   if (!activeProfile) return <NoProfile />;
   if (listQuery.isPending || bankQuery.isPending)
     return <LoadingRegion label="Ouverture de la liste" />;
@@ -476,6 +648,36 @@ export function VocabularyListDetailPage() {
   const words = list.member_sense_ids
     .map((senseId) => bank.find((item) => item.sense_id === senseId))
     .filter((item) => item !== undefined);
+
+  async function trainList() {
+    setError("");
+    const at = new Date().toISOString();
+    const snapshot = await freezeList.mutateAsync({
+      listId,
+      data: { at },
+    });
+    const snapshotProblem = responseProblem(snapshot);
+    if (snapshotProblem || snapshot.status !== 200) {
+      setError(snapshotProblem || "La liste n'a pas pu être figée.");
+      return;
+    }
+    const stack = await createStack.mutateAsync({
+      profileId,
+      data: {
+        created_at: at,
+        name: list.name,
+        source_list_snapshot_id: snapshot.data.snapshot_id,
+        source_refs: [`vocabulary_list:${list.list_id}`],
+        stack_kind: "list_snapshot",
+      },
+    });
+    const stackProblem = responseProblem(stack);
+    if (stackProblem || stack.status !== 201) {
+      setError(stackProblem || "La pile n'a pas pu être créée.");
+      return;
+    }
+    void navigate("/practice");
+  }
   return (
     <div className="page-flow page-flow--narrow">
       <PageHeader
@@ -495,7 +697,7 @@ export function VocabularyListDetailPage() {
         </p>
         {words.map((word) => (
           <div key={word.sense_id}>
-            <strong lang="it">{word.label}</strong>
+            <strong lang={activePack?.target_language_tag}>{word.label}</strong>
             <span>{word.definition ?? "Définition indisponible"}</span>
           </div>
         ))}
@@ -503,6 +705,16 @@ export function VocabularyListDetailPage() {
           <p>Cette liste ne contient encore aucun mot de votre Word Bank.</p>
         ) : null}
       </section>
+      {error ? <ErrorRegion message={error} /> : null}
+      <button
+        disabled={
+          !words.length || freezeList.isPending || createStack.isPending
+        }
+        type="button"
+        onClick={() => void trainList()}
+      >
+        <FolderOpen aria-hidden="true" size={18} /> Entraîner cette liste
+      </button>
       <Link className="text-link" to="/vocabulary">
         Retour au vocabulaire
       </Link>
@@ -528,7 +740,7 @@ export function VocabularySenseDetailPage() {
   );
   const bankQuery = useGetWordBankOverview(
     activeProfile?.profile_id ?? "",
-    { limit: 100, reference_set_code: "it-pilot-core" },
+    { limit: 100 },
     {
       fetch: queryFetch(),
       query: { enabled: Boolean(activeProfile), retry: false },

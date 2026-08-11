@@ -35,6 +35,7 @@ from polyglot.interfaces.http.routes.language_profiles import language_profiles_
 from polyglot.interfaces.http.routes.media import media_router
 from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
 from polyglot.interfaces.http.routes.onboarding import onboarding_router
+from polyglot.interfaces.http.routes.practice import practice_router
 from polyglot.interfaces.http.routes.progress import ProgressService, progress_router
 from polyglot.interfaces.http.routes.sprints import sprints_router
 from polyglot.interfaces.http.routes.word_bank import (
@@ -54,6 +55,7 @@ from polyglot.modules.identity.language_persistence import AccountLanguageApplic
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
 from polyglot.modules.language_profiles.onboarding_persistence import OnboardingApplicationService
 from polyglot.modules.media.application import MediaApplicationService
+from polyglot.modules.practice.application import PracticeService
 from polyglot.modules.sprints.application import SprintApplicationService
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 from polyglot.platform.observability import configure_local_logging
@@ -104,6 +106,7 @@ def create_app(
     curriculum_service: CurriculumApplicationService | None = None,
     sprint_service: SprintApplicationService | None = None,
     progress_service: ProgressService | None = None,
+    practice_service: PracticeService | None = None,
     assessment_service: AssessmentApplicationService | None = None,
     media_service: MediaApplicationService | None = None,
     generation_service: GenerationApplicationService | None = None,
@@ -194,6 +197,13 @@ def create_app(
         )
     )
     app.include_router(progress_router(progress_service, identity_service))
+    app.include_router(
+        practice_router(
+            practice_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
     app.include_router(
         assessments_router(
             assessment_service,
@@ -309,6 +319,7 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.media.persistence import SqlMediaService
     from polyglot.modules.media.ports import MacOSTtsPort, TtsAvailability, TtsVoice
     from polyglot.modules.media.storage import FilesystemObjectStorage, LocalSignedUrlSigner
+    from polyglot.modules.practice.persistence import SqlPracticeService
     from polyglot.modules.progress.application import SqlProgressQueryService
     from polyglot.modules.progress.persistence import SqlProgressRepository
     from polyglot.modules.sprints.persistence import SqlSprintService
@@ -319,6 +330,7 @@ def create_runtime_app() -> FastAPI:
     curriculum_service = SqlCurriculumService(session_factory)
     sprint_service = SqlSprintService(session_factory)
     progress_service = SqlProgressQueryService(session_factory)
+    practice_service = SqlPracticeService(session_factory)
     progress_dispatcher = LocalOutboxDispatcher(
         session_factory=session_factory,
         publisher=LocalLearningEventPublisher(
@@ -404,6 +416,7 @@ def create_runtime_app() -> FastAPI:
         curriculum_service=curriculum_service,
         sprint_service=sprint_service,
         progress_service=progress_service,
+        practice_service=practice_service,
         assessment_service=assessment_service,
         media_service=media_service,
         generation_service=generation_service,

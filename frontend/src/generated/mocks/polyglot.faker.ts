@@ -13,6 +13,9 @@ import {
   LanguageRelationship,
   PlacementBand,
   PlacementChoice,
+  PracticeDirection,
+  PracticeMode,
+  PracticeStackKind,
   SelfAssessedBand,
   SkillDimension,
 } from "../model";
@@ -53,6 +56,11 @@ import type {
   MutationResponse,
   OnboardingResponse,
   PlacementManifestResponse,
+  PracticePresetPageResponse,
+  PracticePresetResponse,
+  PracticeRunResponse,
+  PracticeStackPageResponse,
+  PracticeStackResponse,
   PreferencesResponse,
   ProfileResponse,
   ProfilesResponse,
@@ -65,6 +73,7 @@ import type {
   SessionPlanResponse,
   SessionResponse,
   SprintRunResponse,
+  StackInjectionResponse,
   ToolDefinitionResponse,
   ToolResultResponse,
   TtsCapabilitiesResponse,
@@ -3914,6 +3923,146 @@ export const getChoosePlacementResponseMock = (
   ...overrideResponse,
 });
 
+export const getListPracticePresetsResponseMock = (
+  overrideResponse: Partial<Extract<PracticePresetPageResponse, object>> = {},
+): PracticePresetPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+    mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    preset_id: faker.string.uuid(),
+    preset_revision_id: faker.string.uuid(),
+    profile_id: faker.string.uuid(),
+    revision_no: faker.number.int(),
+    settings: {
+      [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([
+          faker.datatype.boolean(),
+          faker.number.int(),
+          faker.number.float({ fractionDigits: 2 }),
+          faker.string.alpha({ length: { min: 10, max: 20 } }),
+          null,
+        ]),
+        [],
+      ]),
+    },
+    stack_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreatePracticePresetResponseMock = (
+  overrideResponse: Partial<Extract<PracticePresetResponse, object>> = {},
+): PracticePresetResponse => ({
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  revision_no: faker.number.int(),
+  settings: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
+  stack_ids: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.uuid()),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getListPracticeStacksResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackPageResponse, object>> = {},
+): PracticeStackPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    language_pack_revision_id: faker.string.uuid(),
+    members: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    })),
+    name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    pedagogical_day: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 10),
+      null,
+    ]),
+    profile_id: faker.string.uuid(),
+    source_refs: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    stack_id: faker.string.uuid(),
+    stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreatePracticeStackResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackResponse, object>> = {},
+): PracticeStackResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  language_pack_revision_id: faker.string.uuid(),
+  members: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+    label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    sense_id: faker.string.uuid(),
+    sense_revision_id: faker.string.uuid(),
+    source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+    source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+  })),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  source_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  stack_id: faker.string.uuid(),
+  stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
+  ...overrideResponse,
+});
+
 export const getAddPrivateLexicalUnitResponseMock = (
   overrideResponse: Partial<Extract<MutationResponse, object>> = {},
 ): MutationResponse => ({
@@ -4045,6 +4194,14 @@ export const getGetWordBankOverviewResponseMock = (
             structure: faker.datatype.boolean(),
             support_lexicon: faker.datatype.boolean(),
           },
+          knowledge: {
+            autonomous_reuse_success_count: faker.number.int(),
+            encounter_count: faker.number.int(),
+            guided_reuse_success_count: faker.number.int(),
+            recall_success_count: faker.number.int(),
+            recognition_success_count: faker.number.int(),
+            stage: faker.string.alpha({ length: { min: 10, max: 20 } }),
+          },
           learning_targets: Array.from(
             { length: faker.number.int({ min: 1, max: 10 }) },
             (_, i) => i + 1,
@@ -4115,6 +4272,17 @@ export const getGetWordBankOverviewResponseMock = (
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
   ).map(() => ({
+    candidates: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      candidate_id: faker.string.uuid(),
+      confidence: faker.number.float({ fractionDigits: 2 }),
+      definition: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      label: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+    })),
     created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
     encounter_id: faker.string.uuid(),
     exact_surface: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -5014,6 +5182,280 @@ export const getRetractLexicalRelationResponseMock = (
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getAbandonPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getAdvancePracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getInterruptPracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getResumePracticeRunResponseMock = (
+  overrideResponse: Partial<Extract<PracticeRunResponse, object>> = {},
+): PracticeRunResponse => ({
+  completed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  current_item: faker.helpers.arrayElement([
+    {
+      definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+      label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+      sense_id: faker.string.uuid(),
+      sense_revision_id: faker.string.uuid(),
+      source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+      source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    },
+    null,
+  ]),
+  current_position: faker.number.int(),
+  direction: faker.helpers.arrayElement(Object.values(PracticeDirection)),
+  member_count: faker.number.int(),
+  mode: faker.helpers.arrayElement(Object.values(PracticeMode)),
+  preset_id: faker.string.uuid(),
+  preset_revision_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  run_id: faker.string.uuid(),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetPracticeStackResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackResponse, object>> = {},
+): PracticeStackResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  language_pack_revision_id: faker.string.uuid(),
+  members: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+    label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    sense_id: faker.string.uuid(),
+    sense_revision_id: faker.string.uuid(),
+    source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+    source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+  })),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  source_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  stack_id: faker.string.uuid(),
+  stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
+  ...overrideResponse,
+});
+
+export const getInjectPracticeStackIntoNextSprintResponseMock = (
+  overrideResponse: Partial<Extract<StackInjectionResponse, object>> = {},
+): StackInjectionResponse => ({
+  injection_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  requested_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  stack_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getCombinePracticeStacksResponseMock = (
+  overrideResponse: Partial<Extract<PracticeStackResponse, object>> = {},
+): PracticeStackResponse => ({
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  language_pack_revision_id: faker.string.uuid(),
+  members: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    definition: faker.string.alpha({ length: { min: 1, max: 2000 } }),
+    label: faker.string.alpha({ length: { min: 1, max: 500 } }),
+    sense_id: faker.string.uuid(),
+    sense_revision_id: faker.string.uuid(),
+    source_kind: faker.string.alpha({ length: { min: 1, max: 40 } }),
+    source_ref: faker.string.alpha({ length: { min: 1, max: 500 } }),
+  })),
+  name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  pedagogical_day: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 10),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  source_refs: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  stack_id: faker.string.uuid(),
+  stack_kind: faker.helpers.arrayElement(Object.values(PracticeStackKind)),
   ...overrideResponse,
 });
 

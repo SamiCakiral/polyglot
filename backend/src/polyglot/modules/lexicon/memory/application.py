@@ -203,7 +203,7 @@ class MemoryLifecycle:
     ) -> ReviewDecision:
         self._require_status(aggregate, {PromptStatus.ACTIVE})
         self._require_binding(aggregate, policy)
-        if not self._certification_matches(aggregate.prompt, command):
+        if not self._retrieval_certification_matches(aggregate.prompt, command):
             return ReviewDecision(aggregate, False, "operation_not_certified")
         if command.answer_revealed:
             return ReviewDecision(aggregate, False, "answer_revealed")
@@ -624,14 +624,14 @@ class MemoryLifecycle:
             )
 
     @staticmethod
-    def _certification_matches(
+    def _retrieval_certification_matches(
         prompt: MemoryPrompt,
         command: SubmitMemoryReview,
     ) -> bool:
         return (
             command.certified_recall
             and bool(command.certification_ref.strip())
-            and prompt.operation == "recall"
+            and prompt.operation in {"recall", "recognition"}
             and command.certified_operation == prompt.operation
             and command.certified_protocol_id == prompt.protocol_id
             and command.certified_protocol_revision == prompt.protocol_revision

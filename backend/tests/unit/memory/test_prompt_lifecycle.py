@@ -194,6 +194,34 @@ def test_review_adds_one_fact_and_projection_without_pedagogical_mastery(
     assert not hasattr(decision.aggregate, "learning_evidence")
 
 
+def test_self_reported_recognition_updates_schedule_at_low_confidence(
+    lifecycle: MemoryLifecycle,
+    policy: SchedulerPolicy,
+) -> None:
+    aggregate = lifecycle.create(
+        create_command(
+            operation="recognition",
+            protocol_id="practice-stack-self-recall",
+        ),
+        policy,
+    )
+    command = review_command(
+        certified_operation="recognition",
+        certified_protocol_id="practice-stack-self-recall",
+    )
+    command = SubmitMemoryReview(
+        **{**command.as_dict(), "self_reported": True}
+    )
+
+    decision = lifecycle.submit_review(aggregate, command, policy)
+
+    assert decision.review_created is True
+    assert decision.aggregate.prompt.version == 2
+    assert decision.aggregate.schedule.reps == 1
+    assert decision.aggregate.reviews[0].low_confidence is True
+    assert not hasattr(decision.aggregate, "mastery")
+
+
 @pytest.mark.parametrize(
     ("changes", "reason"),
     [

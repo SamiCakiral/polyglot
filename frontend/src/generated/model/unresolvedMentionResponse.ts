@@ -4,8 +4,10 @@
  * Polyglot V2 API
  * OpenAPI spec version: 0.1.0
  */
+import type { MentionCandidateResponse } from "./mentionCandidateResponse";
 
 export interface UnresolvedMentionResponse {
+  candidates?: MentionCandidateResponse[];
   created_at: string;
   encounter_id: string;
   exact_surface: string;

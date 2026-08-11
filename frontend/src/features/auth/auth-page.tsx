@@ -55,10 +55,10 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     <main className="auth-layout">
       <section className="auth-intro">
         <div className="brand-mark"><Languages aria-hidden="true" size={22} /> Polyglot</div>
-        <p className="eyebrow">Français vers italien</p>
+        <p className="eyebrow">Votre parcours linguistique</p>
         <h1>Une pratique courte, reliée à ce que vous apprenez vraiment.</h1>
         <p>Vocabulaire rencontré, structures grammaticales, productions et progrès restent liés dans un même parcours.</p>
-        <blockquote lang="it">“Un passo alla volta, ma ogni giorno.”</blockquote>
+        <blockquote>“Comprendre, pratiquer, réutiliser.”</blockquote>
       </section>
       <section className="auth-form-region">
         <form className="auth-form" onSubmit={(event) => void submit(event)}>

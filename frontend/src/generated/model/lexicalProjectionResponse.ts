@@ -6,6 +6,7 @@
  */
 import type { AssessmentScopeResponse } from "./assessmentScopeResponse";
 import type { GymCreditResponse } from "./gymCreditResponse";
+import type { KnowledgeStateResponse } from "./knowledgeStateResponse";
 import type { LexicalDebtResponse } from "./lexicalDebtResponse";
 import type { LexicalPlanResponse } from "./lexicalPlanResponse";
 import type { LexicalProjectionResponseModalities } from "./lexicalProjectionResponseModalities";
@@ -18,6 +19,7 @@ export interface LexicalProjectionResponse {
   diagnostic_estimate: [number, number] | null;
   gap_reasons: string[];
   gym: GymCreditResponse;
+  knowledge: KnowledgeStateResponse;
   learning_targets: string[];
   modalities: LexicalProjectionResponseModalities;
   plan: LexicalPlanResponse;

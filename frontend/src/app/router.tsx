@@ -11,7 +11,10 @@ import {
   AssessmentRunPage,
 } from "../features/assess/assess-page";
 import { LearnPage, ModuleDetailPage } from "../features/learn/learn-page";
-import { PracticePage } from "../features/practice/practice-page";
+import {
+  PracticePage,
+  PracticeRunPage,
+} from "../features/practice/practice-page";
 import {
   ProgressPage,
   ProgressSkillDetailPage,
@@ -73,6 +76,15 @@ const routes: RouteObject[] = [
     element: (
       <ProtectedFocus>
         <SprintPage />
+      </ProtectedFocus>
+    ),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/practice/runs/:practiceRunId",
+    element: (
+      <ProtectedFocus>
+        <PracticeRunPage />
       </ProtectedFocus>
     ),
     errorElement: <RouteErrorBoundary />,
