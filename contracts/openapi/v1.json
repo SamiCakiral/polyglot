@@ -159,6 +159,29 @@
         "title": "ApproveContentRevisionRequest",
         "type": "object"
       },
+      "AssessmentCapabilitiesResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "available_modalities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Available Modalities",
+            "type": "array"
+          },
+          "profile_id": {
+            "format": "uuid",
+            "title": "Profile Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id",
+          "available_modalities"
+        ],
+        "title": "AssessmentCapabilitiesResponse",
+        "type": "object"
+      },
       "AssessmentItemResponse": {
         "additionalProperties": false,
         "properties": {
@@ -3357,6 +3380,19 @@
         "title": "GymCreditResponse",
         "type": "object"
       },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
       "ImportConflictResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5129,6 +5165,11 @@
             "title": "Nominal Days",
             "type": "integer"
           },
+          "pack_revision_id": {
+            "format": "uuid",
+            "title": "Pack Revision Id",
+            "type": "string"
+          },
           "primary_intention": {
             "title": "Primary Intention",
             "type": "string"
@@ -5138,6 +5179,7 @@
           "module_id",
           "module_code",
           "module_revision_id",
+          "pack_revision_id",
           "primary_intention",
           "nominal_days",
           "max_days",
@@ -8877,6 +8919,46 @@
           "validator_set_revision_id"
         ],
         "title": "ValidateContentRevisionRequest",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
         "type": "object"
       },
       "ValidationFindingResponse": {
@@ -21014,6 +21096,51 @@
         "summary": "Route"
       }
     },
+    "/api/v1/language-profiles/{profile_id}/assessment-capabilities": {
+      "get": {
+        "operationId": "get_assessment_capabilities",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentCapabilitiesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Get Assessment Capabilities"
+      }
+    },
     "/api/v1/language-profiles/{profile_id}/assessments": {
       "post": {
         "operationId": "prepare_assessment",
@@ -32615,6 +32742,25 @@
     "/api/v1/modules": {
       "get": {
         "operationId": "list_learning_modules",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pack_revision_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pack Revision Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {

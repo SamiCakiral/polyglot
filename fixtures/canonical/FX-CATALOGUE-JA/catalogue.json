@@ -1,0 +1,2896 @@
+{
+  "schema_version": 1,
+  "fixture_id": "FX-CATALOGUE-JA",
+  "pilot_days": [
+    1,
+    2,
+    3
+  ],
+  "linguistic_review": "pending_human",
+  "pack": {
+    "pack_id": "019c0000-0000-7000-9000-000000000008",
+    "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+    "pack_code": "ja-JP__fr-FR",
+    "pack_revision_code": "pilot-1.0.0",
+    "revision_no": 1,
+    "target": {
+      "variety_id": "019c0000-0000-7000-9000-000000000002",
+      "language_tag": "ja-JP",
+      "region_code": "JP",
+      "script_codes": [
+        "Hira",
+        "Kana",
+        "Jpan"
+      ],
+      "text_direction": "ltr",
+      "segmentation_policy_revision_id": "019c0000-0000-7000-9000-000000000003",
+      "media_capabilities": [
+        "text",
+        "tts"
+      ],
+      "normalization_policy_revision_id": "019c0000-0000-7000-9000-000000000004"
+    },
+    "supports": [
+      {
+        "variety_id": "019b0000-0000-7000-8000-000000000005",
+        "language_tag": "fr-FR",
+        "region_code": "FR",
+        "script_codes": [
+          "Latn"
+        ],
+        "text_direction": "ltr",
+        "segmentation_policy_revision_id": "019b0000-0000-7000-8000-000000000006",
+        "media_capabilities": [
+          "text"
+        ],
+        "normalization_policy_revision_id": "019b0000-0000-7000-8000-000000000007"
+      }
+    ],
+    "status": "published",
+    "engine_min_version": "2.0.0",
+    "engine_max_version": "2.0.x",
+    "capabilities": [
+      "catalogue",
+      "grammar",
+      "lexicon",
+      "skill_graph",
+      "non_latin_script"
+    ],
+    "checksum_manifest": {
+      "pilot-content": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "license_refs": [
+      "CC-BY-4.0"
+    ],
+    "provenance_id": "019c0000-0000-7000-9000-000000000001",
+    "published_at": "2026-08-11T12:00:00+00:00"
+  },
+  "communicative_functions": [
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000102",
+      "function_id": "019c0000-0000-7000-9000-000000000101",
+      "revision_no": 1,
+      "function_code": "ja-foundation-hiragana",
+      "label": "Reconnaître les hiragana",
+      "realizations": [
+        "あ",
+        "い",
+        "う",
+        "え",
+        "お"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000104",
+      "function_id": "019c0000-0000-7000-9000-000000000103",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-GREET",
+      "label": "Saluer",
+      "realizations": [
+        "こんにちは",
+        "おはようございます"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000106",
+      "function_id": "019c0000-0000-7000-9000-000000000105",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-IDENTIFY",
+      "label": "S'identifier",
+      "realizations": [
+        "わたしは…です"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000108",
+      "function_id": "019c0000-0000-7000-9000-000000000107",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-REQUEST",
+      "label": "Formuler une demande",
+      "realizations": [
+        "…をください"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000110",
+      "function_id": "019c0000-0000-7000-9000-000000000109",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-QUESTION",
+      "label": "Poser une question",
+      "realizations": [
+        "…ですか"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000112",
+      "function_id": "019c0000-0000-7000-9000-000000000111",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-EXIST",
+      "label": "Exprimer l'existence",
+      "realizations": [
+        "…があります",
+        "…がいます"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000114",
+      "function_id": "019c0000-0000-7000-9000-000000000113",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-LOCATE",
+      "label": "Situer quelque chose",
+      "realizations": [
+        "…はどこですか"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "function_revision_id": "019c0000-0000-7000-9000-000000000116",
+      "function_id": "019c0000-0000-7000-9000-000000000115",
+      "revision_no": 1,
+      "function_code": "JA-FUNC-REPAIR",
+      "label": "Demander de répéter",
+      "realizations": [
+        "もういちどおねがいします"
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    }
+  ],
+  "grammar_structures": [
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000303",
+      "structure_id": "019c0000-0000-7000-9000-000000000302",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-001",
+      "function_code": "ja-foundation-hiragana",
+      "constraints": {
+        "activation_day": "1"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000304",
+          "pattern_code": "JA-GRAM-001-P1",
+          "template": "[hiragana]",
+          "slots": [
+            "かな"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "あ・い・う・え・お"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000306",
+      "structure_id": "019c0000-0000-7000-9000-000000000305",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-002",
+      "function_code": "JA-FUNC-GREET",
+      "constraints": {
+        "activation_day": "1"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000307",
+          "pattern_code": "JA-GRAM-002-P1",
+          "template": "salutation",
+          "slots": [
+            "salutation"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "こんにちは"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000309",
+      "structure_id": "019c0000-0000-7000-9000-000000000308",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-003",
+      "function_code": "JA-FUNC-IDENTIFY",
+      "constraints": {
+        "activation_day": "1"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000310",
+          "pattern_code": "JA-GRAM-003-P1",
+          "template": "X は Y です",
+          "slots": [
+            "X,Y"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "わたしはサミです"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000312",
+      "structure_id": "019c0000-0000-7000-9000-000000000311",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-004",
+      "function_code": "JA-FUNC-REQUEST",
+      "constraints": {
+        "activation_day": "2"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000313",
+          "pattern_code": "JA-GRAM-004-P1",
+          "template": "X をください",
+          "slots": [
+            "X"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "みずをください"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000315",
+      "structure_id": "019c0000-0000-7000-9000-000000000314",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-005",
+      "function_code": "JA-FUNC-QUESTION",
+      "constraints": {
+        "activation_day": "2"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000316",
+          "pattern_code": "JA-GRAM-005-P1",
+          "template": "X ですか",
+          "slots": [
+            "X"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "だいじょうぶですか"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000318",
+      "structure_id": "019c0000-0000-7000-9000-000000000317",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-006",
+      "function_code": "JA-FUNC-EXIST",
+      "constraints": {
+        "activation_day": "2"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000319",
+          "pattern_code": "JA-GRAM-006-P1",
+          "template": "X があります/います",
+          "slots": [
+            "X"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "えきがあります"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000321",
+      "structure_id": "019c0000-0000-7000-9000-000000000320",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-007",
+      "function_code": "JA-FUNC-LOCATE",
+      "constraints": {
+        "activation_day": "3"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000322",
+          "pattern_code": "JA-GRAM-007-P1",
+          "template": "X はどこですか",
+          "slots": [
+            "X"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "えきはどこですか"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "structure_revision_id": "019c0000-0000-7000-9000-000000000324",
+      "structure_id": "019c0000-0000-7000-9000-000000000323",
+      "revision_no": 1,
+      "structure_code": "JA-GRAM-008",
+      "function_code": "JA-FUNC-REPAIR",
+      "constraints": {
+        "activation_day": "3"
+      },
+      "contrasts": [
+        "L'ordre japonais place généralement le prédicat en fin de phrase."
+      ],
+      "typical_errors": [
+        "Omettre une particule en calquant le français."
+      ],
+      "variants": [],
+      "patterns": [
+        {
+          "pattern_id": "019c0000-0000-7000-9000-000000000325",
+          "pattern_code": "JA-GRAM-008-P1",
+          "template": "もういちど + おねがいします",
+          "slots": [
+            "request"
+          ],
+          "instantiation_rules": {
+            "register": "polite"
+          },
+          "examples": [
+            "もういちどおねがいします"
+          ],
+          "counterexamples": []
+        }
+      ],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    }
+  ],
+  "skills": [
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000502",
+      "skill_id": "019c0000-0000-7000-9000-000000000501",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-01",
+      "skill_type": "communicative_function",
+      "modality": "reading",
+      "operation": "recognize",
+      "target_ref": "ja-foundation-hiragana",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 1
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000504",
+      "skill_id": "019c0000-0000-7000-9000-000000000503",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-02",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-GREET",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 2
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000506",
+      "skill_id": "019c0000-0000-7000-9000-000000000505",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-03",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-IDENTIFY",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 3
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000508",
+      "skill_id": "019c0000-0000-7000-9000-000000000507",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-04",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-REQUEST",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 4
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000510",
+      "skill_id": "019c0000-0000-7000-9000-000000000509",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-05",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-QUESTION",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000512",
+      "skill_id": "019c0000-0000-7000-9000-000000000511",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-06",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-EXIST",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000514",
+      "skill_id": "019c0000-0000-7000-9000-000000000513",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-07",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-LOCATE",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000516",
+      "skill_id": "019c0000-0000-7000-9000-000000000515",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-FUNC-08",
+      "skill_type": "communicative_function",
+      "modality": "speaking",
+      "operation": "interact",
+      "target_ref": "JA-FUNC-REPAIR",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000552",
+      "skill_id": "019c0000-0000-7000-9000-000000000551",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-01",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-001",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 1
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000554",
+      "skill_id": "019c0000-0000-7000-9000-000000000553",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-02",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-002",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 2
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000556",
+      "skill_id": "019c0000-0000-7000-9000-000000000555",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-03",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-003",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 3
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000558",
+      "skill_id": "019c0000-0000-7000-9000-000000000557",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-04",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-004",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 4
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000560",
+      "skill_id": "019c0000-0000-7000-9000-000000000559",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-05",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-005",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000562",
+      "skill_id": "019c0000-0000-7000-9000-000000000561",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-06",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-006",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000564",
+      "skill_id": "019c0000-0000-7000-9000-000000000563",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-07",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-007",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "skill_revision_id": "019c0000-0000-7000-9000-000000000566",
+      "skill_id": "019c0000-0000-7000-9000-000000000565",
+      "revision_no": 1,
+      "skill_code": "JA-SKILL-GRAM-08",
+      "skill_type": "grammar_structure",
+      "modality": "writing",
+      "operation": "transform",
+      "target_ref": "JA-GRAM-008",
+      "scope": [
+        "japanese-pilot"
+      ],
+      "evidence_protocol_ids": [],
+      "load_profile": {
+        "intrinsic": 5
+      },
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    }
+  ],
+  "prerequisites": [
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000601",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000502",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000504",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000602",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000504",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000506",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000603",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000506",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000508",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000604",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000508",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000510",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000605",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000510",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000512",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000606",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000512",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000514",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000607",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000514",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000516",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000608",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000516",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000552",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000609",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000552",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000554",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000610",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000554",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000556",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000611",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000556",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000558",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000612",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000558",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000560",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000613",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000560",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000562",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000614",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000562",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000564",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "edge_id": "019c0000-0000-7000-9000-000000000615",
+      "from_skill_revision_id": "019c0000-0000-7000-9000-000000000564",
+      "to_skill_revision_id": "019c0000-0000-7000-9000-000000000566",
+      "edge_type": "required",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    }
+  ],
+  "foundations": {
+    "foundation_id": "019c0000-0000-7000-9000-000000000900",
+    "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+    "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+    "foundation_code": "FOUNDATIONS_JA_V0",
+    "revision_no": 1,
+    "references": [
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000951",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "ja-foundation-hiragana",
+        "reference_kind": "target",
+        "status": "published",
+        "checksum": "9009b4198219f3bf446411a0fadee3460b161cf9ccfeea8f49aff40597c461f6"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000952",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "ja-foundation-sounds",
+        "reference_kind": "target",
+        "status": "published",
+        "checksum": "d52ed8d5a2f4cd7b205813c323f7116ea7fc24b1cc686d6652f34712c7b41269"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000953",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "ja-foundation-segmentation",
+        "reference_kind": "target",
+        "status": "published",
+        "checksum": "f57595ddc07b24d7271b4aba57089b6d3c38fb6d999c04794491710cb9082b45"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000954",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "ja-foundation-greeting",
+        "reference_kind": "target",
+        "status": "published",
+        "checksum": "f709d44c37a5c8c4b615260ab946d64ef41ebce1369e9f30b238ba61c119857d"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000955",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "ja-foundation-request",
+        "reference_kind": "target",
+        "status": "published",
+        "checksum": "6db5ec80286ea9322563037c723191d9d6ddb52b24edd34137d2748f63489f63"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000956",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "ja-foundation-survival",
+        "reference_kind": "target",
+        "status": "published",
+        "checksum": "abda61d77094963eca2f610fa4eee79b1fd45ca57b73e8b98fb53fdc539725ed"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000957",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "grapheme_sound_discrimination",
+        "reference_kind": "facet",
+        "status": "published",
+        "checksum": "013b3c0b1fc98f0f070a49a487a5ee596862f07c5f2737ba3500b8c67d34b5fe"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000958",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "controlled_reading",
+        "reference_kind": "facet",
+        "status": "published",
+        "checksum": "9d316a1ca742e854eba57d168d3911cade825be4c6b42d4627b616a7d6854a13"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000959",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "greeting_recognition",
+        "reference_kind": "facet",
+        "status": "published",
+        "checksum": "bc484d61e0d1fdbe3b85af59335a1c8038b0d0c2315372f9167fa807036ec36a"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000960",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "functional_frame_choice",
+        "reference_kind": "facet",
+        "status": "published",
+        "checksum": "0ed0d1089b245bb8958b3cbd8b91395b19393e3194d77726de2789dc8fa54e49"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000961",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "written_guided_repair",
+        "reference_kind": "facet",
+        "status": "published",
+        "checksum": "0c3b986433d05d29ca5c9f596c43b741623dc748cb908fc764100f79979b41cf"
+      },
+      {
+        "reference_revision_id": "019c0000-0000-7000-9000-000000000962",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "reference_code": "DIAGNOSTIC_WAIVER_JA_V0",
+        "reference_kind": "waiver_policy",
+        "status": "published",
+        "checksum": "d7e10902169f8c3b878c47f064869ec774784bd163325b42af0c966c2fdcc4a8"
+      }
+    ],
+    "status": "published",
+    "checksum": "31608d77f9065b101d6f6122bc4a5f3444b9b19041e30fe6998ba2c839bbaf3f",
+    "blocks": [
+      {
+        "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+        "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "block_code": "F1",
+        "ordinal": 1,
+        "component_type": "script_sound",
+        "prerequisite_refs": [],
+        "modalities": [
+          "listening",
+          "reading"
+        ],
+        "backend_criteria": [
+          "deterministic"
+        ],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_JA_V0",
+        "status": "published",
+        "checksum": "d26088a131b4a53d44ae4513b4bbf69ee5c16dc9becffccdf24b941d5179e0f2",
+        "items": [
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001101",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-01",
+            "ordinal": 1,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "あ=a"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "fb2885a4f91b6cd437778c30c4dd7877f1d7de302a4b44f84ebfa217bdb065f0"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001102",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-02",
+            "ordinal": 2,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "い=i"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "062cae0ce3d4e66567fca6d5bad910a43e68f8fcabf77d372558365c7f3756e1"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001103",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-03",
+            "ordinal": 3,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "う=u"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "a534aec7c2386f0a49af3c1f77addf2c72e0dc82bb1d4d82b958eba0582cc22e"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001104",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-04",
+            "ordinal": 4,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "え=e"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "62c9b68eed321e60ca465829bd516af2ff41f2d2e8b3392eed6f880f2e1cffaf"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001105",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-05",
+            "ordinal": 5,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "お=o"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "d8cc8966ef725c99d930498e17faffce2fe48dee508d68435e7b09553a8292d3"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001106",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-06",
+            "ordinal": 6,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "か=ka"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "f9ff418c29873d12002dfedecda07d4e1bd090dfecc2e54e551343089a8f02b1"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001107",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-07",
+            "ordinal": 7,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "き=ki"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "87748d23fe10b0bcd33361b7107363138a77990cc6c4570b1bf9acf2c75ccb33"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001108",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-08",
+            "ordinal": 8,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "く=ku"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "cd2f78b62f3ac85c579e4f6f1ab4b52c52aa7d2f08e9c92f7490cefcf8781ba7"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001109",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-09",
+            "ordinal": 9,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "け=ke"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "a665110622957d5d8c4b4d8ca270695e1d504474ff9aa38473a1aaa5aec1df61"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001110",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000911",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F1-10",
+            "ordinal": 10,
+            "target_refs": [
+              "ja-foundation-hiragana",
+              "ja-foundation-sounds"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "こ=ko"
+            ],
+            "modalities": [
+              "listening",
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "6c4153ce0b0fdbc280944b957cbd29c79ad39247d449df9c17f7dfc050e82c59"
+          }
+        ]
+      },
+      {
+        "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+        "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "block_code": "F2",
+        "ordinal": 2,
+        "component_type": "controlled_reading",
+        "prerequisite_refs": [
+          "ja-foundation-hiragana"
+        ],
+        "modalities": [
+          "reading"
+        ],
+        "backend_criteria": [
+          "deterministic"
+        ],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_JA_V0",
+        "status": "published",
+        "checksum": "1b558a59f20dc2c4769b611e5daf1df5ec59c43c713ed8e2e102ddb66493198b",
+        "items": [
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001111",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-01",
+            "ordinal": 1,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "こんにちは"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "5143736649c743927f403cf5c73c0b1a196d4f8dbcd47ad9c8c701364ecff636"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001112",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-02",
+            "ordinal": 2,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "ありがとう"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "6daf21ac105e39af29fb8e862ce923dcdf397a7fa81cfd2a81cf363488154854"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001113",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-03",
+            "ordinal": 3,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "わたし"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "bea67ecdbcba2173b58327a9afd06a5c048896cdc188b78fe654d26a6d80d7a9"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001114",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-04",
+            "ordinal": 4,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "みず"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "54afc7892985ce509d598c33b8071a7bca3e4af4294dd4e49ecf8723a84e792a"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001115",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-05",
+            "ordinal": 5,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "えき"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "c94dc6d43c343c7fb20b998cb093b94f72a5e250127d767b183f6aa6543ef02d"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001116",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-06",
+            "ordinal": 6,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "ここ"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "9407f8d15dedcd2d57a48fc9966248a77f6b3aa6108eab98f426f9a621868b5c"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001117",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-07",
+            "ordinal": 7,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "どこ"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "2d60bcf095047eb14dcb5273f544cc5ed4ae9ce940bdb1c8b07c06d95941cfaf"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001118",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-08",
+            "ordinal": 8,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "です"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "82a8bd79445f690bc22a5e6c552d5315d1ba5b410f2e7eac1532a31defb08bfb"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001119",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-09",
+            "ordinal": 9,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "ください"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "0f11b39e73028d31e607c0bb9a6970053e314598e2ed07e9fcb758f4e498669d"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001120",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000912",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F2-10",
+            "ordinal": 10,
+            "target_refs": [
+              "ja-foundation-segmentation"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "わかりません"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "bc69a2247affbc726fef056e997c236e7007667278471a2e352131c379ad3d45"
+          }
+        ]
+      },
+      {
+        "block_revision_id": "019c0000-0000-7000-9000-000000000913",
+        "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "block_code": "F3",
+        "ordinal": 3,
+        "component_type": "greeting_recognition",
+        "prerequisite_refs": [
+          "ja-foundation-segmentation"
+        ],
+        "modalities": [
+          "reading",
+          "listening"
+        ],
+        "backend_criteria": [
+          "deterministic"
+        ],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_JA_V0",
+        "status": "published",
+        "checksum": "c815321f4ab0392699a84dc1bda7ff13b0002465a2c40935b79e4e277e7aaae9",
+        "items": [
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001121",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000913",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F3-01",
+            "ordinal": 1,
+            "target_refs": [
+              "ja-foundation-greeting"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "こんにちは"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "7bc10f25330228bf455672162990e9a70bdc4067ba35ecbef525cef7665df0be"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001122",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000913",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F3-02",
+            "ordinal": 2,
+            "target_refs": [
+              "ja-foundation-greeting"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "おはよう"
+            ],
+            "modalities": [
+              "listening"
+            ],
+            "status": "published",
+            "checksum": "6ecec2b98ebbf76111eeee887421e47dc161403c4ffde745074cab7eae832a27"
+          }
+        ]
+      },
+      {
+        "block_revision_id": "019c0000-0000-7000-9000-000000000914",
+        "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "block_code": "F4",
+        "ordinal": 4,
+        "component_type": "functional_frames",
+        "prerequisite_refs": [
+          "ja-foundation-greeting"
+        ],
+        "modalities": [
+          "reading",
+          "writing"
+        ],
+        "backend_criteria": [
+          "deterministic"
+        ],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_JA_V0",
+        "status": "published",
+        "checksum": "1b384490f77552c94dd9c8bb16eccef51f66ff5dd85aaa817eec5b0c2671ebaa",
+        "items": [
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001123",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000914",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F4-01",
+            "ordinal": 1,
+            "target_refs": [
+              "ja-foundation-request"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "みずをください"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "a2251b9f392ac2cf3024ce9ae27f490a30b2a3298fc861a582ff360e1954d5db"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001124",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000914",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F4-02",
+            "ordinal": 2,
+            "target_refs": [
+              "ja-foundation-request"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "えきはどこですか"
+            ],
+            "modalities": [
+              "reading"
+            ],
+            "status": "published",
+            "checksum": "852cb8bf957c939ab8621b52fe415487675519a6b0786a68223e8e1553e4e439"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001125",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000914",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F4-03",
+            "ordinal": 3,
+            "target_refs": [
+              "ja-foundation-request"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "わたしはサミです"
+            ],
+            "modalities": [
+              "writing"
+            ],
+            "status": "published",
+            "checksum": "5298233cae30d0de39b8f050cd536e26d31d5a30603cdecb6240c1cb9d3c4c5e"
+          }
+        ]
+      },
+      {
+        "block_revision_id": "019c0000-0000-7000-9000-000000000915",
+        "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+        "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+        "block_code": "F5",
+        "ordinal": 5,
+        "component_type": "survival_exchange",
+        "prerequisite_refs": [
+          "ja-foundation-request"
+        ],
+        "modalities": [
+          "reading",
+          "writing",
+          "speaking"
+        ],
+        "backend_criteria": [
+          "deterministic"
+        ],
+        "waiver_policy_ref": "DIAGNOSTIC_WAIVER_JA_V0",
+        "status": "published",
+        "checksum": "02fc13858790786659056cb31cd1b9f262cbf8c52bb3855ffdd0709111ea9791",
+        "items": [
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001126",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000915",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F5-01",
+            "ordinal": 1,
+            "target_refs": [
+              "ja-foundation-survival"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "すみません"
+            ],
+            "modalities": [
+              "writing"
+            ],
+            "status": "published",
+            "checksum": "21708280a64154df91a9786f341d32d7f1e58cd5158cb7e05d049e45e1644b8e"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001127",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000915",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F5-02",
+            "ordinal": 2,
+            "target_refs": [
+              "ja-foundation-survival"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "もういちどおねがいします"
+            ],
+            "modalities": [
+              "writing"
+            ],
+            "status": "published",
+            "checksum": "c76690aaa34df47ed095da9c9b483cda9d5663e2882b7a5a10ce505f131b151a"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001128",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000915",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F5-03",
+            "ordinal": 3,
+            "target_refs": [
+              "ja-foundation-survival"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "わかりません"
+            ],
+            "modalities": [
+              "writing"
+            ],
+            "status": "published",
+            "checksum": "28d004617948193f49b8ea5eb34bc22719f0edf86476d888b92c62ceb9d1af3a"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001129",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000915",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F5-04",
+            "ordinal": 4,
+            "target_refs": [
+              "ja-foundation-survival"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "トイレはどこですか"
+            ],
+            "modalities": [
+              "writing"
+            ],
+            "status": "published",
+            "checksum": "2792d8d3707b25e350111c7628b971e7bc913ac28047424fbb56d92645d0e9de"
+          },
+          {
+            "item_revision_id": "019c0000-0000-7000-9000-000000001130",
+            "block_revision_id": "019c0000-0000-7000-9000-000000000915",
+            "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+            "item_code": "JAF-F5-05",
+            "ordinal": 5,
+            "target_refs": [
+              "ja-foundation-survival"
+            ],
+            "response_kind": "raw",
+            "checker_kind": "exact_choice",
+            "checker_values": [
+              "ありがとう"
+            ],
+            "modalities": [
+              "writing"
+            ],
+            "status": "published",
+            "checksum": "40fbdc40ebb4f6220a52ef25960823696ff6d9c5ebd2ddedb51cfb50a82f325a"
+          }
+        ]
+      }
+    ],
+    "gate": {
+      "gate_revision_id": "019c0000-0000-7000-9000-000000000990",
+      "foundation_revision_id": "019c0000-0000-7000-9000-000000000901",
+      "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+      "gate_code": "FOUNDATIONS_JA_V0",
+      "blocking_target_refs": [
+        "ja-foundation-hiragana",
+        "ja-foundation-sounds",
+        "ja-foundation-segmentation",
+        "ja-foundation-greeting",
+        "ja-foundation-request",
+        "ja-foundation-survival"
+      ],
+      "blocking_facet_refs": [
+        "grapheme_sound_discrimination",
+        "controlled_reading",
+        "greeting_recognition",
+        "functional_frame_choice",
+        "written_guided_repair"
+      ],
+      "blocking_facet_minimum_status": "reliable",
+      "coverage_threshold": 1.0,
+      "confidence_threshold": 0.6,
+      "minimum_distinct_sessions": 2,
+      "delayed_control_block_code": "F1",
+      "delayed_control_hours": 24,
+      "grapheme_sound_minimum": 8,
+      "grapheme_sound_total": 10,
+      "targeted_reading_minimum": 8,
+      "targeted_reading_total": 10,
+      "survival_exchange_minimum": 4,
+      "survival_exchange_total": 5,
+      "survival_exchange_without_reveal": true,
+      "oral_policy": "not_evaluable_non_blocking",
+      "status": "published",
+      "checksum": "45498391e09c81aca63597418044f4cb09bf43d52a528fe91f6299562bcc6d3d"
+    }
+  },
+  "lexical_units": [
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002011",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002010",
+      "revision_no": 1,
+      "lemma": "こんにちは",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002013",
+          "sense_id": "019c0000-0000-7000-9000-000000002012",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-001",
+          "definition": "Bonjour.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002014",
+          "surface": "こんにちは",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "こんにちは"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002021",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002020",
+      "revision_no": 1,
+      "lemma": "おはよう",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002023",
+          "sense_id": "019c0000-0000-7000-9000-000000002022",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-002",
+          "definition": "Bonjour, le matin.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002024",
+          "surface": "おはよう",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "おはよう"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002031",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002030",
+      "revision_no": 1,
+      "lemma": "こんばんは",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002033",
+          "sense_id": "019c0000-0000-7000-9000-000000002032",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-003",
+          "definition": "Bonsoir.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002034",
+          "surface": "こんばんは",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "こんばんは"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002041",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002040",
+      "revision_no": 1,
+      "lemma": "ありがとう",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002043",
+          "sense_id": "019c0000-0000-7000-9000-000000002042",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-004",
+          "definition": "Merci.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002044",
+          "surface": "ありがとう",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "ありがとう"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002051",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002050",
+      "revision_no": 1,
+      "lemma": "すみません",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002053",
+          "sense_id": "019c0000-0000-7000-9000-000000002052",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-005",
+          "definition": "Excusez-moi ou pardon.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002054",
+          "surface": "すみません",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "すみません"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002061",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002060",
+      "revision_no": 1,
+      "lemma": "はい",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002063",
+          "sense_id": "019c0000-0000-7000-9000-000000002062",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-006",
+          "definition": "Oui.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002064",
+          "surface": "はい",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "はい"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002071",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002070",
+      "revision_no": 1,
+      "lemma": "いいえ",
+      "unit_type": "word",
+      "part_of_speech": "interjection",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002073",
+          "sense_id": "019c0000-0000-7000-9000-000000002072",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-007",
+          "definition": "Non.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002074",
+          "surface": "いいえ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "いいえ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002081",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002080",
+      "revision_no": 1,
+      "lemma": "わたし",
+      "unit_type": "word",
+      "part_of_speech": "pronoun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002083",
+          "sense_id": "019c0000-0000-7000-9000-000000002082",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-008",
+          "definition": "Je ou moi.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002084",
+          "surface": "わたし",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "わたし"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002091",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002090",
+      "revision_no": 1,
+      "lemma": "あなた",
+      "unit_type": "word",
+      "part_of_speech": "pronoun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002093",
+          "sense_id": "019c0000-0000-7000-9000-000000002092",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-009",
+          "definition": "Vous ou toi, lorsque le contexte l'exige.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002094",
+          "surface": "あなた",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "あなた"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002101",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002100",
+      "revision_no": 1,
+      "lemma": "です",
+      "unit_type": "word",
+      "part_of_speech": "copula",
+      "register": "polite",
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002103",
+          "sense_id": "019c0000-0000-7000-9000-000000002102",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-010",
+          "definition": "Copule polie d'identification.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002104",
+          "surface": "です",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "です"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002111",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002110",
+      "revision_no": 1,
+      "lemma": "ます",
+      "unit_type": "word",
+      "part_of_speech": "auxiliary",
+      "register": "polite",
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002113",
+          "sense_id": "019c0000-0000-7000-9000-000000002112",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-011",
+          "definition": "Marque verbale polie.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002114",
+          "surface": "ます",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "ます"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002121",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002120",
+      "revision_no": 1,
+      "lemma": "ください",
+      "unit_type": "word",
+      "part_of_speech": "verb",
+      "register": "polite",
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002123",
+          "sense_id": "019c0000-0000-7000-9000-000000002122",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-012",
+          "definition": "Donnez-moi, s'il vous plaît.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002124",
+          "surface": "ください",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "ください"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002131",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002130",
+      "revision_no": 1,
+      "lemma": "おねがいします",
+      "unit_type": "word",
+      "part_of_speech": "expression",
+      "register": "polite",
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002133",
+          "sense_id": "019c0000-0000-7000-9000-000000002132",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-013",
+          "definition": "S'il vous plaît ou je vous en prie.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002134",
+          "surface": "おねがいします",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "おねがいします"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002141",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002140",
+      "revision_no": 1,
+      "lemma": "なまえ",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002143",
+          "sense_id": "019c0000-0000-7000-9000-000000002142",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-014",
+          "definition": "Nom d'une personne.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002144",
+          "surface": "なまえ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "なまえ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002151",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002150",
+      "revision_no": 1,
+      "lemma": "みず",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002153",
+          "sense_id": "019c0000-0000-7000-9000-000000002152",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-015",
+          "definition": "Eau.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002154",
+          "surface": "みず",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "みず"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002161",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002160",
+      "revision_no": 1,
+      "lemma": "ごはん",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002163",
+          "sense_id": "019c0000-0000-7000-9000-000000002162",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-016",
+          "definition": "Repas ou riz cuit.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002164",
+          "surface": "ごはん",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "ごはん"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002171",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002170",
+      "revision_no": 1,
+      "lemma": "えき",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002173",
+          "sense_id": "019c0000-0000-7000-9000-000000002172",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-017",
+          "definition": "Gare.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002174",
+          "surface": "えき",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "えき"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002181",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002180",
+      "revision_no": 1,
+      "lemma": "でんしゃ",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002183",
+          "sense_id": "019c0000-0000-7000-9000-000000002182",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-018",
+          "definition": "Train.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002184",
+          "surface": "でんしゃ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "でんしゃ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002191",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002190",
+      "revision_no": 1,
+      "lemma": "ホテル",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002193",
+          "sense_id": "019c0000-0000-7000-9000-000000002192",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-019",
+          "definition": "Hôtel.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002194",
+          "surface": "ホテル",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "ホテル"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002201",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002200",
+      "revision_no": 1,
+      "lemma": "トイレ",
+      "unit_type": "word",
+      "part_of_speech": "noun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002203",
+          "sense_id": "019c0000-0000-7000-9000-000000002202",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-020",
+          "definition": "Toilettes.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002204",
+          "surface": "トイレ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "トイレ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002211",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002210",
+      "revision_no": 1,
+      "lemma": "ここ",
+      "unit_type": "word",
+      "part_of_speech": "adverb",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002213",
+          "sense_id": "019c0000-0000-7000-9000-000000002212",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-021",
+          "definition": "Ici.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002214",
+          "surface": "ここ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "ここ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002221",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002220",
+      "revision_no": 1,
+      "lemma": "そこ",
+      "unit_type": "word",
+      "part_of_speech": "adverb",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002223",
+          "sense_id": "019c0000-0000-7000-9000-000000002222",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-022",
+          "definition": "Là, près de l'interlocuteur.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002224",
+          "surface": "そこ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "そこ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002231",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002230",
+      "revision_no": 1,
+      "lemma": "どこ",
+      "unit_type": "word",
+      "part_of_speech": "interrogative",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002233",
+          "sense_id": "019c0000-0000-7000-9000-000000002232",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-023",
+          "definition": "Où.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002234",
+          "surface": "どこ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "どこ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002241",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002240",
+      "revision_no": 1,
+      "lemma": "これ",
+      "unit_type": "word",
+      "part_of_speech": "pronoun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002243",
+          "sense_id": "019c0000-0000-7000-9000-000000002242",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-024",
+          "definition": "Ceci.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002244",
+          "surface": "これ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "これ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002251",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002250",
+      "revision_no": 1,
+      "lemma": "それ",
+      "unit_type": "word",
+      "part_of_speech": "pronoun",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002253",
+          "sense_id": "019c0000-0000-7000-9000-000000002252",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-025",
+          "definition": "Cela, près de l'interlocuteur.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002254",
+          "surface": "それ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "それ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002261",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002260",
+      "revision_no": 1,
+      "lemma": "いくら",
+      "unit_type": "word",
+      "part_of_speech": "interrogative",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002263",
+          "sense_id": "019c0000-0000-7000-9000-000000002262",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-026",
+          "definition": "Combien, pour un prix.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002264",
+          "surface": "いくら",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "いくら"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002271",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002270",
+      "revision_no": 1,
+      "lemma": "だいじょうぶ",
+      "unit_type": "word",
+      "part_of_speech": "adjective",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002273",
+          "sense_id": "019c0000-0000-7000-9000-000000002272",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-027",
+          "definition": "D'accord, sans problème ou en bon état.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002274",
+          "surface": "だいじょうぶ",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "だいじょうぶ"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002281",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002280",
+      "revision_no": 1,
+      "lemma": "わかります",
+      "unit_type": "word",
+      "part_of_speech": "verb",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002283",
+          "sense_id": "019c0000-0000-7000-9000-000000002282",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-028",
+          "definition": "Comprendre, forme polie.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002284",
+          "surface": "わかります",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "わかります"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002291",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002290",
+      "revision_no": 1,
+      "lemma": "わかりません",
+      "unit_type": "word",
+      "part_of_speech": "verb",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002293",
+          "sense_id": "019c0000-0000-7000-9000-000000002292",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-029",
+          "definition": "Ne pas comprendre, forme polie.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002294",
+          "surface": "わかりません",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "わかりません"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    },
+    {
+      "unit_revision_id": "019c0000-0000-7000-9000-000000002301",
+      "lexical_unit_id": "019c0000-0000-7000-9000-000000002300",
+      "revision_no": 1,
+      "lemma": "もういちど",
+      "unit_type": "word",
+      "part_of_speech": "adverb",
+      "register": null,
+      "senses": [
+        {
+          "sense_revision_id": "019c0000-0000-7000-9000-000000002303",
+          "sense_id": "019c0000-0000-7000-9000-000000002302",
+          "revision_no": 1,
+          "sense_code": "JA-SENSE-030",
+          "definition": "Encore une fois.",
+          "domains": [
+            "survival"
+          ],
+          "register": null,
+          "status": "published",
+          "provenance_id": "019c0000-0000-7000-9000-000000000001"
+        }
+      ],
+      "forms": [
+        {
+          "form_analysis_id": "019c0000-0000-7000-9000-000000002304",
+          "surface": "もういちど",
+          "features": {
+            "script": "hiragana"
+          },
+          "pronunciation_refs": [],
+          "normalization_key": "もういちど"
+        }
+      ],
+      "components": [],
+      "status": "published",
+      "provenance_id": "019c0000-0000-7000-9000-000000000001"
+    }
+  ]
+}

@@ -231,6 +231,10 @@
     {
       "method": "GET",
       "route": "/teacher-conversations/{conversation_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/assessment-capabilities"
     }
   ],
   "application_query_names": [
@@ -278,6 +282,7 @@
     "GetTtsCapabilities",
     "GetMediaAvailability",
     "ListTeacherConversations",
-    "GetTeacherConversation"
+    "GetTeacherConversation",
+    "GetAssessmentCapabilities"
   ]
 }

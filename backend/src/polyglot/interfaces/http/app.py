@@ -327,7 +327,12 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.generation.providers import LmStudioChatProvider
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
     from polyglot.modules.media.persistence import SqlMediaService
-    from polyglot.modules.media.ports import MacOSTtsPort, TtsAvailability, TtsVoice
+    from polyglot.modules.media.ports import (
+        FixtureBackedTtsPort,
+        MacOSTtsPort,
+        TtsAvailability,
+        TtsVoice,
+    )
     from polyglot.modules.media.storage import FilesystemObjectStorage, LocalSignedUrlSigner
     from polyglot.modules.practice.persistence import SqlPracticeService
     from polyglot.modules.progress.application import SqlProgressQueryService
@@ -357,16 +362,26 @@ def create_runtime_app() -> FastAPI:
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
     )
     object_storage.prepare()
+    local_tts_voices = (
+        TtsVoice("Alice", "it-IT", TtsAvailability.AVAILABLE, "local-v2"),
+        TtsVoice("Kyoko", "ja-JP", TtsAvailability.AVAILABLE, "local-v2"),
+    )
     media_service = SqlMediaService(
         session_factory,
         FilesystemObjectStorage(object_storage.path),
         LocalSignedUrlSigner(os.environ["POLYGLOT_MEDIA_SIGNING_SECRET"].encode()),
-        MacOSTtsPort(
-            voices=(
-                TtsVoice("Alice", "it-IT", TtsAvailability.AVAILABLE, "local-v1"),
-                TtsVoice("Kyoko", "ja-JP", TtsAvailability.AVAILABLE, "local-v1"),
+        FixtureBackedTtsPort(
+            voices=local_tts_voices,
+            fixture_dir=Path(
+                os.environ.get(
+                    "POLYGLOT_TTS_FIXTURE_PATH",
+                    str(Path.cwd().parent / "fixtures" / "tts" / "local-v2"),
+                )
             ),
-            cache_dir=object_storage.path / "tts-cache",
+            fallback=MacOSTtsPort(
+                voices=local_tts_voices,
+                cache_dir=object_storage.path / "tts-cache",
+            ),
         ),
     )
     generation_ids = Uuid7Generator()

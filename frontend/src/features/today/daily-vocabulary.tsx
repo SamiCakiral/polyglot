@@ -16,6 +16,7 @@ import {
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
+import { languageDisplayName } from "../../lib/language-display";
 import {
   ErrorRegion,
   LoadingRegion,
@@ -98,6 +99,10 @@ export function DailyVocabulary({
   const currentWord = current
     ? wordBySense.get(current.prompt.target_ref)
     : undefined;
+  const targetLanguageTag = activePack?.target_language_tag ?? "und";
+  const supportLanguageTag = activePack?.support_language_tags[0] ?? "und";
+  const targetLanguageName = languageDisplayName(targetLanguageTag);
+  const supportLanguageName = languageDisplayName(supportLanguageTag);
 
   async function prepareCards() {
     setBusy(true);
@@ -215,12 +220,17 @@ export function DailyVocabulary({
             {due.length} carte{due.length > 1 ? "s" : ""} restante
             {due.length > 1 ? "s" : ""}
           </span>
-          <strong lang="it">{currentWord?.label ?? "Mot italien"}</strong>
+          <strong
+            dir={activePack?.text_direction}
+            lang={targetLanguageTag}
+          >
+            {currentWord?.label ?? `Mot en ${targetLanguageName}`}
+          </strong>
           {revealed ? (
             <p>{currentWord?.definition ?? "Définition indisponible"}</p>
           ) : (
             <p className="memory-card__prompt">
-              Retrouvez le sens en français avant de révéler.
+              Retrouvez le sens en {supportLanguageName} avant de révéler.
             </p>
           )}
           {!revealed ? (

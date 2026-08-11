@@ -538,6 +538,78 @@ async def test_free_practice_never_consumes_a_module_day(
     assert PACK_REVISION_ID is not None
 
 
+async def test_free_practice_can_run_while_daily_practice_is_interrupted(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_sprint_dependencies(migration_session)
+    await migration_session.commit()
+    service = sprint_service(runtime_factory)
+    daily = await service.compose_daily(
+        ACCOUNT_ID,
+        PROFILE_ID,
+        ComposeDailySession(new_id(), new_id(), NOW.date(), 10),
+        idempotency_key="parallel-daily-plan",
+        context=context(),
+    )
+    daily = await service.prepare(
+        ACCOUNT_ID,
+        daily.plan_id,
+        expected_version=daily.version,
+        idempotency_key="parallel-daily-prepare",
+        context=context(),
+    )
+    daily_run = await service.start_run(
+        ACCOUNT_ID,
+        daily.plan_id,
+        StartSprintRun(new_id()),
+        idempotency_key="parallel-daily-start",
+        context=context(),
+    )
+    await service.interrupt_run(
+        ACCOUNT_ID,
+        daily_run.run_id,
+        InterruptSprintRun("learner_pause"),
+        expected_version=daily_run.version,
+        idempotency_key="parallel-daily-pause",
+        context=context(),
+    )
+    free = await service.compose_free(
+        ACCOUNT_ID,
+        PROFILE_ID,
+        ComposeFreePractice(
+            plan_id=new_id(),
+            snapshot_id=new_id(),
+            pedagogical_day=NOW.date(),
+            budget_minutes=20,
+            target_refs=("grammar:near_future",),
+            primitive_ids=("EX-RECALL-01", "EX-TRANSFORM-01"),
+            modalities=("writing",),
+            challenge="matched",
+            allow_novelty=False,
+        ),
+        idempotency_key="parallel-free-plan",
+        context=context(),
+    )
+    free = await service.prepare(
+        ACCOUNT_ID,
+        free.plan_id,
+        expected_version=free.version,
+        idempotency_key="parallel-free-prepare",
+        context=context(),
+    )
+    free_run = await service.start_run(
+        ACCOUNT_ID,
+        free.plan_id,
+        StartSprintRun(new_id()),
+        idempotency_key="parallel-free-start",
+        context=context(),
+    )
+
+    assert daily_run.plan_kind == "foundation"
+    assert free_run.plan_kind == "free"
+
+
 async def test_free_practice_never_silently_drops_an_unavailable_primitive(
     migration_session: AsyncSession,
     runtime_factory: async_sessionmaker[AsyncSession],
@@ -567,6 +639,54 @@ async def test_free_practice_never_silently_drops_an_unavailable_primitive(
     assert rejected.value.code is ErrorCode.PRIMITIVE_UNKNOWN
 
 
+async def test_free_practice_selects_definitions_from_the_active_language_pack(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_sprint_dependencies(migration_session)
+    foreign_definition_id = uid(495)
+    foreign_revision_id = uid(496)
+    await migration_session.execute(
+        text(
+            "INSERT INTO exercises.exercise_definitions "
+            "(definition_id,definition_code,status,version,created_at,updated_at) VALUES "
+            "(:definition,'foreign.recall','published',1,:now,:now)"
+        ),
+        {"definition": foreign_definition_id, "now": NOW},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO exercises.exercise_definition_revisions "
+            "(definition_revision_id,definition_id,revision_no,schema_version,primitive_id,"
+            "status,response_kinds,language_certification_ids,modes,target_weights,"
+            "response_contract,stimulus_contract,target_contract,difficulty_profile,"
+            "prerequisite_skill_revision_ids,correction_policy_id,hint_policy_id,"
+            "observation_policy_id,accessibility_features,min_duration_ms,p50_duration_ms,"
+            "p80_duration_ms,example_revision_ids,provenance_id,created_at) VALUES "
+            "(:revision,:definition,99,1,'EX-RECALL-01','published','[\"text\"]','[]',"
+            "'[\"guided\"]','[[\"grammar\",1]]','{}','{}','[]','{}','[]',"
+            "'correction:v1','hint:v1','observation:v1','[\"keyboard\"]',"
+            "30000,60000,90000,'[]',:provenance,:now)"
+        ),
+        {
+            "revision": foreign_revision_id,
+            "definition": foreign_definition_id,
+            "provenance": uid(497),
+            "now": NOW,
+        },
+    )
+    await migration_session.commit()
+
+    selected = await sprint_service(runtime_factory)._free_definition_ids(
+        migration_session,
+        ("EX-RECALL-01",),
+        PACK_REVISION_ID,
+    )
+
+    assert selected == (uid(411),)
+    assert foreign_revision_id not in selected
+
+
 async def test_daily_composition_without_enrollment_returns_foundation_session(
     migration_session: AsyncSession,
     runtime_factory: async_sessionmaker[AsyncSession],
@@ -585,7 +705,8 @@ async def test_daily_composition_without_enrollment_returns_foundation_session(
     assert plan.plan_kind == "foundation"
     assert len(plan.blocks) <= 4
     families = {block.family for block in plan.blocks}
-    assert {"recall_warmup", "grammar_toolbox", "transformation_gym"} <= families
+    assert {"recall_warmup", "grammar_toolbox"} <= families
+    assert "transformation_gym" not in families
     assert families & {"version_input", "listening"}
 
 

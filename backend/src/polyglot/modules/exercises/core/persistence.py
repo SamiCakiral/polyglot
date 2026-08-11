@@ -97,6 +97,8 @@ def _resolved_stimulus(
     if realization is None:
         return stimulus
     spec = primitive_spec(primitive_id)
+    if spec.learning_operation not in {"exposure", "transformation"}:
+        return stimulus
     prompt = (
         f"Comprenez la fonction « {realization.support_template} », puis observez "
         f"le moule « {realization.target_template} »."
@@ -503,8 +505,10 @@ class SqlExerciseService:
             learner_self_assessment = (
                 bool(owns_profile) and str(command.result.strategy) == "self_assessment"
             )
-            if not authorized and not learner_self_assessment and not (
-                trusted_learner_evaluation and bool(owns_profile)
+            if (
+                not authorized
+                and not learner_self_assessment
+                and not (trusted_learner_evaluation and bool(owns_profile))
             ):
                 raise DomainError(ErrorCode.FORBIDDEN)
             if before.version != expected_version:

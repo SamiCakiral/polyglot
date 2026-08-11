@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "file": "e0bd6561ca24d9816641028b68a57221cd59463ed402a18d023df4bc327ee763.mp3",
+      "locale": "ja-JP",
+      "provider": "macos-say",
+      "provider_version": "local-v2",
+      "sha256": "da1a0fa7660b51096a9f9d56b15860a399f9c6c313582573467a6c8c9c258846",
+      "text": "こんにちは。わたしはサミです。",
+      "voice_id": "Kyoko"
+    },
+    {
+      "file": "dce81fc17f97209c654a0c67f268e12bf726554c88239fafdc38395aba8827b7.mp3",
+      "locale": "ja-JP",
+      "provider": "macos-say",
+      "provider_version": "local-v2",
+      "sha256": "92746cf72f239adcd15032d022d21a20b76c2c8977693ddcc8df7ecefebc28d6",
+      "text": "すみません。みずをください。",
+      "voice_id": "Kyoko"
+    },
+    {
+      "file": "92c0e31db8badc604ed4b695957e4d54ed8152ee90d629d7133f2f380c26316a.mp3",
+      "locale": "ja-JP",
+      "provider": "macos-say",
+      "provider_version": "local-v2",
+      "sha256": "ccbeb1ad6049c7c5a71d08a7f1a95fc302bb83917206a8d649ce81e64c49918a",
+      "text": "もういちどおねがいします。",
+      "voice_id": "Kyoko"
+    }
+  ]
+}

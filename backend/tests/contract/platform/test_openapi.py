@@ -92,6 +92,7 @@ def test_openapi_exports_the_implemented_w01_through_w16_surface() -> None:
         "/api/v1/language-profiles/{id}/progress",
         "/api/v1/language-profiles/{id}/recommendations",
         "/api/v1/language-profiles/{profile_id}",
+        "/api/v1/language-profiles/{profile_id}/assessment-capabilities",
         "/api/v1/language-profiles/{profile_id}/assessments",
         "/api/v1/language-profiles/{profile_id}/diagnostics",
         "/api/v1/language-profiles/{profile_id}/daily-plans",

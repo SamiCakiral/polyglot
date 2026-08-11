@@ -25,6 +25,7 @@ import type {
   AccountLanguageResponse,
   AccountResponse,
   ApproveContentRevisionRequest,
+  AssessmentCapabilitiesResponse,
   AssessmentRunResponse,
   AtRequest,
   AttemptResponse,
@@ -79,6 +80,7 @@ import type {
   GetTtsCapabilitiesParams,
   GetWordBankOverviewParams,
   GrammarToolboxResponse,
+  HTTPValidationError,
   ImportPreviewPageResponse,
   ImportRunResponse,
   InjectPracticeStackRequest,
@@ -91,6 +93,7 @@ import type {
   ListContentDraftsParams,
   ListDueMemoryPromptsParams,
   ListLanguagePacksParams,
+  ListLearningModulesParams,
   ListLexicalAnnotationsParams,
   ListRecommendationsParams,
   ListSharedVocabularyListsParams,
@@ -15789,6 +15792,215 @@ export const useDeleteLanguageProfile = <
   );
 };
 
+export type getAssessmentCapabilitiesResponse200 = {
+  data: AssessmentCapabilitiesResponse;
+  status: 200;
+};
+
+export type getAssessmentCapabilitiesResponse422 = {
+  data: HTTPValidationError;
+  status: 422;
+};
+
+export type getAssessmentCapabilitiesResponseSuccess =
+  getAssessmentCapabilitiesResponse200 & {
+    headers: Headers;
+  };
+export type getAssessmentCapabilitiesResponseError =
+  getAssessmentCapabilitiesResponse422 & {
+    headers: Headers;
+  };
+
+export type getAssessmentCapabilitiesResponse =
+  | getAssessmentCapabilitiesResponseSuccess
+  | getAssessmentCapabilitiesResponseError;
+
+export const getGetAssessmentCapabilitiesUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/assessment-capabilities`;
+};
+
+/**
+ * @summary Get Assessment Capabilities
+ */
+export const getAssessmentCapabilities = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<getAssessmentCapabilitiesResponse> => {
+  const res = await fetch(getGetAssessmentCapabilitiesUrl(profileId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getAssessmentCapabilitiesResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getAssessmentCapabilitiesResponse;
+};
+
+export const getGetAssessmentCapabilitiesQueryKey = (profileId: string) => {
+  return [
+    `/api/v1/language-profiles/${profileId}/assessment-capabilities`,
+  ] as const;
+};
+
+export const getGetAssessmentCapabilitiesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+  TError = HTTPValidationError,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAssessmentCapabilitiesQueryKey(profileId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAssessmentCapabilities>>
+  > = ({ signal }) =>
+    getAssessmentCapabilities(profileId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAssessmentCapabilitiesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAssessmentCapabilities>>
+>;
+export type GetAssessmentCapabilitiesQueryError = HTTPValidationError;
+
+export function useGetAssessmentCapabilities<
+  TData = Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+  TError = HTTPValidationError,
+>(
+  profileId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+          TError,
+          Awaited<ReturnType<typeof getAssessmentCapabilities>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAssessmentCapabilities<
+  TData = Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+  TError = HTTPValidationError,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+          TError,
+          Awaited<ReturnType<typeof getAssessmentCapabilities>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAssessmentCapabilities<
+  TData = Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+  TError = HTTPValidationError,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Assessment Capabilities
+ */
+
+export function useGetAssessmentCapabilities<
+  TData = Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+  TError = HTTPValidationError,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAssessmentCapabilities>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetAssessmentCapabilitiesQueryOptions(
+    profileId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export type prepareAssessmentResponse201 = {
   data: AssessmentRunResponse;
   status: 201;
@@ -29885,17 +30097,32 @@ export type listLearningModulesResponseError = (
 export type listLearningModulesResponse =
   listLearningModulesResponseSuccess | listLearningModulesResponseError;
 
-export const getListLearningModulesUrl = () => {
-  return `/api/v1/modules`;
+export const getListLearningModulesUrl = (
+  params?: ListLearningModulesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/modules?${stringifiedParams}`
+    : `/api/v1/modules`;
 };
 
 /**
  * @summary List Learning Modules
  */
 export const listLearningModules = async (
+  params?: ListLearningModulesParams,
   options?: RequestInit,
 ): Promise<listLearningModulesResponse> => {
-  const res = await fetch(getListLearningModulesUrl(), {
+  const res = await fetch(getListLearningModulesUrl(params), {
     ...options,
     method: "GET",
   });
@@ -29912,30 +30139,36 @@ export const listLearningModules = async (
   } as listLearningModulesResponse;
 };
 
-export const getListLearningModulesQueryKey = () => {
-  return [`/api/v1/modules`] as const;
+export const getListLearningModulesQueryKey = (
+  params?: ListLearningModulesParams,
+) => {
+  return [`/api/v1/modules`, ...(params ? [params] : [])] as const;
 };
 
 export const getListLearningModulesQueryOptions = <
   TData = Awaited<ReturnType<typeof listLearningModules>>,
   TError = ProblemResponse,
->(options?: {
-  query?: Partial<
-    UseQueryOptions<
-      Awaited<ReturnType<typeof listLearningModules>>,
-      TError,
-      TData
-    >
-  >;
-  fetch?: RequestInit;
-}) => {
+>(
+  params?: ListLearningModulesParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listLearningModules>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
   const { query: queryOptions, fetch: fetchOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListLearningModulesQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getListLearningModulesQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof listLearningModules>>
-  > = ({ signal }) => listLearningModules({ signal, ...fetchOptions });
+  > = ({ signal }) => listLearningModules(params, { signal, ...fetchOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listLearningModules>>,
@@ -29953,6 +30186,7 @@ export function useListLearningModules<
   TData = Awaited<ReturnType<typeof listLearningModules>>,
   TError = ProblemResponse,
 >(
+  params: undefined | ListLearningModulesParams,
   options: {
     query: Partial<
       UseQueryOptions<
@@ -29979,6 +30213,7 @@ export function useListLearningModules<
   TData = Awaited<ReturnType<typeof listLearningModules>>,
   TError = ProblemResponse,
 >(
+  params?: ListLearningModulesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -30005,6 +30240,7 @@ export function useListLearningModules<
   TData = Awaited<ReturnType<typeof listLearningModules>>,
   TError = ProblemResponse,
 >(
+  params?: ListLearningModulesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -30027,6 +30263,7 @@ export function useListLearningModules<
   TData = Awaited<ReturnType<typeof listLearningModules>>,
   TError = ProblemResponse,
 >(
+  params?: ListLearningModulesParams,
   options?: {
     query?: Partial<
       UseQueryOptions<
@@ -30041,7 +30278,7 @@ export function useListLearningModules<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getListLearningModulesQueryOptions(options);
+  const queryOptions = getListLearningModulesQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

@@ -5,6 +5,7 @@ from polyglot.modules.media.ports import (
     DeterministicSttPort,
     DeterministicTtsPort,
     FakeObjectStorage,
+    FixtureBackedTtsPort,
     MacOSTtsPort,
     TtsAvailability,
     TtsRequest,
@@ -82,6 +83,25 @@ def test_macos_adapter_is_injectable_and_does_not_need_macos(tmp_path: Path) -> 
     assert len(runner.calls) == 2
     assert runner.calls[0][0] == "say"
     assert runner.calls[1][0] == "ffmpeg"
+
+
+def test_fixture_backed_tts_serves_exact_editorial_audio(tmp_path: Path) -> None:
+    request = TtsRequest("こんにちは。", "ja-JP", "Kyoko", {})
+    fixture_path = tmp_path / FixtureBackedTtsPort.fixture_filename(request)
+    fixture_path.write_bytes(b"ID3-real-editorial-audio")
+    port = FixtureBackedTtsPort(
+        voices=(TtsVoice("Kyoko", "ja-JP", TtsAvailability.AVAILABLE, "local-v2"),),
+        fixture_dir=tmp_path,
+        fallback=DeterministicTtsPort.unavailable(),
+    )
+
+    result = port.synthesize(request)
+    missing = port.synthesize(TtsRequest("さようなら。", "ja-JP", "Kyoko", {}))
+
+    assert result.availability is TtsAvailability.AVAILABLE
+    assert result.audio == b"ID3-real-editorial-audio"
+    assert result.cache_key == request.cache_key("local-v2")
+    assert missing.availability is TtsAvailability.TEMPORARILY_UNAVAILABLE
 
 
 def test_object_storage_fake_exposes_private_bytes_only() -> None:

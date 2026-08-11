@@ -29,6 +29,7 @@ import {
   saveAssessmentResponse,
   startAssessment,
   submitAssessment,
+  useGetAssessmentCapabilities,
   useGetAssessmentRun,
   usePrepareAssessment,
 } from "../../generated/polyglot";
@@ -81,6 +82,19 @@ function promptOptions(item: AssessmentItemResponse): string[] {
 }
 
 export function AssessPage() {
+  const { activeProfile } = useActiveProfile();
+  const capabilitiesQuery = useGetAssessmentCapabilities(
+    activeProfile?.profile_id ?? "",
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(activeProfile), retry: false },
+    },
+  );
+  const available = new Set(
+    capabilitiesQuery.data?.status === 200
+      ? capabilitiesQuery.data.data.available_modalities
+      : [],
+  );
   return (
     <div className="page-flow">
       <PageHeader
@@ -89,21 +103,32 @@ export function AssessPage() {
         description="Chaque test mesure une compétence séparément à partir de contenu nouveau."
       />
       <div className="assessment-grid">
-        {modalities.map(({ id, label, icon: Icon, note }) => (
-          <article key={id}>
+        {modalities.map(({ id, label, icon: Icon, note }) => {
+          const isAvailable = available.has(id);
+          return <article key={id}>
             <Icon aria-hidden="true" />
             <div>
               <h2>{label}</h2>
               <p>{note}</p>
             </div>
-            <StatusPill tone={id === "speaking" ? "warn" : "neutral"}>
-              {id === "speaking" ? "Protocole seul" : "Disponible"}
+            <StatusPill
+              tone={!isAvailable || id === "speaking" ? "warn" : "neutral"}
+            >
+              {isAvailable
+                ? id === "speaking"
+                  ? "Protocole seul"
+                  : "Disponible"
+                : "À publier"}
             </StatusPill>
-            <Link className="text-link" to={`/assess/${id}`}>
-              Voir le protocole <ArrowRight aria-hidden="true" size={17} />
-            </Link>
+            {isAvailable ? (
+              <Link className="text-link" to={`/assess/${id}`}>
+                Voir le protocole <ArrowRight aria-hidden="true" size={17} />
+              </Link>
+            ) : (
+              <span>Pas encore disponible pour cette langue</span>
+            )}
           </article>
-        ))}
+        })}
       </div>
       <section className="integrity-note">
         <strong>Une évaluation n'est pas un entraînement</strong>
@@ -122,10 +147,21 @@ export function AssessmentProtocolPage() {
   const session = useSession();
   const navigate = useNavigate();
   const prepare = usePrepareAssessment({ fetch: commandFetch(session) });
+  const capabilitiesQuery = useGetAssessmentCapabilities(
+    activeProfile?.profile_id ?? "",
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(activeProfile), retry: false },
+    },
+  );
   const [error, setError] = useState("");
   const meta = modalities.find((item) => item.id === modality) ?? modalities[0];
   if (!activeProfile) return <NoProfile />;
   const profileId = activeProfile.profile_id;
+  const available =
+    capabilitiesQuery.data?.status === 200
+      ? capabilitiesQuery.data.data.available_modalities.includes(meta.id)
+      : false;
 
   async function begin() {
     setError("");
@@ -202,13 +238,19 @@ export function AssessmentProtocolPage() {
           </p>
         ) : null}
         {error ? <ErrorRegion message={error} /> : null}
-        <button
-          disabled={prepare.isPending}
-          type="button"
-          onClick={() => void begin()}
-        >
-          Commencer l'évaluation <ArrowRight aria-hidden="true" size={18} />
-        </button>
+        {capabilitiesQuery.isPending ? (
+          <LoadingRegion label="Vérification du protocole" />
+        ) : available ? (
+          <button
+            disabled={prepare.isPending}
+            type="button"
+            onClick={() => void begin()}
+          >
+            Commencer l'évaluation <ArrowRight aria-hidden="true" size={18} />
+          </button>
+        ) : (
+          <ErrorRegion message="Ce protocole n'est pas encore publié pour cette langue." />
+        )}
       </section>
     </div>
   );

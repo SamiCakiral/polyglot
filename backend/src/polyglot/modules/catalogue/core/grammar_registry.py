@@ -3,12 +3,17 @@ from polyglot.modules.catalogue.core.italian_grammar import (
     GrammarRealizationDefinition,
     GrammarToolbox,
 )
+from polyglot.modules.catalogue.core.japanese_grammar import JAPANESE_GRAMMAR_TOOLBOX
 
 _TOOLBOXES = {
     (
         ITALIAN_GRAMMAR_TOOLBOX.target_language_tag,
         ITALIAN_GRAMMAR_TOOLBOX.support_language_tag,
     ): ITALIAN_GRAMMAR_TOOLBOX,
+    (
+        JAPANESE_GRAMMAR_TOOLBOX.target_language_tag,
+        JAPANESE_GRAMMAR_TOOLBOX.support_language_tag,
+    ): JAPANESE_GRAMMAR_TOOLBOX,
 }
 
 

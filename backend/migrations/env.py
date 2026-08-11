@@ -36,7 +36,7 @@ def include_object(
     compare_to: object | None,
 ) -> bool:
     """Audited SQL DDL owns schemas with RLS policies and append-only triggers."""
-    del name, type_, reflected, compare_to
+    del type_, compare_to
     sql_ddl_owned_schemas = {
         "assessments",
         "curriculum",
@@ -48,9 +48,24 @@ def include_object(
         "memory",
         "media",
         "planning",
+        "practice",
         "progress",
+        "teacher",
     }
-    return getattr(object_, "schema", None) not in sql_ddl_owned_schemas
+    object_schema = getattr(object_, "schema", None)
+    if object_schema in sql_ddl_owned_schemas:
+        return False
+
+    parent_table = getattr(object_, "table", None)
+    parent_schema = getattr(parent_table, "schema", None)
+    parent_name = getattr(parent_table, "name", None)
+    if reflected and (
+        (object_schema == "identity" and name == "account_languages")
+        or (parent_schema == "identity" and parent_name == "account_languages")
+    ):
+        return False
+
+    return True
 
 
 def database_url() -> str:

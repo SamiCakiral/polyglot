@@ -99,6 +99,10 @@ class ResolveAssessmentReview:
 
 
 class AssessmentApplicationService(Protocol):
+    async def available_modalities(
+        self, actor_id: UUID, profile_id: UUID
+    ) -> tuple[str, ...]: ...
+
     async def prepare(
         self,
         actor_id: UUID,

@@ -25,11 +25,17 @@ import { modulePresentation } from "./module-presentation";
 
 export function LearnPage() {
   const { activePack } = useActiveProfile();
-  const query = useListLearningModules({
-    fetch: queryFetch(),
-    query: { retry: false },
-  });
-  if (query.isPending) return <LoadingRegion label="Chargement des modules" />;
+  const query = useListLearningModules(
+    activePack
+      ? { pack_revision_id: activePack.pack_revision_id }
+      : undefined,
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(activePack), retry: false },
+    },
+  );
+  if (activePack && query.isPending)
+    return <LoadingRegion label="Chargement des modules" />;
   const modules = query.data?.status === 200 ? query.data.data : [];
 
   return (
@@ -110,11 +116,17 @@ export function ModuleDetailPage() {
   const moduleEyebrow = activePack
     ? `Module · ${activePack.target_language_tag}`
     : "Module";
-  const query = useListLearningModules({
-    fetch: queryFetch(),
-    query: { retry: false },
-  });
-  if (query.isPending) return <LoadingRegion label="Ouverture du module" />;
+  const query = useListLearningModules(
+    activePack
+      ? { pack_revision_id: activePack.pack_revision_id }
+      : undefined,
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(activePack), retry: false },
+    },
+  );
+  if (activePack && query.isPending)
+    return <LoadingRegion label="Ouverture du module" />;
   const modules = query.data?.status === 200 ? query.data.data : [];
   const module = modules.find((item) => item.module_id === moduleId);
   if (!module)

@@ -22,7 +22,10 @@ import {
   useOpenExerciseAttempt,
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
-import { activeRunStorageKey } from "../../lib/browser-storage";
+import {
+  activeRunStorageKey,
+  freePracticeRunStorageKey,
+} from "../../lib/browser-storage";
 import { uuid7 } from "../../lib/ids";
 import { PrimitiveResponseEditor } from "../exercises/primitive-response-editor";
 import {
@@ -31,24 +34,7 @@ import {
   type PrimitiveResponse,
 } from "../exercises/primitive-response";
 import { resumeBlockOffset } from "./sprint-position";
-
-const familyLabels: Record<string, string> = {
-  lexical_acquisition: "Vocabulaire du jour",
-  vocabulary: "Vocabulaire du jour",
-  recall_warmup: "Rappel actif",
-  memory_review: "Rappels à échéance",
-  version_input: "Comprendre l'italien",
-  version: "Comprendre l'italien",
-  grammar_toolbox: "Boîte grammaticale",
-  transformation_gym: "Gym de transformation",
-  gym: "Gym de transformation",
-  listening: "Compréhension orale",
-  shadowing: "Écoute et shadowing",
-  guided_output: "Expression guidée",
-  free_writing: "Expression écrite",
-  delayed_recode: "Inversion J+1",
-  reflection_close: "Bilan de séance",
-};
+import { sprintFamilyLabel } from "./sprint-family-label";
 
 function readableBinding(value: unknown): string | null {
   if (typeof value === "string") return value;
@@ -248,7 +234,11 @@ function ExerciseReader({
       <div className="exercise-reader__meta">
         <span>Réponse sauvegardée localement</span>
       </div>
-      <div className="exercise-prompt" lang={targetLanguageTag}>
+      <div
+        className="exercise-prompt"
+        dir={activePack?.text_direction}
+        lang={targetLanguageTag}
+      >
         {prompt}
       </div>
       {exercise.primitive_id.includes("ORAL") ? (
@@ -328,6 +318,7 @@ function ExerciseReader({
 export function SprintPage() {
   const { runId = "" } = useParams();
   const session = useSession();
+  const { activePack } = useActiveProfile();
   const navigate = useNavigate();
   const query = useGetSprintRun(runId, {
     fetch: queryFetch(),
@@ -349,6 +340,7 @@ export function SprintPage() {
     resumeBlockOffset(blocks, run?.current_block_id ?? null);
   const block: SprintBlockResponse | undefined = blocks[blockOffset];
   const instanceId = block?.exercise_instance_ids[exerciseOffset];
+  const targetLanguageTag = activePack?.target_language_tag ?? "und";
 
   if (query.isPending)
     return (
@@ -404,9 +396,11 @@ export function SprintPage() {
       );
     }
     localStorage.removeItem(
-      activeRunStorageKey(session.account_id, currentRun.profile_id),
+      currentRun.plan_kind === "free"
+        ? freePracticeRunStorageKey(session.account_id, currentRun.profile_id)
+        : activeRunStorageKey(session.account_id, currentRun.profile_id),
     );
-    void navigate("/progress");
+    void navigate(currentRun.plan_kind === "free" ? "/practice" : "/progress");
   }
 
   async function pause() {
@@ -422,7 +416,7 @@ export function SprintPage() {
       setError(problem);
       return;
     }
-    void navigate("/today");
+    void navigate(currentRun.plan_kind === "free" ? "/practice" : "/today");
   }
 
   const completed =
@@ -442,7 +436,10 @@ export function SprintPage() {
   return (
     <div className="sprint-shell">
       <header className="sprint-header">
-        <Link aria-label="Quitter la séance" to="/today">
+        <Link
+          aria-label="Quitter la séance"
+          to={currentRun.plan_kind === "free" ? "/practice" : "/today"}
+        >
           <ArrowLeft aria-hidden="true" />
         </Link>
         <div>
@@ -450,7 +447,7 @@ export function SprintPage() {
             Étape {blockOffset + 1} sur {blocks.length}
           </span>
           <strong>
-            {familyLabels[currentBlock.family] ?? currentBlock.family}
+            {sprintFamilyLabel(currentBlock.family, targetLanguageTag)}
           </strong>
         </div>
         <button
@@ -478,7 +475,7 @@ export function SprintPage() {
         <p className="eyebrow">
           {currentBlock.required ? "Étape essentielle" : "Approfondissement"}
         </p>
-        <h1>{familyLabels[currentBlock.family] ?? "Exercice"}</h1>
+        <h1>{sprintFamilyLabel(currentBlock.family, targetLanguageTag)}</h1>
         {instanceId ? (
           <ExerciseReader
             key={instanceId}

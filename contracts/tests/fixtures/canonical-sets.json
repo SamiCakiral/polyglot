@@ -164,7 +164,8 @@
     "GetTtsCapabilities",
     "GetMediaAvailability",
     "ListTeacherConversations",
-    "GetTeacherConversation"
+    "GetTeacherConversation",
+    "GetAssessmentCapabilities"
   ],
   "tool_names": [
     "profile.read_authorized",
@@ -1239,6 +1240,10 @@
     {
       "method": "GET",
       "route": "/teacher-conversations/{conversation_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/assessment-capabilities"
     }
   ]
 }

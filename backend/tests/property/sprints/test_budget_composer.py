@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from uuid import UUID
 
@@ -155,15 +156,19 @@ def test_prerequisite_teaching_is_ordered_before_dependent_block() -> None:
 
 def test_daily_budget_bands_preserve_the_pedagogical_chain() -> None:
     families = (
+        (BlockFamily.RECALL_WARMUP, frozenset({"activation"})),
         (BlockFamily.VERSION_INPUT, frozenset({"activation"})),
         (BlockFamily.GRAMMAR_TOOLBOX, frozenset({"grammar_explanation"})),
         (
             BlockFamily.TRANSFORMATION_GYM,
-            frozenset({"primary_objective", "unsupported_production", "reflection"}),
+            frozenset({"guided_practice"}),
         ),
         (BlockFamily.LISTENING, frozenset({"contextual_encounter"})),
         (BlockFamily.SHADOWING, frozenset({"second_modality"})),
-        (BlockFamily.GUIDED_OUTPUT, frozenset({"production"})),
+        (
+            BlockFamily.GUIDED_OUTPUT,
+            frozenset({"production", "primary_objective", "unsupported_production", "reflection"}),
+        ),
         (BlockFamily.FREE_WRITING, frozenset({"production"})),
     )
     candidates_by_band = tuple(
@@ -204,10 +209,54 @@ def test_daily_budget_bands_preserve_the_pedagogical_chain() -> None:
 
         assert BlockFamily.VERSION_INPUT in selected or BlockFamily.LISTENING in selected
         assert BlockFamily.GRAMMAR_TOOLBOX in selected
-        assert BlockFamily.TRANSFORMATION_GYM in selected
-        if budget >= 30:
-            assert BlockFamily.LISTENING in selected or BlockFamily.SHADOWING in selected
-        if budget >= 45:
-            assert BlockFamily.GUIDED_OUTPUT in selected or BlockFamily.FREE_WRITING in selected
+        assert BlockFamily.RECALL_WARMUP in selected
+        assert selected & {
+            BlockFamily.DELAYED_RECODE,
+            BlockFamily.GUIDED_OUTPUT,
+            BlockFamily.FREE_WRITING,
+        }
+        if budget >= 20:
+            assert BlockFamily.TRANSFORMATION_GYM in selected
+            assert selected & {BlockFamily.LISTENING, BlockFamily.SHADOWING}
         if budget >= 60:
             assert BlockFamily.SHADOWING in selected
+
+
+def test_mid_length_session_uses_shadowing_when_no_listening_primitive_exists() -> None:
+    candidates_without_listening = tuple(
+        replace(
+            item,
+            roles=frozenset({"guided_practice"})
+            if item.family is BlockFamily.TRANSFORMATION_GYM
+            else frozenset(
+                {"production", "primary_objective", "unsupported_production", "reflection"}
+            )
+            if item.family is BlockFamily.GUIDED_OUTPUT
+            else item.roles,
+        )
+        for item in candidates()
+        if item.family not in {BlockFamily.LISTENING, BlockFamily.REFLECTION_CLOSE}
+    )
+    snapshot = PlanningSnapshot(
+        snapshot_id=uid(1001),
+        profile_id=uid(1002),
+        plan_kind=PlanKind.DAILY,
+        budget_minutes=30,
+        pedagogical_day=date(2026, 8, 10),
+        timezone="Europe/Paris",
+        cutoff_at=datetime(2026, 8, 10, 8, tzinfo=UTC),
+        seed="shadowing-as-audio-input",
+        policy_revision="SPRINT_PRIORITY_V1",
+        planner_revision="COMPOSER_V1",
+        profile_band="P-ABS",
+        mastered_refs=frozenset({"lex:new"}),
+        enrollment_id=uid(1003),
+        module_revision_id=uid(1004),
+        module_day_id=uid(1005),
+        due_delayed_recode_ids=(uid(90),),
+        candidates=candidates_without_listening,
+    )
+
+    selected = {block.family for block in DailySprintComposer().compose(uid(1006), snapshot).blocks}
+
+    assert BlockFamily.SHADOWING in selected

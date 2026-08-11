@@ -19,6 +19,7 @@ import {
 } from "../../lib/browser-storage";
 import { uuid7 } from "../../lib/ids";
 import { DailyVocabulary } from "./daily-vocabulary";
+import { dailyComposeDisabled } from "./today-state";
 
 const budgets = [10, 20, 30, 45, 60] as const;
 
@@ -118,7 +119,7 @@ export function TodayPage() {
             <p className="quiet-copy">La durée ajuste le nombre d'exercices, jamais la qualité de la correction ni la continuité J+1.</p>
           )}
           {error ? <ErrorRegion message={error} /> : null}
-          {plan ? <button disabled={prepare.isPending || start.isPending} type="button" onClick={() => void begin()}>Commencer la séance <ArrowRight aria-hidden="true" size={18} /></button> : <button disabled={compose.isPending || pendingPlanQuery.isPending} type="button" onClick={() => void composePlan()}>{compose.isPending ? "Composition..." : "Composer ma séance"} <Sparkles aria-hidden="true" size={18} /></button>}
+          {plan ? <button disabled={prepare.isPending || start.isPending} type="button" onClick={() => void begin()}>Commencer la séance <ArrowRight aria-hidden="true" size={18} /></button> : <button disabled={dailyComposeDisabled({ composePending: compose.isPending, pendingPlanId, pendingPlanQueryPending: pendingPlanQuery.isPending })} type="button" onClick={() => void composePlan()}>{compose.isPending ? "Composition..." : "Composer ma séance"} <Sparkles aria-hidden="true" size={18} /></button>}
           </>}
         </div>
         <aside className="today-workbench__aside">

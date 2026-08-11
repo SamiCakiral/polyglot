@@ -52,6 +52,23 @@ RECEIPT_RETENTION = timedelta(hours=24)
 EVENT_RETENTION = timedelta(days=3650)
 RUN_RETENTION = timedelta(days=7)
 
+_LONG_SESSION_REPEAT_FAMILIES = frozenset(
+    {
+        BlockFamily.RECALL_WARMUP.value,
+        BlockFamily.DELAYED_RECODE.value,
+        BlockFamily.VERSION_INPUT.value,
+        BlockFamily.LISTENING.value,
+        BlockFamily.TRANSFORMATION_GYM.value,
+        BlockFamily.SHADOWING.value,
+        BlockFamily.GUIDED_OUTPUT.value,
+        BlockFamily.FREE_WRITING.value,
+    }
+)
+
+
+def _instance_repetitions(budget_minutes: int, family: str) -> int:
+    return 2 if budget_minutes >= 60 and family in _LONG_SESSION_REPEAT_FAMILIES else 1
+
 
 def _uuid(value: object) -> UUID:
     return UUID(str(value))
@@ -290,12 +307,14 @@ class SqlSprintService:
                 if context_row is None:
                     effective_plan_kind = PlanKind.FOUNDATION
                     target_refs = ("grammar:foundation", "skill:calibration")
-                    definition_ids = await self._foundation_definition_ids(session)
+                    pack_revision_id = await self._profile_pack_revision(session, profile_id)
+                    definition_ids = await self._foundation_definition_ids(
+                        session, pack_revision_id
+                    )
                     content_ids = ()
                     enrollment_id = None
                     module_revision_id = None
                     module_day_id = None
-                    pack_revision_id = await self._profile_pack_revision(session, profile_id)
                     grammar_families = ("foundation",)
                 else:
                     target_refs = tuple(str(item) for item in context_row["primary_target_refs"])
@@ -313,14 +332,14 @@ class SqlSprintService:
             else:
                 assert free_command is not None
                 target_refs = free_command.target_refs
+                pack_revision_id = await self._profile_pack_revision(session, profile_id)
                 definition_ids = await self._free_definition_ids(
-                    session, free_command.primitive_ids
+                    session, free_command.primitive_ids, pack_revision_id
                 )
                 content_ids = ()
                 enrollment_id = None
                 module_revision_id = None
                 module_day_id = None
-                pack_revision_id = await self._profile_pack_revision(session, profile_id)
                 grammar_families = ()
             candidates = await self._candidates(
                 session,
@@ -915,9 +934,7 @@ class SqlSprintService:
             {"actor": str(actor_id)},
         )
 
-    async def _daily_context(
-        self, session: AsyncSession, profile_id: UUID
-    ) -> RowMapping | None:
+    async def _daily_context(self, session: AsyncSession, profile_id: UUID) -> RowMapping | None:
         row = (
             (
                 await session.execute(
@@ -945,7 +962,9 @@ class SqlSprintService:
         )
         return row
 
-    async def _foundation_definition_ids(self, session: AsyncSession) -> tuple[UUID, ...]:
+    async def _foundation_definition_ids(
+        self, session: AsyncSession, pack_revision_id: UUID
+    ) -> tuple[UUID, ...]:
         preferred = (
             "EX-RECALL-01",
             "EX-RECALL-02",
@@ -963,12 +982,20 @@ class SqlSprintService:
             "EX-ORAL-01",
         )
         statement = text(
-            "SELECT DISTINCT ON (primitive_id) definition_revision_id,primitive_id "
-            "FROM exercises.exercise_definition_revisions "
-            "WHERE status='published' AND primitive_id IN :primitives "
-            "ORDER BY primitive_id,revision_no DESC,definition_revision_id DESC"
+            "SELECT DISTINCT ON (revision.primitive_id) "
+            "revision.definition_revision_id,revision.primitive_id "
+            "FROM exercises.exercise_definition_revisions revision "
+            "JOIN catalogue.language_pack_revisions pack "
+            "ON pack.pack_revision_id=:pack AND pack.provenance_id=revision.provenance_id "
+            "WHERE revision.status='published' AND revision.primitive_id IN :primitives "
+            "ORDER BY revision.primitive_id,revision.revision_no DESC,"
+            "revision.definition_revision_id DESC"
         ).bindparams(bindparam("primitives", expanding=True))
-        rows = (await session.execute(statement, {"primitives": preferred})).mappings().all()
+        rows = (
+            await session.execute(
+                statement, {"primitives": preferred, "pack": pack_revision_id}
+            )
+        ).mappings().all()
         found = {str(row["primitive_id"]) for row in rows}
         if not {"EX-EXPOSE-01", "EX-TRANSFORM-01"}.issubset(found) or not any(
             value.startswith(("EX-COMP", "EX-RECALL")) for value in found
@@ -995,15 +1022,26 @@ class SqlSprintService:
         return tuple(_uuid(value) for value in rows.scalars())
 
     async def _free_definition_ids(
-        self, session: AsyncSession, primitive_ids: tuple[str, ...]
+        self,
+        session: AsyncSession,
+        primitive_ids: tuple[str, ...],
+        pack_revision_id: UUID,
     ) -> tuple[UUID, ...]:
         statement = text(
-            "SELECT DISTINCT ON (primitive_id) definition_revision_id,primitive_id "
-            "FROM exercises.exercise_definition_revisions "
-            "WHERE status='published' AND primitive_id IN :primitives "
-            "ORDER BY primitive_id,revision_no DESC,definition_revision_id DESC LIMIT 16"
+            "SELECT DISTINCT ON (revision.primitive_id) "
+            "revision.definition_revision_id,revision.primitive_id "
+            "FROM exercises.exercise_definition_revisions revision "
+            "JOIN catalogue.language_pack_revisions pack "
+            "ON pack.pack_revision_id=:pack AND pack.provenance_id=revision.provenance_id "
+            "WHERE revision.status='published' AND revision.primitive_id IN :primitives "
+            "ORDER BY revision.primitive_id,revision.revision_no DESC,"
+            "revision.definition_revision_id DESC LIMIT 16"
         ).bindparams(bindparam("primitives", expanding=True))
-        rows = (await session.execute(statement, {"primitives": primitive_ids})).mappings().all()
+        rows = (
+            await session.execute(
+                statement, {"primitives": primitive_ids, "pack": pack_revision_id}
+            )
+        ).mappings().all()
         found = {str(row["primitive_id"]) for row in rows}
         if found != set(primitive_ids):
             raise DomainError(ErrorCode.PRIMITIVE_UNKNOWN)
@@ -1136,14 +1174,10 @@ class SqlSprintService:
             (
                 item
                 for item in candidates
-                if item.family is BlockFamily.TRANSFORMATION_GYM
+                if item.family in {BlockFamily.GUIDED_OUTPUT, BlockFamily.FREE_WRITING}
             ),
             next(
-                (
-                    item
-                    for item in candidates
-                    if item.family in {BlockFamily.GUIDED_OUTPUT, BlockFamily.FREE_WRITING}
-                ),
+                (item for item in candidates if item.family is BlockFamily.TRANSFORMATION_GYM),
                 None,
             ),
         )
@@ -1689,7 +1723,8 @@ class SqlSprintService:
             (
                 await session.execute(
                     text(
-                        "SELECT session_plan_block_id,ordinal,exercise_definition_revision_ids,"
+                        "SELECT session_plan_block_id,ordinal,family,"
+                        "exercise_definition_revision_ids,"
                         "content_revision_ids,target_refs FROM planning.session_plan_blocks "
                         "WHERE plan_revision_id=:revision ORDER BY ordinal"
                     ),
@@ -1701,7 +1736,12 @@ class SqlSprintService:
         )
         for block in block_rows:
             definitions = tuple(_uuid(item) for item in block["exercise_definition_revision_ids"])
-            for ordinal, definition_id in enumerate(definitions, start=1):
+            expanded_definitions = tuple(
+                definition_id
+                for definition_id in definitions
+                for _ in range(_instance_repetitions(plan.budget_minutes, str(block["family"])))
+            )
+            for ordinal, definition_id in enumerate(expanded_definitions, start=1):
                 definition = (
                     (
                         await session.execute(

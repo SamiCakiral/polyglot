@@ -118,7 +118,10 @@ async def seed_curriculum_dependencies(
                 "created_at,updated_at) VALUES "
                 "(:profile,:account,:target,:support,'active','module_learning','[]','[]','[]',"
                 "CAST(:correction AS jsonb),CAST(:availability AS jsonb),1,:now,:now) "
-                "ON CONFLICT DO NOTHING"
+                "ON CONFLICT (profile_id) DO UPDATE SET "
+                "account_id=EXCLUDED.account_id,target_variety_id=EXCLUDED.target_variety_id,"
+                "native_variety_id=EXCLUDED.native_variety_id,status=EXCLUDED.status,"
+                "current_phase=EXCLUDED.current_phase,updated_at=EXCLUDED.updated_at"
             ),
             {
                 "profile": profile_id,

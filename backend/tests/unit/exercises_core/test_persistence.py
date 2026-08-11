@@ -18,3 +18,14 @@ def test_grammar_target_resolves_to_a_teachable_then_transformable_stimulus() ->
     assert "Comprenez la fonction" in str(exposure["prompt"])
     assert "Utilisez puis transformez" in str(transformation["prompt"])
     assert "register" in transformation["transformations"]
+
+
+def test_grammar_binding_does_not_replace_authored_oral_content() -> None:
+    authored = {
+        "prompt": "Répétez : こんにちは。わたしはサミです。",
+        "model_answer": "こんにちは。わたしはサミです。",
+    }
+
+    resolved = _resolved_stimulus("EX-ORAL-01", authored, ("grammar:JA-GRAM-001",))
+
+    assert resolved == authored

@@ -19,7 +19,10 @@ from .conftest import (
     ACCOUNT_ID,
     MODULE_REVISION_ID,
     NOW,
+    PACK_REVISION_ID,
     PROFILE_ID,
+    SUPPORT_VARIETY_ID,
+    TARGET_VARIETY_ID,
     seed_curriculum_dependencies,
     uid,
 )
@@ -57,7 +60,47 @@ async def test_lists_published_modules_with_pinned_current_revision(
     assert len(modules) == 1
     assert modules[0].module_code == "IT-FIRST-AUTONOMOUS-EXCHANGE"
     assert modules[0].module_revision_id == MODULE_REVISION_ID
+    assert modules[0].pack_revision_id == PACK_REVISION_ID
     assert modules[0].nominal_days == 3
+
+    assert (
+        await service(runtime_factory).list_modules(
+            ACCOUNT_ID,
+            pack_revision_id=uid(999),
+        )
+        == ()
+    )
+
+
+async def test_enrollment_rejects_a_module_for_another_target_language(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_curriculum_dependencies(migration_session)
+    await migration_session.execute(
+        text(
+            "UPDATE language_profiles.learner_language_profiles "
+            "SET target_variety_id=:support,native_variety_id=:target "
+            "WHERE profile_id=:profile"
+        ),
+        {
+            "profile": PROFILE_ID,
+            "support": SUPPORT_VARIETY_ID,
+            "target": TARGET_VARIETY_ID,
+        },
+    )
+    await migration_session.commit()
+
+    with pytest.raises(DomainError) as error:
+        await service(runtime_factory).enroll(
+            ACCOUNT_ID,
+            PROFILE_ID,
+            EnrollInModule(new_id(), MODULE_REVISION_ID, NOW.date()),
+            idempotency_key="wrong-target-language",
+            context=context(),
+        )
+
+    assert error.value.code is ErrorCode.NOT_FOUND
 
 
 async def test_enrollment_starts_and_replays_without_duplicate_effects(

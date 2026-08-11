@@ -13,6 +13,7 @@ class ModuleSummary:
     module_id: UUID
     module_code: str
     module_revision_id: UUID
+    pack_revision_id: UUID
     primary_intention: str
     nominal_days: int
     max_days: int
@@ -61,7 +62,12 @@ class CompleteEnrollment:
 
 
 class CurriculumApplicationService(Protocol):
-    async def list_modules(self, actor_id: UUID) -> tuple[ModuleSummary, ...]: ...
+    async def list_modules(
+        self,
+        actor_id: UUID,
+        *,
+        pack_revision_id: UUID | None = None,
+    ) -> tuple[ModuleSummary, ...]: ...
 
     async def get_enrollment(self, actor_id: UUID, enrollment_id: UUID) -> EnrollmentView: ...
 

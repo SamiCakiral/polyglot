@@ -1,4 +1,4 @@
-"""Idempotent publication of the local French to Italian MVP pilot."""
+"""Idempotent publication of the local multilingual MVP pilots."""
 
 # ruff: noqa: E501
 
@@ -25,6 +25,10 @@ PILOT_PUBLICATION_ID = UUID("019b0000-0000-7000-8000-00000000000a")
 PILOT_MODULE_ID = UUID("019fe113-0000-7000-8000-000000000001")
 PILOT_MODULE_REVISION_ID = UUID("019fe113-0000-7000-8000-000000000002")
 PILOT_REFERENCE_SET_ID = UUID("019fe113-0000-7000-8200-000000000001")
+JAPANESE_PUBLICATION_ID = UUID("019c0000-0000-7000-9000-000000004001")
+JAPANESE_MODULE_ID = UUID("019c0000-0000-7000-9000-000000004002")
+JAPANESE_MODULE_REVISION_ID = UUID("019c0000-0000-7000-9000-000000004003")
+JAPANESE_REFERENCE_SET_ID = UUID("019c0000-0000-7000-9000-000000004004")
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +37,116 @@ class PilotBootstrapResult:
     foundation_items: int
     exercise_definitions: int
     module_days: int
+    japanese_created: bool = False
+    japanese_foundation_items: int = 0
+    japanese_exercise_definitions: int = 0
+    japanese_module_days: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class PilotActivity:
+    primitive_id: str
+    prompt: str
+    model_answer: str
+
+
+JAPANESE_DAY_ACTIVITIES = {
+    1: (
+        PilotActivity(
+            "EX-REPAIR-01",
+            "Le moule X は Y です identifie poliment. Corrigez : わたし サミ。",
+            "わたしはサミです。",
+        ),
+        PilotActivity(
+            "EX-EXPOSE-01",
+            "Découvrez こんにちは, ありがとう, わたし et です.",
+            "こんにちは。わたしはサミです。",
+        ),
+        PilotActivity(
+            "EX-COMP-03",
+            "Traduisez : こんにちは。わたしはユキです。",
+            "Bonjour. Je m'appelle Yuki.",
+        ),
+        PilotActivity(
+            "EX-TRANSFORM-01", "Remplacez ユキ par サミ : わたしはユキです。", "わたしはサミです。"
+        ),
+        PilotActivity(
+            "EX-ORAL-01",
+            "Répétez trois fois : こんにちは。わたしはサミです。",
+            "こんにちは。わたしはサミです。",
+        ),
+        PilotActivity(
+            "EX-PROD-01", "Saluez puis présentez-vous poliment.", "こんにちは。わたしはサミです。"
+        ),
+        PilotActivity(
+            "EX-RECALL-04",
+            "Écrivez en japonais : Bonjour, je suis Sami.",
+            "こんにちは。わたしはサミです。",
+        ),
+    ),
+    2: (
+        PilotActivity(
+            "EX-REPAIR-01",
+            "Le moule X をください demande poliment. Corrigez : みず ください。",
+            "みずをください。",
+        ),
+        PilotActivity(
+            "EX-EXPOSE-01",
+            "Découvrez みず, ごはん, ください et おねがいします.",
+            "みずをください。",
+        ),
+        PilotActivity(
+            "EX-COMP-03",
+            "Traduisez : すみません。みずをください。",
+            "Excusez-moi. De l'eau, s'il vous plaît.",
+        ),
+        PilotActivity(
+            "EX-TRANSFORM-01", "Remplacez みず par ごはん : みずをください。", "ごはんをください。"
+        ),
+        PilotActivity(
+            "EX-ORAL-01", "Répétez : すみません。みずをください。", "すみません。みずをください。"
+        ),
+        PilotActivity(
+            "EX-PROD-01", "Demandez de l'eau puis remerciez.", "みずをください。ありがとう。"
+        ),
+        PilotActivity(
+            "EX-RECALL-04",
+            "Réécrivez exactement votre présentation d'hier.",
+            "こんにちは。わたしはサミです。",
+        ),
+    ),
+    3: (
+        PilotActivity(
+            "EX-REPAIR-01",
+            "Le moule X はどこですか localise. Corrigez : えき どこ。",
+            "えきはどこですか。",
+        ),
+        PilotActivity(
+            "EX-EXPOSE-01", "Découvrez えき, トイレ, どこ et もういちど.", "えきはどこですか。"
+        ),
+        PilotActivity(
+            "EX-COMP-03",
+            "Traduisez : すみません。トイレはどこですか。",
+            "Excusez-moi. Où sont les toilettes ?",
+        ),
+        PilotActivity(
+            "EX-TRANSFORM-01",
+            "Remplacez トイレ par えき : トイレはどこですか。",
+            "えきはどこですか。",
+        ),
+        PilotActivity(
+            "EX-ORAL-01", "Répétez : もういちどおねがいします。", "もういちどおねがいします。"
+        ),
+        PilotActivity(
+            "EX-PROD-01",
+            "Demandez où est la gare puis demandez de répéter.",
+            "えきはどこですか。もういちどおねがいします。",
+        ),
+        PilotActivity(
+            "EX-RECALL-04", "Réécrivez exactement la demande d'eau d'hier.", "みずをください。"
+        ),
+    ),
+}
 
 
 def fixture_root_from_environment() -> Path:
@@ -66,9 +180,35 @@ def _policy_id(offset: int) -> UUID:
     return UUID(f"019fe113-0000-7000-8700-{offset:012d}")
 
 
-def _realization_id(unit_index: int, form_index: int, sense_index: int) -> UUID:
+def _japanese_definition_id(day: int, ordinal: int) -> UUID:
+    return UUID(f"019c0000-0000-7000-9101-{day * 100 + ordinal:012d}")
+
+
+def _japanese_revision_id(day: int, ordinal: int) -> UUID:
+    return UUID(f"019c0000-0000-7000-9102-{day * 100 + ordinal:012d}")
+
+
+def _japanese_library_definition_id(index: int) -> UUID:
+    return UUID(f"019c0000-0000-7000-9105-{index:012d}")
+
+
+def _japanese_library_revision_id(index: int) -> UUID:
+    return UUID(f"019c0000-0000-7000-9106-{index:012d}")
+
+
+def _japanese_day_id(ordinal: int) -> UUID:
+    return UUID(f"019c0000-0000-7000-9103-{ordinal:012d}")
+
+
+def _japanese_policy_id(ordinal: int) -> UUID:
+    return UUID(f"019c0000-0000-7000-9104-{ordinal:012d}")
+
+
+def _realization_id(
+    unit_index: int, form_index: int, sense_index: int, *, namespace: str = "8300"
+) -> UUID:
     suffix = unit_index * 10_000 + form_index * 100 + sense_index
-    return UUID(f"019fe113-0000-7000-8300-{suffix:012d}")
+    return UUID(f"019fe113-0000-7000-{namespace}-{suffix:012d}")
 
 
 def _preferred_answer_kind(primitive_id: str) -> str:
@@ -87,16 +227,91 @@ def _preferred_answer_kind(primitive_id: str) -> str:
 
 
 def _library_interaction(
-    primitive_id: str, answer_kind: str
+    primitive_id: str, answer_kind: str, *, language_tag: str = "it-IT"
 ) -> tuple[dict[str, object], dict[str, object]]:
     prompt = f"Entraînement ciblé : {primitive_spec(primitive_id).reader_adapter}."
     response: dict[str, object] = {}
     stimulus: dict[str, object] = {
         "prompt": prompt,
         "model_answer": "Buongiorno, vorrei un caffè, per favore.",
-        "language_tag": "it-IT",
+        "language_tag": language_tag,
         "feedback_mode": "compare_then_self_assess",
     }
+    if language_tag == "ja-JP":
+        stimulus["model_answer"] = "すみません。みずをください。"
+        if answer_kind in {"single_choice", "graded_choice"}:
+            response["choices"] = [
+                {"value": "natural", "label": "みずをください。"},
+                {"value": "fragment", "label": "みず。"},
+            ]
+            response["expected_answer"] = "natural"
+        elif answer_kind == "selection":
+            response["choices"] = [
+                {"value": "wo", "label": "を"},
+                {"value": "kudasai", "label": "ください"},
+                {"value": "desu", "label": "です"},
+            ]
+            response["expected_answer"] = ["wo", "kudasai"]
+        elif answer_kind == "pairing":
+            response["items"] = [
+                {"value": "kudasai", "label": "ください"},
+                {"value": "desu", "label": "です"},
+            ]
+            response["matches"] = [
+                {"value": "polite_request", "label": "demande polie"},
+                {"value": "identification", "label": "identification polie"},
+            ]
+            response["expected_answer"] = {
+                "kudasai": "polite_request",
+                "desu": "identification",
+            }
+        elif answer_kind == "grouping":
+            response["items"] = [
+                {"value": "kudasai", "label": "ください"},
+                {"value": "desu", "label": "です"},
+            ]
+            response["groups"] = [
+                {"value": "request", "label": "demande"},
+                {"value": "statement", "label": "énoncé"},
+            ]
+            response["expected_answer"] = {
+                "request": ["kudasai"],
+                "statement": ["desu"],
+            }
+        elif answer_kind == "ordered_items":
+            response["items"] = [
+                {"value": "mizu", "label": "みず"},
+                {"value": "wo", "label": "を"},
+                {"value": "kudasai", "label": "ください"},
+            ]
+            response["expected_answer"] = ["mizu", "wo", "kudasai"]
+        elif answer_kind == "cells":
+            response["cells"] = [
+                {"value": "watashi", "label": "わたし"},
+                {"value": "anata", "label": "あなた"},
+            ]
+            response["expected_answer"] = {"watashi": "です", "anata": "です"}
+        elif answer_kind == "spans":
+            response["segments"] = [
+                {"value": "0:2", "label": "みず"},
+                {"value": "2:7", "label": "をください"},
+            ]
+            stimulus["text"] = "みずをください。"
+            response["expected_answer"] = [[0, 2], [2, 7]]
+        elif answer_kind == "tokens":
+            response["slots"] = [
+                {"value": "object", "label": "Objet demandé"},
+                {"value": "request", "label": "Formule de demande"},
+            ]
+            response["expected_answer"] = ["みず", "ください"]
+        elif answer_kind in {"text", "short_text"} and primitive_id in {
+            "EX-RECALL-03",
+            "EX-RECALL-04",
+            "EX-TRANSFORM-01",
+            "EX-REPAIR-01",
+        }:
+            stimulus["accepted_answers"] = [stimulus["model_answer"]]
+        return response, stimulus
     if answer_kind in {"single_choice", "graded_choice"}:
         response["choices"] = [
             {"value": "natural", "label": "Vorrei un caffè, per favore."},
@@ -176,6 +391,11 @@ async def _seed_lexicon(
     session: AsyncSession,
     fixture: CatalogueFixture,
     now: datetime,
+    *,
+    reference_set_id: UUID = PILOT_REFERENCE_SET_ID,
+    reference_code: str = "it-pilot-core",
+    reference_label: str = "Lexique italien pilote",
+    realization_namespace: str = "8300",
 ) -> None:
     units_by_lemma = {unit.lemma: unit for unit in fixture.lexical_units}
     for unit_index, unit in enumerate(fixture.lexical_units, start=1):
@@ -261,7 +481,12 @@ async def _seed_lexicon(
                         "VALUES (:id,:form,:unit,:sense) ON CONFLICT DO NOTHING"
                     ),
                     {
-                        "id": _realization_id(unit_index, form_index, sense_index),
+                        "id": _realization_id(
+                            unit_index,
+                            form_index,
+                            sense_index,
+                            namespace=realization_namespace,
+                        ),
                         "form": form.form_analysis_id,
                         "unit": unit.unit_revision_id,
                         "sense": sense.sense_revision_id,
@@ -284,9 +509,9 @@ async def _seed_lexicon(
         text(
             "INSERT INTO lexicon.lexical_reference_sets "
             "(reference_set_id,code,revision,label,created_at) "
-            "VALUES (:id,'it-pilot-core','v1','Lexique italien pilote',:now) ON CONFLICT DO NOTHING"
+            "VALUES (:id,:code,'v1',:label,:now) ON CONFLICT DO NOTHING"
         ),
-        {"id": PILOT_REFERENCE_SET_ID, "now": now},
+        {"id": reference_set_id, "code": reference_code, "label": reference_label, "now": now},
     )
     ordinal = 1
     for unit in fixture.lexical_units:
@@ -298,7 +523,7 @@ async def _seed_lexicon(
                     "VALUES (:set,:sense,:ordinal,:label,:definition) ON CONFLICT DO NOTHING"
                 ),
                 {
-                    "set": PILOT_REFERENCE_SET_ID,
+                    "set": reference_set_id,
                     "sense": sense.sense_id,
                     "ordinal": ordinal,
                     "label": unit.lemma,
@@ -323,9 +548,14 @@ async def _seed_lexicon(
 
 
 async def _seed_catalogue(
-    session: AsyncSession, root: Path, now: datetime
+    session: AsyncSession,
+    root: Path,
+    now: datetime,
+    *,
+    fixture_code: str = "FX-CATALOGUE-IT",
+    publication_id: UUID = PILOT_PUBLICATION_ID,
 ) -> tuple[CatalogueFixture, int]:
-    fixture = load_catalogue_fixture(root / "FX-CATALOGUE-IT")
+    fixture = load_catalogue_fixture(root / fixture_code)
     pack = fixture.pack_revision
     await session.execute(
         text(
@@ -339,10 +569,15 @@ async def _seed_catalogue(
         text(
             "INSERT INTO platform.provenance_records "
             "(provenance_id,source_type,source_ref,transformation_chain,input_fingerprint,created_at) "
-            "VALUES (:id,'project_authored','FX-CATALOGUE-IT','[]'::jsonb,:fingerprint,:now) "
+            "VALUES (:id,'project_authored',:source,'[]'::jsonb,:fingerprint,:now) "
             "ON CONFLICT DO NOTHING"
         ),
-        {"id": pack.provenance_id, "fingerprint": "a" * 64, "now": now},
+        {
+            "id": pack.provenance_id,
+            "source": fixture_code,
+            "fingerprint": "a" * 64,
+            "now": now,
+        },
     )
     for variety in (fixture.target_variety, *fixture.support_varieties):
         await session.execute(
@@ -418,7 +653,7 @@ async def _seed_catalogue(
                 "(skill_revision_id,skill_id,pack_revision_id,revision_no,skill_type,modality,"
                 "operation,target_ref,scope,evidence_protocol_ids,load_profile,status,provenance_id) "
                 "VALUES (:revision,:skill,:pack,:number,:type,:modality,:operation,:target,"
-                "CAST(:scope AS jsonb),:protocols,CAST(:load AS jsonb),'published',:provenance) "
+                "CAST(:scope AS jsonb),:protocols,CAST(:load AS jsonb),'approved',:provenance) "
                 "ON CONFLICT DO NOTHING"
             ),
             {
@@ -436,6 +671,98 @@ async def _seed_catalogue(
                 "provenance": skill.provenance_id,
             },
         )
+    skill_by_target = {skill.target_ref: skill for skill in fixture.skills}
+    for edge in fixture.skill_graph.edges:
+        await session.execute(
+            text(
+                "INSERT INTO catalogue.skill_prerequisite_edges "
+                "(edge_id,from_skill_revision_id,to_skill_revision_id,edge_type,provenance_id) "
+                "VALUES (:id,:source,:target,:type,:provenance) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": edge.edge_id,
+                "source": edge.from_skill_revision_id,
+                "target": edge.to_skill_revision_id,
+                "type": edge.edge_type.value,
+                "provenance": edge.provenance_id,
+            },
+        )
+    for structure in fixture.grammar_structures:
+        function_skill = skill_by_target.get(structure.structure_code) or skill_by_target.get(
+            structure.function_code
+        )
+        if function_skill is None:
+            raise DomainError(
+                ErrorCode.REFERENCE_NOT_FOUND,
+                detail=f"missing function skill for {structure.structure_code}",
+            )
+        await session.execute(
+            text(
+                "INSERT INTO catalogue.grammar_structures "
+                "(structure_id,structure_code,function_skill_id) "
+                "VALUES (:id,:code,:skill) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": structure.structure_id,
+                "code": structure.structure_code,
+                "skill": function_skill.skill_id,
+            },
+        )
+        await session.execute(
+            text(
+                "INSERT INTO catalogue.grammar_structure_revisions "
+                "(structure_revision_id,structure_id,pack_revision_id,revision_no,constraints,"
+                "contrasts,typical_errors,variants,status,provenance_id) VALUES "
+                "(:revision,:structure,:pack,:number,CAST(:constraints AS jsonb),"
+                "CAST(:contrasts AS jsonb),CAST(:errors AS jsonb),CAST(:variants AS jsonb),"
+                "'approved',:provenance) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "revision": structure.structure_revision_id,
+                "structure": structure.structure_id,
+                "pack": pack.pack_revision_id,
+                "number": structure.revision_no,
+                "constraints": _json(dict(structure.constraints)),
+                "contrasts": _json(list(structure.contrasts)),
+                "errors": _json(list(structure.typical_errors)),
+                "variants": _json(list(structure.variants)),
+                "provenance": structure.provenance_id,
+            },
+        )
+        for pattern in structure.patterns:
+            await session.execute(
+                text(
+                    "INSERT INTO catalogue.grammar_patterns "
+                    "(pattern_id,structure_revision_id,pattern_code,template,slots,"
+                    "instantiation_rules,examples,counterexamples) VALUES "
+                    "(:id,:structure,:code,:template,CAST(:slots AS jsonb),"
+                    "CAST(:rules AS jsonb),:examples,:counterexamples) ON CONFLICT DO NOTHING"
+                ),
+                {
+                    "id": pattern.pattern_id,
+                    "structure": structure.structure_revision_id,
+                    "code": pattern.pattern_code,
+                    "template": pattern.template,
+                    "slots": _json(list(pattern.slots)),
+                    "rules": _json(dict(pattern.instantiation_rules)),
+                    "examples": list(pattern.examples),
+                    "counterexamples": list(pattern.counterexamples),
+                },
+            )
+    await session.execute(
+        text(
+            "UPDATE catalogue.skill_revisions SET status='published' "
+            "WHERE pack_revision_id=:pack AND status='approved'"
+        ),
+        {"pack": pack.pack_revision_id},
+    )
+    await session.execute(
+        text(
+            "UPDATE catalogue.grammar_structure_revisions SET status='published' "
+            "WHERE pack_revision_id=:pack AND status='approved'"
+        ),
+        {"pack": pack.pack_revision_id},
+    )
     foundations = fixture.foundations
     definition = foundations.definition
     await session.execute(
@@ -575,7 +902,7 @@ async def _seed_catalogue(
             "ON CONFLICT DO NOTHING"
         ),
         {
-            "id": PILOT_PUBLICATION_ID,
+            "id": publication_id,
             "pack": pack.pack_id,
             "revision": pack.pack_revision_id,
             "now": pack.published_at or now,
@@ -946,25 +1273,288 @@ async def _seed_exercises_and_module(
     return len(selected) + len(CORE_PRIMITIVE_IDS), len(days_payload)
 
 
+async def _seed_japanese_exercises_and_module(
+    session: AsyncSession,
+    fixture: CatalogueFixture,
+    now: datetime,
+) -> tuple[int, int]:
+    revisions_by_day: dict[int, list[UUID]] = {1: [], 2: [], 3: []}
+    grammar_by_day = {1: "JA-GRAM-003", 2: "JA-GRAM-004", 3: "JA-GRAM-007"}
+    senses = [sense.sense_id for unit in fixture.lexical_units for sense in unit.senses]
+    senses_by_day = {1: senses[:10], 2: senses[10:20], 3: senses[20:30]}
+
+    for day, activities in JAPANESE_DAY_ACTIVITIES.items():
+        target_refs = [
+            *(f"lexical:{sense_id}" for sense_id in senses_by_day[day]),
+            f"grammar:{grammar_by_day[day]}",
+        ]
+        for ordinal, activity in enumerate(activities, start=1):
+            definition_id = _japanese_definition_id(day, ordinal)
+            revision_id = _japanese_revision_id(day, ordinal)
+            answer_kind = _preferred_answer_kind(activity.primitive_id)
+            response_contract, stimulus_contract = _library_interaction(
+                activity.primitive_id, answer_kind, language_tag="ja-JP"
+            )
+            stimulus_contract.update(
+                {
+                    "prompt": activity.prompt,
+                    "model_answer": activity.model_answer,
+                    "language_tag": "ja-JP",
+                    "feedback_mode": "compare_then_self_assess",
+                }
+            )
+            if answer_kind in {"text", "short_text"}:
+                stimulus_contract["accepted_answers"] = [activity.model_answer]
+            await session.execute(
+                text(
+                    "INSERT INTO exercises.exercise_definitions "
+                    "(definition_id,definition_code,status,version,created_at,updated_at) "
+                    "VALUES (:id,:code,'published',1,:now,:now) ON CONFLICT DO NOTHING"
+                ),
+                {
+                    "id": definition_id,
+                    "code": f"ja.pilot.day{day}.{ordinal:02d}",
+                    "now": now,
+                },
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO exercises.exercise_definition_revisions "
+                    "(definition_revision_id,definition_id,revision_no,schema_version,primitive_id,"
+                    "status,response_kinds,language_certification_ids,modes,target_weights,"
+                    "response_contract,stimulus_contract,target_contract,difficulty_profile,"
+                    "prerequisite_skill_revision_ids,correction_policy_id,hint_policy_id,"
+                    "observation_policy_id,accessibility_features,min_duration_ms,p50_duration_ms,"
+                    "p80_duration_ms,example_revision_ids,provenance_id,created_at) VALUES "
+                    "(:revision,:definition,1,1,:primitive,'published',CAST(:responses AS jsonb),"
+                    "'[]'::jsonb,'[\"guided\"]'::jsonb,CAST(:weights AS jsonb),"
+                    "CAST(:response AS jsonb),CAST(:stimulus AS jsonb),CAST(:targets AS jsonb),"
+                    "'{}'::jsonb,'[]'::jsonb,:correction,:hint,:observation,"
+                    '\'["keyboard","screen_reader","untimed","unicode_input"]\'::jsonb,'
+                    "30000,60000,90000,'[]'::jsonb,:provenance,:now) ON CONFLICT DO NOTHING"
+                ),
+                {
+                    "revision": revision_id,
+                    "definition": definition_id,
+                    "primitive": activity.primitive_id,
+                    "responses": _json([answer_kind]),
+                    "weights": _json([[target, 1.0] for target in target_refs]),
+                    "response": _json(response_contract),
+                    "stimulus": _json(stimulus_contract),
+                    "targets": _json(target_refs),
+                    "correction": f"correction:ja:{activity.primitive_id.casefold()}:v1",
+                    "hint": f"hint:ja:{activity.primitive_id.casefold()}:v1",
+                    "observation": f"observation:ja:{activity.primitive_id.casefold()}:v1",
+                    "provenance": fixture.pack_revision.provenance_id,
+                    "now": now,
+                },
+            )
+            await session.execute(
+                text(
+                    "UPDATE exercises.exercise_definitions SET current_revision_id=:revision "
+                    "WHERE definition_id=:definition AND current_revision_id IS NULL"
+                ),
+                {"revision": revision_id, "definition": definition_id},
+            )
+            revisions_by_day[day].append(revision_id)
+
+    for index, primitive in enumerate(CORE_PRIMITIVE_IDS, start=1):
+        definition_id = _japanese_library_definition_id(index)
+        revision_id = _japanese_library_revision_id(index)
+        answer_kind = _preferred_answer_kind(primitive)
+        response_contract, stimulus_contract = _library_interaction(
+            primitive, answer_kind, language_tag="ja-JP"
+        )
+        await session.execute(
+            text(
+                "INSERT INTO exercises.exercise_definitions "
+                "(definition_id,definition_code,status,version,created_at,updated_at) "
+                "VALUES (:id,:code,'published',1,:now,:now) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": definition_id,
+                "code": f"ja.pilot.library.{primitive.casefold().replace('-', '.')}",
+                "now": now,
+            },
+        )
+        await session.execute(
+            text(
+                "INSERT INTO exercises.exercise_definition_revisions "
+                "(definition_revision_id,definition_id,revision_no,schema_version,primitive_id,"
+                "status,response_kinds,language_certification_ids,modes,target_weights,"
+                "response_contract,stimulus_contract,target_contract,difficulty_profile,"
+                "prerequisite_skill_revision_ids,correction_policy_id,hint_policy_id,"
+                "observation_policy_id,accessibility_features,min_duration_ms,p50_duration_ms,"
+                "p80_duration_ms,example_revision_ids,provenance_id,created_at) VALUES "
+                "(:revision,:definition,1,1,:primitive,'published',CAST(:responses AS jsonb),"
+                "'[]'::jsonb,'[\"free_practice\"]'::jsonb,"
+                "'[[\"free-practice-target\",1.0]]'::jsonb,CAST(:response AS jsonb),"
+                "CAST(:stimulus AS jsonb),'[]'::jsonb,'{}'::jsonb,'[]'::jsonb,"
+                ":correction,:hint,:observation,"
+                "'[\"keyboard\",\"screen_reader\",\"untimed\",\"unicode_input\"]'::jsonb,"
+                "30000,60000,90000,'[]'::jsonb,:provenance,:now) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "revision": revision_id,
+                "definition": definition_id,
+                "primitive": primitive,
+                "responses": _json([answer_kind]),
+                "response": _json(response_contract),
+                "stimulus": _json(stimulus_contract),
+                "correction": f"correction:ja:{primitive.casefold()}:v1",
+                "hint": f"hint:ja:{primitive.casefold()}:v1",
+                "observation": f"observation:ja:{primitive.casefold()}:v1",
+                "provenance": fixture.pack_revision.provenance_id,
+                "now": now,
+            },
+        )
+        await session.execute(
+            text(
+                "UPDATE exercises.exercise_definitions SET current_revision_id=:revision "
+                "WHERE definition_id=:definition AND current_revision_id IS NULL"
+            ),
+            {"revision": revision_id, "definition": definition_id},
+        )
+
+    await session.execute(
+        text(
+            "INSERT INTO curriculum.learning_modules "
+            "(module_id,module_code,pack_id,editorial_owner_id,status,version,created_at,updated_at) "
+            "VALUES (:id,'JA-SURVIVAL-FOUNDATIONS',:pack,:owner,'published',1,:now,:now) "
+            "ON CONFLICT DO NOTHING"
+        ),
+        {
+            "id": JAPANESE_MODULE_ID,
+            "pack": fixture.pack.pack_id,
+            "owner": PILOT_OWNER_ID,
+            "now": now,
+        },
+    )
+    await session.execute(
+        text(
+            "INSERT INTO curriculum.module_revisions "
+            "(module_revision_id,module_id,revision_no,status,pack_revision_id,target_variety_id,"
+            "support_variety_ids,primary_intention,final_mission_revision_id,entry_profile_codes,"
+            "nominal_days,max_days,min_minutes,max_minutes,prerequisite_skill_revision_ids,"
+            "target_skill_revision_ids,lexicon_set_revision_ids,exit_policy_revision_id,"
+            "recall_policy_revision_id,provenance_ref,rights_refs,validator_set_revision_id,"
+            "schema_version,compatibility_range,reference_manifest_checksum,supersedes_revision_id,"
+            "payload_checksum,created_at) VALUES "
+            "(:revision,:module,1,'published',:pack,:target,:supports,:intention,:mission,"
+            "ARRAY['P-ABS','P-FAUX','P-INT'],3,3,10,60,ARRAY[]::uuid[],:skills,"
+            "ARRAY[:lexicon_set]::uuid[],:exit,:recall,:provenance,ARRAY['project-authored'],"
+            ":validators,1,'>=2.0.0,<2.1.0',:manifest,NULL,:checksum,:now) ON CONFLICT DO NOTHING"
+        ),
+        {
+            "revision": JAPANESE_MODULE_REVISION_ID,
+            "module": JAPANESE_MODULE_ID,
+            "pack": fixture.pack_revision.pack_revision_id,
+            "target": fixture.target_variety.variety_id,
+            "supports": [item.variety_id for item in fixture.support_varieties],
+            "intention": "Décoder les kana et accomplir des échanges de survie polis.",
+            "mission": _japanese_policy_id(10),
+            "skills": [item.skill_revision_id for item in fixture.skills],
+            "lexicon_set": JAPANESE_REFERENCE_SET_ID,
+            "exit": _japanese_policy_id(1),
+            "recall": _japanese_policy_id(2),
+            "provenance": "FX-CATALOGUE-JA",
+            "validators": _japanese_policy_id(3),
+            "manifest": "sha256:" + "3" * 64,
+            "checksum": "sha256:" + "4" * 64,
+            "now": now,
+        },
+    )
+    objectives = {
+        1: "Décoder les premiers hiragana et se présenter.",
+        2: "Formuler une demande simple et polie.",
+        3: "Demander un lieu et réparer l'échange.",
+    }
+    for day in (1, 2, 3):
+        target_refs = [
+            *(f"lexical:{sense_id}" for sense_id in senses_by_day[day]),
+            f"grammar:{grammar_by_day[day]}",
+        ]
+        recalled = [] if day == 1 else [day - 1]
+        await session.execute(
+            text(
+                "INSERT INTO curriculum.module_days "
+                "(module_day_id,module_revision_id,ordinal,arc_type,objective_codes,"
+                "modality_objectives,primary_target_refs,secondary_target_refs,"
+                "encountered_target_refs,output_target_refs,content_revision_ids,"
+                "exercise_definition_revision_ids,context_revision_ids,target_bindings,recall_specs,"
+                "recall_source_day_ordinals,minimum_useful_minutes,novelty_budget,required_block_roles,"
+                "new_grammar_family_codes,explained_grammar_family_codes,gym_grammar_family_codes,"
+                "fallback_revision_ids,final_output_spec,validator_revision_ids,"
+                "prerequisite_day_ordinals,payload_checksum,created_at) VALUES "
+                "(:id,:revision,:ordinal,:arc,:objectives,CAST(:modalities AS jsonb),:targets,"
+                "ARRAY[]::varchar[],:targets,:targets,ARRAY[]::uuid[],:definitions,ARRAY[]::uuid[],"
+                "CAST(:bindings AS jsonb),'[]'::jsonb,:recalls,10,:novelty,"
+                "ARRAY['explanation','practice','production'],:grammar,:grammar,:grammar,"
+                "ARRAY[]::uuid[],:output,ARRAY[]::uuid[],:prerequisites,:checksum,:now) "
+                "ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": _japanese_day_id(day),
+                "revision": JAPANESE_MODULE_REVISION_ID,
+                "ordinal": day,
+                "arc": "transfer" if day == 3 else ("discovery" if day == 1 else "integration"),
+                "objectives": [f"JA-DAY-{day}"],
+                "modalities": _json(
+                    [["written_production", "produce"], ["oral_comprehension", "recognize"]]
+                ),
+                "targets": target_refs,
+                "definitions": revisions_by_day[day],
+                "bindings": _json(
+                    {
+                        "theme": f"ja-survival-day-{day}",
+                        "grammar": [grammar_by_day[day]],
+                        "script": ["Hira", "Kana", "Jpan"],
+                    }
+                ),
+                "recalls": recalled,
+                "novelty": 0 if day == 3 else 3,
+                "grammar": [grammar_by_day[day]],
+                "output": objectives[day],
+                "prerequisites": recalled,
+                "checksum": "sha256:" + f"{day + 10:064x}",
+                "now": now,
+            },
+        )
+    await session.execute(
+        text(
+            "UPDATE curriculum.learning_modules SET current_revision_id=:revision "
+            "WHERE module_id=:module AND current_revision_id IS NULL"
+        ),
+        {"revision": JAPANESE_MODULE_REVISION_ID, "module": JAPANESE_MODULE_ID},
+    )
+    return sum(len(value) for value in JAPANESE_DAY_ACTIVITIES.values()) + len(
+        CORE_PRIMITIVE_IDS
+    ), 3
+
+
 async def bootstrap_pilot(database_url: str, fixture_root: Path) -> PilotBootstrapResult:
     engine = create_async_engine(database_url)
     try:
         async with AsyncSession(engine, expire_on_commit=False) as session:
-            existing = await session.scalar(
-                text("SELECT count(*) FROM catalogue.language_packs WHERE pack_code='it-IT__fr-FR'")
+            now = datetime.now(UTC)
+            italian_existing = bool(
+                await session.scalar(
+                    text(
+                        "SELECT count(*) FROM catalogue.language_packs "
+                        "WHERE pack_code='it-IT__fr-FR'"
+                    )
+                )
             )
-            if existing:
-                counts = (
-                    int(
-                        await session.scalar(
-                            text("SELECT count(*) FROM catalogue.foundation_item_revisions")
-                        )
-                        or 0
-                    ),
+            if italian_existing:
+                italian_counts = (
                     int(
                         await session.scalar(
                             text(
-                                "SELECT count(*) FROM exercises.exercise_definitions WHERE definition_code LIKE 'it.pilot.%'"
+                                "SELECT count(*) FROM catalogue.foundation_item_revisions item "
+                                "JOIN catalogue.language_pack_revisions revision "
+                                "ON revision.pack_revision_id=item.pack_revision_id "
+                                "JOIN catalogue.language_packs pack USING(pack_id) "
+                                "WHERE pack.pack_code='it-IT__fr-FR'"
                             )
                         )
                         or 0
@@ -972,27 +1562,116 @@ async def bootstrap_pilot(database_url: str, fixture_root: Path) -> PilotBootstr
                     int(
                         await session.scalar(
                             text(
-                                "SELECT count(*) FROM curriculum.module_days WHERE module_revision_id=:revision"
+                                "SELECT count(*) FROM exercises.exercise_definitions "
+                                "WHERE definition_code LIKE 'it.pilot.%'"
+                            )
+                        )
+                        or 0
+                    ),
+                    int(
+                        await session.scalar(
+                            text(
+                                "SELECT count(*) FROM curriculum.module_days "
+                                "WHERE module_revision_id=:revision"
                             ),
                             {"revision": PILOT_MODULE_REVISION_ID},
                         )
                         or 0
                     ),
                 )
-                if counts != (32, 43, 3):
-                    raise DomainError(
-                        ErrorCode.CONTENT_UNAVAILABLE,
-                        detail="Italian pilot publication is incomplete",
+            else:
+                italian_fixture, italian_foundations = await _seed_catalogue(
+                    session, fixture_root, now
+                )
+                await _seed_lexicon(session, italian_fixture, now)
+                italian_exercises, italian_days = await _seed_exercises_and_module(
+                    session, fixture_root, italian_fixture, now
+                )
+                italian_counts = (italian_foundations, italian_exercises, italian_days)
+
+            japanese_existing = bool(
+                await session.scalar(
+                    text(
+                        "SELECT count(*) FROM catalogue.language_packs "
+                        "WHERE pack_code='ja-JP__fr-FR'"
                     )
-                return PilotBootstrapResult(False, *counts)
-            now = datetime.now(UTC)
-            fixture, foundation_items = await _seed_catalogue(session, fixture_root, now)
-            await _seed_lexicon(session, fixture, now)
-            exercise_count, day_count = await _seed_exercises_and_module(
-                session, fixture_root, fixture, now
+                )
             )
+            if japanese_existing:
+                japanese_counts = (
+                    int(
+                        await session.scalar(
+                            text(
+                                "SELECT count(*) FROM catalogue.foundation_item_revisions item "
+                                "JOIN catalogue.language_pack_revisions revision "
+                                "ON revision.pack_revision_id=item.pack_revision_id "
+                                "JOIN catalogue.language_packs pack USING(pack_id) "
+                                "WHERE pack.pack_code='ja-JP__fr-FR'"
+                            )
+                        )
+                        or 0
+                    ),
+                    int(
+                        await session.scalar(
+                            text(
+                                "SELECT count(*) FROM exercises.exercise_definitions "
+                                "WHERE definition_code LIKE 'ja.pilot.%'"
+                            )
+                        )
+                        or 0
+                    ),
+                    int(
+                        await session.scalar(
+                            text(
+                                "SELECT count(*) FROM curriculum.module_days "
+                                "WHERE module_revision_id=:revision"
+                            ),
+                            {"revision": JAPANESE_MODULE_REVISION_ID},
+                        )
+                        or 0
+                    ),
+                )
+            else:
+                japanese_fixture, japanese_foundations = await _seed_catalogue(
+                    session,
+                    fixture_root,
+                    now,
+                    fixture_code="FX-CATALOGUE-JA",
+                    publication_id=JAPANESE_PUBLICATION_ID,
+                )
+                await _seed_lexicon(
+                    session,
+                    japanese_fixture,
+                    now,
+                    reference_set_id=JAPANESE_REFERENCE_SET_ID,
+                    reference_code="ja-pilot-core",
+                    reference_label="Lexique japonais pilote",
+                    realization_namespace="9300",
+                )
+                japanese_exercises, japanese_days = await _seed_japanese_exercises_and_module(
+                    session, japanese_fixture, now
+                )
+                japanese_counts = (japanese_foundations, japanese_exercises, japanese_days)
+
+            if italian_counts != (32, 43, 3):
+                raise DomainError(
+                    ErrorCode.CONTENT_UNAVAILABLE,
+                    detail="Italian pilot publication is incomplete",
+                )
+            if japanese_counts != (30, 43, 3):
+                raise DomainError(
+                    ErrorCode.CONTENT_UNAVAILABLE,
+                    detail="Japanese pilot publication is incomplete",
+                )
             await session.commit()
-            return PilotBootstrapResult(True, foundation_items, exercise_count, day_count)
+            return PilotBootstrapResult(
+                not italian_existing,
+                *italian_counts,
+                japanese_created=not japanese_existing,
+                japanese_foundation_items=japanese_counts[0],
+                japanese_exercise_definitions=japanese_counts[1],
+                japanese_module_days=japanese_counts[2],
+            )
     finally:
         await engine.dispose()
 
@@ -1008,6 +1687,10 @@ async def _main() -> None:
                 "foundation_items": result.foundation_items,
                 "exercise_definitions": result.exercise_definitions,
                 "module_days": result.module_days,
+                "japanese_created": result.japanese_created,
+                "japanese_foundation_items": result.japanese_foundation_items,
+                "japanese_exercise_definitions": result.japanese_exercise_definitions,
+                "japanese_module_days": result.japanese_module_days,
             },
             sort_keys=True,
         )

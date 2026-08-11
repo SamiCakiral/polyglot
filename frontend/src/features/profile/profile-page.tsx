@@ -106,28 +106,51 @@ const bandLabels: Record<string, string> = {
 export function LanguageProfilePage() {
   const session = useSession();
   const navigate = useNavigate();
-  const { activeProfile, isPending, refresh } = useActiveProfile();
+  const {
+    activeProfile,
+    isPending,
+    profiles,
+    refresh,
+    selectProfile,
+  } = useActiveProfile();
+  const [creatingAdditionalProfile, setCreatingAdditionalProfile] =
+    useState(false);
   const [selectedPackRevisionId, setSelectedPackRevisionId] = useState("");
   const packsQuery = useListLanguagePacks(
     { limit: 20 },
     { fetch: queryFetch(), query: { retry: false } },
   );
-  const modulesQuery = useListLearningModules({
-    fetch: queryFetch(),
-    query: { retry: false },
-  });
   const accountLanguagesQuery = useListAccountLanguages({
     fetch: queryFetch(),
     query: { retry: false },
   });
   const packs =
     packsQuery.data?.status === 200 ? packsQuery.data.data.items : [];
-  const pack = activeProfile
-    ? packs.find(
+  const availablePacks = packs.filter(
+    (item) =>
+      !profiles.some(
+        (profile) => profile.target_variety_id === item.target_variety_id,
+      ),
+  );
+  const creationPacks = activeProfile ? availablePacks : packs;
+  const pack = creatingAdditionalProfile
+    ? (creationPacks.find(
+        (item) => item.pack_revision_id === selectedPackRevisionId,
+      ) ?? creationPacks[0])
+    : activeProfile
+      ? packs.find(
         (item) => item.target_variety_id === activeProfile.target_variety_id,
       )
-    : (packs.find((item) => item.pack_revision_id === selectedPackRevisionId) ??
-      packs[0]);
+      : (creationPacks.find(
+          (item) => item.pack_revision_id === selectedPackRevisionId,
+        ) ?? creationPacks[0]);
+  const modulesQuery = useListLearningModules(
+    pack ? { pack_revision_id: pack.pack_revision_id } : undefined,
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(pack), retry: false },
+    },
+  );
   const displayNames = new Intl.DisplayNames(["fr"], { type: "language" });
   const targetName = pack
     ? (displayNames.of(new Intl.Locale(pack.target_language_tag).language) ??
@@ -242,6 +265,11 @@ export function LanguageProfilePage() {
     }
     await refresh();
     await accountLanguagesQuery.refetch();
+    if (response.status === 201) {
+      selectProfile(response.data.profile_id);
+      setCreatingAdditionalProfile(false);
+      setSelectedPackRevisionId("");
+    }
   }
 
   async function chooseEntryPath(entryPath: EntryPath) {
@@ -477,18 +505,38 @@ export function LanguageProfilePage() {
     }
   }
 
-  if (!pack) {
+  if (!pack && !creatingAdditionalProfile) {
     return (
       <ErrorRegion message="Aucun parcours linguistique n'est publié sur cette installation." />
     );
   }
 
-  if (!activeProfile) {
+  if (!activeProfile || creatingAdditionalProfile) {
+    if (!pack) {
+      return (
+        <div className="page-flow page-flow--narrow">
+          <PageHeader
+            eyebrow="Parcours linguistiques"
+            title="Toutes les langues publiées sont déjà configurées"
+            description="Utilisez le sélecteur de langue pour reprendre un parcours existant."
+          />
+          <button
+            className="secondary-button"
+            type="button"
+            onClick={() => {
+              setCreatingAdditionalProfile(false);
+            }}
+          >
+            Retour au profil actif
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="page-flow page-flow--narrow">
         <PageHeader
-          eyebrow="Étape 1 sur 3"
-          title="Votre profil de langue"
+          eyebrow={activeProfile ? "Nouveau parcours" : "Étape 1 sur 3"}
+          title={activeProfile ? "Ajouter une langue" : "Votre profil de langue"}
           description="Choisissez la langue à apprendre et la langue utilisée pour les explications."
         />
         <form
@@ -503,7 +551,7 @@ export function LanguageProfilePage() {
                 setSelectedPackRevisionId(event.target.value);
               }}
             >
-              {packs.map((item) => (
+              {creationPacks.map((item) => (
                 <option
                   key={item.pack_revision_id}
                   value={item.pack_revision_id}
@@ -556,8 +604,26 @@ export function LanguageProfilePage() {
           <button disabled={createProfile.isPending} type="submit">
             {createProfile.isPending ? "Création..." : "Créer ce profil"}
           </button>
+          {activeProfile ? (
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setCreatingAdditionalProfile(false);
+                setError("");
+              }}
+            >
+              Annuler
+            </button>
+          ) : null}
         </form>
       </div>
+    );
+  }
+
+  if (!pack) {
+    return (
+      <ErrorRegion message="Le parcours actif n'existe plus dans le catalogue publié." />
     );
   }
 
@@ -763,6 +829,22 @@ export function LanguageProfilePage() {
           eyebrow="Profil prêt"
           title={`Votre parcours ${targetName.toLocaleLowerCase("fr")}`}
           description="Le placement est terminé. Le premier module peut maintenant commencer."
+          action={
+            availablePacks.length > 0 ? (
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={() => {
+                  setSelectedPackRevisionId(
+                    availablePacks[0]?.pack_revision_id ?? "",
+                  );
+                  setCreatingAdditionalProfile(true);
+                }}
+              >
+                Ajouter une langue
+              </button>
+            ) : undefined
+          }
         />
         <section className="onboarding-panel">
           <Check aria-hidden="true" size={28} />

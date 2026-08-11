@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   activeRunStorageKey,
+  freePracticeRunStorageKey,
   pendingDailyPlanStorageKey,
 } from "./browser-storage";
 
@@ -23,6 +24,14 @@ describe("activeRunStorageKey", () => {
       pendingDailyPlanStorageKey("account-a", "profile-it", "2026-08-12"),
     ).not.toBe(
       pendingDailyPlanStorageKey("account-a", "profile-it", "2026-08-11"),
+    );
+  });
+});
+
+describe("freePracticeRunStorageKey", () => {
+  it("does not collide with the daily sprint for the same profile", () => {
+    expect(freePracticeRunStorageKey("account-a", "profile-it")).not.toBe(
+      activeRunStorageKey("account-a", "profile-it"),
     );
   });
 });

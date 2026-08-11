@@ -63,18 +63,24 @@ async def test_media_storage_never_declares_public_object_keys(
     assert "storage_key" in columns
 
 
-async def test_alice_italian_voice_is_seeded_as_explicit_local_capability(
+async def test_latest_local_catalogue_exposes_italian_and_japanese_voices(
     migration_session: AsyncSession,
 ) -> None:
-    row = (
+    rows = (
         await migration_session.execute(
             text(
                 "SELECT c.voice_id,c.language_tags,c.availability,"
                 "r.provider_code,r.provider_version "
                 "FROM media.tts_voice_capabilities c "
                 "JOIN media.tts_voice_catalog_revisions r "
-                "ON r.catalog_revision_id=c.catalog_revision_id"
+                "ON r.catalog_revision_id=c.catalog_revision_id "
+                "WHERE r.catalog_revision_id=("
+                "SELECT catalog_revision_id FROM media.tts_voice_catalog_revisions "
+                "ORDER BY published_at DESC LIMIT 1) ORDER BY c.voice_id"
             )
         )
-    ).one()
-    assert row == ("Alice", ["it-IT"], "available", "macos-say", "local-v1")
+    ).all()
+    assert rows == [
+        ("Alice", ["it-IT"], "available", "macos-say", "local-v2"),
+        ("Kyoko", ["ja-JP"], "available", "macos-say", "local-v2"),
+    ]

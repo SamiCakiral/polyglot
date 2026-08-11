@@ -17,6 +17,7 @@ from polyglot.modules.catalogue.core.persistence import (
 )
 
 CATALOGUE_FIXTURE_ROOT = Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
+JAPANESE_FIXTURE_ROOT = Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-JA"
 
 
 class StubCatalogueReader:
@@ -123,6 +124,51 @@ class StubCatalogueReader:
         )
 
 
+class JapaneseCatalogueReader(StubCatalogueReader):
+    async def read_foundations(self, *, pack_revision_id: UUID):
+        fixture = load_catalogue_fixture(JAPANESE_FIXTURE_ROOT)
+        assert pack_revision_id == fixture.pack_revision.pack_revision_id
+        return fixture.foundations
+
+    async def list_language_packs(
+        self,
+        *,
+        limit: int,
+        cursor: str | None,
+    ) -> Page[LanguagePackSummary]:
+        del limit, cursor
+        fixture = load_catalogue_fixture(JAPANESE_FIXTURE_ROOT)
+        return Page(
+            (
+                LanguagePackSummary(
+                    pack_id=fixture.pack.pack_id,
+                    pack_revision_id=fixture.pack_revision.pack_revision_id,
+                    pack_code=fixture.pack.pack_code,
+                    revision_no=fixture.pack_revision.revision_no,
+                    target_variety_id=fixture.target_variety.variety_id,
+                    target_language_tag=fixture.target_variety.language_tag,
+                    target_script_codes=fixture.target_variety.script_codes,
+                    text_direction=fixture.target_variety.text_direction,
+                    segmentation_policy_revision_id=(
+                        fixture.target_variety.segmentation_policy_revision_id
+                    ),
+                    media_capabilities={"schema_version": 1, "tts": True},
+                    capability_manifest={"schema_version": 1, "grammar": True},
+                    support_variety_ids=tuple(
+                        item.variety_id for item in fixture.support_varieties
+                    ),
+                    support_language_tags=tuple(
+                        item.language_tag for item in fixture.support_varieties
+                    ),
+                    foundation_revision_id=(fixture.foundations.definition.foundation_revision_id),
+                    channel="stable",
+                    compatibility_range=">=2.0.0,<2.1.0",
+                ),
+            ),
+            None,
+        )
+
+
 def test_canonical_catalogue_reads_are_public_paginated_and_closed() -> None:
     app = create_app(test_mode=True, catalogue_service=StubCatalogueReader())
 
@@ -217,3 +263,27 @@ def test_grammar_toolbox_exposes_functions_and_italian_realizations_separately()
     assert len(payload["realizations"]) == 30
     assert payload["realizations"][0]["function_code"] == "express_will"
     assert payload["realizations"][0]["realization_code"] == "IT-GRAM-001"
+
+
+def test_japanese_manifests_and_grammar_are_executable_without_italian_assumptions() -> None:
+    reader = JapaneseCatalogueReader()
+    fixture = load_catalogue_fixture(JAPANESE_FIXTURE_ROOT)
+    app = create_app(test_mode=True, catalogue_service=reader)
+    revision = fixture.pack_revision.pack_revision_id
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        placement = client.get(f"/api/v1/language-packs/{revision}/placement-manifest")
+        foundations = client.get(f"/api/v1/language-packs/{revision}/foundation-manifest")
+        grammar = client.get(
+            f"/api/v1/language-packs/{revision}/grammar-functions",
+            params={"support_language_tag": "fr-FR"},
+        )
+
+    assert placement.status_code == 200
+    assert len(placement.json()["items"]) == 6
+    assert foundations.status_code == 200
+    assert len(foundations.json()["activities"]) == 30
+    assert "hiragana" in foundations.text.lower()
+    assert grammar.status_code == 200
+    assert grammar.json()["target_language_tag"] == "ja-JP"
+    assert len(grammar.json()["realizations"]) == 8

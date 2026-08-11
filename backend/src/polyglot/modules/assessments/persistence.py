@@ -74,6 +74,29 @@ class SqlAssessmentService:
         self._clock = clock or SystemClock()
         self._ids = id_generator or Uuid7Generator(self._clock)
 
+    async def available_modalities(
+        self, actor_id: UUID, profile_id: UUID
+    ) -> tuple[str, ...]:
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            rows = await session.execute(
+                text(
+                    "SELECT DISTINCT definition.modality "
+                    "FROM language_profiles.learner_language_profiles profile "
+                    "JOIN assessments.assessment_definitions definition "
+                    "ON definition.target_variety_id=profile.target_variety_id "
+                    "JOIN assessments.assessment_definition_revisions revision "
+                    "ON revision.assessment_revision_id=definition.current_revision_id "
+                    "JOIN assessments.assessment_forms form "
+                    "ON form.assessment_revision_id=revision.assessment_revision_id "
+                    "WHERE profile.profile_id=:profile AND profile.account_id=:actor "
+                    "AND definition.status='published' AND revision.status='published' "
+                    "AND form.status='published' ORDER BY definition.modality"
+                ),
+                {"profile": profile_id, "actor": actor_id},
+            )
+            return tuple(str(value) for value in rows.scalars())
+
     async def prepare(
         self,
         actor_id: UUID,
@@ -114,14 +137,14 @@ class SqlAssessmentService:
                 assert view is not None
                 return view
 
-            profile_exists = await session.scalar(
+            target_variety_id = await session.scalar(
                 text(
-                    "SELECT 1 FROM language_profiles.learner_language_profiles "
+                    "SELECT target_variety_id FROM language_profiles.learner_language_profiles "
                     "WHERE profile_id=:profile"
                 ),
                 {"profile": profile_id},
             )
-            if profile_exists is None:
+            if target_variety_id is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
 
             rows = (
@@ -139,10 +162,14 @@ class SqlAssessmentService:
                         "AND d.current_revision_id=r.assessment_revision_id "
                         "JOIN assessments.assessment_section_definitions s ON s.form_id=f.form_id "
                         "JOIN assessments.assessment_items i ON i.section_definition_id=s.section_definition_id "
-                        "WHERE d.modality=:modality AND d.status='published' AND r.status='published' "
+                        "WHERE d.modality=:modality AND d.target_variety_id=:target "
+                        "AND d.status='published' AND r.status='published' "
                         "GROUP BY f.form_id,f.assessment_revision_id,d.modality"
                     ),
-                    {"modality": command.modality.value},
+                    {
+                        "modality": command.modality.value,
+                        "target": target_variety_id,
+                    },
                 )
             ).mappings()
             candidates = tuple(

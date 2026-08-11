@@ -97,7 +97,12 @@ class SqlCurriculumService:
         self._clock = clock or SystemClock()
         self._ids = id_generator or Uuid7Generator(self._clock)
 
-    async def list_modules(self, actor_id: UUID) -> tuple[ModuleSummary, ...]:
+    async def list_modules(
+        self,
+        actor_id: UUID,
+        *,
+        pack_revision_id: UUID | None = None,
+    ) -> tuple[ModuleSummary, ...]:
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
             rows = (
@@ -105,15 +110,19 @@ class SqlCurriculumService:
                     await session.execute(
                         text(
                             "SELECT module.module_id,module.module_code,"
-                            "revision.module_revision_id,revision.primary_intention,"
+                            "revision.module_revision_id,revision.pack_revision_id,"
+                            "revision.primary_intention,"
                             "revision.nominal_days,revision.max_days,revision.min_minutes,"
                             "revision.max_minutes,revision.entry_profile_codes "
                             "FROM curriculum.learning_modules module "
                             "JOIN curriculum.module_revisions revision ON "
                             "revision.module_revision_id=module.current_revision_id "
                             "WHERE module.status='published' AND revision.status='published' "
+                            "AND (CAST(:pack_revision AS uuid) IS NULL "
+                            "OR revision.pack_revision_id=:pack_revision) "
                             "ORDER BY module.module_code,module.module_id"
-                        )
+                        ),
+                        {"pack_revision": pack_revision_id},
                     )
                 )
                 .mappings()
@@ -124,6 +133,7 @@ class SqlCurriculumService:
                     module_id=_uuid(row["module_id"]),
                     module_code=str(row["module_code"]),
                     module_revision_id=_uuid(row["module_revision_id"]),
+                    pack_revision_id=_uuid(row["pack_revision_id"]),
                     primary_intention=str(row["primary_intention"]),
                     nominal_days=int(row["nominal_days"]),
                     max_days=int(row["max_days"]),
@@ -196,9 +206,18 @@ class SqlCurriculumService:
                             "FROM curriculum.module_revisions revision "
                             "JOIN curriculum.learning_modules module USING (module_id) "
                             "WHERE revision.module_revision_id=:revision "
-                            "AND revision.status='published' AND module.status='published'"
+                            "AND revision.status='published' AND module.status='published' "
+                            "AND revision.target_variety_id=("
+                            "SELECT target_variety_id FROM "
+                            "language_profiles.learner_language_profiles "
+                            "WHERE profile_id=:profile AND account_id=:actor "
+                            "AND status <> 'deleted')"
                         ),
-                        {"revision": command.module_revision_id},
+                        {
+                            "revision": command.module_revision_id,
+                            "profile": profile_id,
+                            "actor": actor_id,
+                        },
                     )
                 )
                 .mappings()

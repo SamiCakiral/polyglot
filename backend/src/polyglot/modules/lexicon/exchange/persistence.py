@@ -1259,12 +1259,17 @@ class SqlExchangeService:
                     raise DomainError(ErrorCode.MEMBER_CONFLICT)
                 if not current.ordered:
                     members = tuple(sorted(members))
+            member_revisions = await self._published_sense_revisions(
+                session,
+                current.variety_id,
+                members,
+            )
             snapshot_id = self._ids.new()
             checksum = canonical_json_fingerprint(
                 {
                     "list_id": str(list_id),
                     "revision_id": str(current.revision_id),
-                    "members": [str(value) for value in members],
+                    "members": [str(value) for value in member_revisions],
                 }
             )
             await session.execute(
@@ -1282,7 +1287,7 @@ class SqlExchangeService:
                     "checksum": checksum,
                 },
             )
-            for position, sense_id in enumerate(members, 1):
+            for position, sense_revision_id in enumerate(member_revisions, 1):
                 await session.execute(
                     text(
                         "INSERT INTO lexicon.list_snapshot_members "
@@ -1294,7 +1299,7 @@ class SqlExchangeService:
                         "id": self._ids.new(),
                         "snapshot": snapshot_id,
                         "profile": current.profile_id,
-                        "sense": sense_id,
+                        "sense": sense_revision_id,
                         "position": position,
                     },
                 )
@@ -1314,6 +1319,39 @@ class SqlExchangeService:
                 event_type="vocabulary_list_snapshot_created",
             )
             return await self._load_snapshot(session, snapshot_id)
+
+    @staticmethod
+    async def _published_sense_revisions(
+        session: AsyncSession,
+        variety_id: UUID,
+        sense_ids: tuple[UUID, ...],
+    ) -> tuple[UUID, ...]:
+        if not sense_ids:
+            return ()
+        rows = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT DISTINCT ON (revision.sense_id) revision.sense_id,"
+                        "revision.sense_revision_id FROM "
+                        "catalogue.lexical_sense_revisions revision "
+                        "JOIN catalogue.language_pack_revisions pack_revision "
+                        "USING(pack_revision_id) WHERE revision.sense_id=ANY(:senses) "
+                        "AND revision.status='published' "
+                        "AND pack_revision.target_variety_id=:variety "
+                        "ORDER BY revision.sense_id,revision.revision_no DESC,"
+                        "revision.sense_revision_id DESC"
+                    ),
+                    {"senses": list(sense_ids), "variety": variety_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        revisions = {
+            UUID(str(row["sense_id"])): UUID(str(row["sense_revision_id"])) for row in rows
+        }
+        return tuple(revisions.get(sense_id, sense_id) for sense_id in sense_ids)
 
     async def _load_snapshot(
         self,

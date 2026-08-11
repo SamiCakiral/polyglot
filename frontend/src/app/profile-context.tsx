@@ -30,7 +30,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     ) ?? null;
 
   function selectProfile(profileId: string) {
-    if (!profiles.some((profile) => profile.profile_id === profileId)) return;
     localStorage.setItem(ACTIVE_PROFILE_KEY, profileId);
     setPreferredProfileId(profileId);
   }

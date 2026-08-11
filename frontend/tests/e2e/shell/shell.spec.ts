@@ -316,12 +316,14 @@ test("onboards a new French to Italian learner", async ({ page }, testInfo) => {
   ).toBeVisible();
   await page.getByRole("button", { name: "Créer ce profil" }).click();
   await expect(
-    page.getByRole("heading", { name: "Votre parcours italien" }),
+    page.getByRole("heading", { name: "français → italien" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Commencer le module" }).click();
+  await page.getByRole("button", { name: "Enregistrer et continuer" }).click();
   await expect(
-    page.getByRole("heading", { name: "Aujourd'hui" }),
+    page.getByRole("heading", { name: "Où en êtes-vous en italien ?" }),
   ).toBeVisible();
+  await page.getByRole("button", { name: /Je pars de zéro/ }).click();
+  await expect(page.getByRole("heading", { name: "S'entraîner" })).toBeVisible();
 });
 
 test("shows canonical vocabulary and four separate progress axes", async ({

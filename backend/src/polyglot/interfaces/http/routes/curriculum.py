@@ -86,6 +86,7 @@ class ModuleResponse(ClosedModel):
     module_id: UUID
     module_code: str
     module_revision_id: UUID
+    pack_revision_id: UUID
     primary_intention: str
     nominal_days: int
     max_days: int
@@ -163,10 +164,14 @@ def curriculum_router(
     )
     async def list_learning_modules(
         request: Request,
+        pack_revision_id: UUID | None = None,
         session_token: SessionCookieToken = None,
     ) -> list[ModuleResponse]:
         current = await session_for(request, session_token)
-        modules = await application_service().list_modules(current.account_id)
+        modules = await application_service().list_modules(
+            current.account_id,
+            pack_revision_id=pack_revision_id,
+        )
         return [ModuleResponse.model_validate(item) for item in modules]
 
     @router.get(

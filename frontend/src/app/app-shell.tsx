@@ -16,6 +16,7 @@ import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { TeacherDrawer } from "../features/teacher/teacher-drawer";
+import { languageDisplayName } from "../lib/language-display";
 import { getShellRouteTitle } from "./navigation";
 import { useActiveProfile } from "./profile-state";
 import { useSession } from "./session-context";
@@ -100,12 +101,11 @@ export function AppShell() {
   const menuTooltipId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
   const routeTitle = getShellRouteTitle(location.pathname);
-  const displayNames = new Intl.DisplayNames(["fr"], { type: "language" });
 
   function profileLabel(targetVarietyId: string): string {
     const pack = packs.find((item) => item.target_variety_id === targetVarietyId);
     if (pack) {
-      return displayNames.of(pack.target_language_tag) ?? pack.target_language_tag;
+      return languageDisplayName(pack.target_language_tag);
     }
     return "Autre langue";
   }

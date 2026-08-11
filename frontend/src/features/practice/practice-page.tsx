@@ -46,7 +46,7 @@ import {
   responseProblem,
   todayIso,
 } from "../../lib/api";
-import { activeRunStorageKey } from "../../lib/browser-storage";
+import { freePracticeRunStorageKey } from "../../lib/browser-storage";
 import { uuid7 } from "../../lib/ids";
 import { focusOptions } from "./practice-focus";
 
@@ -192,7 +192,7 @@ export function PracticePage() {
       query: { enabled: Boolean(activePack), retry: false },
     },
   );
-  const activeRunKey = activeRunStorageKey(session.account_id, profileId);
+  const activeRunKey = freePracticeRunStorageKey(session.account_id, profileId);
   const activeRunId = localStorage.getItem(activeRunKey);
 
   if (!activeProfile) return <NoProfile />;

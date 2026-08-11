@@ -155,6 +155,45 @@ class DeterministicTtsPort:
         return TtsSynthesis(request.voice_id, TtsAvailability.AVAILABLE, cache_key, audio)
 
 
+@dataclass(slots=True)
+class FixtureBackedTtsPort:
+    voices: tuple[TtsVoice, ...]
+    fixture_dir: Path
+    fallback: TtsPort
+
+    def list_voices(self) -> tuple[TtsVoice, ...]:
+        return self.voices
+
+    @staticmethod
+    def fixture_filename(request: TtsRequest) -> str:
+        canonical = json.dumps(
+            {
+                "locale": request.locale,
+                "parameters": dict(sorted(request.parameters.items())),
+                "text": request.text,
+                "voice_id": request.voice_id,
+            },
+            ensure_ascii=True,
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+        return f"{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}.mp3"
+
+    def synthesize(self, request: TtsRequest) -> TtsSynthesis:
+        voice = _voice_result(self.voices, request)
+        if isinstance(voice, TtsSynthesis):
+            return voice
+        fixture = self.fixture_dir / self.fixture_filename(request)
+        if fixture.is_file():
+            return TtsSynthesis(
+                request.voice_id,
+                TtsAvailability.AVAILABLE,
+                request.cache_key(voice.provider_version),
+                fixture.read_bytes(),
+            )
+        return self.fallback.synthesize(request)
+
+
 class CommandRunner(Protocol):
     def run(self, command: tuple[str, ...]) -> None: ...
 

@@ -26,6 +26,7 @@ import type {
   AccountLanguagePageResponse,
   AccountLanguageResponse,
   AccountResponse,
+  AssessmentCapabilitiesResponse,
   AssessmentRunResponse,
   AttemptResponse,
   AuthoringArtifactResponse,
@@ -3384,6 +3385,19 @@ export const getDeleteLanguageProfileResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetAssessmentCapabilitiesResponseMock = (
+  overrideResponse: Partial<
+    Extract<AssessmentCapabilitiesResponse, object>
+  > = {},
+): AssessmentCapabilitiesResponse => ({
+  available_modalities: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  profile_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
 export const getPrepareAssessmentResponseMock = (
   overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
 ): AssessmentRunResponse => ({
@@ -5424,6 +5438,7 @@ export const getListLearningModulesResponseMock = (): ModuleResponse[] =>
     module_id: faker.string.uuid(),
     module_revision_id: faker.string.uuid(),
     nominal_days: faker.number.int(),
+    pack_revision_id: faker.string.uuid(),
     primary_intention: faker.string.alpha({ length: { min: 10, max: 20 } }),
   }));
 
@@ -8569,6 +8584,34 @@ export const getDeleteLanguageProfileMockHandler = (
   );
 };
 
+export const getGetAssessmentCapabilitiesMockHandler = (
+  overrideResponse?:
+    | AssessmentCapabilitiesResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) =>
+        | Promise<AssessmentCapabilitiesResponse>
+        | AssessmentCapabilitiesResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:profileId/assessment-capabilities",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetAssessmentCapabilitiesResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getPrepareAssessmentMockHandler = (
   overrideResponse?:
     | AssessmentRunResponse
@@ -11335,6 +11378,7 @@ export const getPolyglotV2APIMock = () => [
   getGetProgressOverviewMockHandler(),
   getListRecommendationsMockHandler(),
   getDeleteLanguageProfileMockHandler(),
+  getGetAssessmentCapabilitiesMockHandler(),
   getPrepareAssessmentMockHandler(),
   getComposeDailySessionMockHandler(),
   getStartDiagnosticMockHandler(),

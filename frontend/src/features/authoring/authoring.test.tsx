@@ -16,6 +16,88 @@ function useAuthorSession() {
   );
 }
 
+function useJapaneseAuthorContext(
+  onGeneration: (body: Record<string, unknown>) => void,
+) {
+  const targetVarietyId = "019fe900-6000-7000-8000-000000000151";
+  server.use(
+    http.get("*/api/v1/language-profiles", () =>
+      HttpResponse.json({
+        items: [
+          {
+            account_id: currentSessionFixture.account_id,
+            archived_at: null,
+            created_at: "2026-08-11T08:00:00Z",
+            current_phase: "active",
+            deleted_at: null,
+            excluded_themes: [],
+            goals: [],
+            interests: [],
+            native_variety_id: "019fe900-6000-7000-8000-000000000152",
+            profile_id: "019fe900-6000-7000-8000-000000000153",
+            status: "active",
+            target_variety_id: targetVarietyId,
+            updated_at: "2026-08-11T08:00:00Z",
+            version: 1,
+          },
+        ],
+      }),
+    ),
+    http.get("*/api/v1/language-packs", () =>
+      HttpResponse.json({
+        items: [
+          {
+            capability_manifest: { schema_version: 1 },
+            channel: "stable",
+            compatibility_range: ">=2.0.0,<2.1.0",
+            foundation_revision_id: null,
+            media_capabilities: { schema_version: 1 },
+            pack_code: "ja-JP__fr-FR",
+            pack_id: "019fe900-6000-7000-8000-000000000154",
+            pack_revision_id: "019fe900-6000-7000-8000-000000000155",
+            revision_no: 1,
+            segmentation_policy_revision_id:
+              "019fe900-6000-7000-8000-000000000156",
+            support_language_tags: ["fr-FR"],
+            support_variety_ids: [
+              "019fe900-6000-7000-8000-000000000152",
+            ],
+            target_language_tag: "ja-JP",
+            target_script_codes: ["Hira", "Kana", "Jpan"],
+            target_variety_id: targetVarietyId,
+            text_direction: "ltr",
+          },
+        ],
+        next_cursor: null,
+      }),
+    ),
+    http.post("*/api/v1/generation-jobs", async ({ request }) => {
+      onGeneration((await request.json()) as Record<string, unknown>);
+      return HttpResponse.json(
+        {
+          attempt_count: 0,
+          error_code: null,
+          finished_at: null,
+          job_id: "019fe900-6000-7000-8000-000000000157",
+          max_attempts: 1,
+          model_code: "qwen/qwen3.6-35b-a3b",
+          prompt_revision: "POLYGLOT_AUTHOR_V1",
+          provider_code: "lm_studio",
+          requested_at: "2026-08-11T12:00:00Z",
+          requested_by_actor_id: currentSessionFixture.account_id,
+          result_draft_id: null,
+          started_at: null,
+          status: "requested",
+          task_type: "exercise_draft",
+          tool_allowlist: ["exercise.submit_draft@1.0.0"],
+          version: 1,
+        },
+        { status: 201 },
+      );
+    }),
+  );
+}
+
 it("refuses authoring surfaces to a learner", async () => {
   renderShell("/authoring");
 
@@ -89,6 +171,28 @@ it("shows a locally generated artifact to an author", async () => {
   useAuthorSession();
   const artifactId = "019fe900-6000-7000-8000-000000000088";
   server.use(
+    http.get("*/api/v1/language-profiles", () =>
+      HttpResponse.json({
+        items: [
+          {
+            account_id: currentSessionFixture.account_id,
+            archived_at: null,
+            created_at: "2026-08-11T08:00:00Z",
+            current_phase: "active",
+            deleted_at: null,
+            excluded_themes: [],
+            goals: [],
+            interests: [],
+            native_variety_id: "019fe900-6000-7000-8000-000000000057",
+            profile_id: "019fe900-6000-7000-8000-000000000058",
+            status: "active",
+            target_variety_id: "019fe900-6000-7000-8000-000000000056",
+            updated_at: "2026-08-11T08:00:00Z",
+            version: 1,
+          },
+        ],
+      }),
+    ),
     http.post("*/api/v1/generation-jobs", () =>
       HttpResponse.json(
         {
@@ -149,8 +253,25 @@ it("shows a locally generated artifact to an author", async () => {
       HttpResponse.json({
         items: [
           {
+            capability_manifest: { schema_version: 1 },
+            channel: "stable",
+            compatibility_range: ">=2.0.0,<2.1.0",
+            foundation_revision_id: null,
+            media_capabilities: { schema_version: 1 },
+            pack_code: "it-IT__fr-FR",
             pack_id: "019fe900-6000-7000-8000-000000000055",
+            pack_revision_id: "019fe900-6000-7000-8000-000000000059",
+            revision_no: 1,
+            segmentation_policy_revision_id:
+              "019fe900-6000-7000-8000-000000000060",
+            support_language_tags: ["fr-FR"],
+            support_variety_ids: [
+              "019fe900-6000-7000-8000-000000000057",
+            ],
+            target_language_tag: "it-IT",
+            target_script_codes: ["Latn"],
             target_variety_id: "019fe900-6000-7000-8000-000000000056",
+            text_direction: "ltr",
           },
         ],
         next_cursor: null,
@@ -176,4 +297,29 @@ it("shows a locally generated artifact to an author", async () => {
   expect(await screen.findByText(/In treno/)).toBeVisible();
   await user.click(screen.getByRole("button", { name: "Adopter comme brouillon" }));
   expect(await screen.findByRole("link", { name: "Ouvrir la revue" })).toBeVisible();
+});
+
+it("generates for the active Japanese pack", async () => {
+  useAuthorSession();
+  const submittedBodies: Record<string, unknown>[] = [];
+  useJapaneseAuthorContext((body) => {
+    submittedBodies.push(body);
+  });
+  const user = userEvent.setup();
+  renderShell("/authoring/generate");
+
+  expect(
+    await screen.findByText("Générer pour le japonais"),
+  ).toBeVisible();
+  await user.click(
+    screen.getByRole("button", { name: "Générer l'artefact" }),
+  );
+
+  expect(submittedBodies).toHaveLength(1);
+  const taskInput = submittedBodies[0]?.task_input as Record<string, unknown>;
+  expect(taskInput.target_language).toBe("ja-JP");
+  expect(taskInput.support_language).toBe("fr-FR");
+  expect(taskInput.pack_revision_id).toBe(
+    "019fe900-6000-7000-8000-000000000155",
+  );
 });

@@ -37,6 +37,9 @@ def test_curriculum_queries_are_authenticated_and_enrollment_is_versioned() -> N
     modules = document["paths"]["/api/v1/modules"]["get"]
     enrollment = document["paths"]["/api/v1/module-enrollments/{id}"]["get"]
     assert modules["security"] == [{"SessionCookie": []}]
+    assert parameters(modules)["pack_revision_id"]["required"] is False
+    module_schema = document["components"]["schemas"]["ModuleResponse"]
+    assert "pack_revision_id" in module_schema["required"]
     assert enrollment["security"] == [{"SessionCookie": []}]
     assert enrollment["responses"]["200"]["headers"]["ETag"]["schema"] == {"type": "string"}
 

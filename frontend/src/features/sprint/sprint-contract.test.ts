@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import type { SprintBlockResponse } from "../../generated/model";
+import { sprintFamilyLabel } from "./sprint-family-label";
 import { resumeBlockOffset } from "./sprint-position";
 
 describe("sprint completion contract", () => {
@@ -33,6 +34,15 @@ describe("sprint completion contract", () => {
     );
 
     expect(source).not.toContain("exercise.primitive_id.replaceAll");
+  });
+
+  it("names comprehension from the active target language", () => {
+    expect(sprintFamilyLabel("version_input", "ja-JP")).toBe(
+      "Comprendre le japonais",
+    );
+    expect(sprintFamilyLabel("version", "it-IT")).toBe(
+      "Comprendre l’italien",
+    );
   });
 
   it("resumes at the first unfinished block after a reload", () => {

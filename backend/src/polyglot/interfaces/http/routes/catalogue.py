@@ -242,6 +242,7 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
         catalogue = await reader().read_foundations(pack_revision_id=pack_revision_id)
         if catalogue is None:
             raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
+        is_japanese = catalogue.definition.foundation_code.startswith("FOUNDATIONS_JA_")
         presentations: dict[str, tuple[str, str, tuple[tuple[str, str], ...]]] = {
             "ITF-F1-01": (
                 "Quel couple commence par un son c ou g dur ?",
@@ -274,6 +275,27 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
                 (),
             ),
         }
+        if is_japanese:
+            presentations = {
+                "JAF-F1-01": (
+                    "Quelle lecture correspond au hiragana あ ?",
+                    "single_choice",
+                    (("あ=a", "a"), ("あ=i", "i")),
+                ),
+                "JAF-F1-06": (
+                    "Quelle lecture correspond au hiragana か ?",
+                    "single_choice",
+                    (("か=ka", "ka"), ("か=ki", "ki")),
+                ),
+                "JAF-F2-01": ("Recopiez la salutation こんにちは.", "text", ()),
+                "JAF-F3-01": (
+                    "Quelle formule signifie bonjour dans la journée ?",
+                    "single_choice",
+                    (("こんにちは", "こんにちは"), ("ありがとう", "ありがとう")),
+                ),
+                "JAF-F4-01": ("Demandez de l'eau poliment en japonais.", "text", ()),
+                "JAF-F5-01": ("Présentez des excuses pour attirer l'attention.", "text", ()),
+            }
         items: list[PlacementItemResponse] = []
         ordinal = 1
         for block in catalogue.definition.blocks:
@@ -315,6 +337,7 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
         catalogue = await reader().read_foundations(pack_revision_id=pack_revision_id)
         if catalogue is None:
             raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
+        is_japanese = catalogue.definition.foundation_code.startswith("FOUNDATIONS_JA_")
         block_titles = {
             "F1": "Sons et lecture",
             "F2": "Accent et rythme",
@@ -329,6 +352,21 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
             "F4": "Complétez la structure italienne demandée.",
             "F5": "Produisez une formule courte pour maintenir l'échange.",
         }
+        if is_japanese:
+            block_titles = {
+                "F1": "Hiragana et sons",
+                "F2": "Lecture et segmentation",
+                "F3": "Saluer",
+                "F4": "Construire une phrase polie",
+                "F5": "Maintenir l'échange",
+            }
+            prompts = {
+                "F1": "Associez le hiragana à son son, puis lisez-le à voix haute.",
+                "F2": "Lisez la forme japonaise sans translittération latine.",
+                "F3": "Produisez la salutation japonaise adaptée.",
+                "F4": "Complétez le moule japonais avec la particule attendue.",
+                "F5": "Produisez une formule japonaise courte pour maintenir l'échange.",
+            }
         choice_decoys = {
             "casa_gatto": "cena_gelato",
             "cena_gelato": "casa_gatto",
@@ -394,7 +432,8 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
                     )
                 )
                 global_ordinal += 1
-        if len(activities) != 32:
+        expected_activity_count = sum(len(block.items) for block in catalogue.definition.blocks)
+        if len(activities) != expected_activity_count:
             raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
         return FoundationManifestResponse(
             pack_revision_id=pack_revision_id,

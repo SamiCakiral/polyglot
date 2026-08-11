@@ -157,6 +157,11 @@ class AssessmentRunResponse(ClosedModel):
     version: int
 
 
+class AssessmentCapabilitiesResponse(ClosedModel):
+    profile_id: UUID
+    available_modalities: tuple[str, ...]
+
+
 def assessments_router(
     service: AssessmentApplicationService | None,
     identity_service: IdentityApplicationService | None,
@@ -195,6 +200,25 @@ def assessments_router(
     def run_response(response: Response, view: AssessmentRunView) -> AssessmentRunResponse:
         response.headers["ETag"] = f'"{view.version}"'
         return AssessmentRunResponse.model_validate(view)
+
+    @router.get(
+        "/api/v1/language-profiles/{profile_id}/assessment-capabilities",
+        operation_id="get_assessment_capabilities",
+        response_model=AssessmentCapabilitiesResponse,
+    )
+    async def get_assessment_capabilities(
+        profile_id: UUID,
+        request: Request,
+        session_token: SessionCookieToken = None,
+    ) -> AssessmentCapabilitiesResponse:
+        current = await session_for(request, session_token)
+        available = await application_service().available_modalities(
+            current.account_id, profile_id
+        )
+        return AssessmentCapabilitiesResponse(
+            profile_id=profile_id,
+            available_modalities=available,
+        )
 
     @router.post(
         "/api/v1/language-profiles/{profile_id}/assessments",

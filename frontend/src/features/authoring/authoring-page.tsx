@@ -11,6 +11,7 @@ import {
 import { type ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useActiveProfile } from "../../app/profile-state";
 import { useSession } from "../../app/session-context";
 import {
   ErrorRegion,
@@ -35,11 +36,14 @@ import {
   useListAuthoringArtifacts,
   useListAuthoringTools,
   useListContentDrafts,
-  useListLanguagePacks,
   validateContentRevision,
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
+import {
+  languageDisplayName,
+  languageWithDefiniteArticle,
+} from "../../lib/language-display";
 
 function AuthorGuard({ children }: { children: ReactNode }) {
   const session = useSession();
@@ -71,7 +75,7 @@ export function AuthoringPage() {
         <PageHeader
           eyebrow="Espace éditorial"
           title="Atelier"
-          description="Créer, vérifier et publier du contenu italien avec une trace complète des décisions humaines."
+          description="Créer, vérifier et publier du contenu multilingue avec une trace complète des décisions humaines."
         />
         <div className="authoring-launcher">
           <Link to="/authoring/drafts">
@@ -142,9 +146,10 @@ type GenerationKind = keyof typeof generationKinds;
 
 export function GenerationPage() {
   const session = useSession();
+  const { activePack } = useActiveProfile();
   const [kind, setKind] = useState<GenerationKind>("exercise");
   const [brief, setBrief] = useState(
-    "Créer un exercice italien sur un trajet en train, niveau débutant, avec une consigne sans ambiguïté.",
+    "Créer un exercice sur un trajet en train, niveau débutant, avec une consigne sans ambiguïté.",
   );
   const [jobId, setJobId] = useState("");
   const [adoptedRevisionId, setAdoptedRevisionId] = useState("");
@@ -165,22 +170,18 @@ export function GenerationPage() {
       query: { enabled: Boolean(jobId), refetchInterval: 1000, retry: false },
     },
   );
-  const packsQuery = useListLanguagePacks(
-    { limit: 20 },
-    { fetch: queryFetch(), query: { retry: false } },
-  );
   const job = jobQuery.data?.status === 200 ? jobQuery.data.data : undefined;
   const artifacts =
     artifactsQuery.data?.status === 200 ? artifactsQuery.data.data : [];
   const artifact = artifacts.find(
     (item) => item.artifact_id === job?.result_draft_id,
   );
-  const pack =
-    packsQuery.data?.status === 200 ? packsQuery.data.data.items[0] : undefined;
+  const pack = activePack ?? undefined;
+  const targetLanguageName = languageDisplayName(pack?.target_language_tag);
 
   async function generate() {
     if (!pack) {
-      setError("Le pack italien publié est indisponible.");
+      setError("Le pack actif publié est indisponible.");
       return;
     }
     setBusy(true);
@@ -200,8 +201,8 @@ export function GenerationPage() {
           task_input: {
             brief,
             pack_revision_id: pack.pack_revision_id,
-            support_language: "fr-FR",
-            target_language: "it-IT",
+            support_language: pack.support_language_tags[0] ?? "und",
+            target_language: pack.target_language_tag,
           },
           task_type: selected.taskType,
           tool_allowlist: [selected.tool],
@@ -222,7 +223,7 @@ export function GenerationPage() {
 
   async function adoptArtifact() {
     if (!artifact || !pack) {
-      setError("Le pack italien publié est indisponible.");
+      setError("Le pack actif publié est indisponible.");
       return;
     }
     setBusy(true);
@@ -262,7 +263,11 @@ export function GenerationPage() {
   return (
     <AuthorGuard>
       <div className="page-flow page-flow--narrow">
-        <PageHeader eyebrow="Atelier local" title="Génération" />
+        <PageHeader
+          eyebrow="Atelier local"
+          title="Génération"
+          description={`Générer pour ${pack ? languageWithDefiniteArticle(pack.target_language_tag) : targetLanguageName}`}
+        />
         <section className="generation-workbench">
           <label>
             Type de contenu
@@ -356,19 +361,16 @@ export function GenerationPage() {
 
 export function DraftsPage() {
   const session = useSession();
+  const { activePack } = useActiveProfile();
   const query = useListContentDrafts(
     { limit: 50 },
-    { fetch: queryFetch(), query: { retry: false } },
-  );
-  const packsQuery = useListLanguagePacks(
-    { limit: 20 },
     { fetch: queryFetch(), query: { retry: false } },
   );
   const [selected, setSelected] = useState<ContentRevisionResponse | null>(
     null,
   );
   const [payloadText, setPayloadText] = useState(
-    '{\n  "title": "Nouvel exercice",\n  "instruction": "Répondez en italien."\n}',
+    '{\n  "title": "Nouvel exercice",\n  "instruction": "Répondez dans la langue cible."\n}',
   );
   const [contentType, setContentType] = useState("exercise");
   const [busy, setBusy] = useState(false);
@@ -376,8 +378,7 @@ export function DraftsPage() {
   if (query.isPending)
     return <LoadingRegion label="Chargement des brouillons" />;
   const drafts = query.data?.status === 200 ? query.data.data.items : [];
-  const pack =
-    packsQuery.data?.status === 200 ? packsQuery.data.data.items[0] : undefined;
+  const pack = activePack ?? undefined;
   const canAuthor = session.roles.some((role) =>
     ["author", "admin"].includes(role),
   );
@@ -457,7 +458,7 @@ export function DraftsPage() {
                 onClick={() => {
                   setSelected(null);
                   setPayloadText(
-                    '{\n  "title": "Nouvel exercice",\n  "instruction": "Répondez en italien."\n}',
+                    '{\n  "title": "Nouvel exercice",\n  "instruction": "Répondez dans la langue cible."\n}',
                   );
                 }}
               >

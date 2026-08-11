@@ -79,6 +79,53 @@ async def test_prepare_is_idempotent_frozen_and_hides_solutions(
     assert caught.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
 
 
+async def test_assessments_are_scoped_to_the_profile_target_language(
+    runtime_factory: async_sessionmaker[AsyncSession],
+    migration_session: AsyncSession,
+    seeded_profile: UUID,
+) -> None:
+    japanese_profile = uid(900)
+    await migration_session.execute(
+        text("SELECT set_config('app.user_id',:actor,false)"),
+        {"actor": str(ACCOUNT_ID)},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO language_profiles.learner_language_profiles "
+            "(profile_id,account_id,target_variety_id,native_variety_id,status,current_phase,"
+            "goals,interests,excluded_themes,correction_preference,availability_pattern,"
+            "version,created_at,updated_at) VALUES "
+            "(:profile,:account,:target,:native,'active','module_learning','[]','[]','[]',"
+            "'{}','{}',1,:now,:now) ON CONFLICT DO NOTHING"
+        ),
+        {
+            "profile": japanese_profile,
+            "account": ACCOUNT_ID,
+            "target": UUID("019c0000-0000-7000-9000-000000000002"),
+            "native": UUID("019b0000-0000-7000-8000-000000000005"),
+            "now": NOW,
+        },
+    )
+    await migration_session.commit()
+    assessments = service(runtime_factory, MutableClock(NOW))
+
+    assert set(await assessments.available_modalities(ACCOUNT_ID, seeded_profile)) == {
+        "reading",
+        "listening",
+        "writing",
+        "speaking",
+    }
+    assert await assessments.available_modalities(ACCOUNT_ID, japanese_profile) == ()
+    with pytest.raises(DomainError) as caught:
+        await assessments.prepare(
+            ACCOUNT_ID,
+            japanese_profile,
+            PrepareAssessment(uid(901), AssessmentModality.READING, "ja-scope", {}),
+            idempotency_key="ja-assessment-unavailable",
+        )
+    assert caught.value.code is ErrorCode.ASSESSMENT_UNAVAILABLE
+
+
 async def test_pause_resume_preserves_remaining_time_and_response_version(
     runtime_factory: async_sessionmaker[AsyncSession], seeded_profile: UUID
 ) -> None:

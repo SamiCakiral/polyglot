@@ -67,7 +67,7 @@ class BlockFamily(StrEnum):
     REFLECTION_CLOSE = "reflection_close"
 
 
-_MAX_BLOCKS = {10: 4, 15: 4, 20: 4, 25: 5, 30: 5, 35: 6, 40: 6, 45: 7, 50: 7, 55: 7, 60: 7}
+_MAX_BLOCKS = {10: 4, 15: 4, 20: 6, 25: 6, 30: 6, 35: 6, 40: 6, 45: 7, 50: 7, 55: 7, 60: 7}
 _P_ABS_NOVELTY = {
     10: 3,
     15: 5,

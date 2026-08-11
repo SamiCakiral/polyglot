@@ -61,7 +61,7 @@ async def seeded_profile(migration_session: AsyncSession) -> UUID:
         {
             "profile": PROFILE_ID,
             "account": ACCOUNT_ID,
-            "target": UUID("019feb33-0000-7000-8000-000000000003"),
+            "target": UUID("019b0000-0000-7000-8000-000000000002"),
             "native": UUID("019feb33-0000-7000-8000-000000000004"),
             "now": NOW,
         },

@@ -212,7 +212,7 @@ async def test_assessment_tts_hides_script_and_enforces_server_play_limit(
             "(profile_id,account_id,target_variety_id,native_variety_id,status,current_phase,"
             "goals,interests,excluded_themes,correction_preference,availability_pattern,version,"
             "created_at,updated_at,archived_at,deleted_at) VALUES "
-            "(:profile,:account,'019fe900-5000-7000-8001-000000000001',"
+            "(:profile,:account,'019b0000-0000-7000-8000-000000000002',"
             "'019fe900-5000-7000-8001-000000000002','active','module_learning','[]','[]','[]',"
             "'{}','{}',1,:now,:now,NULL,NULL) ON CONFLICT DO NOTHING"
         ),

@@ -23,6 +23,7 @@ import type {
   AccountLanguagePageResponse,
   AccountLanguageResponse,
   AccountResponse,
+  AssessmentCapabilitiesResponse,
   AssessmentRunResponse,
   AttemptResponse,
   AuthoringArtifactResponse,
@@ -3381,6 +3382,19 @@ export const getDeleteLanguageProfileResponseMock = (
   ...overrideResponse,
 });
 
+export const getGetAssessmentCapabilitiesResponseMock = (
+  overrideResponse: Partial<
+    Extract<AssessmentCapabilitiesResponse, object>
+  > = {},
+): AssessmentCapabilitiesResponse => ({
+  available_modalities: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  profile_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
 export const getPrepareAssessmentResponseMock = (
   overrideResponse: Partial<Extract<AssessmentRunResponse, object>> = {},
 ): AssessmentRunResponse => ({
@@ -5421,6 +5435,7 @@ export const getListLearningModulesResponseMock = (): ModuleResponse[] =>
     module_id: faker.string.uuid(),
     module_revision_id: faker.string.uuid(),
     nominal_days: faker.number.int(),
+    pack_revision_id: faker.string.uuid(),
     primary_intention: faker.string.alpha({ length: { min: 10, max: 20 } }),
   }));
 

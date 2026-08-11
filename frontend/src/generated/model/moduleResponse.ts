@@ -14,5 +14,6 @@ export interface ModuleResponse {
   module_id: string;
   module_revision_id: string;
   nominal_days: number;
+  pack_revision_id: string;
   primary_intention: string;
 }

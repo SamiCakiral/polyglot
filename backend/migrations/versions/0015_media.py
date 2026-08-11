@@ -379,12 +379,14 @@ REVOKE ALL ON ALL TABLES IN SCHEMA media FROM PUBLIC;
 INSERT INTO media.tts_voice_catalog_revisions
   (catalog_revision_id,provider_code,provider_version,published_at,checksum)
 VALUES
-  ('019feb37-0000-7000-8000-000000000001','macos-say','local-v1','2026-08-10T00:00:00Z',
-   'df747e8ef4d27f93f8ee588b2b1fc596f67d515b5ad81974eb7fd66fe14de7ed');
+  ('019feb37-0000-7000-8000-000000000001','macos-say','local-v2','2026-08-10T00:00:00Z',
+   'df34b456b8f5f6f9001b3ddea2fca705886bf039ca94e913540dd421b8f320e4');
 INSERT INTO media.tts_voice_capabilities
   (catalog_revision_id,voice_id,language_tags,formats,limits,availability)
 VALUES
   ('019feb37-0000-7000-8000-000000000001','Alice',ARRAY['it-IT'],ARRAY['audio/mpeg'],
+   '{"max_text_chars":5000,"speed_min":100,"speed_max":300}','available'),
+  ('019feb37-0000-7000-8000-000000000001','Kyoko',ARRAY['ja-JP'],ARRAY['audio/mpeg'],
    '{"max_text_chars":5000,"speed_min":100,"speed_max":300}','available');
 
 ALTER FUNCTION media.is_uuid7(uuid) OWNER TO polyglot_migration;
