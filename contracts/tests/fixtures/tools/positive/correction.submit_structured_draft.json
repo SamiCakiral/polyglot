@@ -1,7 +1,6 @@
 {
-  "id": "correction.submit_structured_draft.positive",
-  "kind": "positive",
   "tool_name": "correction.submit_structured_draft",
+  "kind": "positive",
   "input": {
     "attempt_id": "x",
     "attempt_version": 1,
@@ -12,15 +11,18 @@
     "proposed_answer": "x",
     "alternatives": [],
     "explanation_codes": [],
-    "confidence": 0.5,
+    "confidence": 0,
     "target_observations": [],
     "provenance": "x"
   },
   "output": {
-    "correction_draft": {},
-    "criterion_coverage": {},
-    "candidate_observations": [],
-    "conflicts": [],
-    "review_required": false
+    "draft_id": "019fec00-0000-7000-8000-000000000020",
+    "draft_type": "correction",
+    "revision": 1,
+    "status": "draft",
+    "findings": [],
+    "checksum": "fb45da768373e308325c77bf381b425f82d642928eeaa01eafa7e38b039902d6",
+    "publish_capability": false,
+    "mastery_capability": false
   }
 }

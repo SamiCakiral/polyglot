@@ -37,12 +37,20 @@ def include_object(
 ) -> bool:
     """Audited SQL DDL owns schemas with RLS policies and append-only triggers."""
     del name, type_, reflected, compare_to
-    return getattr(object_, "schema", None) not in {
+    sql_ddl_owned_schemas = {
+        "assessments",
+        "curriculum",
+        "exchange",
+        "exercises",
+        "generation",
         "language_profiles",
         "lexicon",
         "memory",
-        "exchange",
+        "media",
+        "planning",
+        "progress",
     }
+    return getattr(object_, "schema", None) not in sql_ddl_owned_schemas
 
 
 def database_url() -> str:

@@ -1,8 +1,11 @@
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID
 
 import pytest
 
+from polyglot.modules.catalogue.core.fixtures import load_catalogue_fixture
+from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
 from polyglot.modules.language_profiles.foundations import (
     FoundationBlock,
     FoundationCriterion,
@@ -14,6 +17,9 @@ from polyglot.platform.errors import DomainError, ErrorCode
 NOW = datetime(2026, 8, 10, 12, 0, tzinfo=UTC)
 SESSION_ONE = UUID("019fe903-1000-7000-8000-000000000001")
 SESSION_TWO = UUID("019fe903-1000-7000-8000-000000000002")
+CATALOGUE = load_catalogue_fixture(
+    Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
+).foundations
 
 
 def measurement(
@@ -200,3 +206,45 @@ def test_measurements_require_distinct_uuid7_sessions() -> None:
         )
 
     assert rejected.value.code is ErrorCode.VALIDATION_FAILED
+
+
+@pytest.mark.parametrize(
+    ("surface", "canonical"),
+    (
+        ("Può ripetere?", "puo_ripetere"),
+        ("puo ripetere", "puo_ripetere"),
+        ("Buongiorno, sono Luca.", "buongiorno_sono_luca"),
+        ("chi / giro", "chi_giro"),
+    ),
+)
+def test_foundation_answers_accept_natural_italian_surfaces(
+    surface: str, canonical: str
+) -> None:
+    assert (
+        LanguageProfileApplicationService._normalized_foundation_answer(surface)
+        == canonical
+    )
+
+
+@pytest.mark.parametrize(
+    ("item_code", "surface"),
+    (
+        ("ITF-F1-01-S03", "chi / giro"),
+        ("ITF-F5-01", "Può ripetere?"),
+        ("ITF-F5-02-S03", "Può parlare più lentamente?"),
+    ),
+)
+def test_foundation_scoring_accepts_the_surface_that_is_taught(
+    item_code: str, surface: str
+) -> None:
+    item = next(
+        item
+        for block in CATALOGUE.definition.blocks
+        for item in block.items
+        if item.item_code == item_code
+    )
+
+    assert LanguageProfileApplicationService._score_item(item, {"value": surface}) == (
+        1.0,
+        True,
+    )

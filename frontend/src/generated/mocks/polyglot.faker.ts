@@ -1336,6 +1336,7 @@ export const getListAuthoringArtifactsResponseMock =
           [],
         ]),
       },
+      provenance_id: faker.string.uuid(),
       source_tool_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
       status: faker.string.alpha({ length: { min: 10, max: 20 } }),
     }));
@@ -1359,6 +1360,7 @@ export const getGetAuthoringArtifactResponseMock = (
       [],
     ]),
   },
+  provenance_id: faker.string.uuid(),
   source_tool_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   ...overrideResponse,
@@ -2930,6 +2932,41 @@ export const getGetProgressOverviewResponseMock = (
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
   ).map(() => ({
+    assessment_band: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      undefined,
+    ]),
+    assessment_completed_at: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      undefined,
+    ]),
+    assessment_confidence: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      undefined,
+    ]),
+    assessment_score: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.number.float({ fractionDigits: 2 }),
+        null,
+      ]),
+      undefined,
+    ]),
+    assessment_status: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      undefined,
+    ]),
     confidence: faker.number.float({ fractionDigits: 2 }),
     coverage: faker.number.float({ fractionDigits: 2 }),
     expected_facet_count: faker.number.int(),

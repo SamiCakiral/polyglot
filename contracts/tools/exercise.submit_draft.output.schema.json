@@ -1,15 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "exercise.submit_draft output",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "draft_id",
+    "draft_type",
     "revision",
+    "status",
     "findings",
-    "resolved_references",
     "checksum",
-    "status"
+    "publish_capability",
+    "mastery_capability"
   ],
   "properties": {
     "draft_id": {
@@ -17,38 +18,52 @@
       "minLength": 1,
       "maxLength": 20000
     },
+    "draft_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "enum": [
+        "exercise"
+      ]
+    },
     "revision": {
       "type": "integer",
-      "minimum": 0,
+      "minimum": 1,
       "maximum": 10000
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "enum": [
+        "draft"
+      ]
     },
     "findings": {
       "type": "array",
       "maxItems": 200,
       "items": {
         "type": "string",
-        "maxLength": 128
-      }
-    },
-    "resolved_references": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
+        "minLength": 0,
         "maxLength": 128
       }
     },
     "checksum": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 20000
+      "minLength": 64,
+      "maxLength": 64
     },
-    "status": {
-      "type": "string",
+    "publish_capability": {
+      "type": "boolean",
       "enum": [
-        "draft"
-      ],
-      "maxLength": 16
+        false
+      ]
+    },
+    "mastery_capability": {
+      "type": "boolean",
+      "enum": [
+        false
+      ]
     }
   }
 }

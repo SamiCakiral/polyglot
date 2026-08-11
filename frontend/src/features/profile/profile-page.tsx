@@ -1,5 +1,5 @@
 import { ArrowRight, Check, Languages, Milestone } from "lucide-react";
-import { type SyntheticEvent, useMemo, useState } from "react";
+import { type SyntheticEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useSession } from "../../app/session-context";
@@ -366,6 +366,10 @@ export function LanguageProfilePage() {
           packRevisionId={pack.pack_revision_id}
           runId={foundationRunId}
           onComplete={refresh}
+          onMissing={() => {
+            localStorage.removeItem("polyglot.foundation-run");
+            setFoundationRunId("");
+          }}
         />
       );
     }
@@ -514,10 +518,12 @@ function FoundationFlow({
   packRevisionId,
   runId,
   onComplete,
+  onMissing,
 }: {
   packRevisionId: string;
   runId: string;
   onComplete: () => Promise<unknown>;
+  onMissing: () => void;
 }) {
   const session = useSession();
   const runQuery = useGetFoundationRun(runId, {
@@ -536,8 +542,15 @@ function FoundationFlow({
   const run = runQuery.data?.status === 200 ? runQuery.data.data : null;
   const manifest =
     manifestQuery.data?.status === 200 ? manifestQuery.data.data : null;
+  const runMissing = runQuery.data?.status === 404;
+
+  useEffect(() => {
+    if (runMissing) onMissing();
+  }, [onMissing, runMissing]);
+
   if (runQuery.isPending || manifestQuery.isPending)
     return <LoadingRegion label="Préparation des fondations" />;
+  if (runMissing) return <LoadingRegion label="Réinitialisation des fondations" />;
   if (!run || !manifest)
     return (
       <ErrorRegion message="La session de fondations n'est plus disponible." />

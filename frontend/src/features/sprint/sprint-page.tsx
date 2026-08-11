@@ -15,6 +15,7 @@ import {
   selfAssessExerciseAttempt,
   submitExerciseAttempt,
   useCompleteSprintRun,
+  useGetAttempt,
   useGetExerciseInstance,
   useGetSprintRun,
   useInterruptSprintRun,
@@ -22,16 +23,24 @@ import {
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
+import { resumeBlockOffset } from "./sprint-position";
 
 const familyLabels: Record<string, string> = {
+  lexical_acquisition: "Vocabulaire du jour",
   vocabulary: "Vocabulaire du jour",
+  recall_warmup: "Rappel actif",
   memory_review: "Rappels à échéance",
+  version_input: "Comprendre l'italien",
   version: "Comprendre l'italien",
   grammar_toolbox: "Boîte grammaticale",
+  transformation_gym: "Gym de transformation",
   gym: "Gym de transformation",
+  listening: "Compréhension orale",
   shadowing: "Écoute et shadowing",
+  guided_output: "Expression guidée",
   free_writing: "Expression écrite",
   delayed_recode: "Inversion J+1",
+  reflection_close: "Bilan de séance",
 };
 
 const meaningChoices: readonly (readonly [number, string])[] = [
@@ -76,7 +85,18 @@ function ExerciseReader({
     fetch: queryFetch(),
     query: { retry: false },
   });
-  const [attemptId] = useState(uuid7);
+  const attemptStorageKey = `polyglot.attempt.${instanceId}`;
+  const [attemptId] = useState(() => {
+    const stored = localStorage.getItem(attemptStorageKey);
+    if (stored) return stored;
+    const created = uuid7();
+    localStorage.setItem(attemptStorageKey, created);
+    return created;
+  });
+  const attemptQuery = useGetAttempt(attemptId, {
+    fetch: queryFetch(),
+    query: { retry: false },
+  });
   const [attemptVersion, setAttemptVersion] = useState<number | null>(null);
   const storageKey = `polyglot.draft.${instanceId}`;
   const [answer, setAnswer] = useState(
@@ -120,11 +140,21 @@ function ExerciseReader({
   const responseKind: AnswerKind = exercise.response_kinds[0] ?? "text";
   const isAcknowledgement =
     responseKind === "acknowledgement" || responseKind === "self_assessment";
+  const persistedAttempt =
+    attemptQuery.data?.status === 200 ? attemptQuery.data.data : null;
+  const effectiveSubmittedVersion =
+    submittedVersion ??
+    (persistedAttempt?.submitted_at ? persistedAttempt.version : null);
+  const effectiveAnswer =
+    answer ||
+    (typeof persistedAttempt?.raw_answer === "string"
+      ? persistedAttempt.raw_answer
+      : "");
 
   async function submit() {
     setError("");
-    let version = attemptVersion;
-    if (!opened || version === null) {
+    let version = attemptVersion ?? persistedAttempt?.version ?? null;
+    if ((!opened && persistedAttempt === null) || version === null) {
       const openedResponse = await openAttempt.mutateAsync({
         instanceId,
         data: {
@@ -154,7 +184,12 @@ function ExerciseReader({
         input_locale: "it-IT",
         input_method: "keyboard",
         kind: responseKind,
-        raw_value: isAcknowledgement ? { acknowledged: true } : answer,
+        raw_value:
+          responseKind === "acknowledgement"
+            ? true
+            : responseKind === "self_assessment"
+              ? { confidence: 1 }
+              : answer,
         submitted_at: new Date().toISOString(),
       },
       commandFetch(session, version),
@@ -174,7 +209,7 @@ function ExerciseReader({
 
   async function selfAssess() {
     if (
-      submittedVersion === null ||
+      effectiveSubmittedVersion === null ||
       meaningScore === null ||
       formScore === null
     )
@@ -187,7 +222,7 @@ function ExerciseReader({
         form: formScore,
         reviewed_at: new Date().toISOString(),
       },
-      commandFetch(session, submittedVersion),
+      commandFetch(session, effectiveSubmittedVersion),
     );
     const problem = responseProblem(response);
     if (problem) {
@@ -198,6 +233,7 @@ function ExerciseReader({
       setError("L'auto-évaluation n'a pas pu être enregistrée.");
       return;
     }
+    localStorage.removeItem(attemptStorageKey);
     onDone();
   }
 
@@ -213,12 +249,14 @@ function ExerciseReader({
       {exercise.primitive_id.includes("ORAL") ? (
         <TtsAudio session={session} text={modelAnswer} />
       ) : null}
-      {submittedVersion !== null ? (
+      {effectiveSubmittedVersion !== null ? (
         <div className="feedback-panel">
           <div>
             <span>Votre réponse</span>
             <p>
-              {isAcknowledgement ? "Activité effectuée à voix haute" : answer}
+              {isAcknowledgement
+                ? "Activité effectuée à voix haute"
+                : effectiveAnswer}
             </p>
           </div>
           <div>
@@ -287,10 +325,11 @@ function ExerciseReader({
         </label>
       )}
       {error ? <ErrorRegion message={error} /> : null}
-      {submittedVersion === null ? (
+      {effectiveSubmittedVersion === null ? (
         <button
           disabled={
             openAttempt.isPending ||
+            attemptQuery.isPending ||
             (!isAcknowledgement && answer.trim().length === 0)
           }
           type="button"
@@ -328,7 +367,9 @@ export function SprintPage() {
     fetch: commandFetch(session, runVersion),
   });
   const [exerciseOffset, setExerciseOffset] = useState(0);
-  const [blockOffset, setBlockOffset] = useState(0);
+  const [selectedBlockOffset, setSelectedBlockOffset] = useState<number | null>(
+    null,
+  );
   const [error, setError] = useState("");
 
   const run = query.data?.status === 200 ? query.data.data : null;
@@ -336,6 +377,9 @@ export function SprintPage() {
     () => (run ? [...run.blocks].sort((a, b) => a.ordinal - b.ordinal) : []),
     [run],
   );
+  const blockOffset =
+    selectedBlockOffset ??
+    resumeBlockOffset(blocks, run?.current_block_id ?? null);
   const block: SprintBlockResponse | undefined = blocks[blockOffset];
   const instanceId = block?.exercise_instance_ids[exerciseOffset];
 
@@ -360,18 +404,24 @@ export function SprintPage() {
       return;
     }
     if (blockOffset + 1 < blocks.length) {
-      setBlockOffset((value) => value + 1);
+      setSelectedBlockOffset(blockOffset + 1);
       setExerciseOffset(0);
       return;
     }
     const response = await complete.mutateAsync({
       runId,
-      data: { reason: "completed_by_learner" },
+      data: {},
     });
     const problem = responseProblem(response);
     if (problem) {
       setError(problem);
       return;
+    }
+    if (run?.plan_kind === "daily") {
+      localStorage.setItem(
+        `polyglot.completed-day.${run.profile_id}`,
+        new Date().toISOString().slice(0, 10),
+      );
     }
     localStorage.removeItem("polyglot.active-run");
     void navigate("/progress");
@@ -450,7 +500,23 @@ export function SprintPage() {
             instanceId={instanceId}
             onDone={() => void next()}
           />
-        ) : null}
+        ) : currentBlock.family === "reflection_close" ? (
+          <section className="exercise-reader reflection-close">
+            <div className="exercise-prompt">
+              Repérez mentalement un mot devenu plus accessible et une
+              structure à reprendre demain.
+            </div>
+            <p>
+              Les réponses, rappels et auto-évaluations de cette séance sont
+              déjà enregistrés dans votre progression.
+            </p>
+            <button type="button" onClick={() => void next()}>
+              Terminer la séance <ArrowRight aria-hidden="true" size={18} />
+            </button>
+          </section>
+        ) : (
+          <ErrorRegion message="Cette étape ne contient aucun exercice exploitable." />
+        )}
         {error ? <ErrorRegion message={error} /> : null}
       </main>
     </div>

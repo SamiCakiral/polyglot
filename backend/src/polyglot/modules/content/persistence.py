@@ -253,9 +253,7 @@ content_approval_decisions = Table(
         "AND content.is_uuid7(reviewer_id)",
         name="ck_content_approval_uuid7",
     ),
-    UniqueConstraint(
-        "content_revision_id", name="uq_content_approval_decision_revision"
-    ),
+    UniqueConstraint("content_revision_id", name="uq_content_approval_decision_revision"),
     schema="content",
 )
 
@@ -446,12 +444,8 @@ command_contexts = Table(
         nullable=False,
         server_default=text("clock_timestamp()"),
     ),
-    CheckConstraint(
-        "content.is_uuid7(command_id)", name="ck_content_command_context_uuid7"
-    ),
-    CheckConstraint(
-        "actor_type = 'account'", name="ck_content_command_context_actor_type"
-    ),
+    CheckConstraint("content.is_uuid7(command_id)", name="ck_content_command_context_uuid7"),
+    CheckConstraint("actor_type = 'account'", name="ck_content_command_context_actor_type"),
     CheckConstraint(
         "command_type IN ('CreateContentDraft','ReviseContentDraft',"
         "'ValidateContentRevision','ApproveContentRevision',"
@@ -631,9 +625,7 @@ class SqlContentRepository:
             raise DomainError(ErrorCode.FORBIDDEN)
 
     @staticmethod
-    def _scope_filter(
-        *, actor_id: UUID, roles: frozenset[str]
-    ) -> ColumnElement[bool]:
+    def _scope_filter(*, actor_id: UUID, roles: frozenset[str]) -> ColumnElement[bool]:
         branches: list[ColumnElement[bool]] = []
         if "author" in roles:
             branches.append(
@@ -727,12 +719,16 @@ class SqlContentRepository:
 
     async def get_revision(self, content_revision_id: UUID) -> StoredContentRevision:
         row = (
-            await self._session.execute(
-                select(content_revisions).where(
-                    content_revisions.c.content_revision_id == content_revision_id
+            (
+                await self._session.execute(
+                    select(content_revisions).where(
+                        content_revisions.c.content_revision_id == content_revision_id
+                    )
                 )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             raise DomainError(ErrorCode.DRAFT_NOT_FOUND)
         return _stored_revision(row)
@@ -768,13 +764,17 @@ class SqlContentRepository:
                 )
             )
         rows = (
-            await self._session.execute(
-                statement.order_by(
-                    content_revisions.c.created_at,
-                    content_revisions.c.content_revision_id,
-                ).limit(limit + 1)
+            (
+                await self._session.execute(
+                    statement.order_by(
+                        content_revisions.c.created_at,
+                        content_revisions.c.content_revision_id,
+                    ).limit(limit + 1)
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         visible = rows[:limit]
         next_cursor = None
         if len(rows) > limit and visible:
@@ -782,9 +782,7 @@ class SqlContentRepository:
             next_cursor = _encode_cursor(
                 "content_drafts", last["created_at"], last["content_revision_id"]
             )
-        return ContentRevisionPage(
-            tuple(_stored_revision(row) for row in visible), next_cursor
-        )
+        return ContentRevisionPage(tuple(_stored_revision(row) for row in visible), next_cursor)
 
     async def get_draft_for_actor(
         self,
@@ -794,18 +792,24 @@ class SqlContentRepository:
         roles: frozenset[str],
     ) -> StoredContentRevision:
         row = (
-            await self._session.execute(
-                select(content_revisions, content_items.c.editorial_owner_id)
-                .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
-                .where(
-                    content_revisions.c.content_revision_id == content_revision_id,
-                    content_revisions.c.status.in_(
-                        ("draft", "validating", "validated", "approved", "rejected")
-                    ),
-                    self._scope_filter(actor_id=actor_id, roles=roles),
+            (
+                await self._session.execute(
+                    select(content_revisions, content_items.c.editorial_owner_id)
+                    .join(
+                        content_items, content_items.c.content_id == content_revisions.c.content_id
+                    )
+                    .where(
+                        content_revisions.c.content_revision_id == content_revision_id,
+                        content_revisions.c.status.in_(
+                            ("draft", "validating", "validated", "approved", "rejected")
+                        ),
+                        self._scope_filter(actor_id=actor_id, roles=roles),
+                    )
                 )
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         return _stored_revision(row)
@@ -838,13 +842,17 @@ class SqlContentRepository:
                 )
             )
         rows = (
-            await self._session.execute(
-                statement.order_by(
-                    content_revisions.c.created_at,
-                    content_revisions.c.content_revision_id,
-                ).limit(limit + 1)
+            (
+                await self._session.execute(
+                    statement.order_by(
+                        content_revisions.c.created_at,
+                        content_revisions.c.content_revision_id,
+                    ).limit(limit + 1)
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         if not rows and cursor is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         visible = rows[:limit]
@@ -854,9 +862,7 @@ class SqlContentRepository:
             next_cursor = _encode_cursor(
                 "content_history", last["created_at"], last["content_revision_id"]
             )
-        return ContentRevisionPage(
-            tuple(_stored_revision(row) for row in visible), next_cursor
-        )
+        return ContentRevisionPage(tuple(_stored_revision(row) for row in visible), next_cursor)
 
     async def get_validation_report_for_actor(
         self,
@@ -866,27 +872,37 @@ class SqlContentRepository:
         roles: frozenset[str],
     ) -> StoredValidationReport:
         row = (
-            await self._session.execute(
-                select(validation_reports, content_items.c.editorial_owner_id)
-                .join(
-                    content_revisions,
-                    content_revisions.c.content_revision_id
-                    == validation_reports.c.subject_revision_id,
+            (
+                await self._session.execute(
+                    select(validation_reports, content_items.c.editorial_owner_id)
+                    .join(
+                        content_revisions,
+                        content_revisions.c.content_revision_id
+                        == validation_reports.c.subject_revision_id,
+                    )
+                    .join(
+                        content_items, content_items.c.content_id == content_revisions.c.content_id
+                    )
+                    .where(validation_reports.c.report_id == report_id)
+                    .where(self._scope_filter(actor_id=actor_id, roles=roles))
                 )
-                .join(content_items, content_items.c.content_id == content_revisions.c.content_id)
-                .where(validation_reports.c.report_id == report_id)
-                .where(self._scope_filter(actor_id=actor_id, roles=roles))
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         if row is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         finding_rows = (
-            await self._session.execute(
-                select(validation_findings)
-                .where(validation_findings.c.report_id == report_id)
-                .order_by(validation_findings.c.ordinal)
+            (
+                await self._session.execute(
+                    select(validation_findings)
+                    .where(validation_findings.c.report_id == report_id)
+                    .order_by(validation_findings.c.ordinal)
+                )
             )
-        ).mappings().all()
+            .mappings()
+            .all()
+        )
         completed_at = row["completed_at"]
         if not isinstance(completed_at, datetime):
             raise DomainError(ErrorCode.INTERNAL_ERROR)
@@ -920,12 +936,16 @@ class SqlContentRepository:
     ) -> tuple[StoredContentItem, StoredContentRevision]:
         revision = await self.get_revision(content_revision_id)
         item_row = (
-            await self._session.execute(
-                select(content_items)
-                .where(content_items.c.content_id == revision.content_id)
-                .with_for_update()
+            (
+                await self._session.execute(
+                    select(content_items)
+                    .where(content_items.c.content_id == revision.content_id)
+                    .with_for_update()
+                )
             )
-        ).mappings().one()
+            .mappings()
+            .one()
+        )
         item = StoredContentItem(
             content_id=item_row["content_id"],
             content_type=item_row["content_type"],
@@ -1120,6 +1140,33 @@ class SqlContentRepository:
         if source_type not in {"fixture", "human_author", "import", "tool"}:
             raise DomainError(ErrorCode.REFERENCE_NOT_FOUND)
 
+    async def ensure_human_provenance(
+        self,
+        *,
+        provenance_id: UUID,
+        actor_id: UUID,
+        source_ref: str,
+        input_fingerprint: str,
+        created_at: datetime,
+    ) -> None:
+        await self._session.execute(
+            text(
+                "INSERT INTO platform.provenance_records "
+                "(provenance_id,source_type,source_ref,created_by_actor_id,tool_revision_id,"
+                "model_code,prompt_revision_id,transformation_chain,input_fingerprint,created_at) "
+                "VALUES (:provenance,'human_author',:source_ref,:actor,NULL,NULL,NULL,"
+                "CAST('[]' AS jsonb),:fingerprint,:created_at) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "provenance": provenance_id,
+                "source_ref": source_ref,
+                "actor": actor_id,
+                "fingerprint": input_fingerprint,
+                "created_at": created_at,
+            },
+        )
+        await self.require_provenance(provenance_id)
+
     async def resolve_published_references(
         self,
         *,
@@ -1137,27 +1184,31 @@ class SqlContentRepository:
             except ValueError:
                 raise DomainError(ErrorCode.REFERENCE_NOT_PUBLISHABLE) from None
             row = (
-                await self._session.execute(
-                    text(
-                        "SELECT skill_revision.skill_revision_id, skill_revision.skill_type, "
-                        "skill_revision.modality, skill_revision.operation, "
-                        "skill_revision.target_ref, skill_revision.scope, "
-                        "skill_revision.load_profile, skill_revision.provenance_id, "
-                        "pack_revision.license_refs "
-                        "FROM catalogue.skill_revisions AS skill_revision "
-                        "JOIN catalogue.language_pack_revisions AS pack_revision "
-                        "ON pack_revision.pack_revision_id = skill_revision.pack_revision_id "
-                        "JOIN catalogue.language_pack_publications AS publication "
-                        "ON publication.pack_revision_id = pack_revision.pack_revision_id "
-                        "WHERE skill_revision.skill_revision_id = :revision_id "
-                        "AND skill_revision.status = 'published' "
-                        "AND pack_revision.status = 'published' "
-                        "AND pack_revision.target_variety_id = :variety_id "
-                        "AND publication.retired_at IS NULL"
-                    ),
-                    {"revision_id": revision_id, "variety_id": variety_id},
+                (
+                    await self._session.execute(
+                        text(
+                            "SELECT skill_revision.skill_revision_id, skill_revision.skill_type, "
+                            "skill_revision.modality, skill_revision.operation, "
+                            "skill_revision.target_ref, skill_revision.scope, "
+                            "skill_revision.load_profile, skill_revision.provenance_id, "
+                            "pack_revision.license_refs "
+                            "FROM catalogue.skill_revisions AS skill_revision "
+                            "JOIN catalogue.language_pack_revisions AS pack_revision "
+                            "ON pack_revision.pack_revision_id = skill_revision.pack_revision_id "
+                            "JOIN catalogue.language_pack_publications AS publication "
+                            "ON publication.pack_revision_id = pack_revision.pack_revision_id "
+                            "WHERE skill_revision.skill_revision_id = :revision_id "
+                            "AND skill_revision.status = 'published' "
+                            "AND pack_revision.status = 'published' "
+                            "AND pack_revision.target_variety_id = :variety_id "
+                            "AND publication.retired_at IS NULL"
+                        ),
+                        {"revision_id": revision_id, "variety_id": variety_id},
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None or not row["license_refs"]:
                 raise DomainError(ErrorCode.REFERENCE_NOT_PUBLISHABLE)
             checksum_payload = {
@@ -1173,9 +1224,7 @@ class SqlContentRepository:
                 PublishedReferenceSnapshot(
                     revision_id=revision_id,
                     reference_kind=kind,
-                    checksum=hashlib.sha256(
-                        canonical_json_bytes(checksum_payload)
-                    ).hexdigest(),
+                    checksum=hashlib.sha256(canonical_json_bytes(checksum_payload)).hexdigest(),
                     provenance_id=row["provenance_id"],
                     rights_ref=row["license_refs"][0],
                 )

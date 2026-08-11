@@ -1,15 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "lexicon.read_session_scope output",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "senses",
-    "forms",
-    "session_roles",
-    "familiarity",
-    "constraints",
-    "provenance"
+    "snapshot_id"
   ],
   "properties": {
     "senses": {
@@ -17,39 +12,11 @@
       "maxItems": 200,
       "items": {
         "type": "string",
+        "minLength": 0,
         "maxLength": 128
       }
     },
-    "forms": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
-    },
-    "session_roles": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
-    },
-    "familiarity": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 20000
-    },
-    "constraints": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
-    },
-    "provenance": {
+    "snapshot_id": {
       "type": "string",
       "minLength": 1,
       "maxLength": 20000

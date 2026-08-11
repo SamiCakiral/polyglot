@@ -65,8 +65,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Entrée** : `profile_id`, `purpose` parmi `session_authoring`,
   `correction_review`, `recommendation_explanation`, et `field_groups[]` parmi
   `goals`, `constraints`, `mastery_summary`, `due_summary`, `module_position`.
-- **Sortie** : profil pseudonymisé, variétés, objectifs, contraintes, résumés
-  agrégés, versions et date de coupure. Jamais réponse brute, contexte lexical
+- **Sortie MVP** : `profile_id`, groupes autorisés, indicateur de
+  pseudonymisation et date de coupure. Jamais réponse brute, contexte lexical
   privé, email, identité ou audio.
 - **Effet/idempotence/limite** : aucun ; cache privé 60 s ; 100 facettes agrégées.
 - **Erreurs** : `mandate_missing`, `field_group_forbidden`, `profile_deleted`.
@@ -79,8 +79,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Entrée** : `pack_revision_id`, filtres optionnels `target_types[]`,
   `modality`, `operation`, `prerequisite_of`, `status=published`, `cursor`,
   `limit<=200`.
-- **Sortie** : IDs/révisions, libellés éditoriaux, prérequis, protocoles de
-  preuve, charge et curseur suivant.
+- **Sortie MVP** : références de cibles, curseur nullable et indicateur de
+  stabilité pour la révision demandée.
 - **Effet/idempotence** : aucun ; résultat stable pour révision et curseur.
 - **Erreurs** : `pack_not_published`, `cursor_invalid`, `filter_invalid`.
 - **Positif** : liste les structures italiennes publiées de production écrite.
@@ -91,9 +91,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Rôle** : propriétaire ou auteur mandaté pour le plan.
 - **Entrée** : `profile_id`, `planning_snapshot_id`, `roles[]`,
   `target_refs[]`, `list_snapshot_ids[]`, `max_senses<=200`.
-- **Sortie** : sens/révisions autorisés, formes utiles, rôle de session,
-  familiarité agrégée, contraintes de registre et provenance éditoriale. Les
-  notes privées ne sont jamais retournées à un auteur.
+- **Sortie MVP** : références de sens autorisées et identifiant du snapshot
+  retenu. Les notes privées ne sont jamais retournées à un auteur.
 - **Effet/idempotence** : aucun ; snapshot obligatoire et immuable.
 - **Erreurs** : `snapshot_stale`, `sense_out_of_scope`, `private_context_forbidden`.
 - **Positif** : renvoie 8 sens `new` et 12 sens `support` du snapshot.
@@ -104,8 +103,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Rôle** : `author`, `reviewer` ou runner de certification.
 - **Entrée** : `primitive_id`, `primitive_contract_version`,
   `language_pack_revision_id`, `mode`, capacités d'accessibilité demandées.
-- **Sortie** : schémas stimulus/réponse/cibles, stratégies de correction
-  autorisées, aides, contraintes d'observation, budgets et fixtures minimales.
+- **Sortie MVP** : primitive, version du contrat, stratégies de correction et
+  preuve explicite que le blueprint ne peut pas publier.
 - **Effet/idempotence** : aucun ; 1 blueprint par appel.
 - **Erreurs** : `primitive_unknown`, `language_not_certified`, `mode_unsupported`.
 - **Positif** : récupère le blueprint `controlled_transformation` italien.
@@ -117,8 +116,9 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Entrée** : `reserved_draft_id?`, `pack_revision_id`, `primitive_id`,
   `blueprint_version`, `stimulus`, `response_contract`, `target_bindings`,
   `accepted_answers_or_rubric`, `hints`, `difficulty_profile`, `provenance_inputs`.
-- **Sortie** : `draft_id`, révision 1, findings de schéma immédiats, références
-  résolues et checksum. Statut toujours `draft`.
+- **Sortie** : `draft_id`, type, révision 1, findings de schéma immédiats et
+  checksum. Statut toujours `draft`, avec capacités de publication et de
+  maîtrise explicitement à `false`.
 - **Idempotence/limites** : clé obligatoire ; 100 cibles, 100 réponses acceptées,
   20 aides maximum ; timeout 60 s.
 - **Erreurs** : `blueprint_mismatch`, `target_not_published`,
@@ -132,9 +132,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Rôle** : `author` ou `reviewer` ; `side_effect=create_validation_report`.
 - **Entrée** : `draft_revision_id`, `validator_profile_id`,
   `validator_revision_ids[]`, `requested_checks[]`, `seed`.
-- **Sortie** : rapport immuable, findings triés `{severity, path, code,
-  evidence_refs}`, couverture des validateurs et décision
-  `passed|failed|human_required`.
+- **Sortie MVP** : identifiant de rapport immuable, findings, décision
+  `passed|failed|human_required` et indicateur de troncature.
 - **Idempotence/limites** : une clé par tuple de révisions ; 10 000 findings
   maximum puis `report_truncated=true` ; timeout 30 s logique.
 - **Erreurs** : `validator_unavailable`, `draft_not_found`,
@@ -148,8 +147,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Rôle** : `author` ; `side_effect=create_module_draft`.
 - **Entrée** : pack, identité du module, public, objectifs, prérequis, politique
   de sortie, `day_draft_refs[]`, longueur min/max, contexte et provenance.
-- **Sortie** : module brouillon, graphe résolu, charge totale, findings de
-  cohérence et checksum.
+- **Sortie MVP** : identifiant de brouillon module, révision, findings et
+  checksum, sans capacité de publication ni d'attribution de maîtrise.
 - **Idempotence/limites** : 31 jours et 500 cibles maximum ; clé obligatoire.
 - **Erreurs** : `prerequisite_cycle`, `day_revision_invalid`,
   `module_exit_unmeasurable`, `load_budget_exceeded`.
@@ -162,8 +161,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Rôle** : `author` ; `side_effect=create_day_draft`.
 - **Entrée** : `module_draft_id`, ordinal, arc, contexte, objectifs, nouveautés,
   rappels, besoins J+1, listes, compositions 10..60 minutes et provenance.
-- **Sortie** : journée brouillon, plans de référence, validation des budgets,
-  cibles observables et checksum.
+- **Sortie MVP** : identifiant de brouillon journée, révision, findings et
+  checksum, sans capacité de publication ni d'attribution de maîtrise.
 - **Idempotence/limites** : 60 blocs candidats, 200 sens, 20 cibles nouvelles ;
   clé et version du module obligatoires.
 - **Erreurs** : `budget_infeasible`, `novelty_limit_exceeded`,
@@ -179,9 +178,9 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Entrée** : `attempt_id`, `attempt_version`, `strategy`, `verdict`,
   `criterion_scores`, `error_codes`, `proposed_answer`, `alternatives`,
   `explanation_codes`, `confidence`, `target_observations[]`, provenance.
-- **Sortie** : correction brouillon et validation : couverture des critères,
-  observations candidates, conflits et besoin de revue. Elle n'est jamais
-  courante avant la commande métier de revue.
+- **Sortie MVP** : identifiant de correction brouillon, révision, findings et
+  checksum. Elle ne devient jamais courante avant la commande métier de revue
+  et ne peut ni publier ni attribuer de maîtrise.
 - **Idempotence/limites** : 50 erreurs, 20 alternatives, 100 observations ;
   réponse brute accessible uniquement dans la portée de la tentative.
 - **Erreurs** : `attempt_not_submitted`, `rubric_mismatch`,
@@ -197,8 +196,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Entrée** : `resource_ref`, `resource_revision_id`, `ambiguity_type`,
   `location`, `description`, `candidate_interpretations[]`, contexte privé
   facultatif explicitement consenti.
-- **Sortie** : signalement, fingerprint de déduplication, visibilité, statut et
-  signalement existant éventuel.
+- **Sortie MVP** : identifiant de signalement, fingerprint de déduplication,
+  visibilité et statut `open`.
 - **Idempotence/limites** : 10 interprétations, description 4 000 caractères ;
   les doublons relient le reporter sans dupliquer le dossier.
 - **Erreurs** : `resource_revision_missing`, `private_context_not_consented`,
@@ -212,9 +211,8 @@ et `internal_error`. `retryable=false` par défaut ; aucun retry n'est automatiq
 - **Rôle** : propriétaire ou support mandaté en lecture ; aucun effet.
 - **Entrée** : `profile_id`, `recommendation_id`, `as_of_projection_version`,
   `detail_level` parmi `summary`, `evidence`, `policy`.
-- **Sortie** : raison bornée, cibles, faits autorisés, politique, alternatives et
-  conditions de disparition de la recommandation. Le texte est rendu depuis des
-  codes ; aucun raisonnement privé de modèle n'est exposé.
+- **Sortie MVP** : identifiant de recommandation, codes de raison, faits
+  autorisés et alternatives. Aucun raisonnement privé de modèle n'est exposé.
 - **Idempotence/limites** : 100 références de preuve, contextes privés masqués.
 - **Erreurs** : `projection_version_unavailable`, `recommendation_expired`,
   `evidence_scope_forbidden`.

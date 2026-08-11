@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +12,7 @@ EXPECTED_TABLES = {
     "authoring_artifacts",
     "runner_transcripts",
 }
+TOOL_CONTRACTS = Path(__file__).resolve().parents[4] / "contracts" / "tools"
 
 
 async def test_migration_seeds_exactly_eleven_closed_tools(
@@ -27,6 +31,20 @@ async def test_migration_seeds_exactly_eleven_closed_tools(
     count = await migration_session.scalar(text("SELECT count(*) FROM generation.tool_revisions"))
     assert tables == EXPECTED_TABLES
     assert count == 11
+
+    rows = (
+        await migration_session.execute(
+            text("SELECT tool_name,input_schema,output_schema FROM generation.tool_revisions")
+        )
+    ).mappings()
+    for row in rows:
+        name = row["tool_name"]
+        assert row["input_schema"] == json.loads(
+            (TOOL_CONTRACTS / f"{name}.input.schema.json").read_text()
+        )
+        assert row["output_schema"] == json.loads(
+            (TOOL_CONTRACTS / f"{name}.output.schema.json").read_text()
+        )
 
 
 async def test_generation_tables_force_rls_and_expose_no_publish_switch(

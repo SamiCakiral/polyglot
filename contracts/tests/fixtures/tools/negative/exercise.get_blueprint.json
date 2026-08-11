@@ -1,24 +1,23 @@
 {
-  "id": "exercise.get_blueprint.negative",
-  "kind": "negative",
   "tool_name": "exercise.get_blueprint",
+  "kind": "negative",
   "input": {
     "primitive_id": "x",
     "primitive_contract_version": 1,
     "language_pack_revision_id": "x",
     "mode": "x",
-    "accessibility_capabilities": [],
-    "unexpected_field": true
+    "accessibility_capabilities": []
   },
   "output": {
-    "stimulus_schema": {},
-    "response_schema": {},
-    "target_schema": {},
-    "correction_strategies": [],
-    "hints": [],
-    "observation_constraints": [],
-    "budgets": [],
-    "fixtures": []
+    "primitive_id": "x",
+    "contract_version": 1,
+    "correction_strategies": [
+      "deterministic",
+      "rubric"
+    ],
+    "publish_capability": false,
+    "forbidden_effect": "publish"
   },
+  "id": "exercise.get_blueprint.negative",
   "expected_error": "additional property"
 }

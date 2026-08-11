@@ -1,57 +1,44 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "progress.explain_recommendation output",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "reason",
-    "targets",
-    "authorized_facts",
-    "policy",
-    "alternatives",
-    "disappearance_conditions"
+    "recommendation_id",
+    "reason_codes",
+    "facts",
+    "alternatives"
   ],
   "properties": {
-    "reason": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+    "recommendation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
     },
-    "targets": {
+    "reason_codes": {
       "type": "array",
       "maxItems": 200,
       "items": {
         "type": "string",
+        "minLength": 0,
         "maxLength": 128
       }
     },
-    "authorized_facts": {
+    "facts": {
       "type": "array",
       "maxItems": 200,
       "items": {
         "type": "string",
-        "maxLength": 128
+        "minLength": 0,
+        "maxLength": 20000
       }
-    },
-    "policy": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
     },
     "alternatives": {
       "type": "array",
       "maxItems": 20,
       "items": {
         "type": "string",
+        "minLength": 0,
         "maxLength": 20000
-      }
-    },
-    "disappearance_conditions": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
       }
     }
   }

@@ -3,6 +3,14 @@ import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: [
+      {
+        find: /^lucide-react$/,
+        replacement: "/src/lib/icons.ts",
+      },
+    ],
+  },
   server: {
     fs: {
       allow: [".."],

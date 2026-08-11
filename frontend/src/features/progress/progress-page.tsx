@@ -10,6 +10,7 @@ import {
   PageHeader,
   StatusPill,
 } from "../../components/product-ui";
+import type { MasteryFacetResponse } from "../../generated/model";
 import { useGetProgressOverview } from "../../generated/polyglot";
 import { queryFetch } from "../../lib/api";
 
@@ -30,6 +31,64 @@ const statusLabels: Record<string, string> = {
   not_evaluable: "Non évaluable",
 };
 
+const assessmentBandLabels: Record<string, string> = {
+  assess_b0: "Palier 0",
+  assess_b1: "Palier 1",
+  assess_b2: "Palier 2",
+  assess_b3: "Palier 3",
+  assess_b4: "Palier 4",
+};
+
+const operationLabels: Record<string, string> = {
+  interact: "Interagir à l'oral",
+  produce: "Produire",
+  recall: "Rappeler activement",
+  recognize: "Reconnaître",
+  repair: "Corriger",
+  transform: "Transformer",
+};
+
+function aggregateFacets(
+  facets: MasteryFacetResponse[],
+): MasteryFacetResponse[] {
+  const grouped = new Map<string, MasteryFacetResponse[]>();
+  for (const facet of facets) {
+    const key = `${facet.facet_key}:${facet.modality}:${facet.operation}`;
+    grouped.set(key, [...(grouped.get(key) ?? []), facet]);
+  }
+  return [...grouped.values()].flatMap((items) => {
+    const first = items[0];
+    if (!first) return [];
+    const totalMass = items.reduce((sum, item) => sum + item.effective_mass, 0);
+    const weighted = (field: "mastery_base" | "mastery_current" | "confidence" | "freshness") =>
+      items.reduce(
+        (sum, item) =>
+          sum + item[field] * (totalMass > 0 ? item.effective_mass : 1),
+        0,
+      ) / (totalMass > 0 ? totalMass : items.length);
+    return [{
+      ...first,
+      confidence: weighted("confidence"),
+      context_count: items.reduce((sum, item) => sum + item.context_count, 0),
+      delay_band_count: items.reduce(
+        (sum, item) => sum + item.delay_band_count,
+        0,
+      ),
+      effective_mass: totalMass,
+      evidence_ids: [...new Set(items.flatMap((item) => item.evidence_ids))],
+      failure_count: items.reduce((sum, item) => sum + item.failure_count, 0),
+      freshness: weighted("freshness"),
+      mastery_base: weighted("mastery_base"),
+      mastery_current: weighted("mastery_current"),
+      session_count: items.reduce((sum, item) => sum + item.session_count, 0),
+      success_count: items.reduce((sum, item) => sum + item.success_count, 0),
+      target_id: first.facet_key,
+      target_type: "compétence agrégée",
+      transfer_count: items.reduce((sum, item) => sum + item.transfer_count, 0),
+    }];
+  });
+}
+
 export function ProgressPage() {
   const { activeProfile } = useActiveProfile();
   const query = useGetProgressOverview(
@@ -41,6 +100,7 @@ export function ProgressPage() {
     },
   );
   const overview = query.data?.status === 200 ? query.data.data : null;
+  const facets = aggregateFacets(overview?.facets ?? []);
   if (!activeProfile) return <NoProfile />;
   if (query.isPending)
     return <LoadingRegion label="Calcul de la progression" />;
@@ -98,6 +158,27 @@ export function ProgressPage() {
                 {modality.observed_facet_count} compétences observées sur{" "}
                 {modality.expected_facet_count}
               </small>
+              {modality.assessment_status ? (
+                <div className="assessment-calibration">
+                  <span>Dernier test indépendant</span>
+                  {modality.assessment_status === "not_evaluable" ? (
+                    <strong>Non évaluable</strong>
+                  ) : (
+                    <strong>
+                      {Math.round((modality.assessment_score ?? 0) * 100)} / 100
+                      {modality.assessment_band
+                        ? ` · ${assessmentBandLabels[modality.assessment_band] ?? modality.assessment_band}`
+                        : ""}
+                    </strong>
+                  )}
+                  {modality.assessment_confidence !== null ? (
+                    <small>
+                      Confiance du test{" "}
+                      {Math.round((modality.assessment_confidence ?? 0) * 100)} %
+                    </small>
+                  ) : null}
+                </div>
+              ) : null}
             </article>
           );
         })}
@@ -108,20 +189,26 @@ export function ProgressPage() {
             <p className="eyebrow">Compétences observées</p>
             <h2>Détail des acquis</h2>
           </div>
-          <span>{overview?.facets.length ?? 0} facettes</span>
+          <span>{facets.length} compétences</span>
         </div>
         <div className="skill-ledger__rows">
-          {(overview?.facets ?? []).slice(0, 12).map((facet) => (
-            <div key={facet.facet_key}>
+          {facets.slice(0, 12).map((facet) => (
+            <div
+              key={`${facet.facet_key}:${facet.modality}:${facet.operation}`}
+            >
               <span>
                 <Link
                   to={`/progress/skills/${encodeURIComponent(facet.facet_key)}`}
                 >
-                  <strong>{facet.operation.replaceAll("_", " ")}</strong>
+                  <strong>
+                    {operationLabels[facet.operation] ??
+                      facet.operation.replaceAll("_", " ")}
+                  </strong>
                 </Link>
                 <small>
                   {modalityMeta[facet.modality]?.label ?? facet.modality} ·{" "}
-                  {facet.context_count} contextes
+                  {facet.context_count} contexte
+                  {facet.context_count > 1 ? "s" : ""}
                 </small>
               </span>
               <Meter label="Maîtrise actuelle" value={facet.mastery_current} />
@@ -168,14 +255,19 @@ export function ProgressSkillDetailPage() {
   if (query.isPending)
     return <LoadingRegion label="Ouverture de la compétence" />;
   const overview = query.data?.status === 200 ? query.data.data : null;
-  const facet = overview?.facets.find((item) => item.facet_key === skillId);
+  const facet = aggregateFacets(overview?.facets ?? []).find(
+    (item) => item.facet_key === skillId,
+  );
 
   return (
     <div className="page-flow page-flow--narrow">
       <PageHeader
         eyebrow="Preuves de progression"
         title={
-          facet?.operation.replaceAll("_", " ") ?? "Détail de la compétence"
+          (facet
+            ? operationLabels[facet.operation] ??
+              facet.operation.replaceAll("_", " ")
+            : null) ?? "Détail de la compétence"
         }
         description={
           facet

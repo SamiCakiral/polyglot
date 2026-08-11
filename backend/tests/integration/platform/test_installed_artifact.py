@@ -31,6 +31,8 @@ def test_installed_wheel_contains_contracts_and_runs_its_own_migrations(
         "polyglot/migrations/versions/0003_catalogue.py",
         "polyglot/platform/contracts/envelope.schema.json",
         "polyglot/platform/contracts/event-catalogue.yaml",
+        "polyglot/interfaces/tools/contracts/exercise.submit_draft.input.schema.json",
+        "polyglot/interfaces/tools/contracts/exercise.submit_draft.output.schema.json",
     } <= names
 
     target = tmp_path / "installed"

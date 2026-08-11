@@ -1,5 +1,7 @@
 """Application boundary for the W03 profile, diagnostic, and foundation flows."""
 
+import re
+import unicodedata
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -126,6 +128,14 @@ class LanguageProfileApplicationService:
         value = answer.get("value")
         return value if isinstance(value, str) else None
 
+    @staticmethod
+    def _normalized_foundation_answer(value: str) -> str:
+        decomposed = unicodedata.normalize("NFKD", value.casefold().strip())
+        without_marks = "".join(
+            character for character in decomposed if not unicodedata.combining(character)
+        )
+        return re.sub(r"[^a-z0-9]+", "_", without_marks).strip("_")
+
     @classmethod
     def _score_item(
         cls, item: PublishedFoundationItem, answer: dict[str, JsonValue]
@@ -136,10 +146,24 @@ class LanguageProfileApplicationService:
         if value is None:
             return 0.0, True
         if item.checker_kind is FoundationCheckerKind.NORMALIZED_ALTERNATIVES:
-            normalized = "_".join(value.casefold().strip().split())
-            expected = {"_".join(item.casefold().strip().split()) for item in item.checker_values}
+            normalized = cls._normalized_foundation_answer(value)
+            expected = {
+                cls._normalized_foundation_answer(item) for item in item.checker_values
+            }
             return float(normalized in expected), True
-        return float(value in item.checker_values), True
+        if item.checker_kind is FoundationCheckerKind.EXACT_RECONSTRUCTION:
+            normalized = cls._normalized_foundation_answer(value)
+            expected = {
+                cls._normalized_foundation_answer(item) for item in item.checker_values
+            }
+            return float(normalized in expected), True
+        if value in item.checker_values:
+            return 1.0, True
+        normalized = cls._normalized_foundation_answer(value)
+        expected = {
+            cls._normalized_foundation_answer(item) for item in item.checker_values
+        }
+        return float(normalized in expected), True
 
     @staticmethod
     def _foundation_block(code: str) -> FoundationBlock:

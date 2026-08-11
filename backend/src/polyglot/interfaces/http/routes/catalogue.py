@@ -310,6 +310,22 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
             "ci_sono": "Ci sono",
             "ce": "C'è",
         }
+        teaching_surfaces = {
+            "chi_giro": "chi / giro",
+            "coro_gomma": "coro / gomma",
+            "cane_gente": "cane / gente",
+            "cibo_gufo": "cibo / gufo",
+            "che_gemma": "che / gemma",
+            "cuore_gioco": "cuore / gioco",
+            "camera_giacca": "camera / giacca",
+            "coda_giorno": "coda / giorno",
+            "buongiorno_sono_luca": "Buongiorno, sono Luca.",
+            "puo_ripetere": "Può ripetere?",
+            "non_capisco": "Non capisco.",
+            "puo_parlare_piu_lentamente": "Può parlare più lentamente?",
+            "come_si_dice": "Come si dice?",
+            "puo_scriverlo": "Può scriverlo?",
+        }
         activities: list[FoundationActivityResponse] = []
         global_ordinal = 1
         for block in catalogue.definition.blocks:
@@ -335,7 +351,11 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
                         prompt=prompts[block.block_code],
                         response_kind="choice" if choices else "text",
                         modality=item.modalities[0],
-                        teaching_value=teaching_value,
+                        teaching_value=(
+                            teaching_surfaces.get(teaching_value, teaching_value)
+                            if teaching_value is not None
+                            else None
+                        ),
                         choices=choices,
                     )
                 )

@@ -28,7 +28,12 @@ INSTANCE_ID = uid(5)
 ATTEMPT_ID = uid(6)
 
 
-async def seed_attempt(session: AsyncSession) -> None:
+async def seed_attempt(
+    session: AsyncSession,
+    *,
+    primitive_id: str = "EX-RECALL-01",
+    response_kinds: str = '["self_grade"]',
+) -> None:
     await session.execute(
         text(
             "INSERT INTO identity.accounts "
@@ -76,7 +81,7 @@ async def seed_attempt(session: AsyncSession) -> None:
             "prerequisite_skill_revision_ids,correction_policy_id,hint_policy_id,"
             "observation_policy_id,accessibility_features,min_duration_ms,p50_duration_ms,"
             "p80_duration_ms,example_revision_ids,provenance_id,created_at) VALUES "
-            "(:revision,:definition,1,1,'EX-RECALL-01','published','[\"self_grade\"]',"
+            "(:revision,:definition,1,1,:primitive,'published',CAST(:response_kinds AS jsonb),"
             "'[]','[\"cards\"]','[[\"lexical\",0.55]]','{}','{}','[]','{}','[]',"
             "'correction:v1','hint:v1','observation:v1',"
             "'[\"keyboard\",\"screen_reader\",\"untimed\"]',1000,2000,3000,'[]',"
@@ -85,6 +90,8 @@ async def seed_attempt(session: AsyncSession) -> None:
         {
             "revision": DEFINITION_REVISION_ID,
             "definition": DEFINITION_ID,
+            "primitive": primitive_id,
+            "response_kinds": response_kinds,
             "provenance": uid(22),
             "now": NOW,
         },

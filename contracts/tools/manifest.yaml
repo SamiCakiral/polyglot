@@ -29,14 +29,10 @@
         "field_groups"
       ],
       "output": [
-        "profile",
-        "varieties",
-        "goals",
-        "constraints",
-        "mastery_summary",
-        "due_summary",
-        "module_position",
-        "cutoff_at"
+        "profile_id",
+        "field_groups",
+        "pseudonymized",
+        "cutoff"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -60,8 +56,7 @@
         "author",
         "reviewer",
         "support",
-        "admin",
-        "worker"
+        "admin"
       ],
       "side_effect": "none",
       "input": [
@@ -76,7 +71,8 @@
       ],
       "output": [
         "targets",
-        "next_cursor"
+        "next_cursor",
+        "stable"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -110,11 +106,7 @@
       ],
       "output": [
         "senses",
-        "forms",
-        "session_roles",
-        "familiarity",
-        "constraints",
-        "provenance"
+        "snapshot_id"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -147,14 +139,10 @@
         "accessibility_capabilities"
       ],
       "output": [
-        "stimulus_schema",
-        "response_schema",
-        "target_schema",
+        "primitive_id",
+        "contract_version",
         "correction_strategies",
-        "hints",
-        "observation_constraints",
-        "budgets",
-        "fixtures"
+        "publish_capability"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -192,11 +180,13 @@
       ],
       "output": [
         "draft_id",
+        "draft_type",
         "revision",
+        "status",
         "findings",
-        "resolved_references",
         "checksum",
-        "status"
+        "publish_capability",
+        "mastery_capability"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -231,10 +221,9 @@
         "seed"
       ],
       "output": [
-        "report_id",
-        "findings",
-        "coverage",
+        "validation_report_id",
         "decision",
+        "findings",
         "report_truncated"
       ],
       "limits": {
@@ -271,11 +260,14 @@
         "provenance"
       ],
       "output": [
-        "module_draft",
-        "resolved_graph",
-        "total_load",
+        "draft_id",
+        "draft_type",
+        "revision",
+        "status",
         "findings",
-        "checksum"
+        "checksum",
+        "publish_capability",
+        "mastery_capability"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -315,11 +307,14 @@
         "expected_version"
       ],
       "output": [
-        "day_draft",
-        "reference_plans",
-        "budget_validation",
-        "observable_targets",
-        "checksum"
+        "draft_id",
+        "draft_type",
+        "revision",
+        "status",
+        "findings",
+        "checksum",
+        "publish_capability",
+        "mastery_capability"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -361,11 +356,14 @@
         "provenance"
       ],
       "output": [
-        "correction_draft",
-        "criterion_coverage",
-        "candidate_observations",
-        "conflicts",
-        "review_required"
+        "draft_id",
+        "draft_type",
+        "revision",
+        "status",
+        "findings",
+        "checksum",
+        "publish_capability",
+        "mastery_capability"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -403,11 +401,10 @@
         "private_context_consent"
       ],
       "output": [
-        "report_id",
-        "deduplication_fingerprint",
-        "visibility",
+        "quality_report_id",
         "status",
-        "existing_report_id"
+        "visibility",
+        "deduplication_fingerprint"
       ],
       "limits": {
         "max_input_bytes": 262144,
@@ -439,12 +436,10 @@
         "detail_level"
       ],
       "output": [
-        "reason",
-        "targets",
-        "authorized_facts",
-        "policy",
-        "alternatives",
-        "disappearance_conditions"
+        "recommendation_id",
+        "reason_codes",
+        "facts",
+        "alternatives"
       ],
       "limits": {
         "max_input_bytes": 262144,

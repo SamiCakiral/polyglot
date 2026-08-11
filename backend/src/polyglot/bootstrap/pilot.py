@@ -397,7 +397,7 @@ async def _seed_exercises_and_module(
     selected_ids = {
         1: {"ITP-D1-01", "ITP-D1-03", "ITP-D1-04", "ITP-D1-06", "ITP-D1-07", "ITP-D1-10", "ITP-D1-11"},
         2: {"ITP-D2-02", "ITP-D2-05", "ITP-D2-06", "ITP-D2-07", "ITP-D2-08", "ITP-D2-10", "ITP-D2-11"},
-        3: {"ITP-D3-02", "ITP-D3-04", "ITP-D3-05", "ITP-D3-07", "ITP-D3-08", "ITP-D3-11", "ITP-D3-12"},
+        3: {"ITP-D3-04", "ITP-D3-05", "ITP-D3-07", "ITP-D3-08", "ITP-D3-10", "ITP-D3-11", "ITP-D3-12"},
     }
     selected = [item for item in exercise_payload if item["id"] in selected_ids[int(item["day"])]]
     prompts = {
@@ -415,7 +415,7 @@ async def _seed_exercises_and_module(
     }
     activity_content = {
         "ITP-D1-01": ("Lisez à voix haute : buongiorno, salve, piacere, grazie, prego, scusi et arrivederci.", "Buongiorno, piacere. Arrivederci!"),
-        "ITP-D1-03": ("Vous rencontrez Giulia. Présentez-vous avec votre prénom.", "Buongiorno, mi chiamo Sami. Piacere."),
+        "ITP-D1-03": ("Le moule « mi chiamo + prénom » sert à se présenter. Reformulez : Sono Sami.", "Mi chiamo Sami."),
         "ITP-D1-04": ("Répétez trois fois : Buongiorno, mi chiamo Sami. Piacere.", "Buongiorno, mi chiamo Sami. Piacere."),
         "ITP-D1-06": ("Remplacez la présentation directe par une présentation avec « mi chiamo » : Sono Sami.", "Mi chiamo Sami."),
         "ITP-D1-07": ("Répondez à une personne qui se présente, puis terminez poliment l'échange.", "Piacere, mi chiamo Sami. Arrivederci!"),
@@ -426,13 +426,14 @@ async def _seed_exercises_and_module(
         "ITP-D2-06": ("Répétez trois fois en soignant c et g : Vorrei un caffè e un bicchiere d'acqua.", "Vorrei un caffè e un bicchiere d'acqua."),
         "ITP-D2-07": ("Au café, commandez une boisson puis demandez si vous pouvez payer par carte.", "Vorrei un caffè. Posso pagare con la carta?"),
         "ITP-D2-08": ("Traduisez en français : Scusi, c'è un bagno qui?", "Excusez-moi, y a-t-il des toilettes ici ?"),
-        "ITP-D2-10": ("Rendez cette demande plus naturelle : Voglio il conto.", "Vorrei il conto, per favore."),
+        "ITP-D2-10": ("Le moule « vorrei + nom » adoucit une demande. Reformulez : Voglio il conto.", "Vorrei il conto, per favore."),
         "ITP-D2-11": ("Réécrivez en italien : Bonjour, je m'appelle Luca. Enchanté.", "Buongiorno, mi chiamo Luca. Piacere."),
         "ITP-D3-02": ("Lisez à voix haute : Ho bisogno di aiuto. Può parlare lentamente?", "Ho bisogno di aiuto. Può parlare lentamente?"),
         "ITP-D3-04": ("Répétez trois fois : Scusi, può dirmi dov'è la stazione?", "Scusi, può dirmi dov'è la stazione?"),
         "ITP-D3-05": ("Transformez « Parla lentamente » en demande formelle avec « può ».", "Può parlare lentamente, per favore?"),
         "ITP-D3-07": ("Demandez où se trouve la gare puis demandez à votre interlocuteur de répéter.", "Scusi, dov'è la stazione? Può ripetere, per favore?"),
         "ITP-D3-08": ("Vous êtes perdu près de la gare. Demandez de l'aide, reformulez si nécessaire et confirmez la direction.", "Scusi, ho bisogno di aiuto. Dov'è la stazione? È diretto?"),
+        "ITP-D3-10": ("Le moule « può + infinitif » transforme un ordre en demande formelle. Reformulez : Parla lentamente.", "Può parlare lentamente, per favore?"),
         "ITP-D3-11": ("Réécrivez en italien : Je voudrais un café et l'addition, s'il vous plaît.", "Vorrei un caffè e il conto, per favore."),
         "ITP-D3-12": ("Traduisez en français : Scusi, ho bisogno di aiuto. Può parlare lentamente?", "Excusez-moi, j'ai besoin d'aide. Pouvez-vous parler lentement ?"),
     }

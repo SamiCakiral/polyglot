@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import asdict, is_dataclass
 from datetime import UTC, datetime, timedelta
 from enum import Enum
@@ -28,6 +29,7 @@ from polyglot.modules.exercises.core.application import (
 from polyglot.modules.exercises.core.domain import (
     Answer,
     AnswerKind,
+    CorrectionResult,
     CorrectionVerdict,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
@@ -39,7 +41,7 @@ from polyglot.platform.json_types import JsonValue
 def _encode(value: Any) -> JsonValue:
     if is_dataclass(value) and not isinstance(value, type):
         return _encode(asdict(value))
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {str(key): _encode(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
         return [_encode(item) for item in value]
@@ -418,6 +420,22 @@ class SqlExerciseService:
                 )
             revision_no = 1 if current is None else int(str(current["revision_no"])) + 1
             result = command.result
+            if learner_self_assessment:
+                primitive_id = await session.scalar(
+                    text(
+                        "SELECT revision.primitive_id FROM exercises.exercise_attempts attempt "
+                        "JOIN exercises.exercise_instances instance ON "
+                        "instance.instance_id=attempt.instance_id "
+                        "JOIN exercises.exercise_definition_revisions revision ON "
+                        "revision.definition_revision_id=instance.definition_revision_id "
+                        "WHERE attempt.attempt_id=:attempt"
+                    ),
+                    {"attempt": attempt_id},
+                )
+                if str(primitive_id).startswith("EX-ORAL"):
+                    result = CorrectionResult.not_evaluable(
+                        "oral self-assessment requires human review"
+                    )
             provenance_id = command.provenance_id
             if provenance_id is None:
                 raw_provenance_id = await session.scalar(

@@ -1,20 +1,15 @@
 {
-  "id": "profile.read_authorized.positive",
-  "kind": "positive",
   "tool_name": "profile.read_authorized",
+  "kind": "positive",
   "input": {
     "profile_id": "x",
     "purpose": "session_authoring",
     "field_groups": []
   },
   "output": {
-    "profile": {},
-    "varieties": [],
-    "goals": [],
-    "constraints": [],
-    "mastery_summary": {},
-    "due_summary": {},
-    "module_position": {},
-    "cutoff_at": "x"
+    "profile_id": "x",
+    "field_groups": [],
+    "pseudonymized": true,
+    "cutoff": "fixture-clock"
   }
 }

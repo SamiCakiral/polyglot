@@ -1,22 +1,18 @@
 {
-  "id": "profile.read_authorized.negative",
-  "kind": "negative",
   "tool_name": "profile.read_authorized",
+  "kind": "negative",
   "input": {
     "profile_id": "x",
     "purpose": "session_authoring",
-    "field_groups": [],
-    "unexpected_field": true
+    "field_groups": []
   },
   "output": {
-    "profile": {},
-    "varieties": [],
-    "goals": [],
-    "constraints": [],
-    "mastery_summary": {},
-    "due_summary": {},
-    "module_position": {},
-    "cutoff_at": "x"
+    "profile_id": "x",
+    "field_groups": [],
+    "pseudonymized": true,
+    "cutoff": "fixture-clock",
+    "forbidden_effect": "publish"
   },
+  "id": "profile.read_authorized.negative",
   "expected_error": "additional property"
 }

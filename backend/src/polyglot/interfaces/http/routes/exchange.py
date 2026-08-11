@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 from datetime import datetime
 from typing import Annotated, Any, Protocol
@@ -899,7 +900,9 @@ def exchange_router(
             next_cursor=next_cursor,
         )
 
-    def make_list_endpoint(resource_type: str):
+    def make_list_endpoint(
+        resource_type: str,
+    ) -> Callable[..., Awaitable[ResourcePageResponse]]:
         async def list_endpoint(
             request: Request,
             profile_id: Annotated[UUID | None, Query()] = None,
@@ -934,7 +937,9 @@ def exchange_router(
             responses=PROBLEM_RESPONSES,
         )
 
-    def make_get_endpoint(resource_type: str):
+    def make_get_endpoint(
+        resource_type: str,
+    ) -> Callable[..., Awaitable[dict[str, JsonValue]]]:
         async def get_endpoint(
             id: UUID,
             request: Request,

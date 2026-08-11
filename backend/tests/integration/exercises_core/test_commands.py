@@ -19,6 +19,7 @@ from polyglot.modules.exercises.core.application import (
 from polyglot.modules.exercises.core.domain import (
     AnswerKind,
     CorrectionResult,
+    CorrectionStrategy,
     HintLevel,
 )
 from polyglot.modules.exercises.core.persistence import SqlExerciseService
@@ -338,3 +339,61 @@ async def test_unavailable_correction_is_not_recorded_as_success(
 
     assert corrected.status == "not_evaluable"
     assert corrected.terminal_reason == "correction_unavailable"
+
+
+async def test_oral_self_assessment_requires_human_review(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_attempt(
+        migration_session,
+        primitive_id="EX-ORAL-01",
+        response_kinds='["self_assessment"]',
+    )
+    await migration_session.commit()
+    service = SqlExerciseService(runtime_factory)
+    submitted = await service.submit_attempt(
+        ACCOUNT_ID,
+        ATTEMPT_ID,
+        SubmitAttempt(AnswerKind.SELF_ASSESSMENT, {"confidence": 1}, "keyboard", "it-IT", NOW),
+        expected_version=1,
+        idempotency_key="submit-oral-self-assessment",
+    )
+    self_assessment = CorrectionStrategy.self_assessment(
+        required_criteria=("meaning", "form"),
+        passing_score=0.75,
+    ).correct({"meaning": 1, "form": 1})
+
+    corrected = await service.correct_attempt(
+        ACCOUNT_ID,
+        ATTEMPT_ID,
+        CorrectAttempt(
+            correction_id=uid(63),
+            result=self_assessment,
+            provenance_id=uid(64),
+            rubric_revision_id=None,
+            proposed_answer={"meaning": 1, "form": 1},
+            requires_review=False,
+            created_at=NOW,
+        ),
+        expected_version=submitted.version,
+        idempotency_key="correct-oral-self-assessment",
+    )
+
+    assert corrected.status == "not_evaluable"
+    assert corrected.terminal_reason == "correction_unavailable"
+    correction = (
+        await migration_session.execute(
+            text(
+                "SELECT verdict,confidence,target_coverage,explanation "
+                "FROM exercises.exercise_corrections WHERE attempt_id=:attempt"
+            ),
+            {"attempt": ATTEMPT_ID},
+        )
+    ).mappings().one()
+    assert correction == {
+        "verdict": "not_evaluable",
+        "confidence": 0.0,
+        "target_coverage": 0.0,
+        "explanation": "oral self-assessment requires human review",
+    }

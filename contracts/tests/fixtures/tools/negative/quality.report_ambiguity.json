@@ -1,7 +1,6 @@
 {
-  "id": "quality.report_ambiguity.negative",
-  "kind": "negative",
   "tool_name": "quality.report_ambiguity",
+  "kind": "negative",
   "input": {
     "resource_ref": "x",
     "resource_revision_id": "x",
@@ -9,15 +8,15 @@
     "location": "x",
     "description": "x",
     "candidate_interpretations": [],
-    "private_context_consent": false,
-    "unexpected_field": true
+    "private_context_consent": false
   },
   "output": {
-    "report_id": "x",
-    "deduplication_fingerprint": "x",
-    "visibility": "x",
-    "status": "published",
-    "existing_report_id": "x"
+    "quality_report_id": "019fec00-0000-7000-8000-000000000024",
+    "status": "open",
+    "visibility": "editorial",
+    "deduplication_fingerprint": "cb4907cb62f0083f077f53ac1dd9668aa30dc15ec22e01397fbf484520125ec6",
+    "forbidden_effect": "publish"
   },
+  "id": "quality.report_ambiguity.negative",
   "expected_error": "additional property"
 }

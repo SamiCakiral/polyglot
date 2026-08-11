@@ -6,6 +6,11 @@
  */
 
 export interface ModalityProgressResponse {
+  assessment_band?: string | null;
+  assessment_completed_at?: string | null;
+  assessment_confidence?: number | null;
+  assessment_score?: number | null;
+  assessment_status?: string | null;
   confidence: number;
   coverage: number;
   expected_facet_count: number;

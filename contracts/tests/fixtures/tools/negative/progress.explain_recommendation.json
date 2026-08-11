@@ -1,21 +1,21 @@
 {
-  "id": "progress.explain_recommendation.negative",
-  "kind": "negative",
   "tool_name": "progress.explain_recommendation",
+  "kind": "negative",
   "input": {
     "profile_id": "x",
     "recommendation_id": "x",
     "as_of_projection_version": 1,
-    "detail_level": "summary",
-    "unexpected_field": true
+    "detail_level": "summary"
   },
   "output": {
-    "reason": {},
-    "targets": [],
-    "authorized_facts": [],
-    "policy": {},
+    "recommendation_id": "x",
+    "reason_codes": [
+      "evidence_freshness"
+    ],
+    "facts": [],
     "alternatives": [],
-    "disappearance_conditions": []
+    "forbidden_effect": "publish"
   },
+  "id": "progress.explain_recommendation.negative",
   "expected_error": "additional property"
 }

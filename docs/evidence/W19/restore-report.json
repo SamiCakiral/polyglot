@@ -1,0 +1,134 @@
+{
+  "checks": [
+    {
+      "detail": "PostgreSQL client tools are available",
+      "name": "tool_preflight",
+      "status": "PASS"
+    },
+    {
+      "detail": "server system identifiers and database OIDs differ",
+      "name": "source_target_distinct",
+      "status": "PASS"
+    },
+    {
+      "detail": "target PostgreSQL database is empty",
+      "name": "target_database_isolation",
+      "status": "PASS"
+    },
+    {
+      "detail": "all fixture object checksums match",
+      "name": "source_object_manifest",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "source_active_account_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "source_pending_outbox_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "source_completed_deletion_history_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "source_logical_tombstone_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "source_deleted_active_account_absent",
+      "status": "PASS"
+    },
+    {
+      "detail": "custom-format archive created and checksummed",
+      "name": "pg_dump",
+      "status": "PASS"
+    },
+    {
+      "detail": "all fixture object checksums match",
+      "name": "target_object_manifest",
+      "status": "PASS"
+    },
+    {
+      "detail": "sorted FX-OPS manifest copied",
+      "name": "deterministic_object_copy",
+      "status": "PASS"
+    },
+    {
+      "detail": "custom-format archive restored to isolated target",
+      "name": "pg_restore",
+      "status": "PASS"
+    },
+    {
+      "detail": "restored migration head matches FX-OPS",
+      "name": "migration_head",
+      "status": "PASS"
+    },
+    {
+      "detail": "source and target logical database checksums match",
+      "name": "database_logical_checksum",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "target_active_account_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "target_pending_outbox_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "target_completed_deletion_history_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "target_logical_tombstone_present",
+      "status": "PASS"
+    },
+    {
+      "detail": "fixture oracle matched",
+      "name": "target_deleted_active_account_absent",
+      "status": "PASS"
+    },
+    {
+      "detail": "completed deletion, tombstone, and deleted active account absence match before and after restore",
+      "name": "tombstone_non_resurrection",
+      "status": "PASS"
+    }
+  ],
+  "errors": [],
+  "expected_migration_head": "0005_content",
+  "fingerprints": {
+    "object_manifest_sha256": "88290f8357da07b80c88165ce98ba40f4ee24bb9a3b59121144cae6c0e9db585",
+    "postgresql_archive_sha256": "266ffdfa3d01698325ceb6f6a6e575812546996d33a5f7bfc16c2f4358ed7cfd",
+    "source_database_logical_sha256": "78e3b5be64f989dfe3f3309864f19867eac164f81003eb3b9f37b25e784cf5a1",
+    "target_database_logical_sha256": "78e3b5be64f989dfe3f3309864f19867eac164f81003eb3b9f37b25e784cf5a1"
+  },
+  "fixture": "FX-OPS",
+  "limitations": [
+    "Local W19L evidence only; it is not W19C cloud, PITR, canary, or release proof."
+  ],
+  "revision": "dbc508fb5af1a83a0d06c1dd36fcd340b2c8a500",
+  "schema_version": 1,
+  "source": "postgresql://127.0.0.1:55447/polyglot_w19_0811_source",
+  "status": "PASS",
+  "target": "postgresql://127.0.0.1:55447/polyglot_w19_0811_target",
+  "tool_versions": {
+    "pg_dump": "pg_dump (PostgreSQL) 17.10 (Homebrew)",
+    "pg_restore": "pg_restore (PostgreSQL) 17.10 (Homebrew)",
+    "psql": "psql (PostgreSQL) 17.10 (Homebrew)",
+    "sha256": "sha256sum"
+  },
+  "utc": "2026-08-11T00:52:29Z",
+  "workstream": "W19L-A"
+}

@@ -28,7 +28,8 @@ class DeterministicToolHandlers:
         if definition.name == "profile.read_authorized":
             groups = payload["field_groups"]
             if not isinstance(groups, list) or any(
-                item not in {
+                item
+                not in {
                     "goals",
                     "constraints",
                     "mastery_summary",
@@ -66,7 +67,9 @@ class DeterministicToolHandlers:
             return {
                 "quality_report_id": str(self._new_id()),
                 "status": "open",
-                "visibility": "private" if payload.get("private_context") else "editorial",
+                "visibility": (
+                    "private" if payload.get("private_context_consent") is True else "editorial"
+                ),
                 "deduplication_fingerprint": canonical_json_fingerprint(payload),
             }
         if definition.name == "progress.explain_recommendation":

@@ -69,10 +69,7 @@ class SqlGenerationService:
         now = self._clock.now()
         if command.max_attempts != 1:
             raise DomainError(ErrorCode.VALIDATION_FAILED)
-        if (
-            command.provider_code != "lm_studio"
-            or command.model_code != "qwen/qwen3.6-35b-a3b"
-        ):
+        if command.provider_code != "lm_studio" or command.model_code != "qwen/qwen3.6-35b-a3b":
             raise DomainError(ErrorCode.PROVIDER_UNAVAILABLE, retryable=False)
         invalid_tools = False
         for item in command.tool_allowlist:
@@ -236,9 +233,7 @@ class SqlGenerationService:
             )
             return view
 
-    async def process_next_job(
-        self, provider: ChatProvider
-    ) -> GenerationJobView | None:
+    async def process_next_job(self, provider: ChatProvider) -> GenerationJobView | None:
         claimed = await self._claim_next_job()
         if claimed is None:
             return None
@@ -252,9 +247,7 @@ class SqlGenerationService:
         try:
             if claimed["provider_code"] != provider.code or claimed["model_code"] != provider.model:
                 raise DomainError(ErrorCode.PROVIDER_UNAVAILABLE, retryable=False)
-            allowlist = tuple(
-                str(item) for item in cast(list[object], claimed["tool_allowlist"])
-            )
+            allowlist = tuple(str(item) for item in cast(list[object], claimed["tool_allowlist"]))
             task_input = cast(dict[str, JsonValue], claimed["task_input"])
             max_input_tokens = cast(int, claimed["max_input_tokens"])
             max_output_tokens = cast(int, claimed["max_output_tokens"])
@@ -314,10 +307,16 @@ class SqlGenerationService:
             "tool_version": invocation.tool_version,
             "actor_role": invocation.actor_role,
             "scope": {
-                "pack_revision_id": None if invocation.scope.pack_revision_id is None else str(invocation.scope.pack_revision_id),
-                "profile_id": None if invocation.scope.profile_id is None else str(invocation.scope.profile_id),
+                "pack_revision_id": None
+                if invocation.scope.pack_revision_id is None
+                else str(invocation.scope.pack_revision_id),
+                "profile_id": None
+                if invocation.scope.profile_id is None
+                else str(invocation.scope.profile_id),
                 "job_id": None if invocation.scope.job_id is None else str(invocation.scope.job_id),
-                "mandate_id": None if invocation.scope.mandate_id is None else str(invocation.scope.mandate_id),
+                "mandate_id": None
+                if invocation.scope.mandate_id is None
+                else str(invocation.scope.mandate_id),
             },
             "expected_version": invocation.expected_version,
             "input": invocation.input,
@@ -360,10 +359,16 @@ class SqlGenerationService:
             if tool_revision_id is None:
                 raise DomainError(ErrorCode.DEPENDENCY_UNAVAILABLE)
             scope = {
-                "pack_revision_id": None if invocation.scope.pack_revision_id is None else str(invocation.scope.pack_revision_id),
-                "profile_id": None if invocation.scope.profile_id is None else str(invocation.scope.profile_id),
+                "pack_revision_id": None
+                if invocation.scope.pack_revision_id is None
+                else str(invocation.scope.pack_revision_id),
+                "profile_id": None
+                if invocation.scope.profile_id is None
+                else str(invocation.scope.profile_id),
                 "job_id": None if invocation.scope.job_id is None else str(invocation.scope.job_id),
-                "mandate_id": None if invocation.scope.mandate_id is None else str(invocation.scope.mandate_id),
+                "mandate_id": None
+                if invocation.scope.mandate_id is None
+                else str(invocation.scope.mandate_id),
             }
             error_payload = None
             if result.error is not None:
@@ -373,6 +378,31 @@ class SqlGenerationService:
                     "field_path": result.error.field_path,
                     "details_codes": list(result.error.details_codes),
                 }
+            await session.execute(
+                text(
+                    "INSERT INTO platform.provenance_records "
+                    "(provenance_id,source_type,source_ref,created_by_actor_id,tool_revision_id,"
+                    "model_code,prompt_revision_id,transformation_chain,input_fingerprint,created_at) "
+                    "VALUES (:provenance,'tool',:source_ref,:actor,:revision,NULL,NULL,"
+                    "CAST(:chain AS jsonb),:fingerprint,:created_at) ON CONFLICT DO NOTHING"
+                ),
+                {
+                    "provenance": result.provenance_id,
+                    "source_ref": f"tool:{invocation.tool_name}@{invocation.tool_version}",
+                    "actor": invocation.actor_id,
+                    "revision": tool_revision_id,
+                    "chain": _json(
+                        [
+                            {
+                                "kind": "tool_invocation",
+                                "invocation_id": str(invocation.invocation_id),
+                            }
+                        ]
+                    ),
+                    "fingerprint": fingerprint,
+                    "created_at": result.finished_at,
+                },
+            )
             await session.execute(
                 text(
                     "INSERT INTO generation.tool_invocations "
@@ -566,24 +596,25 @@ class SqlGenerationService:
             rows = (
                 await session.execute(
                     text(
-                        "SELECT * FROM generation.authoring_artifacts "
-                        "ORDER BY created_at DESC,artifact_id DESC LIMIT :limit"
+                        "SELECT a.*,i.provenance_id FROM generation.authoring_artifacts a "
+                        "JOIN generation.tool_invocations i ON i.invocation_id=a.source_invocation_id "
+                        "ORDER BY a.created_at DESC,a.artifact_id DESC LIMIT :limit"
                     ),
                     {"limit": limit},
                 )
             ).mappings()
             return tuple(self._artifact_view(row) for row in rows)
 
-    async def get_artifact(
-        self, actor_id: UUID, artifact_id: UUID
-    ) -> AuthoringArtifactView:
+    async def get_artifact(self, actor_id: UUID, artifact_id: UUID) -> AuthoringArtifactView:
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
             row = (
                 (
                     await session.execute(
                         text(
-                            "SELECT * FROM generation.authoring_artifacts WHERE artifact_id=:artifact"
+                            "SELECT a.*,i.provenance_id FROM generation.authoring_artifacts a "
+                            "JOIN generation.tool_invocations i ON i.invocation_id=a.source_invocation_id "
+                            "WHERE a.artifact_id=:artifact"
                         ),
                         {"artifact": artifact_id},
                     )
@@ -649,15 +680,19 @@ class SqlGenerationService:
         artifact_type = cast(
             str,
             result.output.get("draft_type")
-            or ("validation_report" if "validation_report_id" in result.output else "quality_report"),
+            or (
+                "validation_report" if "validation_report_id" in result.output else "quality_report"
+            ),
         )
         status = cast(
             str,
-            result.output.get("status")
-            or result.output.get("decision")
-            or "draft",
+            result.output.get("status") or result.output.get("decision") or "draft",
         )
         checksum = cast(str, result.output.get("checksum") or result.output_fingerprint)
+        artifact_payload: dict[str, JsonValue] = {
+            "draft_payload": invocation.input,
+            "tool_result": result.output,
+        }
         await session.execute(
             text(
                 "INSERT INTO generation.authoring_artifacts "
@@ -672,7 +707,7 @@ class SqlGenerationService:
                 "tool": invocation.tool_name,
                 "type": artifact_type,
                 "status": status,
-                "payload": _json(result.output),
+                "payload": _json(artifact_payload),
                 "checksum": checksum,
                 "now": result.finished_at,
             },
@@ -711,6 +746,7 @@ class SqlGenerationService:
             _uuid(item["artifact_id"]),
             str(item["artifact_type"]),
             str(item["source_tool_name"]),
+            _uuid(item["provenance_id"]),
             str(item["status"]),
             cast(dict[str, JsonValue], item["payload"]),
             str(item["checksum"]),

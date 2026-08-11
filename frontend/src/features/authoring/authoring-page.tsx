@@ -179,6 +179,10 @@ export function GenerationPage() {
     packsQuery.data?.status === 200 ? packsQuery.data.data.items[0] : undefined;
 
   async function generate() {
+    if (!pack) {
+      setError("Le pack italien publié est indisponible.");
+      return;
+    }
     setBusy(true);
     setError("");
     setJobId("");
@@ -195,6 +199,7 @@ export function GenerationPage() {
           provider_code: "lm_studio",
           task_input: {
             brief,
+            pack_revision_id: pack.pack_revision_id,
             support_language: "fr-FR",
             target_language: "it-IT",
           },
@@ -232,7 +237,7 @@ export function GenerationPage() {
             generation_artifact_id: artifact.artifact_id,
             generation_source_tool: artifact.source_tool_name,
           },
-          provenance_id: uuid7(),
+          provenance_id: artifact.provenance_id,
           rights_ref: `rights:tool:${artifact.artifact_id}`,
           variety_id: pack.target_variety_id,
         },
@@ -625,7 +630,7 @@ export function DraftsPage() {
                   </button>
                 </>
               ) : null}
-              {selected?.status === "approved" && canAuthor ? (
+              {selected?.status === "approved" && canReview ? (
                 <button
                   disabled={busy || version === undefined}
                   type="button"

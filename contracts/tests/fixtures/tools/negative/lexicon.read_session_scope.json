@@ -1,23 +1,19 @@
 {
-  "id": "lexicon.read_session_scope.negative",
-  "kind": "negative",
   "tool_name": "lexicon.read_session_scope",
+  "kind": "negative",
   "input": {
     "profile_id": "x",
     "planning_snapshot_id": "x",
     "roles": [],
     "target_refs": [],
     "list_snapshot_ids": [],
-    "max_senses": [],
-    "unexpected_field": true
+    "max_senses": 200
   },
   "output": {
     "senses": [],
-    "forms": [],
-    "session_roles": [],
-    "familiarity": "x",
-    "constraints": [],
-    "provenance": "x"
+    "snapshot_id": "x",
+    "forbidden_effect": "publish"
   },
+  "id": "lexicon.read_session_scope.negative",
   "expected_error": "additional property"
 }

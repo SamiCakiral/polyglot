@@ -59,6 +59,13 @@ def test_compose_uses_postgres_17_and_local_application_services() -> None:
     assert len(image.rsplit("@sha256:", 1)[1]) == 64
 
 
+def test_backend_disables_query_bearing_access_logs() -> None:
+    dockerfile = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
+
+    assert "uvicorn" in dockerfile
+    assert "--no-access-log" in dockerfile
+
+
 def test_compose_declares_the_w01_filesystem_placeholder() -> None:
     configuration = render_compose()
     placeholder = configuration["x-polyglot-object-storage"]

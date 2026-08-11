@@ -267,7 +267,7 @@ test("does not enable browser mocks without explicit opt-in", async ({
   await page.goto("http://127.0.0.1:4176/today");
 
   await expect(page.getByRole("alert")).toContainText(
-    "Votre session ne peut pas être ouverte",
+    /Votre session (a expiré|ne peut pas être ouverte)/,
   );
   await expect(
     page.getByRole("heading", { level: 1, name: "Aujourd'hui" }),

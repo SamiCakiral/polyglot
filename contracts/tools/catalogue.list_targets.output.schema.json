@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "catalogue.list_targets output",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "targets",
-    "next_cursor"
+    "next_cursor",
+    "stable"
   ],
   "properties": {
     "targets": {
@@ -13,13 +13,23 @@
       "maxItems": 200,
       "items": {
         "type": "string",
+        "minLength": 0,
         "maxLength": 128
       }
     },
     "next_cursor": {
-      "type": "string",
+      "type": [
+        "string",
+        "null"
+      ],
       "minLength": 1,
       "maxLength": 20000
+    },
+    "stable": {
+      "type": "boolean",
+      "enum": [
+        true
+      ]
     }
   }
 }

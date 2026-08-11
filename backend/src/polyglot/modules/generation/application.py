@@ -48,6 +48,7 @@ class AuthoringArtifactView:
     artifact_id: UUID
     artifact_type: str
     source_tool_name: str
+    provenance_id: UUID
     status: str
     payload: dict[str, JsonValue]
     checksum: str
@@ -80,6 +81,4 @@ class GenerationApplicationService(Protocol):
         self, actor_id: UUID, *, limit: int = 100
     ) -> tuple[AuthoringArtifactView, ...]: ...
 
-    async def get_artifact(
-        self, actor_id: UUID, artifact_id: UUID
-    ) -> AuthoringArtifactView: ...
+    async def get_artifact(self, actor_id: UUID, artifact_id: UUID) -> AuthoringArtifactView: ...

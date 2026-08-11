@@ -60,6 +60,11 @@ class ModalityProgressView:
     coverage: float
     observed_facet_count: int
     expected_facet_count: int
+    assessment_status: str | None = None
+    assessment_score: float | None = None
+    assessment_band: str | None = None
+    assessment_confidence: float | None = None
+    assessment_completed_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,6 +196,22 @@ class SqlProgressQueryService:
                     )
                 ).all()
             }
+            assessment_rows = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT DISTINCT ON (modality) modality,result_status,score,band,"
+                            "confidence,created_at FROM assessments.assessment_results "
+                            "WHERE profile_id=:profile "
+                            "ORDER BY modality,created_at DESC,result_id DESC"
+                        ),
+                        {"profile": profile_id},
+                    )
+                )
+                .mappings()
+                .all()
+            )
+            assessments = {str(row["modality"]): dict(row) for row in assessment_rows}
             page_rows = [dict(row) for row in all_rows]
             if after is not None:
                 page_rows = [
@@ -225,6 +246,7 @@ class SqlProgressQueryService:
                     self._modality_view(
                         summary,
                         expected_count=int(eligible_weight),
+                        assessment=assessments.get(modality.value),
                     )
                 )
             next_cursor = None
@@ -402,6 +424,7 @@ class SqlProgressQueryService:
         projection: ModalityProjection,
         *,
         expected_count: int,
+        assessment: dict[str, object] | None = None,
     ) -> ModalityProgressView:
         return ModalityProgressView(
             modality=projection.modality.value,
@@ -412,6 +435,25 @@ class SqlProgressQueryService:
             coverage=projection.coverage,
             observed_facet_count=projection.observed_facet_count,
             expected_facet_count=expected_count,
+            assessment_status=(
+                str(assessment["result_status"]) if assessment else None
+            ),
+            assessment_score=(
+                float(str(assessment["score"]))
+                if assessment and assessment["score"] is not None
+                else None
+            ),
+            assessment_band=(
+                str(assessment["band"])
+                if assessment and assessment["band"] is not None
+                else None
+            ),
+            assessment_confidence=(
+                float(str(assessment["confidence"])) if assessment else None
+            ),
+            assessment_completed_at=(
+                cast(datetime, assessment["created_at"]) if assessment else None
+            ),
         )
 
     @staticmethod

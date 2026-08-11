@@ -1,42 +1,40 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "quality.report_ambiguity output",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "report_id",
-    "deduplication_fingerprint",
-    "visibility",
+    "quality_report_id",
     "status",
-    "existing_report_id"
+    "visibility",
+    "deduplication_fingerprint"
   ],
   "properties": {
-    "report_id": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 20000
-    },
-    "deduplication_fingerprint": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 20000
-    },
-    "visibility": {
+    "quality_report_id": {
       "type": "string",
       "minLength": 1,
       "maxLength": 20000
     },
     "status": {
       "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
       "enum": [
-        "published"
-      ],
-      "maxLength": 16
+        "open"
+      ]
     },
-    "existing_report_id": {
+    "visibility": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 20000
+      "maxLength": 16,
+      "enum": [
+        "private",
+        "editorial"
+      ]
+    },
+    "deduplication_fingerprint": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64
     }
   }
 }

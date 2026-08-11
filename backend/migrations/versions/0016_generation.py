@@ -8,6 +8,8 @@ Revises: 0015_media
 
 import hashlib
 import json
+from importlib.resources import files
+from pathlib import Path
 
 from alembic import op
 from asyncpg import Connection
@@ -259,13 +261,20 @@ DROP_DDL = "DROP SCHEMA IF EXISTS generation CASCADE;"
 
 def _tool_rows() -> str:
     rows: list[str] = []
+
+    def contract(name: str, kind: str) -> object:
+        filename = f"{name}.{kind}.schema.json"
+        packaged = files("polyglot.interfaces.tools").joinpath("contracts", filename)
+        try:
+            raw = packaged.read_text(encoding="utf-8")
+        except FileNotFoundError:
+            root = Path(__file__).resolve().parents[3]
+            raw = (root / "contracts" / "tools" / filename).read_text()
+        return json.loads(raw)
+
     for ordinal, (name, roles, effect, timeout_ms) in enumerate(TOOLS, start=1):
-        schema = {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "type": "object",
-            "additionalProperties": False,
-        }
-        output = {"type": "object", "additionalProperties": False}
+        schema = contract(name, "input")
+        output = contract(name, "output")
         canonical = json.dumps(
             {
                 "name": name,

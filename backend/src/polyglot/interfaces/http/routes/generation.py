@@ -110,6 +110,7 @@ class AuthoringArtifactResponse(ClosedModel):
     artifact_id: UUID
     artifact_type: str
     source_tool_name: str
+    provenance_id: UUID
     status: str
     payload: dict[str, JsonValue]
     checksum: str
@@ -218,9 +219,7 @@ def generation_router(
         session_token: SessionCookieToken = None,
     ) -> list[AuthoringArtifactResponse]:
         current = await session_for(request, session_token)
-        artifacts = await application_service().list_artifacts(
-            current.account_id, limit=limit
-        )
+        artifacts = await application_service().list_artifacts(current.account_id, limit=limit)
         return [AuthoringArtifactResponse.model_validate(item) for item in artifacts]
 
     @router.get(

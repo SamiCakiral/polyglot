@@ -1,7 +1,6 @@
 {
-  "id": "curriculum.submit_module_draft.negative",
-  "kind": "negative",
   "tool_name": "curriculum.submit_module_draft",
+  "kind": "negative",
   "input": {
     "pack_revision_id": "x",
     "module": "x",
@@ -12,15 +11,19 @@
     "day_draft_refs": [],
     "length": "x",
     "context": "x",
-    "provenance": "x",
-    "unexpected_field": true
+    "provenance": "x"
   },
   "output": {
-    "module_draft": {},
-    "resolved_graph": {},
-    "total_load": {},
+    "draft_id": "019fec00-0000-7000-8000-000000000018",
+    "draft_type": "module",
+    "revision": 1,
+    "status": "draft",
     "findings": [],
-    "checksum": "x"
+    "checksum": "36f4bfbcecfd13701edb1844854ac404bb559af2658e8e0761ba46c66d94eaf0",
+    "publish_capability": false,
+    "mastery_capability": false,
+    "forbidden_effect": "publish"
   },
+  "id": "curriculum.submit_module_draft.negative",
   "expected_error": "additional property"
 }

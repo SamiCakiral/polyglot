@@ -944,6 +944,20 @@ textarea {
   min-height: 54px;
   color: var(--muted);
 }
+.assessment-calibration {
+  display: grid;
+  gap: 4px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.assessment-calibration > span,
+.assessment-calibration > small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.assessment-calibration > strong {
+  font-size: 17px;
+}
 .meter {
   display: grid;
   gap: 6px;

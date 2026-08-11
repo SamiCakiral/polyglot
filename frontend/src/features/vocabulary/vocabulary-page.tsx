@@ -3,6 +3,7 @@ import {
   BookMarked,
   FolderOpen,
   ListPlus,
+  Plus,
   Search,
   X,
 } from "lucide-react";
@@ -18,17 +19,45 @@ import {
   PageHeader,
   StatusPill,
 } from "../../components/product-ui";
-import type { VocabularyListResponse } from "../../generated/model";
 import {
   useCreateVocabularyList,
   useGetLexicalSense,
   useGetVocabularyList,
   useGetWordBankOverview,
   useListVocabularyLists,
+  useRecordLexicalEncounter,
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
+import { uuid7 } from "../../lib/ids";
 
-function vocabularyLists(data: unknown): VocabularyListResponse[] {
+const analysisLabels: Record<string, string> = {
+  resolved: "Identifié",
+  unresolved: "À clarifier",
+  unobserved: "Non rencontré",
+};
+
+const reasonLabels: Record<string, string> = {
+  encountered: "Rencontré dans une activité",
+  absence_of_evidence: "Pas encore rencontré",
+};
+
+const listStatusLabels: Record<string, string> = {
+  active: "Active",
+  archived: "Archivée",
+};
+
+function wordCountLabel(count: number): string {
+  return `${String(count)} mot${count > 1 ? "s" : ""}`;
+}
+
+interface VocabularyListSummary {
+  list_id: string;
+  member_count: number;
+  name: string;
+  version: number;
+}
+
+function vocabularyLists(data: unknown): VocabularyListSummary[] {
   if (
     !data ||
     typeof data !== "object" ||
@@ -37,11 +66,12 @@ function vocabularyLists(data: unknown): VocabularyListResponse[] {
   )
     return [];
   return data.items.filter(
-    (item): item is VocabularyListResponse =>
+    (item): item is VocabularyListSummary =>
       Boolean(item) &&
       typeof item === "object" &&
       "list_id" in item &&
-      "member_sense_ids" in item,
+      "member_count" in item &&
+      "name" in item,
   );
 }
 
@@ -51,6 +81,8 @@ export function VocabularyPage() {
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
+  const [addingWord, setAddingWord] = useState(false);
+  const [manualSurface, setManualSurface] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const profileId = activeProfile?.profile_id ?? "";
@@ -70,7 +102,11 @@ export function VocabularyPage() {
     },
   );
   const createList = useCreateVocabularyList({ fetch: commandFetch(session) });
+  const recordEncounter = useRecordLexicalEncounter({
+    fetch: commandFetch(session),
+  });
   const overview = query.data?.status === 200 ? query.data.data : null;
+  const unresolvedMentions = overview?.unresolved_mentions ?? [];
   const lists =
     listsQuery.data?.status === 200
       ? vocabularyLists(listsQuery.data.data)
@@ -125,6 +161,46 @@ export function VocabularyPage() {
     await listsQuery.refetch();
   }
 
+  async function addManualWord() {
+    const surface = manualSurface.trim();
+    if (!surface) return;
+    setError("");
+    const now = new Date().toISOString();
+    const response = await recordEncounter.mutateAsync({
+      profileId,
+      data: {
+        data: {
+          analysis_revision_ref: "manual-v1",
+          context_fingerprint:
+            "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          context_retention: "minimal",
+          correction_confidence: 0,
+          correction_ref: "none",
+          encounter_id: uuid7(),
+          exact_surface: surface,
+          help_state: "none",
+          lexical_role: "learner_added",
+          mention_id: uuid7(),
+          modality: "reading",
+          occurred_at: now,
+          operation: "seen",
+          result_state: "not_evaluable",
+          source_ref: "user_word_bank",
+          source_revision_ref: "manual-v1",
+          source_type: "manual",
+        },
+      },
+    });
+    const problem = responseProblem(response);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setManualSurface("");
+    setAddingWord(false);
+    await query.refetch();
+  }
+
   return (
     <div className="page-flow">
       <PageHeader
@@ -132,15 +208,26 @@ export function VocabularyPage() {
         title="Vocabulaire"
         description="Tous les mots rencontrés, leurs contextes et leur état de travail dans un seul inventaire."
         action={
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={() => {
-              setCreating((value) => !value);
-            }}
-          >
-            <ListPlus aria-hidden="true" size={18} /> Nouvelle liste
-          </button>
+          <div className="button-row">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setAddingWord((value) => !value);
+              }}
+            >
+              <Plus aria-hidden="true" size={18} /> Ajouter un mot
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                setCreating((value) => !value);
+              }}
+            >
+              <ListPlus aria-hidden="true" size={18} /> Nouvelle liste
+            </button>
+          </div>
         }
       />
       {query.data && query.data.status !== 200 ? (
@@ -160,6 +247,47 @@ export function VocabularyPage() {
           <span>sens de référence vus</span>
         </div>
       </section>
+      {addingWord ? (
+        <section className="list-composer">
+          <div>
+            <p className="eyebrow">Ajout manuel</p>
+            <h2>Ajouter un mot rencontré ailleurs</h2>
+            <p>Le sens restera à clarifier tant qu'il n'aura pas été identifié.</p>
+          </div>
+          <label>
+            Mot ou expression en italien
+            <input
+              autoFocus
+              lang="it"
+              maxLength={200}
+              value={manualSurface}
+              onChange={(event) => {
+                setManualSurface(event.target.value);
+              }}
+            />
+          </label>
+          {error ? <ErrorRegion message={error} /> : null}
+          <div>
+            <button
+              className="icon-button secondary-button"
+              aria-label="Annuler l'ajout"
+              type="button"
+              onClick={() => {
+                setAddingWord(false);
+              }}
+            >
+              <X aria-hidden="true" />
+            </button>
+            <button
+              disabled={!manualSurface.trim() || recordEncounter.isPending}
+              type="button"
+              onClick={() => void addManualWord()}
+            >
+              Ajouter à ma banque
+            </button>
+          </div>
+        </section>
+      ) : null}
       {creating ? (
         <section className="list-composer">
           <div>
@@ -219,11 +347,34 @@ export function VocabularyPage() {
                 <span>
                   <strong>{list.name}</strong>
                   <small>
-                    {list.member_sense_ids.length} mots · révision{" "}
-                    {list.revision_no}
+                    {wordCountLabel(list.member_count)} · version {list.version}
                   </small>
                 </span>
               </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      {unresolvedMentions.length > 0 ? (
+        <section className="vocabulary-lists">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">À identifier</p>
+              <h2>Mentions à clarifier</h2>
+            </div>
+            <StatusPill tone="warn">
+              {unresolvedMentions.length}
+            </StatusPill>
+          </div>
+          <div>
+            {unresolvedMentions.map((mention) => (
+              <div key={mention.mention_id}>
+                <BookMarked aria-hidden="true" size={20} />
+                <span>
+                  <strong lang="it">{mention.exact_surface}</strong>
+                  <small>Ajouté manuellement · sens non identifié</small>
+                </span>
+              </div>
             ))}
           </div>
         </section>
@@ -272,11 +423,13 @@ export function VocabularyPage() {
             <span role="cell">{item.encounter_count}</span>
             <span role="cell">
               <StatusPill tone={item.projection?.debt ? "warn" : "neutral"}>
-                {item.analysis_state}
+                {analysisLabels[item.analysis_state] ?? item.analysis_state}
               </StatusPill>
             </span>
             <span role="cell">
-              {item.reasons[0] ?? "Rencontré dans une activité"}
+              {reasonLabels[item.reasons[0] ?? ""] ??
+                item.reasons[0] ??
+                "Rencontré dans une activité"}
             </span>
           </div>
         ))}
@@ -329,11 +482,16 @@ export function VocabularyListDetailPage() {
         eyebrow="Liste personnelle"
         title={list.name}
         description={list.purpose}
-        action={<StatusPill>{list.status}</StatusPill>}
+        action={
+          <StatusPill>
+            {listStatusLabels[list.status] ?? list.status}
+          </StatusPill>
+        }
       />
       <section className="vocabulary-list-detail">
         <p>
-          {list.member_sense_ids.length} mots · révision {list.revision_no}
+          {wordCountLabel(list.member_sense_ids.length)} · révision{" "}
+          {list.revision_no}
         </p>
         {words.map((word) => (
           <div key={word.sense_id}>
@@ -396,7 +554,12 @@ export function VocabularySenseDetailPage() {
           "Ce sens lexical n'est pas disponible dans le catalogue actif."
         }
         action={
-          personal ? <StatusPill>{personal.analysis_state}</StatusPill> : null
+          personal ? (
+            <StatusPill>
+              {analysisLabels[personal.analysis_state] ??
+                personal.analysis_state}
+            </StatusPill>
+          ) : null
         }
       />
       {senseQuery.data && senseQuery.data.status !== 200 ? (

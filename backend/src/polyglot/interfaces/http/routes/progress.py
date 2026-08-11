@@ -63,6 +63,11 @@ class ModalityProgressResponse(ClosedModel):
     coverage: float
     observed_facet_count: int
     expected_facet_count: int
+    assessment_status: str | None = None
+    assessment_score: float | None = None
+    assessment_band: str | None = None
+    assessment_confidence: float | None = None
+    assessment_completed_at: datetime | None = None
 
 
 class MasteryFacetResponse(ClosedModel):

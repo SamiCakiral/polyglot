@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final
+from functools import cache
+from importlib.resources import files
+from pathlib import Path
+from typing import Final, cast
 
 from polyglot.platform.json_types import JsonValue
 
@@ -11,112 +15,16 @@ SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 DEFAULT_MAX_INPUT_BYTES = 256 * 1024
 DEFAULT_MAX_OUTPUT_BYTES = 1024 * 1024
 
-_OUTPUT_CONTRACTS: Final[dict[str, tuple[frozenset[str], frozenset[str]]]] = {
-    "profile.read_authorized": (
-        frozenset({"profile_id", "field_groups", "pseudonymized", "cutoff"}),
-        frozenset(),
-    ),
-    "catalogue.list_targets": (
-        frozenset({"targets", "next_cursor", "stable"}),
-        frozenset(),
-    ),
-    "lexicon.read_session_scope": (
-        frozenset({"senses", "snapshot_id"}),
-        frozenset(),
-    ),
-    "exercise.get_blueprint": (
-        frozenset(
-            {
-                "primitive_id",
-                "contract_version",
-                "correction_strategies",
-                "publish_capability",
-            }
-        ),
-        frozenset(),
-    ),
-    "exercise.submit_draft": (
-        frozenset(
-            {
-                "draft_id",
-                "draft_type",
-                "revision",
-                "status",
-                "findings",
-                "checksum",
-                "publish_capability",
-                "mastery_capability",
-            }
-        ),
-        frozenset(),
-    ),
-    "content.validate_draft": (
-        frozenset(
-            {"validation_report_id", "decision", "findings", "report_truncated"}
-        ),
-        frozenset(),
-    ),
-    "curriculum.submit_module_draft": (
-        frozenset(
-            {
-                "draft_id",
-                "draft_type",
-                "revision",
-                "status",
-                "findings",
-                "checksum",
-                "publish_capability",
-                "mastery_capability",
-            }
-        ),
-        frozenset(),
-    ),
-    "curriculum.submit_day_draft": (
-        frozenset(
-            {
-                "draft_id",
-                "draft_type",
-                "revision",
-                "status",
-                "findings",
-                "checksum",
-                "publish_capability",
-                "mastery_capability",
-            }
-        ),
-        frozenset(),
-    ),
-    "correction.submit_structured_draft": (
-        frozenset(
-            {
-                "draft_id",
-                "draft_type",
-                "revision",
-                "status",
-                "findings",
-                "checksum",
-                "publish_capability",
-                "mastery_capability",
-            }
-        ),
-        frozenset(),
-    ),
-    "quality.report_ambiguity": (
-        frozenset(
-            {
-                "quality_report_id",
-                "status",
-                "visibility",
-                "deduplication_fingerprint",
-            }
-        ),
-        frozenset(),
-    ),
-    "progress.explain_recommendation": (
-        frozenset({"recommendation_id", "reason_codes", "facts", "alternatives"}),
-        frozenset(),
-    ),
-}
+
+@cache
+def _contract_schema(tool_name: str, kind: str) -> dict[str, JsonValue]:
+    filename = f"{tool_name}.{kind}.schema.json"
+    packaged = files(__package__).joinpath("contracts", filename)
+    try:
+        raw = packaged.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raw = (Path(__file__).resolve().parents[5] / "contracts" / "tools" / filename).read_text()
+    return cast(dict[str, JsonValue], json.loads(raw))
 
 
 class ToolEffect(StrEnum):
@@ -146,35 +54,17 @@ class ToolDefinition:
         return self.effect is not ToolEffect.NONE
 
     def input_schema(self) -> dict[str, JsonValue]:
-        properties: dict[str, JsonValue] = {
-            key: {} for key in sorted(self.required | self.optional)
-        }
-        required: list[JsonValue] = list(sorted(self.required))
-        return {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "type": "object",
-            "additionalProperties": False,
-            "required": required,
-            "properties": properties,
-        }
+        return _contract_schema(self.name, "input")
 
     def output_schema(self) -> dict[str, JsonValue]:
-        required_fields, optional_fields = _OUTPUT_CONTRACTS[self.name]
-        properties: dict[str, JsonValue] = {
-            key: {} for key in sorted(required_fields | optional_fields)
-        }
-        required: list[JsonValue] = list(sorted(required_fields))
-        return {
-            "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "type": "object",
-            "additionalProperties": False,
-            "required": required,
-            "properties": properties,
-        }
+        return _contract_schema(self.name, "output")
 
     @property
     def output_fields(self) -> tuple[frozenset[str], frozenset[str]]:
-        return _OUTPUT_CONTRACTS[self.name]
+        schema = self.output_schema()
+        required = frozenset(cast(list[str], schema["required"]))
+        properties = frozenset(cast(dict[str, JsonValue], schema["properties"]))
+        return required, properties - required
 
 
 def _tool(
@@ -215,15 +105,26 @@ TOOL_DEFINITIONS: Final[tuple[ToolDefinition, ...]] = (
         "lexicon.read_session_scope",
         ("learner", "author"),
         ToolEffect.NONE,
-        ("profile_id", "planning_snapshot_id", "roles", "target_refs", "list_snapshot_ids"),
-        ("max_senses",),
+        (
+            "profile_id",
+            "planning_snapshot_id",
+            "roles",
+            "target_refs",
+            "list_snapshot_ids",
+            "max_senses",
+        ),
     ),
     _tool(
         "exercise.get_blueprint",
         ("author", "reviewer", "worker"),
         ToolEffect.NONE,
-        ("primitive_id", "primitive_contract_version", "language_pack_revision_id", "mode"),
-        ("accessibility_capabilities",),
+        (
+            "primitive_id",
+            "primitive_contract_version",
+            "language_pack_revision_id",
+            "mode",
+            "accessibility_capabilities",
+        ),
     ),
     _tool(
         "exercise.submit_draft",
@@ -263,14 +164,13 @@ TOOL_DEFINITIONS: Final[tuple[ToolDefinition, ...]] = (
         ToolEffect.CREATE_MODULE_DRAFT,
         (
             "pack_revision_id",
-            "module_identity",
+            "module",
             "audience",
             "objectives",
             "prerequisites",
             "exit_policy",
             "day_draft_refs",
-            "min_days",
-            "max_days",
+            "length",
             "context",
             "provenance",
         ),
@@ -286,12 +186,13 @@ TOOL_DEFINITIONS: Final[tuple[ToolDefinition, ...]] = (
             "arc",
             "context",
             "objectives",
-            "novelties",
-            "recalls",
-            "delayed_needs",
+            "novelty",
+            "reviews",
+            "next_day_needs",
             "lists",
             "compositions",
             "provenance",
+            "expected_version",
         ),
         timeout_ms=60_000,
     ),
@@ -326,8 +227,8 @@ TOOL_DEFINITIONS: Final[tuple[ToolDefinition, ...]] = (
             "location",
             "description",
             "candidate_interpretations",
+            "private_context_consent",
         ),
-        ("private_context", "private_context_consented"),
         timeout_ms=30_000,
     ),
     _tool(

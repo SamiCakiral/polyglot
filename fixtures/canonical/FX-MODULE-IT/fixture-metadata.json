@@ -8,7 +8,7 @@
     "days.json": "sha256:f2620ec34570a362d249d6817f1bfc61bba3a57e17e8f4f45bd39ddbbf51cefe",
     "bindings.json": "sha256:047ed6a59c89af19921eab251afda319f228ae0a79dd6319c5ae8fe99cf47d85",
     "dialogues.json": "sha256:570ea5bcf46d36f3317e16a64821a93319073ab83c620281fa92e0b3f921ccd6",
-    "exercises.json": "sha256:c650704724fbb4c8a78d8b0a697cd2c544e9a73300b0646caa24ad2bd506f1a9",
+    "exercises.json": "sha256:8c3cd44c6d24b9de670193d5387f673104533362f4a18ebda267f4478faabf75",
     "oracles.json": "sha256:00506113d68530d4fac2e64b8254dbe39bd10a5615050926066fe5f07b18afaa",
     "revision-cases.json": "sha256:0f9f9c48469169354353873323559d176729b10e68353a2a24ce396393572b7e"
   },

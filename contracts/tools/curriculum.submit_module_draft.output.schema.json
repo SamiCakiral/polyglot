@@ -1,43 +1,69 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "curriculum.submit_module_draft output",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "module_draft",
-    "resolved_graph",
-    "total_load",
+    "draft_id",
+    "draft_type",
+    "revision",
+    "status",
     "findings",
-    "checksum"
+    "checksum",
+    "publish_capability",
+    "mastery_capability"
   ],
   "properties": {
-    "module_draft": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+    "draft_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
     },
-    "resolved_graph": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+    "draft_type": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "enum": [
+        "module"
+      ]
     },
-    "total_load": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+    "revision": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16,
+      "enum": [
+        "draft"
+      ]
     },
     "findings": {
       "type": "array",
       "maxItems": 200,
       "items": {
         "type": "string",
+        "minLength": 0,
         "maxLength": 128
       }
     },
     "checksum": {
       "type": "string",
-      "minLength": 1,
-      "maxLength": 20000
+      "minLength": 64,
+      "maxLength": 64
+    },
+    "publish_capability": {
+      "type": "boolean",
+      "enum": [
+        false
+      ]
+    },
+    "mastery_capability": {
+      "type": "boolean",
+      "enum": [
+        false
+      ]
     }
   }
 }

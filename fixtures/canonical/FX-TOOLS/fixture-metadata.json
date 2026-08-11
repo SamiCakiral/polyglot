@@ -5,7 +5,7 @@
   "clock": "2026-08-10T12:00:00+00:00",
   "payloads": {
     "scenario.json": "sha256:09897ff93412ac914424d5d7baef7df70095d566311001d2c2e30048ecae8f97",
-    "transcript.jsonl": "sha256:3fcaf3e615c0d06d780cdc153b1b37036f4d13dbf5e859ab994cb3042ee75dff"
+    "transcript.jsonl": "sha256:7fe14f97782e7710ce43efcc147589d98db8128d697be661960cc1e0e994db9d"
   },
   "oracles": [
     "eleven_tools_registered",

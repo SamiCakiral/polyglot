@@ -1,41 +1,37 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "content.validate_draft output",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "report_id",
-    "findings",
-    "coverage",
+    "validation_report_id",
     "decision",
+    "findings",
     "report_truncated"
   ],
   "properties": {
-    "report_id": {
+    "validation_report_id": {
       "type": "string",
       "minLength": 1,
       "maxLength": 20000
-    },
-    "findings": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
-    },
-    "coverage": {
-      "type": "array",
-      "maxItems": 10000,
-      "items": {
-        "type": "string",
-        "maxLength": 20000
-      }
     },
     "decision": {
       "type": "string",
       "minLength": 1,
-      "maxLength": 20000
+      "maxLength": 32,
+      "enum": [
+        "passed",
+        "failed",
+        "human_required"
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "string",
+        "minLength": 0,
+        "maxLength": 128
+      }
     },
     "report_truncated": {
       "type": "boolean"

@@ -100,7 +100,14 @@ async def factory(migration_session: AsyncSession):
     await engine.dispose()
 
 
-async def _create(service, *, key: str = "create", payload=None, references=None):
+async def _create(
+    service,
+    *,
+    key: str = "create",
+    payload=None,
+    references=None,
+    provenance_id: UUID | None = None,
+):
     from polyglot.modules.content.application import CreateContentDraft
 
     return await service.create_draft(
@@ -110,13 +117,40 @@ async def _create(service, *, key: str = "create", payload=None, references=None
             content_type="dialogue",
             variety_id=VARIETY_ID,
             payload=payload or {"schema_version": 1, "text": "Ciao."},
-            provenance_id=IDS["provenance"],
+            provenance_id=provenance_id or IDS["provenance"],
             rights_ref="rights:fixture:content",
             pinned_revision_refs=tuple(references or (_reference(),)),
             idempotency_key=key,
             context=_context(),
         )
     )
+
+
+async def test_human_draft_registers_missing_provenance_atomically(factory) -> None:
+    from polyglot.platform.persistence.models import provenance_records
+
+    provenance_id = UUID("019fec20-0000-7000-8000-000000008888")
+    created = await _create(
+        _service(factory),
+        key="human-provenance-create",
+        provenance_id=provenance_id,
+    )
+
+    async with factory() as session:
+        row = (
+            (
+                await session.execute(
+                    select(provenance_records).where(
+                        provenance_records.c.provenance_id == provenance_id
+                    )
+                )
+            )
+            .mappings()
+            .one()
+        )
+    assert created.revision.provenance_id == provenance_id
+    assert row["source_type"] == "human_author"
+    assert row["source_ref"] == "authoring:create_draft"
 
 
 async def _validate(service, result, *, key: str, expected_version: int | None = None):

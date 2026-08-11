@@ -10,6 +10,7 @@ dependencies = [
   "fastapi==0.141.1",
   "fsrs==6.3.1",
   "greenlet==3.5.4",
+  "jsonschema==4.25.1",
   "httpx==0.28.1",
   "pydantic==2.13.4",
   "rfc8785==0.1.4",
@@ -29,6 +30,7 @@ packages = ["src/polyglot"]
 "migrations" = "polyglot/migrations"
 "../contracts/events/envelope.schema.json" = "polyglot/platform/contracts/envelope.schema.json"
 "../contracts/events/event-catalogue.yaml" = "polyglot/platform/contracts/event-catalogue.yaml"
+"../contracts/tools" = "polyglot/interfaces/tools/contracts"
 
 [dependency-groups]
 dev = [

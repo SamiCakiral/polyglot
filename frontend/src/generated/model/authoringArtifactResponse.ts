@@ -12,6 +12,7 @@ export interface AuthoringArtifactResponse {
   checksum: string;
   created_at: string;
   payload: AuthoringArtifactResponsePayload;
+  provenance_id: string;
   source_tool_name: string;
   status: string;
 }

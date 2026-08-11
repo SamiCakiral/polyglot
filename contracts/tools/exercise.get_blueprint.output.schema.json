@@ -1,73 +1,38 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "exercise.get_blueprint output",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "stimulus_schema",
-    "response_schema",
-    "target_schema",
+    "primitive_id",
+    "contract_version",
     "correction_strategies",
-    "hints",
-    "observation_constraints",
-    "budgets",
-    "fixtures"
+    "publish_capability"
   ],
   "properties": {
-    "stimulus_schema": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+    "primitive_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 20000
     },
-    "response_schema": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
-    },
-    "target_schema": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {}
+    "contract_version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10000
     },
     "correction_strategies": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
-    },
-    "hints": {
       "type": "array",
       "maxItems": 20,
       "items": {
         "type": "string",
-        "maxLength": 20000
-      }
-    },
-    "observation_constraints": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
+        "minLength": 0,
         "maxLength": 128
       }
     },
-    "budgets": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
-    },
-    "fixtures": {
-      "type": "array",
-      "maxItems": 200,
-      "items": {
-        "type": "string",
-        "maxLength": 128
-      }
+    "publish_capability": {
+      "type": "boolean",
+      "enum": [
+        false
+      ]
     }
   }
 }

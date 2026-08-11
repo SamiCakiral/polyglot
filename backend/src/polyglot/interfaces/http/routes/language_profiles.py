@@ -48,6 +48,7 @@ PRECONDITION_RESPONSES: dict[int | str, dict[str, Any]] = {
 RESOURCE_RESPONSES: dict[int | str, dict[str, Any]] = {
     **IDENTITY_PROBLEM_RESPONSES,
     **PRECONDITION_RESPONSES,
+    404: IDENTITY_PROBLEM_RESPONSES[422],
     200: _ETAG_OPENAPI,
 }
 CREATED_RESOURCE_RESPONSES: dict[int | str, dict[str, Any]] = {

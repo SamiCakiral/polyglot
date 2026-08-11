@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Literal, Protocol, cast
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.modules.content.persistence import (
@@ -329,6 +329,10 @@ class ContentApplicationService:
         now = self._clock.now()
         async with self._uow() as uow:
             session = self._session(uow)
+            await session.execute(
+                text("SELECT set_config('app.user_id',:actor,true)"),
+                {"actor": str(actor.actor_id)},
+            )
             repository = SqlContentRepository(session)
             store = SqlCommandReceiptStore(session)
             command_pack_id = pack_id
@@ -380,6 +384,16 @@ class ContentApplicationService:
 
             savepoint = await session.begin_nested()
             try:
+                if (
+                    command_type == "PublishContentRevision"
+                    and not await self._reauthentication.is_recent(
+                        session=session,
+                        actor_id=actor.actor_id,
+                        session_id=actor.session_id,
+                        now=now,
+                    )
+                ):
+                    raise DomainError(ErrorCode.UNAUTHENTICATED)
                 await repository.begin_command(
                     command_id=reservation.receipt.command_id,
                     actor_id=actor.actor_id,
@@ -489,7 +503,13 @@ class ContentApplicationService:
             repository: SqlContentRepository, receipt: CommandReceipt, now: datetime
         ) -> ContentMutationResult:
             self._rights.require_publishable(command.rights_ref)
-            await repository.require_provenance(command.provenance_id)
+            await repository.ensure_human_provenance(
+                provenance_id=command.provenance_id,
+                actor_id=command.actor.actor_id,
+                source_ref="authoring:create_draft",
+                input_fingerprint=fingerprint,
+                created_at=now,
+            )
             content_id = self._id_generator.new()
             revision_id = self._id_generator.new()
             revision = await repository.create_item_and_draft(
@@ -554,7 +574,13 @@ class ContentApplicationService:
             if source.status in {"validating", "validated", "abandoned"}:
                 raise DomainError(ErrorCode.INVALID_TRANSITION)
             self._rights.require_publishable(command.rights_ref)
-            await repository.require_provenance(command.provenance_id)
+            await repository.ensure_human_provenance(
+                provenance_id=command.provenance_id,
+                actor_id=command.actor.actor_id,
+                source_ref="authoring:revise_draft",
+                input_fingerprint=fingerprint,
+                created_at=now,
+            )
             revision = await repository.add_revised_draft(
                 source=source,
                 content_revision_id=self._id_generator.new(),
@@ -590,9 +616,7 @@ class ContentApplicationService:
             action=action,
         )
 
-    async def validate_revision(
-        self, command: ValidateContentRevision
-    ) -> ContentMutationResult:
+    async def validate_revision(self, command: ValidateContentRevision) -> ContentMutationResult:
         self._require_role(command.actor, "author", "reviewer")
         fingerprint = canonical_json_fingerprint(
             {
@@ -672,9 +696,7 @@ class ContentApplicationService:
             action=action,
         )
 
-    async def approve_revision(
-        self, command: ApproveContentRevision
-    ) -> ContentMutationResult:
+    async def approve_revision(self, command: ApproveContentRevision) -> ContentMutationResult:
         self._require_role(command.actor, "reviewer")
         fingerprint = canonical_json_fingerprint(
             {
@@ -708,9 +730,7 @@ class ContentApplicationService:
             await self._event(
                 repository._session,
                 event_type=(
-                    "content_approved"
-                    if command.decision == "approved"
-                    else "content_rejected"
+                    "content_approved" if command.decision == "approved" else "content_rejected"
                 ),
                 content_id=item.content_id,
                 revision_id=command.revision_id,
@@ -733,9 +753,7 @@ class ContentApplicationService:
             action=action,
         )
 
-    async def publish_revision(
-        self, command: PublishContentRevision
-    ) -> ContentMutationResult:
+    async def publish_revision(self, command: PublishContentRevision) -> ContentMutationResult:
         self._require_role(command.actor, "reviewer", "admin")
         fingerprint = canonical_json_fingerprint(
             {
@@ -749,20 +767,19 @@ class ContentApplicationService:
         async def action(
             repository: SqlContentRepository, receipt: CommandReceipt, now: datetime
         ) -> ContentMutationResult:
-            if not await self._reauthentication.is_recent(
-                session=repository._session,
-                actor_id=command.actor.actor_id,
-                session_id=command.actor.session_id,
-                now=now,
-            ):
-                raise DomainError(ErrorCode.UNAUTHENTICATED)
             item, revision = await repository.lock_item_for_revision(
                 command.revision_id, expected_version=command.expected_version
             )
             if revision.status != "approved":
                 raise DomainError(ErrorCode.INVALID_TRANSITION)
             self._rights.require_publishable(revision.rights_ref)
-            await repository.require_provenance(command.publication_provenance_id)
+            await repository.ensure_human_provenance(
+                provenance_id=command.publication_provenance_id,
+                actor_id=command.actor.actor_id,
+                source_ref="authoring:publish_revision",
+                input_fingerprint=fingerprint,
+                created_at=now,
+            )
             references = await repository.resolve_published_references(
                 variety_id=item.variety_id,
                 references=revision.pinned_revision_refs,

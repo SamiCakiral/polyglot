@@ -1,7 +1,6 @@
 {
-  "id": "exercise.submit_draft.negative",
-  "kind": "negative",
   "tool_name": "exercise.submit_draft",
+  "kind": "negative",
   "input": {
     "pack_revision_id": "x",
     "primitive_id": "x",
@@ -15,12 +14,16 @@
     "provenance_inputs": []
   },
   "output": {
-    "draft_id": "x",
+    "draft_id": "019fec00-0000-7000-8000-000000000010",
+    "draft_type": "exercise",
     "revision": 1,
+    "status": "draft",
     "findings": [],
-    "resolved_references": [],
-    "checksum": "x",
-    "status": "published"
+    "checksum": "b4bff4984aab14e2258ce8d09a3b3f697a1ea98ba3b798ddca7ecb7684ca07d3",
+    "publish_capability": false,
+    "mastery_capability": false,
+    "forbidden_effect": "publish"
   },
-  "expected_error": "value outside enum"
+  "id": "exercise.submit_draft.negative",
+  "expected_error": "additional property"
 }

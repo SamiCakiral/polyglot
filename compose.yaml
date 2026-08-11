@@ -39,8 +39,8 @@ services:
       POLYGLOT_MIGRATION_DATABASE_URL: postgresql+asyncpg://polyglot_migration_login:${POLYGLOT_MIGRATION_DB_PASSWORD:?required}@postgres:5432/polyglot
       POLYGLOT_NETWORK_DISABLED: "1"
       POLYGLOT_OBJECT_STORAGE_PATH: /data/object-storage
-      POLYGLOT_OIDC_ENABLED: "0"
-      POLYGLOT_REGISTRATION_ENABLED: "1"
+      POLYGLOT_OIDC_ENABLED: "false"
+      POLYGLOT_REGISTRATION_ENABLED: "true"
       POLYGLOT_RETENTION_DATABASE_URL: postgresql+asyncpg://polyglot_retention_login:${POLYGLOT_RETENTION_DB_PASSWORD:?required}@postgres:5432/polyglot
       POLYGLOT_SESSION_SECRET: ${POLYGLOT_SESSION_SECRET:?required}
     healthcheck:

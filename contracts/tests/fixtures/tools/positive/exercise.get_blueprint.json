@@ -1,7 +1,6 @@
 {
-  "id": "exercise.get_blueprint.positive",
-  "kind": "positive",
   "tool_name": "exercise.get_blueprint",
+  "kind": "positive",
   "input": {
     "primitive_id": "x",
     "primitive_contract_version": 1,
@@ -10,13 +9,12 @@
     "accessibility_capabilities": []
   },
   "output": {
-    "stimulus_schema": {},
-    "response_schema": {},
-    "target_schema": {},
-    "correction_strategies": [],
-    "hints": [],
-    "observation_constraints": [],
-    "budgets": [],
-    "fixtures": []
+    "primitive_id": "x",
+    "contract_version": 1,
+    "correction_strategies": [
+      "deterministic",
+      "rubric"
+    ],
+    "publish_capability": false
   }
 }

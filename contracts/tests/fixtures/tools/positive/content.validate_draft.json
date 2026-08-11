@@ -1,7 +1,6 @@
 {
-  "id": "content.validate_draft.positive",
-  "kind": "positive",
   "tool_name": "content.validate_draft",
+  "kind": "positive",
   "input": {
     "draft_revision_id": "x",
     "validator_profile_id": "x",
@@ -10,10 +9,9 @@
     "seed": 1
   },
   "output": {
-    "report_id": "x",
+    "validation_report_id": "019fec00-0000-7000-8000-000000000014",
+    "decision": "human_required",
     "findings": [],
-    "coverage": [],
-    "decision": "x",
     "report_truncated": false
   }
 }

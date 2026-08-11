@@ -7,6 +7,8 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID
 
+from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
+
 from polyglot.interfaces.tools.registry import SEMVER, TOOL_REGISTRY, ToolDefinition
 from polyglot.platform.fingerprint import canonical_json_bytes, canonical_json_fingerprint
 from polyglot.platform.json_types import JsonValue
@@ -64,9 +66,7 @@ class ToolResult:
     output_fingerprint: str
 
 
-ToolHandler = Callable[
-    [ToolInvocation, ToolDefinition], Awaitable[dict[str, JsonValue]]
-]
+ToolHandler = Callable[[ToolInvocation, ToolDefinition], Awaitable[dict[str, JsonValue]]]
 
 
 class ToolExecutor:
@@ -104,12 +104,11 @@ class ToolExecutor:
             return self._failure(invocation, ToolFailure("internal_error"), started_at)
         if len(canonical_json_bytes(output)) > definition.max_output_bytes:
             return self._failure(invocation, ToolFailure("size_limit_exceeded"), started_at)
-        required, optional = definition.output_fields
-        properties = required | optional
-        if not required <= set(output) or not set(output) <= properties:
+        output_failure = self._schema_failure(output, definition.output_schema(), "output")
+        if output_failure is not None:
             return self._failure(
                 invocation,
-                ToolFailure("tool_schema_invalid", field_path="output"),
+                output_failure,
                 started_at,
             )
         finished_at = self._now()
@@ -141,29 +140,34 @@ class ToolExecutor:
             return ToolFailure("tool_not_allowed", field_path="actor_role")
         if definition.mutating and not invocation.idempotency_key:
             return ToolFailure("tool_schema_invalid", field_path="idempotency_key")
-        keys = set(invocation.input)
-        missing = definition.required - keys
-        unknown = keys - definition.required - definition.optional
-        if missing:
-            return ToolFailure("tool_schema_invalid", field_path=f"input.{sorted(missing)[0]}")
-        if unknown:
-            return ToolFailure("tool_schema_invalid", field_path=f"input.{sorted(unknown)[0]}")
+        schema_failure = ToolExecutor._schema_failure(
+            invocation.input, definition.input_schema(), "input"
+        )
+        if schema_failure is not None:
+            return schema_failure
         if len(canonical_json_bytes(invocation.input)) > definition.max_input_bytes:
             return ToolFailure("size_limit_exceeded", field_path="input")
         if definition.name == "catalogue.list_targets":
             limit = invocation.input.get("limit", 100)
             if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 200:
                 return ToolFailure("size_limit_exceeded", field_path="input.limit")
-        if definition.name == "quality.report_ambiguity":
-            private_context = invocation.input.get("private_context")
-            if (
-                private_context is not None
-                and invocation.input.get("private_context_consented") is not True
-            ):
-                return ToolFailure(
-                    "private_context_not_consented", field_path="input.private_context"
-                )
         return None
+
+    @staticmethod
+    def _schema_failure(
+        payload: dict[str, JsonValue], schema: dict[str, JsonValue], prefix: str
+    ) -> ToolFailure | None:
+        errors = sorted(
+            Draft202012Validator(schema).iter_errors(payload),
+            key=lambda error: tuple(str(part) for part in error.absolute_path),
+        )
+        if not errors:
+            return None
+        path = ".".join(str(part) for part in errors[0].absolute_path)
+        return ToolFailure(
+            "tool_schema_invalid",
+            field_path=prefix if not path else f"{prefix}.{path}",
+        )
 
     def _failure(
         self, invocation: ToolInvocation, failure: ToolFailure, started_at: datetime

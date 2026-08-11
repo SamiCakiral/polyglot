@@ -27,6 +27,9 @@ export function TodayPage() {
   if (isPending) return <LoadingRegion label="Préparation de votre journée" />;
   if (!activeProfile) return <NoProfile />;
   const profileId = activeProfile.profile_id;
+  const activeRunId = localStorage.getItem("polyglot.active-run");
+  const completedToday =
+    localStorage.getItem(`polyglot.completed-day.${profileId}`) === todayIso();
 
   async function composePlan() {
     setError("");
@@ -60,11 +63,12 @@ export function TodayPage() {
 
   return (
     <div className="page-flow">
-      <PageHeader eyebrow={todayIso()} title="Aujourd'hui" description="Une séance construite autour de vos rappels, de votre module et des preuves encore fragiles." action={<StatusPill tone={plan ? "good" : "neutral"}>{plan ? "Prête" : "À composer"}</StatusPill>} />
+      <PageHeader eyebrow={todayIso()} title="Aujourd'hui" description="Une séance construite autour de vos rappels, de votre module et des preuves encore fragiles." action={<StatusPill tone={completedToday || plan ? "good" : "neutral"}>{completedToday ? "Terminée" : activeRunId ? "En pause" : plan ? "Prête" : "À composer"}</StatusPill>} />
       <DailyVocabulary profileId={profileId} session={session} />
       <section className="today-workbench">
         <div className="today-workbench__main">
-          <div className="section-heading"><div><p className="eyebrow">Séance du jour</p><h2>{plan ? "Votre parcours est prêt" : "Combien de temps avez-vous ?"}</h2></div><Clock3 aria-hidden="true" /></div>
+          <div className="section-heading"><div><p className="eyebrow">Séance du jour</p><h2>{completedToday ? "Séance terminée aujourd'hui" : activeRunId ? "Votre séance vous attend" : plan ? "Votre parcours est prêt" : "Combien de temps avez-vous ?"}</h2></div><Clock3 aria-hidden="true" /></div>
+          {completedToday ? <p className="quiet-copy">Vos réponses et vos rappels sont enregistrés. La prochaine séance sera disponible demain.</p> : activeRunId ? <button type="button" onClick={() => { void navigate(`/sprints/${activeRunId}`); }}>Reprendre la séance <ArrowRight aria-hidden="true" size={18} /></button> : <>
           <div aria-label="Durée de la séance" className="segmented-control">
             {budgets.map((minutes) => <button aria-pressed={budget === minutes} className="segment" key={minutes} type="button" onClick={() => { setBudget(minutes); }}>{minutes}<small>min</small></button>)}
           </div>
@@ -78,6 +82,7 @@ export function TodayPage() {
           )}
           {error ? <ErrorRegion message={error} /> : null}
           {plan ? <button disabled={prepare.isPending || start.isPending} type="button" onClick={() => void begin()}>Commencer la séance <ArrowRight aria-hidden="true" size={18} /></button> : <button disabled={compose.isPending} type="button" onClick={() => void composePlan()}>{compose.isPending ? "Composition..." : "Composer ma séance"} <Sparkles aria-hidden="true" size={18} /></button>}
+          </>}
         </div>
         <aside className="today-workbench__aside">
           <p className="eyebrow">Pourquoi maintenant ?</p>

@@ -1,6 +1,8 @@
 import asyncio
+import json
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from uuid import UUID
 
 import pytest
@@ -68,6 +70,25 @@ def test_registry_contains_exactly_the_eleven_closed_tools() -> None:
         definition.input_schema()["additionalProperties"] is False
         for definition in TOOL_DEFINITIONS
     )
+
+
+def test_runtime_registry_matches_the_versioned_contract_manifest() -> None:
+    root = Path(__file__).resolve().parents[4]
+    manifest = json.loads((root / "contracts/tools/manifest.yaml").read_text())
+    manifest_tools = {item["tool_name"]: item for item in manifest["tools"]}
+
+    assert set(manifest_tools) == set(TOOL_REGISTRY)
+    for definition in TOOL_DEFINITIONS:
+        item = manifest_tools[definition.name]
+        assert set(item["roles"]) == definition.roles
+        assert item["side_effect"] == definition.effect.value
+        assert set(item["input"]) == set(definition.input_schema()["properties"])
+        assert set(item["output"]) == set(definition.output_schema()["properties"])
+        assert set(definition.input_schema()["required"]) == definition.required
+        assert (
+            set(definition.input_schema()["properties"]) - definition.required
+            == definition.optional
+        )
     assert not any(
         word in definition.name
         for definition in TOOL_DEFINITIONS
@@ -116,54 +137,54 @@ async def test_every_mutating_tool_only_returns_non_publishable_artifacts() -> N
         "exercise.submit_draft": {
             "pack_revision_id": "p",
             "primitive_id": "cloze",
-            "blueprint_version": "1",
-            "stimulus": {},
-            "response_contract": {},
+            "blueprint_version": 1,
+            "stimulus": [],
+            "response_contract": "free_text",
             "target_bindings": [],
             "accepted_answers_or_rubric": [],
             "hints": [],
-            "difficulty_profile": {},
+            "difficulty_profile": "beginner",
             "provenance_inputs": [],
         },
         "curriculum.submit_module_draft": {
             "pack_revision_id": "p",
-            "module_identity": {},
-            "audience": {},
+            "module": "arrival_in_italy",
+            "audience": "beginner",
             "objectives": [],
             "prerequisites": [],
-            "exit_policy": {},
+            "exit_policy": "complete_required_checks",
             "day_draft_refs": [],
-            "min_days": 1,
-            "max_days": 3,
-            "context": {},
-            "provenance": [],
+            "length": "3_days",
+            "context": "arrival",
+            "provenance": "fixture",
         },
         "curriculum.submit_day_draft": {
             "module_draft_id": "d",
             "ordinal": 1,
-            "arc": {},
-            "context": {},
+            "arc": "discovery_practice_recall",
+            "context": "arrival",
             "objectives": [],
-            "novelties": [],
-            "recalls": [],
-            "delayed_needs": [],
+            "novelty": "identity",
+            "reviews": [],
+            "next_day_needs": [],
             "lists": [],
             "compositions": [],
-            "provenance": [],
+            "provenance": "fixture",
+            "expected_version": 1,
         },
         "correction.submit_structured_draft": {
             "attempt_id": "a",
             "attempt_version": 1,
             "strategy": "rubric",
             "verdict": "partial",
-            "criterion_scores": {},
+            "criterion_scores": [],
             "error_codes": [],
-            "proposed_answer": "",
+            "proposed_answer": "x",
             "alternatives": [],
             "explanation_codes": [],
             "confidence": 0.9,
             "target_observations": [],
-            "provenance": [],
+            "provenance": "fixture",
         },
     }
     roles = {
@@ -194,9 +215,7 @@ async def test_timeout_missing_handler_and_hostile_output_fail_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     sequence = Sequence()
-    call = invocation(
-        "catalogue.list_targets", "learner", {"pack_revision_id": "it-v1"}
-    )
+    call = invocation("catalogue.list_targets", "learner", {"pack_revision_id": "it-v1"})
 
     async def slow(*_: object) -> dict[str, object]:
         await asyncio.sleep(0.02)
@@ -215,9 +234,7 @@ async def test_timeout_missing_handler_and_hostile_output_fail_closed(
     timed_out = await ToolExecutor(
         {call.tool_name: slow}, now=sequence.now, provenance_id=sequence.id
     ).invoke(call)
-    unavailable = await ToolExecutor(
-        {}, now=sequence.now, provenance_id=sequence.id
-    ).invoke(call)
+    unavailable = await ToolExecutor({}, now=sequence.now, provenance_id=sequence.id).invoke(call)
     monkeypatch.setitem(TOOL_REGISTRY, call.tool_name, original)
     rejected_output = await ToolExecutor(
         {call.tool_name: hostile}, now=sequence.now, provenance_id=sequence.id

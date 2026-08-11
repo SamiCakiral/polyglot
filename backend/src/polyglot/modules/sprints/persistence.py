@@ -921,9 +921,10 @@ class SqlSprintService:
         self, session: AsyncSession, primitive_ids: tuple[str, ...]
     ) -> tuple[UUID, ...]:
         statement = text(
-            "SELECT definition_revision_id FROM exercises.exercise_definition_revisions "
+            "SELECT DISTINCT ON (primitive_id) definition_revision_id "
+            "FROM exercises.exercise_definition_revisions "
             "WHERE status='published' AND primitive_id IN :primitives "
-            "ORDER BY primitive_id,definition_revision_id LIMIT 16"
+            "ORDER BY primitive_id,revision_no DESC,definition_revision_id DESC LIMIT 16"
         ).bindparams(bindparam("primitives", expanding=True))
         values = tuple(
             _uuid(item)
@@ -1019,7 +1020,12 @@ class SqlSprintService:
                     memory_due=0.7 if family is BlockFamily.RECALL_WARMUP else 0,
                     module_criticality=(
                         0.9
-                        if family in {BlockFamily.TRANSFORMATION_GYM, BlockFamily.GUIDED_OUTPUT}
+                        if family
+                        in {
+                            BlockFamily.GRAMMAR_TOOLBOX,
+                            BlockFamily.TRANSFORMATION_GYM,
+                            BlockFamily.GUIDED_OUTPUT,
+                        }
                         else 0.4
                     ),
                     modality_balance=(

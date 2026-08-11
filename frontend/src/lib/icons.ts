@@ -1,0 +1,110 @@
+import AlertCircleIcon from "lucide-react/dist/esm/icons/alert-circle.mjs";
+import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left.mjs";
+import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right.mjs";
+import BarChart3Icon from "lucide-react/dist/esm/icons/bar-chart-3.mjs";
+import BookMarkedIcon from "lucide-react/dist/esm/icons/book-marked.mjs";
+import BookOpenIcon from "lucide-react/dist/esm/icons/book-open.mjs";
+import BookOpenCheckIcon from "lucide-react/dist/esm/icons/book-open-check.mjs";
+import BracesIcon from "lucide-react/dist/esm/icons/braces.mjs";
+import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days.mjs";
+import CalendarRangeIcon from "lucide-react/dist/esm/icons/calendar-range.mjs";
+import CheckIcon from "lucide-react/dist/esm/icons/check.mjs";
+import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2.mjs";
+import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down.mjs";
+import Clock3Icon from "lucide-react/dist/esm/icons/clock-3.mjs";
+import DownloadIcon from "lucide-react/dist/esm/icons/download.mjs";
+import DumbbellIcon from "lucide-react/dist/esm/icons/dumbbell.mjs";
+import EarIcon from "lucide-react/dist/esm/icons/ear.mjs";
+import EyeIcon from "lucide-react/dist/esm/icons/eye.mjs";
+import FileClockIcon from "lucide-react/dist/esm/icons/file-clock.mjs";
+import FolderOpenIcon from "lucide-react/dist/esm/icons/folder-open.mjs";
+import HeadphonesIcon from "lucide-react/dist/esm/icons/headphones.mjs";
+import HomeIcon from "lucide-react/dist/esm/icons/home.mjs";
+import LanguagesIcon from "lucide-react/dist/esm/icons/languages.mjs";
+import ListPlusIcon from "lucide-react/dist/esm/icons/list-plus.mjs";
+import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle.mjs";
+import MenuIcon from "lucide-react/dist/esm/icons/menu.mjs";
+import Mic2Icon from "lucide-react/dist/esm/icons/mic-2.mjs";
+import MilestoneIcon from "lucide-react/dist/esm/icons/milestone.mjs";
+import PauseIcon from "lucide-react/dist/esm/icons/pause.mjs";
+import PenLineIcon from "lucide-react/dist/esm/icons/pen-line.mjs";
+import PlayIcon from "lucide-react/dist/esm/icons/play.mjs";
+import PlusIcon from "lucide-react/dist/esm/icons/plus.mjs";
+import RefreshCwIcon from "lucide-react/dist/esm/icons/refresh-cw.mjs";
+import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw.mjs";
+import RouteIcon from "lucide-react/dist/esm/icons/route.mjs";
+import SaveIcon from "lucide-react/dist/esm/icons/save.mjs";
+import SearchIcon from "lucide-react/dist/esm/icons/search.mjs";
+import SettingsIcon from "lucide-react/dist/esm/icons/settings.mjs";
+import ShieldAlertIcon from "lucide-react/dist/esm/icons/shield-alert.mjs";
+import SlidersHorizontalIcon from "lucide-react/dist/esm/icons/sliders-horizontal.mjs";
+import SparklesIcon from "lucide-react/dist/esm/icons/sparkles.mjs";
+import SquareIcon from "lucide-react/dist/esm/icons/square.mjs";
+import TimerIcon from "lucide-react/dist/esm/icons/timer.mjs";
+import Trash2Icon from "lucide-react/dist/esm/icons/trash-2.mjs";
+import UserRoundIcon from "lucide-react/dist/esm/icons/user-round.mjs";
+import Volume2Icon from "lucide-react/dist/esm/icons/volume-2.mjs";
+import WrenchIcon from "lucide-react/dist/esm/icons/wrench.mjs";
+import XIcon from "lucide-react/dist/esm/icons/x.mjs";
+import type {
+  ForwardRefExoticComponent,
+  RefAttributes,
+  SVGProps,
+} from "react";
+
+export type LucideIcon = ForwardRefExoticComponent<
+  Omit<SVGProps<SVGSVGElement>, "ref"> &
+    RefAttributes<SVGSVGElement> & {
+      absoluteStrokeWidth?: boolean;
+      size?: number | string;
+    }
+>;
+
+export const AlertCircle = AlertCircleIcon;
+export const ArrowLeft = ArrowLeftIcon;
+export const ArrowRight = ArrowRightIcon;
+export const BarChart3 = BarChart3Icon;
+export const BookMarked = BookMarkedIcon;
+export const BookOpen = BookOpenIcon;
+export const BookOpenCheck = BookOpenCheckIcon;
+export const Braces = BracesIcon;
+export const CalendarDays = CalendarDaysIcon;
+export const CalendarRange = CalendarRangeIcon;
+export const Check = CheckIcon;
+export const CheckCircle2 = CheckCircle2Icon;
+export const ChevronDown = ChevronDownIcon;
+export const Clock3 = Clock3Icon;
+export const Download = DownloadIcon;
+export const Dumbbell = DumbbellIcon;
+export const Ear = EarIcon;
+export const Eye = EyeIcon;
+export const FileClock = FileClockIcon;
+export const FolderOpen = FolderOpenIcon;
+export const Headphones = HeadphonesIcon;
+export const Home = HomeIcon;
+export const Languages = LanguagesIcon;
+export const ListPlus = ListPlusIcon;
+export const LoaderCircle = LoaderCircleIcon;
+export const Menu = MenuIcon;
+export const Mic2 = Mic2Icon;
+export const Milestone = MilestoneIcon;
+export const Pause = PauseIcon;
+export const PenLine = PenLineIcon;
+export const Play = PlayIcon;
+export const Plus = PlusIcon;
+export const RefreshCw = RefreshCwIcon;
+export const RotateCcw = RotateCcwIcon;
+export const Route = RouteIcon;
+export const Save = SaveIcon;
+export const Search = SearchIcon;
+export const Settings = SettingsIcon;
+export const ShieldAlert = ShieldAlertIcon;
+export const SlidersHorizontal = SlidersHorizontalIcon;
+export const Sparkles = SparklesIcon;
+export const Square = SquareIcon;
+export const Timer = TimerIcon;
+export const Trash2 = Trash2Icon;
+export const UserRound = UserRoundIcon;
+export const Volume2 = Volume2Icon;
+export const Wrench = WrenchIcon;
+export const X = XIcon;

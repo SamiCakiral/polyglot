@@ -328,6 +328,7 @@ function AssessmentItemControl({
   modality,
   runId,
   session,
+  showContext,
   value,
   onChange,
 }: {
@@ -335,6 +336,7 @@ function AssessmentItemControl({
   modality: string;
   runId: string;
   session: CurrentSessionResponse;
+  showContext: boolean;
   value: string;
   onChange: (value: string) => void;
 }) {
@@ -345,8 +347,8 @@ function AssessmentItemControl({
   const options = promptOptions(item);
   return (
     <article className="assessment-item">
-      {title ? <h2>{title}</h2> : null}
-      {body ? <p lang="it">{body}</p> : null}
+      {showContext && title ? <h2>{title}</h2> : null}
+      {showContext && body ? <p lang="it">{body}</p> : null}
       {modality === "listening" ? (
         <TtsAudio
           assessmentItemId={item.item_id}
@@ -502,22 +504,30 @@ export function AssessmentRunPage() {
           <section className="assessment-section" key={section.section_id}>
             <p className="eyebrow">{section.title}</p>
             <p>{section.instructions}</p>
-            {section.items.map((item) => (
-              <AssessmentItemControl
-                item={item}
-                key={item.item_id}
-                modality={run.modality}
-                runId={run.run_id}
-                session={session}
-                value={answers[item.item_id] ?? ""}
-                onChange={(value) => {
-                  setAnswers((current) => ({
-                    ...current,
-                    [item.item_id]: value,
-                  }));
-                }}
-              />
-            ))}
+            {section.items.map((item, index) => {
+              const previous = section.items[index - 1];
+              const showContext =
+                !previous ||
+                promptText(previous, "title") !== promptText(item, "title") ||
+                promptText(previous, "body") !== promptText(item, "body");
+              return (
+                <AssessmentItemControl
+                  item={item}
+                  key={item.item_id}
+                  modality={run.modality}
+                  runId={run.run_id}
+                  session={session}
+                  showContext={showContext}
+                  value={answers[item.item_id] ?? ""}
+                  onChange={(value) => {
+                    setAnswers((current) => ({
+                      ...current,
+                      [item.item_id]: value,
+                    }));
+                  }}
+                />
+              );
+            })}
           </section>
         ))}
         {error ? <ErrorRegion message={error} /> : null}

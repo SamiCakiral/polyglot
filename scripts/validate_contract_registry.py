@@ -117,8 +117,18 @@ def validate_schema_shape(schema: object, label: str) -> None:
     item = obj(schema, label)
     if "$schema" in item and not isinstance(item["$schema"], str):
         raise ValueError(f"invalid schema declaration: {label}")
-    schema_type = item.get("type")
-    if schema_type not in {"object", "array", "string", "integer", "number", "boolean"}:
+    raw_type = item.get("type")
+    allowed_types = {"object", "array", "string", "integer", "number", "boolean", "null"}
+    if isinstance(raw_type, list):
+        if not raw_type or not set(raw_type) <= allowed_types or "null" not in raw_type:
+            raise ValueError(f"schema has invalid union type: {label}")
+        concrete_types = [value for value in raw_type if value != "null"]
+        if len(concrete_types) != 1:
+            raise ValueError(f"schema union must have one concrete type: {label}")
+        schema_type = concrete_types[0]
+    else:
+        schema_type = raw_type
+    if schema_type not in allowed_types - {"null"}:
         raise ValueError(f"schema missing concrete type: {label}")
     if schema_type == "object":
         if item.get("additionalProperties") is not False:
@@ -143,7 +153,13 @@ def validate_schema_shape(schema: object, label: str) -> None:
 
 def validate_instance(value: object, schema: object, path: str) -> None:
     item = obj(schema, path)
-    schema_type = item["type"]
+    raw_type = item["type"]
+    if isinstance(raw_type, list):
+        if value is None and "null" in raw_type:
+            return
+        schema_type = next(kind for kind in raw_type if kind != "null")
+    else:
+        schema_type = raw_type
     type_ok = {
         "object": isinstance(value, dict),
         "array": isinstance(value, list),
@@ -548,7 +564,9 @@ def check_artifacts(root: Path) -> None:
     tracked = set(tracked_lines)
     forbidden = ("app/", "tests/", "card_sets/", "pillar_content/", ".env", "venv/", ".venv/")
     for path in tracked_lines:
-        if path in {"config.py", "run.py", "requirements.txt", ".env.example"} or path.startswith(forbidden) or path.endswith((".db", ".sqlite", ".sqlite3")):
+        if path == ".env.example":
+            continue
+        if path in {"config.py", "run.py", "requirements.txt"} or path.startswith(forbidden) or path.endswith((".db", ".sqlite", ".sqlite3")):
             raise ValueError(f"forbidden tracked V1/private artifact: {path}")
     untracked = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=normal"],

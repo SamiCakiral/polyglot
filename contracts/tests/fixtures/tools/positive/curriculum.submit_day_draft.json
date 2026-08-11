@@ -1,7 +1,6 @@
 {
-  "id": "curriculum.submit_day_draft.positive",
-  "kind": "positive",
   "tool_name": "curriculum.submit_day_draft",
+  "kind": "positive",
   "input": {
     "module_draft_id": "x",
     "ordinal": 1,
@@ -17,10 +16,13 @@
     "expected_version": 1
   },
   "output": {
-    "day_draft": {},
-    "reference_plans": [],
-    "budget_validation": {},
-    "observable_targets": [],
-    "checksum": "x"
+    "draft_id": "019fec00-0000-7000-8000-00000000001c",
+    "draft_type": "day",
+    "revision": 1,
+    "status": "draft",
+    "findings": [],
+    "checksum": "ef9a0c5adc82e13247e6286e71a5cab233ba4d8553477463169c3a2058eb1f09",
+    "publish_capability": false,
+    "mastery_capability": false
   }
 }

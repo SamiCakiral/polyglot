@@ -7746,6 +7746,16 @@ export type getDiagnosticSummaryResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type getDiagnosticSummaryResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getDiagnosticSummaryResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type getDiagnosticSummaryResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -7815,6 +7825,8 @@ export type getDiagnosticSummaryResponseError = (
   | getDiagnosticSummaryResponse401ApplicationProblemJson
   | getDiagnosticSummaryResponse403ApplicationJson
   | getDiagnosticSummaryResponse403ApplicationProblemJson
+  | getDiagnosticSummaryResponse404ApplicationJson
+  | getDiagnosticSummaryResponse404ApplicationProblemJson
   | getDiagnosticSummaryResponse409ApplicationJson
   | getDiagnosticSummaryResponse409ApplicationProblemJson
   | getDiagnosticSummaryResponse422ApplicationJson
@@ -8039,6 +8051,16 @@ export type submitDiagnosticResponseResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type submitDiagnosticResponseResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type submitDiagnosticResponseResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type submitDiagnosticResponseResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -8108,6 +8130,8 @@ export type submitDiagnosticResponseResponseError = (
   | submitDiagnosticResponseResponse401ApplicationProblemJson
   | submitDiagnosticResponseResponse403ApplicationJson
   | submitDiagnosticResponseResponse403ApplicationProblemJson
+  | submitDiagnosticResponseResponse404ApplicationJson
+  | submitDiagnosticResponseResponse404ApplicationProblemJson
   | submitDiagnosticResponseResponse409ApplicationJson
   | submitDiagnosticResponseResponse409ApplicationProblemJson
   | submitDiagnosticResponseResponse422ApplicationJson
@@ -8258,6 +8282,16 @@ export type completeDiagnosticResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type completeDiagnosticResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type completeDiagnosticResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type completeDiagnosticResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -8327,6 +8361,8 @@ export type completeDiagnosticResponseError = (
   | completeDiagnosticResponse401ApplicationProblemJson
   | completeDiagnosticResponse403ApplicationJson
   | completeDiagnosticResponse403ApplicationProblemJson
+  | completeDiagnosticResponse404ApplicationJson
+  | completeDiagnosticResponse404ApplicationProblemJson
   | completeDiagnosticResponse409ApplicationJson
   | completeDiagnosticResponse409ApplicationProblemJson
   | completeDiagnosticResponse422ApplicationJson
@@ -9246,6 +9282,16 @@ export type getFoundationRunResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type getFoundationRunResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getFoundationRunResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type getFoundationRunResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -9314,6 +9360,8 @@ export type getFoundationRunResponseError = (
   | getFoundationRunResponse401ApplicationProblemJson
   | getFoundationRunResponse403ApplicationJson
   | getFoundationRunResponse403ApplicationProblemJson
+  | getFoundationRunResponse404ApplicationJson
+  | getFoundationRunResponse404ApplicationProblemJson
   | getFoundationRunResponse409ApplicationJson
   | getFoundationRunResponse409ApplicationProblemJson
   | getFoundationRunResponse422ApplicationJson
@@ -9535,6 +9583,16 @@ export type completeFoundationGateResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type completeFoundationGateResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type completeFoundationGateResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type completeFoundationGateResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -9604,6 +9662,8 @@ export type completeFoundationGateResponseError = (
   | completeFoundationGateResponse401ApplicationProblemJson
   | completeFoundationGateResponse403ApplicationJson
   | completeFoundationGateResponse403ApplicationProblemJson
+  | completeFoundationGateResponse404ApplicationJson
+  | completeFoundationGateResponse404ApplicationProblemJson
   | completeFoundationGateResponse409ApplicationJson
   | completeFoundationGateResponse409ApplicationProblemJson
   | completeFoundationGateResponse422ApplicationJson
@@ -13223,6 +13283,16 @@ export type getLanguageProfileResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type getLanguageProfileResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getLanguageProfileResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type getLanguageProfileResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -13292,6 +13362,8 @@ export type getLanguageProfileResponseError = (
   | getLanguageProfileResponse401ApplicationProblemJson
   | getLanguageProfileResponse403ApplicationJson
   | getLanguageProfileResponse403ApplicationProblemJson
+  | getLanguageProfileResponse404ApplicationJson
+  | getLanguageProfileResponse404ApplicationProblemJson
   | getLanguageProfileResponse409ApplicationJson
   | getLanguageProfileResponse409ApplicationProblemJson
   | getLanguageProfileResponse422ApplicationJson
@@ -14131,6 +14203,16 @@ export type deleteLanguageProfileResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type deleteLanguageProfileResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type deleteLanguageProfileResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type deleteLanguageProfileResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -14200,6 +14282,8 @@ export type deleteLanguageProfileResponseError = (
   | deleteLanguageProfileResponse401ApplicationProblemJson
   | deleteLanguageProfileResponse403ApplicationJson
   | deleteLanguageProfileResponse403ApplicationProblemJson
+  | deleteLanguageProfileResponse404ApplicationJson
+  | deleteLanguageProfileResponse404ApplicationProblemJson
   | deleteLanguageProfileResponse409ApplicationJson
   | deleteLanguageProfileResponse409ApplicationProblemJson
   | deleteLanguageProfileResponse422ApplicationJson
@@ -15842,6 +15926,16 @@ export type updateLearningGoalsResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type updateLearningGoalsResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type updateLearningGoalsResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type updateLearningGoalsResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -15911,6 +16005,8 @@ export type updateLearningGoalsResponseError = (
   | updateLearningGoalsResponse401ApplicationProblemJson
   | updateLearningGoalsResponse403ApplicationJson
   | updateLearningGoalsResponse403ApplicationProblemJson
+  | updateLearningGoalsResponse404ApplicationJson
+  | updateLearningGoalsResponse404ApplicationProblemJson
   | updateLearningGoalsResponse409ApplicationJson
   | updateLearningGoalsResponse409ApplicationProblemJson
   | updateLearningGoalsResponse422ApplicationJson
@@ -18961,6 +19057,16 @@ export type archiveLanguageProfileResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type archiveLanguageProfileResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type archiveLanguageProfileResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type archiveLanguageProfileResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -19030,6 +19136,8 @@ export type archiveLanguageProfileResponseError = (
   | archiveLanguageProfileResponse401ApplicationProblemJson
   | archiveLanguageProfileResponse403ApplicationJson
   | archiveLanguageProfileResponse403ApplicationProblemJson
+  | archiveLanguageProfileResponse404ApplicationJson
+  | archiveLanguageProfileResponse404ApplicationProblemJson
   | archiveLanguageProfileResponse409ApplicationJson
   | archiveLanguageProfileResponse409ApplicationProblemJson
   | archiveLanguageProfileResponse422ApplicationJson
@@ -19175,6 +19283,16 @@ export type pauseLanguageProfileResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type pauseLanguageProfileResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type pauseLanguageProfileResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type pauseLanguageProfileResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -19244,6 +19362,8 @@ export type pauseLanguageProfileResponseError = (
   | pauseLanguageProfileResponse401ApplicationProblemJson
   | pauseLanguageProfileResponse403ApplicationJson
   | pauseLanguageProfileResponse403ApplicationProblemJson
+  | pauseLanguageProfileResponse404ApplicationJson
+  | pauseLanguageProfileResponse404ApplicationProblemJson
   | pauseLanguageProfileResponse409ApplicationJson
   | pauseLanguageProfileResponse409ApplicationProblemJson
   | pauseLanguageProfileResponse422ApplicationJson
@@ -19389,6 +19509,16 @@ export type restoreLanguageProfileResponse403ApplicationProblemJson = {
   status: 403;
 };
 
+export type restoreLanguageProfileResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type restoreLanguageProfileResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
 export type restoreLanguageProfileResponse409ApplicationJson = {
   data: ProblemResponse;
   status: 409;
@@ -19458,6 +19588,8 @@ export type restoreLanguageProfileResponseError = (
   | restoreLanguageProfileResponse401ApplicationProblemJson
   | restoreLanguageProfileResponse403ApplicationJson
   | restoreLanguageProfileResponse403ApplicationProblemJson
+  | restoreLanguageProfileResponse404ApplicationJson
+  | restoreLanguageProfileResponse404ApplicationProblemJson
   | restoreLanguageProfileResponse409ApplicationJson
   | restoreLanguageProfileResponse409ApplicationProblemJson
   | restoreLanguageProfileResponse422ApplicationJson

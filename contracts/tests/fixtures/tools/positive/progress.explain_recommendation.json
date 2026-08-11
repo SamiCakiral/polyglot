@@ -1,7 +1,6 @@
 {
-  "id": "progress.explain_recommendation.positive",
-  "kind": "positive",
   "tool_name": "progress.explain_recommendation",
+  "kind": "positive",
   "input": {
     "profile_id": "x",
     "recommendation_id": "x",
@@ -9,11 +8,11 @@
     "detail_level": "summary"
   },
   "output": {
-    "reason": {},
-    "targets": [],
-    "authorized_facts": [],
-    "policy": {},
-    "alternatives": [],
-    "disappearance_conditions": []
+    "recommendation_id": "x",
+    "reason_codes": [
+      "evidence_freshness"
+    ],
+    "facts": [],
+    "alternatives": []
   }
 }

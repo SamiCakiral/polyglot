@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from polyglot.interfaces.tools.deterministic import DeterministicToolHandlers
@@ -69,6 +70,7 @@ class FakeProvider:
                         "location": "prompt",
                         "description": "La consigne admet deux lectures.",
                         "candidate_interpretations": ["train", "entraînement"],
+                        "private_context_consent": False,
                     },
                 }
             ),
@@ -91,13 +93,13 @@ def draft_invocation(actor_id: UUID, sequence: Sequence | None = None) -> ToolIn
         {
             "pack_revision_id": "p",
             "primitive_id": "cloze",
-            "blueprint_version": "1",
-            "stimulus": {},
-            "response_contract": {},
+            "blueprint_version": 1,
+            "stimulus": [],
+            "response_contract": "free_text",
             "target_bindings": [],
             "accepted_answers_or_rubric": [],
             "hints": [],
-            "difficulty_profile": {},
+            "difficulty_profile": "beginner",
             "provenance_inputs": [],
         },
         ids.id(),
@@ -184,6 +186,29 @@ async def test_tool_invocation_is_idempotent_and_only_persists_a_draft(
     assert artifacts[0].status == "draft"
     assert artifacts[0].artifact_type == "exercise"
     assert "publish" not in artifacts[0].payload
+    assert artifacts[0].payload["draft_payload"] == invocation.input
+    assert artifacts[0].payload["tool_result"] == result.output
+    assert artifacts[0].provenance_id == result.provenance_id
+    async with runtime_factory() as session:
+        await session.execute(
+            text("SELECT set_config('app.user_id',:actor,true)"),
+            {"actor": str(seeded_account)},
+        )
+        provenance = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT source_type,source_ref FROM platform.provenance_records "
+                        "WHERE provenance_id=:provenance"
+                    ),
+                    {"provenance": result.provenance_id},
+                )
+            )
+            .mappings()
+            .one()
+        )
+    assert provenance["source_type"] == "tool"
+    assert provenance["source_ref"] == "tool:exercise.submit_draft@1.0.0"
 
     conflicting = ToolInvocation(
         invocation.tool_name,
