@@ -7,6 +7,12 @@
     "UpdateUserPreferences",
     "UpdateConsent",
     "CreateLanguageProfile",
+    "CreateAccountLanguage",
+    "ReviseAccountLanguage",
+    "ArchiveAccountLanguage",
+    "StartOnboarding",
+    "RecordPlacementProfile",
+    "ChoosePlacement",
     "UpdateLearningGoals",
     "StartDiagnostic",
     "SubmitDiagnosticResponse",
@@ -81,6 +87,7 @@
     "UseExerciseHint",
     "SubmitExerciseAttempt",
     "SelfAssessExerciseAttempt",
+    "EvaluateExerciseAttempt",
     "ContestCorrection",
     "ReviewCorrection",
     "ReviewCorrectionCase",
@@ -98,7 +105,19 @@
     "CompleteMediaUpload",
     "DeleteMedia",
     "SynthesizeSpeech",
-    "CancelJob"
+    "CancelJob",
+    "CreatePracticeStack",
+    "CombinePracticeStacks",
+    "InjectPracticeStack",
+    "CreatePracticePreset",
+    "StartPracticeRun",
+    "AdvancePracticeRun",
+    "InterruptPracticeRun",
+    "ResumePracticeRun",
+    "AbandonPracticeRun",
+    "CreateTeacherConversation",
+    "SendTeacherMessage",
+    "RevertTeacherAction"
   ],
   "query_names": [
     "GetCurrentUser",
@@ -143,7 +162,9 @@
     "GetContentDraft",
     "GetValidationReport",
     "GetTtsCapabilities",
-    "GetMediaAvailability"
+    "GetMediaAvailability",
+    "ListTeacherConversations",
+    "GetTeacherConversation"
   ],
   "tool_names": [
     "profile.read_authorized",
@@ -321,6 +342,42 @@
       "name": "CreateLanguageProfile",
       "method": "POST",
       "route": "/api/v1/language-profiles",
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateAccountLanguage",
+      "method": "POST",
+      "route": "/api/v1/account-languages",
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviseAccountLanguage",
+      "method": "PATCH",
+      "route": "/api/v1/account-languages/{language_id}",
+      "idempotency": "required"
+    },
+    {
+      "name": "ArchiveAccountLanguage",
+      "method": "POST",
+      "route": "/api/v1/account-languages/{language_id}:archive",
+      "idempotency": "required"
+    },
+    {
+      "name": "StartOnboarding",
+      "method": "PUT",
+      "route": "/api/v1/language-profiles/{profile_id}/onboarding",
+      "idempotency": "required"
+    },
+    {
+      "name": "RecordPlacementProfile",
+      "method": "PATCH",
+      "route": "/api/v1/language-profiles/{profile_id}/onboarding/placement",
+      "idempotency": "required"
+    },
+    {
+      "name": "ChoosePlacement",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/onboarding:choose",
       "idempotency": "required"
     },
     {
@@ -768,6 +825,12 @@
       "idempotency": "required"
     },
     {
+      "name": "EvaluateExerciseAttempt",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}:evaluate",
+      "idempotency": "required"
+    },
+    {
       "name": "ContestCorrection",
       "method": "POST",
       "route": "/api/v1/attempts/{attempt_id}/correction-case",
@@ -874,6 +937,78 @@
       "method": "POST",
       "route": "/api/v1/jobs/{job_id}:cancel",
       "idempotency": "required"
+    },
+    {
+      "name": "CreatePracticeStack",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/practice-stacks",
+      "idempotency": "required"
+    },
+    {
+      "name": "CombinePracticeStacks",
+      "method": "POST",
+      "route": "/api/v1/practice-stacks:combine",
+      "idempotency": "required"
+    },
+    {
+      "name": "InjectPracticeStack",
+      "method": "POST",
+      "route": "/api/v1/practice-stacks/{stack_id}:inject-next-sprint",
+      "idempotency": "required"
+    },
+    {
+      "name": "CreatePracticePreset",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/practice-presets",
+      "idempotency": "required"
+    },
+    {
+      "name": "StartPracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-presets/{preset_id}/runs",
+      "idempotency": "required"
+    },
+    {
+      "name": "AdvancePracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:advance",
+      "idempotency": "required"
+    },
+    {
+      "name": "InterruptPracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:interrupt",
+      "idempotency": "required"
+    },
+    {
+      "name": "ResumePracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:resume",
+      "idempotency": "required"
+    },
+    {
+      "name": "AbandonPracticeRun",
+      "method": "POST",
+      "route": "/api/v1/practice-runs/{run_id}:abandon",
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateTeacherConversation",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/teacher-conversations",
+      "idempotency": "required"
+    },
+    {
+      "name": "SendTeacherMessage",
+      "method": "POST",
+      "route": "/api/v1/teacher-conversations/{conversation_id}/messages",
+      "idempotency": "required"
+    },
+    {
+      "name": "RevertTeacherAction",
+      "method": "POST",
+      "route": "/api/v1/teacher-actions/{action_id}:revert",
+      "idempotency": "required"
     }
   ],
   "query_mappings": [
@@ -883,11 +1018,19 @@
     },
     {
       "method": "GET",
+      "route": "/account-languages"
+    },
+    {
+      "method": "GET",
       "route": "/language-profiles"
     },
     {
       "method": "GET",
       "route": "/language-profiles/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/onboarding"
     },
     {
       "method": "GET",
@@ -1068,6 +1211,34 @@
     {
       "method": "GET",
       "route": "/media/tts/capabilities"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/practice-stacks"
+    },
+    {
+      "method": "GET",
+      "route": "/practice-stacks/{stack_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/practice-presets"
+    },
+    {
+      "method": "GET",
+      "route": "/practice-runs/{run_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-packs/{pack_revision_id}/grammar-functions"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/teacher-conversations"
+    },
+    {
+      "method": "GET",
+      "route": "/teacher-conversations/{conversation_id}"
     }
   ]
 }

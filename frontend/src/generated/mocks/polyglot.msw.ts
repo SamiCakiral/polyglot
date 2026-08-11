@@ -78,6 +78,9 @@ import type {
   SessionResponse,
   SprintRunResponse,
   StackInjectionResponse,
+  TeacherActionResponse,
+  TeacherConversationPageResponse,
+  TeacherConversationResponse,
   ToolDefinitionResponse,
   ToolResultResponse,
   TtsCapabilitiesResponse,
@@ -4210,6 +4213,125 @@ export const getMergeLexicalUnitsResponseMock = (
   ...overrideResponse,
 });
 
+export const getListTeacherConversationsResponseMock = (
+  overrideResponse: Partial<
+    Extract<TeacherConversationPageResponse, object>
+  > = {},
+): TeacherConversationPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    conversation_id: faker.string.uuid(),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    messages: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      actions: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        action_id: faker.string.uuid(),
+        action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        payload: {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        reverted_at: faker.helpers.arrayElement([
+          faker.date.past().toISOString().slice(0, 19) + "Z",
+          null,
+        ]),
+        status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        version: faker.number.int(),
+      })),
+      content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      message_id: faker.string.uuid(),
+      model_code: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      provider_code: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    })),
+    profile_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreateTeacherConversationResponseMock = (
+  overrideResponse: Partial<Extract<TeacherConversationResponse, object>> = {},
+): TeacherConversationResponse => ({
+  conversation_id: faker.string.uuid(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  messages: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    actions: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      action_id: faker.string.uuid(),
+      action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      reverted_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      version: faker.number.int(),
+    })),
+    content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    message_id: faker.string.uuid(),
+    model_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    provider_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  profile_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getCreateVocabularyListResponseMock = (
   overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
 ): VocabularyListResponse => ({
@@ -6287,6 +6409,145 @@ export const getStopSprintRunResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getRevertTeacherActionResponseMock = (
+  overrideResponse: Partial<Extract<TeacherActionResponse, object>> = {},
+): TeacherActionResponse => ({
+  action_id: faker.string.uuid(),
+  action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  payload: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
+  reverted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetTeacherConversationResponseMock = (
+  overrideResponse: Partial<Extract<TeacherConversationResponse, object>> = {},
+): TeacherConversationResponse => ({
+  conversation_id: faker.string.uuid(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  messages: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    actions: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      action_id: faker.string.uuid(),
+      action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      reverted_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      version: faker.number.int(),
+    })),
+    content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    message_id: faker.string.uuid(),
+    model_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    provider_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  profile_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSendTeacherMessageResponseMock = (
+  overrideResponse: Partial<Extract<TeacherConversationResponse, object>> = {},
+): TeacherConversationResponse => ({
+  conversation_id: faker.string.uuid(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  messages: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    actions: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      action_id: faker.string.uuid(),
+      action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      reverted_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      version: faker.number.int(),
+    })),
+    content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    message_id: faker.string.uuid(),
+    model_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    provider_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  profile_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,
@@ -8987,6 +9248,60 @@ export const getMergeLexicalUnitsMockHandler = (
   );
 };
 
+export const getListTeacherConversationsMockHandler = (
+  overrideResponse?:
+    | TeacherConversationPageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) =>
+        | Promise<TeacherConversationPageResponse>
+        | TeacherConversationPageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:profileId/teacher-conversations",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListTeacherConversationsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCreateTeacherConversationMockHandler = (
+  overrideResponse?:
+    | TeacherConversationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<TeacherConversationResponse> | TeacherConversationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/teacher-conversations",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCreateTeacherConversationResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
 export const getCreateVocabularyListMockHandler = (
   overrideResponse?:
     | void
@@ -10538,6 +10853,84 @@ export const getStopSprintRunMockHandler = (
   );
 };
 
+export const getRevertTeacherActionMockHandler = (
+  overrideResponse?:
+    | TeacherActionResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<TeacherActionResponse> | TeacherActionResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/teacher-actions/:actionId\\:revert",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRevertTeacherActionResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetTeacherConversationMockHandler = (
+  overrideResponse?:
+    | TeacherConversationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<TeacherConversationResponse> | TeacherConversationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/teacher-conversations/:conversationId",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetTeacherConversationResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSendTeacherMessageMockHandler = (
+  overrideResponse?:
+    | TeacherConversationResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<TeacherConversationResponse> | TeacherConversationResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/teacher-conversations/:conversationId/messages",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSendTeacherMessageResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
 export const getListAuthoringToolsMockHandler = (
   overrideResponse?:
     | ToolDefinitionResponse[]
@@ -10968,6 +11361,8 @@ export const getPolyglotV2APIMock = () => [
   getCreatePracticeStackMockHandler(),
   getAddPrivateLexicalUnitMockHandler(),
   getMergeLexicalUnitsMockHandler(),
+  getListTeacherConversationsMockHandler(),
+  getCreateTeacherConversationMockHandler(),
   getCreateVocabularyListMockHandler(),
   getGetWordBankOverviewMockHandler(),
   getArchiveLanguageProfileMockHandler(),
@@ -11028,6 +11423,9 @@ export const getPolyglotV2APIMock = () => [
   getInterruptSprintRunMockHandler(),
   getResumeSprintRunMockHandler(),
   getStopSprintRunMockHandler(),
+  getRevertTeacherActionMockHandler(),
+  getGetTeacherConversationMockHandler(),
+  getSendTeacherMessageMockHandler(),
   getListAuthoringToolsMockHandler(),
   getInvokeAuthoringToolMockHandler(),
   getGetValidationReportMockHandler(),

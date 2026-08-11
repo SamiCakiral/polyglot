@@ -223,6 +223,14 @@
     {
       "method": "GET",
       "route": "/language-packs/{pack_revision_id}/grammar-functions"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/teacher-conversations"
+    },
+    {
+      "method": "GET",
+      "route": "/teacher-conversations/{conversation_id}"
     }
   ],
   "application_query_names": [
@@ -268,6 +276,8 @@
     "GetContentDraft",
     "GetValidationReport",
     "GetTtsCapabilities",
-    "GetMediaAvailability"
+    "GetMediaAvailability",
+    "ListTeacherConversations",
+    "GetTeacherConversation"
   ]
 }

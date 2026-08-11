@@ -54,6 +54,7 @@ import type {
   CreatePracticePresetRequest,
   CreatePracticeStackRequest,
   CreateProfileRequest,
+  CreateTeacherConversationRequest,
   CreateVocabularyListRequest,
   CurrentSessionResponse,
   DeleteMemoryPromptRequest,
@@ -149,6 +150,7 @@ import type {
   SaveDraftRequest,
   SearchLexiconParams,
   SelfAssessAttemptRequest,
+  SendTeacherMessageRequest,
   SenseNeighborhoodResponse,
   SessionPlanResponse,
   SessionResponse,
@@ -163,6 +165,9 @@ import type {
   SubmitDiagnosticResponseRequest,
   SubmitMemoryReviewRequest,
   SynthesizeSpeechRequest,
+  TeacherActionResponse,
+  TeacherConversationPageResponse,
+  TeacherConversationResponse,
   ToolDefinitionResponse,
   ToolResultResponse,
   TtsCapabilitiesResponse,
@@ -21719,6 +21724,501 @@ export const useMergeLexicalUnits = <
   return useMutation(getMergeLexicalUnitsMutationOptions(options), queryClient);
 };
 
+export type listTeacherConversationsResponse200 = {
+  data: TeacherConversationPageResponse;
+  status: 200;
+};
+
+export type listTeacherConversationsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listTeacherConversationsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listTeacherConversationsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listTeacherConversationsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listTeacherConversationsResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type listTeacherConversationsResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type listTeacherConversationsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listTeacherConversationsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listTeacherConversationsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listTeacherConversationsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listTeacherConversationsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listTeacherConversationsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listTeacherConversationsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listTeacherConversationsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listTeacherConversationsResponseSuccess =
+  listTeacherConversationsResponse200 & {
+    headers: Headers;
+  };
+export type listTeacherConversationsResponseError = (
+  | listTeacherConversationsResponse401ApplicationJson
+  | listTeacherConversationsResponse401ApplicationProblemJson
+  | listTeacherConversationsResponse403ApplicationJson
+  | listTeacherConversationsResponse403ApplicationProblemJson
+  | listTeacherConversationsResponse404ApplicationJson
+  | listTeacherConversationsResponse404ApplicationProblemJson
+  | listTeacherConversationsResponse409ApplicationJson
+  | listTeacherConversationsResponse409ApplicationProblemJson
+  | listTeacherConversationsResponse422ApplicationJson
+  | listTeacherConversationsResponse422ApplicationProblemJson
+  | listTeacherConversationsResponse428ApplicationJson
+  | listTeacherConversationsResponse428ApplicationProblemJson
+  | listTeacherConversationsResponse503ApplicationJson
+  | listTeacherConversationsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listTeacherConversationsResponse =
+  | listTeacherConversationsResponseSuccess
+  | listTeacherConversationsResponseError;
+
+export const getListTeacherConversationsUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/teacher-conversations`;
+};
+
+/**
+ * @summary List Teacher Conversations
+ */
+export const listTeacherConversations = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<listTeacherConversationsResponse> => {
+  const res = await fetch(getListTeacherConversationsUrl(profileId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listTeacherConversationsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listTeacherConversationsResponse;
+};
+
+export const getListTeacherConversationsQueryKey = (profileId: string) => {
+  return [
+    `/api/v1/language-profiles/${profileId}/teacher-conversations`,
+  ] as const;
+};
+
+export const getListTeacherConversationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTeacherConversations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTeacherConversations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTeacherConversationsQueryKey(profileId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTeacherConversations>>
+  > = ({ signal }) =>
+    listTeacherConversations(profileId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTeacherConversations>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListTeacherConversationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTeacherConversations>>
+>;
+export type ListTeacherConversationsQueryError = ProblemResponse;
+
+export function useListTeacherConversations<
+  TData = Awaited<ReturnType<typeof listTeacherConversations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTeacherConversations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTeacherConversations>>,
+          TError,
+          Awaited<ReturnType<typeof listTeacherConversations>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListTeacherConversations<
+  TData = Awaited<ReturnType<typeof listTeacherConversations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTeacherConversations>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTeacherConversations>>,
+          TError,
+          Awaited<ReturnType<typeof listTeacherConversations>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListTeacherConversations<
+  TData = Awaited<ReturnType<typeof listTeacherConversations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTeacherConversations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Teacher Conversations
+ */
+
+export function useListTeacherConversations<
+  TData = Awaited<ReturnType<typeof listTeacherConversations>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listTeacherConversations>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListTeacherConversationsQueryOptions(
+    profileId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createTeacherConversationResponse201 = {
+  data: TeacherConversationResponse;
+  status: 201;
+};
+
+export type createTeacherConversationResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createTeacherConversationResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createTeacherConversationResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createTeacherConversationResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createTeacherConversationResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type createTeacherConversationResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type createTeacherConversationResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createTeacherConversationResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createTeacherConversationResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createTeacherConversationResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createTeacherConversationResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createTeacherConversationResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type createTeacherConversationResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createTeacherConversationResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createTeacherConversationResponseSuccess =
+  createTeacherConversationResponse201 & {
+    headers: Headers;
+  };
+export type createTeacherConversationResponseError = (
+  | createTeacherConversationResponse401ApplicationJson
+  | createTeacherConversationResponse401ApplicationProblemJson
+  | createTeacherConversationResponse403ApplicationJson
+  | createTeacherConversationResponse403ApplicationProblemJson
+  | createTeacherConversationResponse404ApplicationJson
+  | createTeacherConversationResponse404ApplicationProblemJson
+  | createTeacherConversationResponse409ApplicationJson
+  | createTeacherConversationResponse409ApplicationProblemJson
+  | createTeacherConversationResponse422ApplicationJson
+  | createTeacherConversationResponse422ApplicationProblemJson
+  | createTeacherConversationResponse428ApplicationJson
+  | createTeacherConversationResponse428ApplicationProblemJson
+  | createTeacherConversationResponse503ApplicationJson
+  | createTeacherConversationResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createTeacherConversationResponse =
+  | createTeacherConversationResponseSuccess
+  | createTeacherConversationResponseError;
+
+export const getCreateTeacherConversationUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/teacher-conversations`;
+};
+
+/**
+ * @summary Create Teacher Conversation
+ */
+export const createTeacherConversation = async (
+  profileId: string,
+  createTeacherConversationRequest: CreateTeacherConversationRequest,
+  options?: RequestInit,
+): Promise<createTeacherConversationResponse> => {
+  const res = await fetch(getCreateTeacherConversationUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createTeacherConversationRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createTeacherConversationResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createTeacherConversationResponse;
+};
+
+export const getCreateTeacherConversationMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTeacherConversation>>,
+    TError,
+    { profileId: string; data: CreateTeacherConversationRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTeacherConversation>>,
+  TError,
+  { profileId: string; data: CreateTeacherConversationRequest },
+  TContext
+> => {
+  const mutationKey = ["createTeacherConversation"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTeacherConversation>>,
+    { profileId: string; data: CreateTeacherConversationRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return createTeacherConversation(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTeacherConversationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTeacherConversation>>
+>;
+export type CreateTeacherConversationMutationBody =
+  CreateTeacherConversationRequest;
+export type CreateTeacherConversationMutationError = ProblemResponse;
+
+/**
+ * @summary Create Teacher Conversation
+ */
+export const useCreateTeacherConversation = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createTeacherConversation>>,
+      TError,
+      { profileId: string; data: CreateTeacherConversationRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createTeacherConversation>>,
+  TError,
+  { profileId: string; data: CreateTeacherConversationRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateTeacherConversationMutationOptions(options),
+    queryClient,
+  );
+};
+
 export type createVocabularyListResponse200 = {
   data: void;
   status: 200;
@@ -35552,6 +36052,696 @@ export const useStopSprintRun = <TError = ProblemResponse, TContext = unknown>(
   TContext
 > => {
   return useMutation(getStopSprintRunMutationOptions(options), queryClient);
+};
+
+export type revertTeacherActionResponse200 = {
+  data: TeacherActionResponse;
+  status: 200;
+};
+
+export type revertTeacherActionResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type revertTeacherActionResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type revertTeacherActionResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type revertTeacherActionResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type revertTeacherActionResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type revertTeacherActionResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type revertTeacherActionResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type revertTeacherActionResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type revertTeacherActionResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type revertTeacherActionResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type revertTeacherActionResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type revertTeacherActionResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type revertTeacherActionResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type revertTeacherActionResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type revertTeacherActionResponseSuccess =
+  revertTeacherActionResponse200 & {
+    headers: Headers;
+  };
+export type revertTeacherActionResponseError = (
+  | revertTeacherActionResponse401ApplicationJson
+  | revertTeacherActionResponse401ApplicationProblemJson
+  | revertTeacherActionResponse403ApplicationJson
+  | revertTeacherActionResponse403ApplicationProblemJson
+  | revertTeacherActionResponse404ApplicationJson
+  | revertTeacherActionResponse404ApplicationProblemJson
+  | revertTeacherActionResponse409ApplicationJson
+  | revertTeacherActionResponse409ApplicationProblemJson
+  | revertTeacherActionResponse422ApplicationJson
+  | revertTeacherActionResponse422ApplicationProblemJson
+  | revertTeacherActionResponse428ApplicationJson
+  | revertTeacherActionResponse428ApplicationProblemJson
+  | revertTeacherActionResponse503ApplicationJson
+  | revertTeacherActionResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type revertTeacherActionResponse =
+  revertTeacherActionResponseSuccess | revertTeacherActionResponseError;
+
+export const getRevertTeacherActionUrl = (actionId: string) => {
+  return `/api/v1/teacher-actions/${actionId}:revert`;
+};
+
+/**
+ * @summary Revert Teacher Action
+ */
+export const revertTeacherAction = async (
+  actionId: string,
+  options?: RequestInit,
+): Promise<revertTeacherActionResponse> => {
+  const res = await fetch(getRevertTeacherActionUrl(actionId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: revertTeacherActionResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as revertTeacherActionResponse;
+};
+
+export const getRevertTeacherActionMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof revertTeacherAction>>,
+    TError,
+    { actionId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof revertTeacherAction>>,
+  TError,
+  { actionId: string },
+  TContext
+> => {
+  const mutationKey = ["revertTeacherAction"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof revertTeacherAction>>,
+    { actionId: string }
+  > = (props) => {
+    const { actionId } = props ?? {};
+
+    return revertTeacherAction(actionId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RevertTeacherActionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof revertTeacherAction>>
+>;
+
+export type RevertTeacherActionMutationError = ProblemResponse;
+
+/**
+ * @summary Revert Teacher Action
+ */
+export const useRevertTeacherAction = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof revertTeacherAction>>,
+      TError,
+      { actionId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof revertTeacherAction>>,
+  TError,
+  { actionId: string },
+  TContext
+> => {
+  return useMutation(
+    getRevertTeacherActionMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getTeacherConversationResponse200 = {
+  data: TeacherConversationResponse;
+  status: 200;
+};
+
+export type getTeacherConversationResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getTeacherConversationResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getTeacherConversationResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getTeacherConversationResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getTeacherConversationResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getTeacherConversationResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getTeacherConversationResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getTeacherConversationResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getTeacherConversationResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getTeacherConversationResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getTeacherConversationResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getTeacherConversationResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getTeacherConversationResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getTeacherConversationResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getTeacherConversationResponseSuccess =
+  getTeacherConversationResponse200 & {
+    headers: Headers;
+  };
+export type getTeacherConversationResponseError = (
+  | getTeacherConversationResponse401ApplicationJson
+  | getTeacherConversationResponse401ApplicationProblemJson
+  | getTeacherConversationResponse403ApplicationJson
+  | getTeacherConversationResponse403ApplicationProblemJson
+  | getTeacherConversationResponse404ApplicationJson
+  | getTeacherConversationResponse404ApplicationProblemJson
+  | getTeacherConversationResponse409ApplicationJson
+  | getTeacherConversationResponse409ApplicationProblemJson
+  | getTeacherConversationResponse422ApplicationJson
+  | getTeacherConversationResponse422ApplicationProblemJson
+  | getTeacherConversationResponse428ApplicationJson
+  | getTeacherConversationResponse428ApplicationProblemJson
+  | getTeacherConversationResponse503ApplicationJson
+  | getTeacherConversationResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getTeacherConversationResponse =
+  getTeacherConversationResponseSuccess | getTeacherConversationResponseError;
+
+export const getGetTeacherConversationUrl = (conversationId: string) => {
+  return `/api/v1/teacher-conversations/${conversationId}`;
+};
+
+/**
+ * @summary Get Teacher Conversation
+ */
+export const getTeacherConversation = async (
+  conversationId: string,
+  options?: RequestInit,
+): Promise<getTeacherConversationResponse> => {
+  const res = await fetch(getGetTeacherConversationUrl(conversationId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getTeacherConversationResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getTeacherConversationResponse;
+};
+
+export const getGetTeacherConversationQueryKey = (conversationId: string) => {
+  return [`/api/v1/teacher-conversations/${conversationId}`] as const;
+};
+
+export const getGetTeacherConversationQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTeacherConversation>>,
+  TError = ProblemResponse,
+>(
+  conversationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTeacherConversation>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTeacherConversationQueryKey(conversationId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTeacherConversation>>
+  > = ({ signal }) =>
+    getTeacherConversation(conversationId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: conversationId !== null && conversationId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTeacherConversation>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetTeacherConversationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTeacherConversation>>
+>;
+export type GetTeacherConversationQueryError = ProblemResponse;
+
+export function useGetTeacherConversation<
+  TData = Awaited<ReturnType<typeof getTeacherConversation>>,
+  TError = ProblemResponse,
+>(
+  conversationId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTeacherConversation>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTeacherConversation>>,
+          TError,
+          Awaited<ReturnType<typeof getTeacherConversation>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetTeacherConversation<
+  TData = Awaited<ReturnType<typeof getTeacherConversation>>,
+  TError = ProblemResponse,
+>(
+  conversationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTeacherConversation>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTeacherConversation>>,
+          TError,
+          Awaited<ReturnType<typeof getTeacherConversation>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetTeacherConversation<
+  TData = Awaited<ReturnType<typeof getTeacherConversation>>,
+  TError = ProblemResponse,
+>(
+  conversationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTeacherConversation>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Teacher Conversation
+ */
+
+export function useGetTeacherConversation<
+  TData = Awaited<ReturnType<typeof getTeacherConversation>>,
+  TError = ProblemResponse,
+>(
+  conversationId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getTeacherConversation>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetTeacherConversationQueryOptions(
+    conversationId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type sendTeacherMessageResponse201 = {
+  data: TeacherConversationResponse;
+  status: 201;
+};
+
+export type sendTeacherMessageResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type sendTeacherMessageResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type sendTeacherMessageResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type sendTeacherMessageResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type sendTeacherMessageResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type sendTeacherMessageResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type sendTeacherMessageResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type sendTeacherMessageResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type sendTeacherMessageResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type sendTeacherMessageResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type sendTeacherMessageResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type sendTeacherMessageResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type sendTeacherMessageResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type sendTeacherMessageResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type sendTeacherMessageResponseSuccess =
+  sendTeacherMessageResponse201 & {
+    headers: Headers;
+  };
+export type sendTeacherMessageResponseError = (
+  | sendTeacherMessageResponse401ApplicationJson
+  | sendTeacherMessageResponse401ApplicationProblemJson
+  | sendTeacherMessageResponse403ApplicationJson
+  | sendTeacherMessageResponse403ApplicationProblemJson
+  | sendTeacherMessageResponse404ApplicationJson
+  | sendTeacherMessageResponse404ApplicationProblemJson
+  | sendTeacherMessageResponse409ApplicationJson
+  | sendTeacherMessageResponse409ApplicationProblemJson
+  | sendTeacherMessageResponse422ApplicationJson
+  | sendTeacherMessageResponse422ApplicationProblemJson
+  | sendTeacherMessageResponse428ApplicationJson
+  | sendTeacherMessageResponse428ApplicationProblemJson
+  | sendTeacherMessageResponse503ApplicationJson
+  | sendTeacherMessageResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type sendTeacherMessageResponse =
+  sendTeacherMessageResponseSuccess | sendTeacherMessageResponseError;
+
+export const getSendTeacherMessageUrl = (conversationId: string) => {
+  return `/api/v1/teacher-conversations/${conversationId}/messages`;
+};
+
+/**
+ * @summary Send Teacher Message
+ */
+export const sendTeacherMessage = async (
+  conversationId: string,
+  sendTeacherMessageRequest: SendTeacherMessageRequest,
+  options?: RequestInit,
+): Promise<sendTeacherMessageResponse> => {
+  const res = await fetch(getSendTeacherMessageUrl(conversationId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(sendTeacherMessageRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: sendTeacherMessageResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as sendTeacherMessageResponse;
+};
+
+export const getSendTeacherMessageMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendTeacherMessage>>,
+    TError,
+    { conversationId: string; data: SendTeacherMessageRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendTeacherMessage>>,
+  TError,
+  { conversationId: string; data: SendTeacherMessageRequest },
+  TContext
+> => {
+  const mutationKey = ["sendTeacherMessage"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendTeacherMessage>>,
+    { conversationId: string; data: SendTeacherMessageRequest }
+  > = (props) => {
+    const { conversationId, data } = props ?? {};
+
+    return sendTeacherMessage(conversationId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendTeacherMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendTeacherMessage>>
+>;
+export type SendTeacherMessageMutationBody = SendTeacherMessageRequest;
+export type SendTeacherMessageMutationError = ProblemResponse;
+
+/**
+ * @summary Send Teacher Message
+ */
+export const useSendTeacherMessage = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof sendTeacherMessage>>,
+      TError,
+      { conversationId: string; data: SendTeacherMessageRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof sendTeacherMessage>>,
+  TError,
+  { conversationId: string; data: SendTeacherMessageRequest },
+  TContext
+> => {
+  return useMutation(
+    getSendTeacherMessageMutationOptions(options),
+    queryClient,
+  );
 };
 
 export type listAuthoringToolsResponse200 = {

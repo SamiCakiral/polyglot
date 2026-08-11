@@ -278,7 +278,7 @@ class W00ContractDeliveryTest(unittest.TestCase):
         )
 
     def test_allows_reproducible_frontend_artifacts(self) -> None:
-        roots = ("node_modules", "playwright-report", "test-results")
+        roots = ("dist", "node_modules", "playwright-report", "test-results")
         for root in roots:
             with self.subTest(root=root):
                 cache = ROOT / f"frontend/{root}/.polyglot-contract-marker"

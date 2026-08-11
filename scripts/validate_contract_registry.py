@@ -69,6 +69,7 @@ APPROVED_CACHE_ROOTS = {
     "backend/.pytest_cache",
     "backend/.ruff_cache",
     "backend/.venv",
+    "frontend/dist",
     "frontend/node_modules",
     "frontend/playwright-report",
     "frontend/test-results",

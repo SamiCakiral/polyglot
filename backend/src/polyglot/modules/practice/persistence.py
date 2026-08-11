@@ -405,7 +405,7 @@ class SqlPracticeService:
             idempotency_key=idempotency_key,
             fingerprint=fingerprint,
             at=command.created_at,
-            event_type="practice.stack.created",
+            event_type="practice_stack_created",
         )
         return await self._load_stack(session, stack_id)
 
@@ -610,7 +610,7 @@ class SqlPracticeService:
                 idempotency_key=idempotency_key,
                 fingerprint=fingerprint,
                 at=requested_at,
-                event_type="practice.stack.injected",
+                event_type="practice_stack_injected",
             )
             row = (
                 (
@@ -763,7 +763,7 @@ class SqlPracticeService:
                 idempotency_key=idempotency_key,
                 fingerprint=fingerprint,
                 at=command.created_at,
-                event_type="practice.preset.created",
+                event_type="practice_preset_created",
             )
             return await self._load_preset(session, preset_id)
 
@@ -948,7 +948,7 @@ class SqlPracticeService:
                 idempotency_key=idempotency_key,
                 fingerprint=fingerprint,
                 at=started_at,
-                event_type="practice.run.started",
+                event_type="practice_run_started",
             )
             return await self._load_run(session, run_id)
 
@@ -1048,10 +1048,10 @@ class SqlPracticeService:
                 fingerprint=fingerprint,
                 at=changed_at,
                 event_type={
-                    "advance": "practice.run.advanced",
-                    "interrupt": "practice.run.interrupted",
-                    "resume": "practice.run.resumed",
-                    "abandon": "practice.run.abandoned",
+                    "advance": "practice_run_advanced",
+                    "interrupt": "practice_run_interrupted",
+                    "resume": "practice_run_resumed",
+                    "abandon": "practice_run_abandoned",
                 }[action],
             )
             return await self._load_run(session, run_id)

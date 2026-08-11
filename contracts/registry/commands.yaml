@@ -1229,7 +1229,7 @@
       "name": "CreatePracticeStack",
       "method": "POST",
       "route": "/api/v1/language-profiles/{profile_id}/practice-stacks",
-      "events": ["practice.stack.created"],
+      "events": ["practice_stack_created"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1237,7 +1237,7 @@
       "name": "CombinePracticeStacks",
       "method": "POST",
       "route": "/api/v1/practice-stacks:combine",
-      "events": ["practice.stack.created"],
+      "events": ["practice_stack_created"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1245,7 +1245,7 @@
       "name": "InjectPracticeStack",
       "method": "POST",
       "route": "/api/v1/practice-stacks/{stack_id}:inject-next-sprint",
-      "events": ["practice.stack.injected"],
+      "events": ["practice_stack_injected"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1253,7 +1253,7 @@
       "name": "CreatePracticePreset",
       "method": "POST",
       "route": "/api/v1/language-profiles/{profile_id}/practice-presets",
-      "events": ["practice.preset.created"],
+      "events": ["practice_preset_created"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1261,7 +1261,7 @@
       "name": "StartPracticeRun",
       "method": "POST",
       "route": "/api/v1/practice-presets/{preset_id}/runs",
-      "events": ["practice.run.started"],
+      "events": ["practice_run_started"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1269,7 +1269,7 @@
       "name": "AdvancePracticeRun",
       "method": "POST",
       "route": "/api/v1/practice-runs/{run_id}:advance",
-      "events": ["practice.run.advanced"],
+      "events": ["practice_run_advanced"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1277,7 +1277,7 @@
       "name": "InterruptPracticeRun",
       "method": "POST",
       "route": "/api/v1/practice-runs/{run_id}:interrupt",
-      "events": ["practice.run.interrupted"],
+      "events": ["practice_run_interrupted"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1285,7 +1285,7 @@
       "name": "ResumePracticeRun",
       "method": "POST",
       "route": "/api/v1/practice-runs/{run_id}:resume",
-      "events": ["practice.run.resumed"],
+      "events": ["practice_run_resumed"],
       "errors": [],
       "idempotency": "required"
     },
@@ -1293,8 +1293,32 @@
       "name": "AbandonPracticeRun",
       "method": "POST",
       "route": "/api/v1/practice-runs/{run_id}:abandon",
-      "events": ["practice.run.abandoned"],
+      "events": ["practice_run_abandoned"],
       "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "CreateTeacherConversation",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/teacher-conversations",
+      "events": [],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "SendTeacherMessage",
+      "method": "POST",
+      "route": "/api/v1/teacher-conversations/{conversation_id}/messages",
+      "events": ["teacher_action_applied"],
+      "errors": ["provider_unavailable", "tool_schema_invalid"],
+      "idempotency": "required"
+    },
+    {
+      "name": "RevertTeacherAction",
+      "method": "POST",
+      "route": "/api/v1/teacher-actions/{action_id}:revert",
+      "events": ["teacher_action_reverted"],
+      "errors": ["invalid_transition"],
       "idempotency": "required"
     }
   ]

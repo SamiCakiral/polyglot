@@ -38,6 +38,7 @@ from polyglot.interfaces.http.routes.onboarding import onboarding_router
 from polyglot.interfaces.http.routes.practice import practice_router
 from polyglot.interfaces.http.routes.progress import ProgressService, progress_router
 from polyglot.interfaces.http.routes.sprints import sprints_router
+from polyglot.interfaces.http.routes.teacher import teacher_router
 from polyglot.interfaces.http.routes.word_bank import (
     SqlWordBankService,
     WordBankService,
@@ -57,6 +58,7 @@ from polyglot.modules.language_profiles.onboarding_persistence import Onboarding
 from polyglot.modules.media.application import MediaApplicationService
 from polyglot.modules.practice.application import PracticeService
 from polyglot.modules.sprints.application import SprintApplicationService
+from polyglot.modules.teacher.application import TeacherService
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
 from polyglot.platform.observability import configure_local_logging
 
@@ -110,6 +112,7 @@ def create_app(
     assessment_service: AssessmentApplicationService | None = None,
     media_service: MediaApplicationService | None = None,
     generation_service: GenerationApplicationService | None = None,
+    teacher_service: TeacherService | None = None,
     allowed_origin: str = "https://polyglot.test",
 ) -> FastAPI:
     if not readiness_checks and not test_mode:
@@ -225,6 +228,13 @@ def create_app(
             allowed_origin=allowed_origin,
         )
     )
+    app.include_router(
+        teacher_router(
+            teacher_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
     http_logger = logging.getLogger("polyglot.http")
 
     @app.middleware("http")
@@ -323,6 +333,7 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.progress.application import SqlProgressQueryService
     from polyglot.modules.progress.persistence import SqlProgressRepository
     from polyglot.modules.sprints.persistence import SqlSprintService
+    from polyglot.modules.teacher.persistence import SqlTeacherService
     from polyglot.platform.clock import SystemClock
 
     exchange_service = SqlExchangeService(session_factory)
@@ -372,6 +383,7 @@ def create_runtime_app() -> FastAPI:
         base_url=os.environ.get("POLYGLOT_LM_STUDIO_URL", "http://127.0.0.1:1234"),
         model="qwen/qwen3.6-35b-a3b",
     )
+    teacher_service = SqlTeacherService(session_factory, generation_provider)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -420,5 +432,6 @@ def create_runtime_app() -> FastAPI:
         assessment_service=assessment_service,
         media_service=media_service,
         generation_service=generation_service,
+        teacher_service=teacher_service,
         allowed_origin=os.environ["POLYGLOT_ALLOWED_ORIGIN"],
     )

@@ -75,6 +75,9 @@ import type {
   SessionResponse,
   SprintRunResponse,
   StackInjectionResponse,
+  TeacherActionResponse,
+  TeacherConversationPageResponse,
+  TeacherConversationResponse,
   ToolDefinitionResponse,
   ToolResultResponse,
   TtsCapabilitiesResponse,
@@ -4207,6 +4210,125 @@ export const getMergeLexicalUnitsResponseMock = (
   ...overrideResponse,
 });
 
+export const getListTeacherConversationsResponseMock = (
+  overrideResponse: Partial<
+    Extract<TeacherConversationPageResponse, object>
+  > = {},
+): TeacherConversationPageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    conversation_id: faker.string.uuid(),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    messages: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      actions: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+      ).map(() => ({
+        action_id: faker.string.uuid(),
+        action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        payload: {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        reverted_at: faker.helpers.arrayElement([
+          faker.date.past().toISOString().slice(0, 19) + "Z",
+          null,
+        ]),
+        status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        version: faker.number.int(),
+      })),
+      content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      message_id: faker.string.uuid(),
+      model_code: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      provider_code: faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    })),
+    profile_id: faker.string.uuid(),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreateTeacherConversationResponseMock = (
+  overrideResponse: Partial<Extract<TeacherConversationResponse, object>> = {},
+): TeacherConversationResponse => ({
+  conversation_id: faker.string.uuid(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  messages: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    actions: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      action_id: faker.string.uuid(),
+      action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      reverted_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      version: faker.number.int(),
+    })),
+    content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    message_id: faker.string.uuid(),
+    model_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    provider_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  profile_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getCreateVocabularyListResponseMock = (
   overrideResponse: Partial<Extract<VocabularyListResponse, object>> = {},
 ): VocabularyListResponse => ({
@@ -6284,6 +6406,145 @@ export const getStopSprintRunResponseMock = (
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getRevertTeacherActionResponseMock = (
+  overrideResponse: Partial<Extract<TeacherActionResponse, object>> = {},
+): TeacherActionResponse => ({
+  action_id: faker.string.uuid(),
+  action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  payload: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
+  reverted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetTeacherConversationResponseMock = (
+  overrideResponse: Partial<Extract<TeacherConversationResponse, object>> = {},
+): TeacherConversationResponse => ({
+  conversation_id: faker.string.uuid(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  messages: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    actions: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      action_id: faker.string.uuid(),
+      action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      reverted_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      version: faker.number.int(),
+    })),
+    content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    message_id: faker.string.uuid(),
+    model_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    provider_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  profile_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getSendTeacherMessageResponseMock = (
+  overrideResponse: Partial<Extract<TeacherConversationResponse, object>> = {},
+): TeacherConversationResponse => ({
+  conversation_id: faker.string.uuid(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  messages: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    actions: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      action_id: faker.string.uuid(),
+      action_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      applied_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      reverted_at: faker.helpers.arrayElement([
+        faker.date.past().toISOString().slice(0, 19) + "Z",
+        null,
+      ]),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      version: faker.number.int(),
+    })),
+    content: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    message_id: faker.string.uuid(),
+    model_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    provider_code: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    role: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  profile_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  title: faker.string.alpha({ length: { min: 10, max: 20 } }),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
   ...overrideResponse,

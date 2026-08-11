@@ -15,6 +15,7 @@ import {
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
+import { TeacherDrawer } from "../features/teacher/teacher-drawer";
 import { getShellRouteTitle } from "./navigation";
 import { useActiveProfile } from "./profile-state";
 import { useSession } from "./session-context";
@@ -272,6 +273,7 @@ export function AppShell() {
           </NavLink>
         ))}
       </nav>
+      <TeacherDrawer />
     </div>
   );
 }

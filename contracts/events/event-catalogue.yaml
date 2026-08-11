@@ -5,6 +5,10 @@
   ],
   "events": [
     {
+      "event_type": "account_registered",
+      "schema_version": 1
+    },
+    {
       "event_type": "account_language_archived",
       "schema_version": 1
     },
@@ -14,10 +18,6 @@
     },
     {
       "event_type": "account_language_revised",
-      "schema_version": 1
-    },
-    {
-      "event_type": "account_registered",
       "schema_version": 1
     },
     {
@@ -349,6 +349,38 @@
       "schema_version": 1
     },
     {
+      "event_type": "practice_preset_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_run_abandoned",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_run_advanced",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_run_interrupted",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_run_resumed",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_run_started",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_stack_created",
+      "schema_version": 1
+    },
+    {
+      "event_type": "practice_stack_injected",
+      "schema_version": 1
+    },
+    {
       "event_type": "session_authenticated",
       "schema_version": 1
     },
@@ -398,6 +430,14 @@
     },
     {
       "event_type": "sprint_run_stopped",
+      "schema_version": 1
+    },
+    {
+      "event_type": "teacher_action_applied",
+      "schema_version": 1
+    },
+    {
+      "event_type": "teacher_action_reverted",
       "schema_version": 1
     },
     {
