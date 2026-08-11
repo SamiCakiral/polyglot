@@ -923,6 +923,18 @@
       "idempotency": "required"
     },
     {
+      "name": "SelfAssessExerciseAttempt",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}:self-assess",
+      "events": [
+        "exercise_attempt_corrected"
+      ],
+      "errors": [
+        "attempt_not_submitted"
+      ],
+      "idempotency": "required"
+    },
+    {
       "name": "ContestCorrection",
       "method": "POST",
       "route": "/api/v1/attempts/{attempt_id}/correction-case",

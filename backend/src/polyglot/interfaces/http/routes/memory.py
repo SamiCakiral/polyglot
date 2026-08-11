@@ -184,6 +184,10 @@ class DueMemoryPromptPageResponse(ClosedModel):
     cutoff: datetime
 
 
+class MemoryPromptListResponse(ClosedModel):
+    items: tuple[MemoryPromptResponse, ...]
+
+
 def _prompt_response(aggregate: MemoryAggregate) -> MemoryPromptResponse:
     prompt = aggregate.prompt
     schedule = aggregate.schedule
@@ -268,6 +272,10 @@ class MemoryService(Protocol):
         cursor: str | None,
     ) -> tuple[tuple[DueMemoryPrompt, ...], str | None]: ...
 
+    async def list_for_profile(
+        self, actor_id: UUID, profile_id: UUID
+    ) -> tuple[MemoryAggregate, ...]: ...
+
 
 def memory_router(
     service: MemoryService | None,
@@ -334,6 +342,25 @@ def memory_router(
             idempotency_key=idempotency_key,
         )
         return with_etag(response, aggregate)
+
+    @router.get(
+        "/api/v1/language-profiles/{profile_id}/memory-prompts",
+        operation_id="list_memory_prompts",
+        response_model=MemoryPromptListResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def list_memory_prompts(
+        profile_id: UUID,
+        request: Request,
+        session_token: SessionCookieToken = None,
+    ) -> MemoryPromptListResponse:
+        current = await session_for(request, session_token)
+        items = await application_service().list_for_profile(
+            current.account_id, profile_id
+        )
+        return MemoryPromptListResponse(
+            items=tuple(_prompt_response(item) for item in items)
+        )
 
     @router.post(
         "/api/v1/memory-prompts/{prompt_id}/reviews",

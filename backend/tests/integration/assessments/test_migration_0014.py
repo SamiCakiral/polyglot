@@ -7,6 +7,7 @@ EXPECTED_TABLES = {
     "assessment_forms",
     "assessment_section_definitions",
     "assessment_items",
+    "assessment_item_plays",
     "assessment_runs",
     "assessment_section_runs",
     "assessment_responses",
@@ -20,6 +21,7 @@ IMMUTABLE_TABLES = {
     "assessment_forms",
     "assessment_section_definitions",
     "assessment_items",
+    "assessment_item_plays",
     "assessment_results",
     "assessment_evidence",
     "assessment_reviews",
@@ -86,7 +88,7 @@ async def test_four_protocols_are_seeded_with_fingerprinted_forms(
                 "SELECT d.modality,r.protocol_code,f.checksum "
                 "FROM assessments.assessment_definitions d "
                 "JOIN assessments.assessment_definition_revisions r "
-                "ON r.assessment_definition_id=d.assessment_definition_id "
+                "ON r.assessment_revision_id=d.current_revision_id "
                 "JOIN assessments.assessment_forms f "
                 "ON f.assessment_revision_id=r.assessment_revision_id "
                 "ORDER BY d.modality"
@@ -95,3 +97,25 @@ async def test_four_protocols_are_seeded_with_fingerprinted_forms(
     ).all()
     assert [row[0] for row in rows] == ["listening", "reading", "speaking", "writing"]
     assert all(row[1].endswith("_V0") and len(row[2]) == 64 for row in rows)
+
+
+async def test_current_listening_form_keeps_audio_scripts_out_of_prompts(
+    migration_session: AsyncSession,
+) -> None:
+    row = (
+        await migration_session.execute(
+            text(
+                "SELECT count(*) AS total,"
+                "count(*) FILTER (WHERE i.prompt_snapshot ? 'audio_script') AS exposed,"
+                "count(*) FILTER (WHERE i.solution_snapshot ? 'audio_script') AS private "
+                "FROM assessments.assessment_definitions d "
+                "JOIN assessments.assessment_forms f "
+                "ON f.assessment_revision_id=d.current_revision_id "
+                "JOIN assessments.assessment_section_definitions s ON s.form_id=f.form_id "
+                "JOIN assessments.assessment_items i "
+                "ON i.section_definition_id=s.section_definition_id "
+                "WHERE d.modality='listening'"
+            )
+        )
+    ).one()
+    assert row == (16, 0, 16)

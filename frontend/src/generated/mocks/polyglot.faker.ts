@@ -23,6 +23,7 @@ import type {
   DynamicListPreviewResponse,
   EnrollmentResponse,
   ExerciseInstanceResponse,
+  FoundationManifestResponse,
   FoundationResponse,
   GenerationJobResponse,
   GetExport200,
@@ -35,9 +36,11 @@ import type {
   ListSnapshotResponse,
   LiveStatus,
   MediaResponse,
+  MemoryPromptListResponse,
   MemoryPromptResponse,
   ModuleResponse,
   MutationResponse,
+  PlacementManifestResponse,
   PreferencesResponse,
   ProfileResponse,
   ProfilesResponse,
@@ -1172,6 +1175,52 @@ export const getReviewCorrectionResponseMock = (
   ...overrideResponse,
 });
 
+export const getSelfAssessExerciseAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getSubmitExerciseAttemptResponseMock = (
   overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
 ): AttemptResponse => ({
@@ -2183,6 +2232,18 @@ export const getGetExerciseInstanceResponseMock = (
   primitive_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   response_kinds: faker.helpers.arrayElements(Object.values(AnswerKind)),
   seed: faker.number.int(),
+  stimulus_contract: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
   stimulus_revision_ids: Array.from(
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
@@ -2576,6 +2637,10 @@ export const getListLanguagePacksResponseMock = (
   ).map(() => ({
     channel: faker.string.alpha({ length: { min: 10, max: 20 } }),
     compatibility_range: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    foundation_revision_id: faker.helpers.arrayElement([
+      faker.string.uuid(),
+      null,
+    ]),
     pack_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
     pack_id: faker.string.uuid(),
     pack_revision_id: faker.string.uuid(),
@@ -2584,12 +2649,75 @@ export const getListLanguagePacksResponseMock = (
       { length: faker.number.int({ min: 1, max: 10 }) },
       (_, i) => i + 1,
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    support_variety_ids: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.uuid()),
     target_language_tag: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    target_variety_id: faker.string.uuid(),
   })),
   next_cursor: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),
     null,
   ]),
+  ...overrideResponse,
+});
+
+export const getGetFoundationManifestResponseMock = (
+  overrideResponse: Partial<Extract<FoundationManifestResponse, object>> = {},
+): FoundationManifestResponse => ({
+  activities: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    block_title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    choices: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      label: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      value: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    })),
+    item_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    item_revision_id: faker.string.uuid(),
+    modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ordinal: faker.number.int(),
+    prompt: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    response_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    teaching_value: faker.helpers.arrayElement([
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+  })),
+  foundation_revision_id: faker.string.uuid(),
+  pack_revision_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getGetPlacementManifestResponseMock = (
+  overrideResponse: Partial<Extract<PlacementManifestResponse, object>> = {},
+): PlacementManifestResponse => ({
+  foundation_revision_id: faker.string.uuid(),
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    block_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    choices: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      label: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      value: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    })),
+    item_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    item_revision_id: faker.string.uuid(),
+    ordinal: faker.number.int(),
+    prompt: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    response_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  })),
+  pack_revision_id: faker.string.uuid(),
   ...overrideResponse,
 });
 
@@ -3259,6 +3387,39 @@ export const getSetLexicalLearningPreferenceResponseMock = (
   ...overrideResponse,
 });
 
+export const getListMemoryPromptsResponseMock = (
+  overrideResponse: Partial<Extract<MemoryPromptListResponse, object>> = {},
+): MemoryPromptListResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    direction: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    modality: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    operation: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    profile_id: faker.string.uuid(),
+    prompt_id: faker.string.uuid(),
+    protocol_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    protocol_revision: faker.number.int(),
+    schedule: {
+      due_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      lapses: faker.number.int(),
+      parameter_set_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      policy_revision: faker.number.int(),
+      projection_version: faker.number.int(),
+      reps: faker.number.int(),
+      scheduler_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      scheduler_version: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      state: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    target_ref: faker.string.uuid(),
+    target_revision_id: faker.string.uuid(),
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
 export const getCreateMemoryPromptResponseMock = (
   overrideResponse: Partial<Extract<MemoryPromptResponse, object>> = {},
 ): MemoryPromptResponse => ({
@@ -3399,6 +3560,13 @@ export const getGetWordBankOverviewResponseMock = (
     (_, i) => i + 1,
   ).map(() => ({
     analysis_state: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    definition: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      undefined,
+    ]),
     encounter_count: faker.number.int(),
     familiarity_declaration: faker.helpers.arrayElement([
       faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3491,6 +3659,10 @@ export const getGetWordBankOverviewResponseMock = (
       (_, i) => i + 1,
     ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
     sense_id: faker.string.uuid(),
+    sense_revision_id: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([faker.string.uuid(), null]),
+      undefined,
+    ]),
   })),
   next_cursor: faker.helpers.arrayElement([
     faker.string.alpha({ length: { min: 10, max: 20 } }),

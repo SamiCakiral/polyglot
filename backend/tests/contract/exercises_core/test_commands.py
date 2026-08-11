@@ -5,6 +5,7 @@ COMMANDS = {
     ("patch", "/api/v1/attempts/{attempt_id}/draft", True),
     ("post", "/api/v1/attempts/{attempt_id}/hints", True),
     ("post", "/api/v1/attempts/{attempt_id}:submit", True),
+    ("post", "/api/v1/attempts/{attempt_id}:self-assess", True),
     ("post", "/api/v1/attempts/{attempt_id}/correction-case", True),
     ("post", "/api/v1/attempts/{attempt_id}:mark-correction-read", True),
     ("post", "/api/v1/correction-cases/{case_id}:resolve", True),

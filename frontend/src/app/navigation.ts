@@ -22,6 +22,9 @@ export const shellRoutes: readonly ShellRouteDefinition[] = [
   { path: "/assess/runs/:assessmentRunId", title: "Évaluation en cours" },
   { path: "/language-profile", title: "Profil de langue" },
   { path: "/settings", title: "Préférences" },
+  { path: "/authoring", title: "Atelier" },
+  { path: "/authoring/drafts", title: "Brouillons" },
+  { path: "/authoring/tools", title: "Outils auteur" },
 ] as const;
 
 export function getShellRouteTitle(pathname: string): string {

@@ -4,28 +4,103 @@ import {
   createMemoryRouter,
   type RouteObject,
 } from "react-router-dom";
-
-import { AppShell } from "./app-shell";
+import { AuthPage } from "../features/auth/auth-page";
+import {
+  AssessPage,
+  AssessmentProtocolPage,
+  AssessmentRunPage,
+} from "../features/assess/assess-page";
+import { LearnPage, ModuleDetailPage } from "../features/learn/learn-page";
+import { PracticePage } from "../features/practice/practice-page";
+import {
+  ProgressPage,
+  ProgressSkillDetailPage,
+} from "../features/progress/progress-page";
+import { LanguageProfilePage } from "../features/profile/profile-page";
+import { SettingsPage } from "../features/settings/settings-page";
+import { SprintPage } from "../features/sprint/sprint-page";
+import { TodayPage } from "../features/today/today-page";
+import {
+  VocabularyListDetailPage,
+  VocabularyPage,
+  VocabularySenseDetailPage,
+} from "../features/vocabulary/vocabulary-page";
+import {
+  AuthoringPage,
+  AuthoringToolsPage,
+  DraftsPage,
+} from "../features/authoring/authoring-page";
 import { shellRoutes } from "./navigation";
+import { ProtectedFocus, ProtectedShell } from "./protected-routes";
 import { RouteErrorBoundary } from "./route-error-boundary";
-import { NotFoundRoute, ShellRoute } from "./shell-route";
-import { SessionBoundary } from "./session";
+import { NotFoundRoute } from "./shell-route";
+
+const routeElements: Record<string, React.ReactNode> = {
+  "/today": <TodayPage />,
+  "/learn": <LearnPage />,
+  "/learn/modules/:moduleId": <ModuleDetailPage />,
+  "/practice": <PracticePage />,
+  "/practice/configure": <PracticePage />,
+  "/vocabulary": <VocabularyPage />,
+  "/vocabulary/lists/:listId": <VocabularyListDetailPage />,
+  "/vocabulary/senses/:senseId": <VocabularySenseDetailPage />,
+  "/progress": <ProgressPage />,
+  "/progress/skills/:skillId": <ProgressSkillDetailPage />,
+  "/assess": <AssessPage />,
+  "/assess/:modality": <AssessmentProtocolPage />,
+  "/language-profile": <LanguageProfilePage />,
+  "/settings": <SettingsPage />,
+  "/authoring": <AuthoringPage />,
+  "/authoring/drafts": <DraftsPage />,
+  "/authoring/tools": <AuthoringToolsPage />,
+};
 
 const routes: RouteObject[] = [
   {
-    path: "/",
+    path: "/login",
+    element: <AuthPage mode="login" />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/register",
+    element: <AuthPage mode="register" />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/sprints/:runId",
     element: (
-      <SessionBoundary>
-        <AppShell />
-      </SessionBoundary>
+      <ProtectedFocus>
+        <SprintPage />
+      </ProtectedFocus>
     ),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/assess/runs/:assessmentRunId",
+    element: (
+      <ProtectedFocus>
+        <AssessmentRunPage />
+      </ProtectedFocus>
+    ),
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/",
+    element: <ProtectedShell />,
     errorElement: <RouteErrorBoundary />,
     children: [
       { index: true, element: <Navigate replace to="/today" /> },
-      ...shellRoutes.map(({ path, title }) => ({
-        path,
-        element: <ShellRoute title={title} />,
-      })),
+      ...shellRoutes
+        .filter(
+          ({ path }) =>
+            !["/sprints/:runId", "/assess/runs/:assessmentRunId"].includes(
+              path,
+            ),
+        )
+        .map(({ path }) => ({
+          path,
+          element: routeElements[path] ?? <NotFoundRoute />,
+        })),
       { path: "*", element: <NotFoundRoute /> },
     ],
   },

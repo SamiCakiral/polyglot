@@ -71,10 +71,12 @@ class TtsCapabilitiesView:
 
 @dataclass(frozen=True, slots=True)
 class SynthesizeSpeech:
-    text: str
+    text: str | None
     locale: str
     voice_id: str
     parameters: dict[str, str]
+    assessment_run_id: UUID | None = None
+    assessment_item_id: UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)

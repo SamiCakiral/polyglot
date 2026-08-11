@@ -16,6 +16,7 @@ class ExerciseInstanceView:
     language_pack_revision_id: UUID
     primitive_id: str
     response_kinds: tuple[AnswerKind, ...]
+    stimulus_contract: dict[str, JsonValue]
     stimulus_revision_ids: tuple[UUID, ...]
     target_bindings: tuple[JsonValue, ...]
     lexical_bindings: tuple[JsonValue, ...]
@@ -136,7 +137,7 @@ class ResolveCorrectionCase:
 class CorrectAttempt:
     correction_id: UUID
     result: CorrectionResult
-    provenance_id: UUID
+    provenance_id: UUID | None
     rubric_revision_id: UUID | None
     proposed_answer: JsonValue
     requires_review: bool

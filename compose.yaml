@@ -24,8 +24,50 @@ services:
       - ./ops/postgres/bootstrap-identities.sh:/docker-entrypoint-initdb.d/10-polyglot-identities.sh:ro
       - polyglot-postgres:/var/lib/postgresql/data
 
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POLYGLOT_ALLOWED_ORIGIN: http://127.0.0.1:9001
+      POLYGLOT_DATABASE_URL: postgresql+asyncpg://polyglot_runtime_login:${POLYGLOT_RUNTIME_DB_PASSWORD:?required}@postgres:5432/polyglot
+      POLYGLOT_MEDIA_SIGNING_SECRET: ${POLYGLOT_MEDIA_SIGNING_SECRET:?required}
+      POLYGLOT_MIGRATION_DATABASE_URL: postgresql+asyncpg://polyglot_migration_login:${POLYGLOT_MIGRATION_DB_PASSWORD:?required}@postgres:5432/polyglot
+      POLYGLOT_NETWORK_DISABLED: "1"
+      POLYGLOT_OBJECT_STORAGE_PATH: /data/object-storage
+      POLYGLOT_OIDC_ENABLED: "0"
+      POLYGLOT_REGISTRATION_ENABLED: "1"
+      POLYGLOT_RETENTION_DATABASE_URL: postgresql+asyncpg://polyglot_retention_login:${POLYGLOT_RETENTION_DB_PASSWORD:?required}@postgres:5432/polyglot
+      POLYGLOT_SESSION_SECRET: ${POLYGLOT_SESSION_SECRET:?required}
+    healthcheck:
+      test: [CMD, curl, --fail, --silent, http://127.0.0.1:8000/api/v1/health/ready]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - polyglot-objects:/data/object-storage
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${POLYGLOT_HTTP_PORT:-9001}:80"
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
 volumes:
   polyglot-postgres:
+  polyglot-objects:
 
 x-polyglot-object-storage:
   mode: filesystem-placeholder

@@ -29,6 +29,8 @@ def compose_environment(
         "POLYGLOT_MIGRATION_DB_PASSWORD": passwords["migration"],
         "POLYGLOT_RUNTIME_DB_PASSWORD": passwords["runtime"],
         "POLYGLOT_RETENTION_DB_PASSWORD": passwords["retention"],
+        "POLYGLOT_MEDIA_SIGNING_SECRET": "contract-media-signing-secret",
+        "POLYGLOT_SESSION_SECRET": "contract-session-secret-32-bytes-minimum",
     }
 
 
@@ -49,9 +51,9 @@ def render_compose(
     return cast(dict[str, Any], json.loads(result.stdout))
 
 
-def test_compose_uses_postgres_17_and_no_fake_object_storage_service() -> None:
+def test_compose_uses_postgres_17_and_local_application_services() -> None:
     configuration = render_compose()
-    assert set(configuration["services"]) == {"postgres"}
+    assert set(configuration["services"]) == {"postgres", "backend", "frontend"}
     image = configuration["services"]["postgres"]["image"]
     assert image.startswith("postgres:17-alpine@sha256:")
     assert len(image.rsplit("@sha256:", 1)[1]) == 64

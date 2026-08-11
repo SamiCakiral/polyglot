@@ -34,6 +34,14 @@
     },
     {
       "method": "GET",
+      "route": "/language-packs/{pack_revision_id}/placement-manifest"
+    },
+    {
+      "method": "GET",
+      "route": "/language-packs/{pack_revision_id}/foundation-manifest"
+    },
+    {
+      "method": "GET",
       "route": "/lexicon/search"
     },
     {
@@ -71,6 +79,10 @@
     {
       "method": "GET",
       "route": "/memory-prompts/due"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/memory-prompts"
     },
     {
       "method": "GET",
@@ -184,6 +196,8 @@
     "GetLanguageProfile",
     "GetOnboardingState",
     "GetDiagnosticSummary",
+    "GetPlacementManifest",
+    "GetFoundationManifest",
     "SearchLexicon",
     "GetLexicalSense",
     "GetSenseNeighborhood",

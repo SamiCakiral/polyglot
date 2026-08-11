@@ -953,7 +953,6 @@ class LanguageProfileApplicationService:
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
-            await uow.commit()
             summary = await self._foundation_summary(session, dict(row))
             await uow.commit()
             return summary

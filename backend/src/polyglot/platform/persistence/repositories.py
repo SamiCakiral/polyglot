@@ -6,6 +6,7 @@ from sqlalchemy import and_, func, select, text
 from sqlalchemy.dialects.postgresql import insert as postgresql_insert
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.elements import ColumnElement
 
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_bytes
@@ -530,16 +531,20 @@ class SqlOutboxRepository:
         now: datetime,
         lease_for: timedelta,
         limit: int,
+        destination: str | None = None,
     ) -> list[OutboxClaim]:
         if limit < 1:
             return []
+        conditions: list[ColumnElement[bool]] = [
+            outbox_messages.c.published_at.is_(None),
+            (outbox_messages.c.lease_expires_at.is_(None))
+            | (outbox_messages.c.lease_expires_at <= now),
+        ]
+        if destination is not None:
+            conditions.append(outbox_messages.c.destination == destination)
         available = (
             select(outbox_messages.c.outbox_id)
-            .where(
-                outbox_messages.c.published_at.is_(None),
-                (outbox_messages.c.lease_expires_at.is_(None))
-                | (outbox_messages.c.lease_expires_at <= now),
-            )
+            .where(*conditions)
             .order_by(outbox_messages.c.created_at, outbox_messages.c.outbox_id)
             .limit(limit)
             .with_for_update(skip_locked=True, of=outbox_messages)

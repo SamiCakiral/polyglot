@@ -136,7 +136,13 @@ async def test_reading_submission_scores_and_emits_only_reading_evidence(
             ACCOUNT_ID,
             run.run_id,
             item.item_id,
-            SaveAssessmentResponse({"kind": "single_choice", "value": "A"}, 0),
+            SaveAssessmentResponse(
+                {
+                    "kind": "single_choice",
+                    "value": item.prompt["options"][0],
+                },
+                0,
+            ),
             expected_version=run.version,
             idempotency_key=f"score-answer-{item.item_id}",
         )

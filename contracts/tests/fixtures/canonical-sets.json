@@ -80,6 +80,7 @@
     "SaveAttemptDraft",
     "UseExerciseHint",
     "SubmitExerciseAttempt",
+    "SelfAssessExerciseAttempt",
     "ContestCorrection",
     "ReviewCorrection",
     "ReviewCorrectionCase",
@@ -93,8 +94,10 @@
     "SubmitAssessment",
     "ReviewAssessmentResult",
     "ReserveMediaUpload",
+    "PutMediaUploadContent",
     "CompleteMediaUpload",
     "DeleteMedia",
+    "SynthesizeSpeech",
     "CancelJob"
   ],
   "query_names": [
@@ -104,6 +107,8 @@
     "GetLanguageProfile",
     "GetOnboardingState",
     "GetDiagnosticSummary",
+    "GetPlacementManifest",
+    "GetFoundationManifest",
     "SearchLexicon",
     "GetLexicalSense",
     "GetSenseNeighborhood",
@@ -755,6 +760,12 @@
       "idempotency": "required"
     },
     {
+      "name": "SelfAssessExerciseAttempt",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}:self-assess",
+      "idempotency": "required"
+    },
+    {
       "name": "ContestCorrection",
       "method": "POST",
       "route": "/api/v1/attempts/{attempt_id}/correction-case",
@@ -833,6 +844,12 @@
       "idempotency": "required"
     },
     {
+      "name": "PutMediaUploadContent",
+      "method": "PUT",
+      "route": "/api/v1/media/uploads/{upload_id}/content",
+      "idempotency": "supported"
+    },
+    {
       "name": "CompleteMediaUpload",
       "method": "POST",
       "route": "/api/v1/media/uploads/{upload_id}:complete",
@@ -842,6 +859,12 @@
       "name": "DeleteMedia",
       "method": "DELETE",
       "route": "/api/v1/media/{media_id}",
+      "idempotency": "required"
+    },
+    {
+      "name": "SynthesizeSpeech",
+      "method": "POST",
+      "route": "/api/v1/media/tts/syntheses",
       "idempotency": "required"
     },
     {
@@ -882,6 +905,14 @@
     },
     {
       "method": "GET",
+      "route": "/language-packs/{pack_revision_id}/placement-manifest"
+    },
+    {
+      "method": "GET",
+      "route": "/language-packs/{pack_revision_id}/foundation-manifest"
+    },
+    {
+      "method": "GET",
       "route": "/lexicon/search"
     },
     {
@@ -919,6 +950,10 @@
     {
       "method": "GET",
       "route": "/memory-prompts/due"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/memory-prompts"
     },
     {
       "method": "GET",
@@ -1010,7 +1045,15 @@
     },
     {
       "method": "GET",
-      "route": "/media/{id}"
+      "route": "/tools"
+    },
+    {
+      "method": "GET",
+      "route": "/media/{media_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/media/{media_id}/content"
     },
     {
       "method": "GET",

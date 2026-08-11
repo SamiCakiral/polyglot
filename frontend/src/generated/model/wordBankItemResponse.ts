@@ -8,6 +8,7 @@ import type { LexicalProjectionResponse } from "./lexicalProjectionResponse";
 
 export interface WordBankItemResponse {
   analysis_state: string;
+  definition?: string | null;
   encounter_count: number;
   familiarity_declaration: string | null;
   first_encountered_at: string | null;
@@ -17,4 +18,5 @@ export interface WordBankItemResponse {
   projection?: LexicalProjectionResponse | null;
   reasons: string[];
   sense_id: string;
+  sense_revision_id?: string | null;
 }

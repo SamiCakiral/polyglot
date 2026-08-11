@@ -20,7 +20,8 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "corepack pnpm exec vite --host 127.0.0.1 --port 4175 --strictPort",
+      command:
+        "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4175 --strictPort",
       url: mockBaseUrl,
       env: { VITE_ENABLE_API_MOCKS: "true" },
       reuseExistingServer: false,
@@ -29,7 +30,8 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
-      command: "corepack pnpm exec vite --host 127.0.0.1 --port 4176 --strictPort",
+      command:
+        "node node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4176 --strictPort",
       url: "http://127.0.0.1:4176",
       env: { VITE_ENABLE_API_MOCKS: "" },
       reuseExistingServer: false,

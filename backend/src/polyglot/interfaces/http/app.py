@@ -1,6 +1,7 @@
+import asyncio
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Literal
 
@@ -255,6 +256,8 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
 
     memory_service = SqlMemoryService(session_factory, FsrsV6Scheduler())
+    from polyglot.interfaces.tasks.dispatcher import LocalOutboxDispatcher
+    from polyglot.interfaces.tasks.progress import LocalLearningEventPublisher
     from polyglot.interfaces.tools.deterministic import DeterministicToolHandlers
     from polyglot.interfaces.tools.executor import ToolExecutor
     from polyglot.modules.assessments.persistence import SqlAssessmentService
@@ -266,6 +269,7 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.media.ports import MacOSTtsPort, TtsAvailability, TtsVoice
     from polyglot.modules.media.storage import FilesystemObjectStorage, LocalSignedUrlSigner
     from polyglot.modules.progress.application import SqlProgressQueryService
+    from polyglot.modules.progress.persistence import SqlProgressRepository
     from polyglot.modules.sprints.persistence import SqlSprintService
     from polyglot.platform.clock import SystemClock
 
@@ -274,6 +278,16 @@ def create_runtime_app() -> FastAPI:
     curriculum_service = SqlCurriculumService(session_factory)
     sprint_service = SqlSprintService(session_factory)
     progress_service = SqlProgressQueryService(session_factory)
+    progress_dispatcher = LocalOutboxDispatcher(
+        session_factory=session_factory,
+        publisher=LocalLearningEventPublisher(
+            session_factory,
+            SqlProgressRepository(session_factory),
+        ),
+        clock=SystemClock(),
+        worker_id="polyglot-local-progress",
+        destination="learning-events",
+    )
     assessment_service = SqlAssessmentService(session_factory)
     object_storage = FilesystemObjectStorageProbe(
         Path(os.environ.get("POLYGLOT_OBJECT_STORAGE_PATH", ".local/object-storage"))
@@ -301,8 +315,19 @@ def create_runtime_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        yield
-        await engine.dispose()
+        async def dispatch_progress() -> None:
+            while True:
+                await progress_dispatcher.run_once()
+                await asyncio.sleep(0.5)
+
+        progress_task = asyncio.create_task(dispatch_progress())
+        try:
+            yield
+        finally:
+            progress_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await progress_task
+            await engine.dispose()
 
     return create_app(
         readiness_checks=(DatabaseReadinessProbe(engine), object_storage),

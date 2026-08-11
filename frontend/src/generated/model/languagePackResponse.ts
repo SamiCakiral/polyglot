@@ -8,10 +8,13 @@
 export interface LanguagePackResponse {
   channel: string;
   compatibility_range: string;
+  foundation_revision_id: string | null;
   pack_code: string;
   pack_id: string;
   pack_revision_id: string;
   revision_no: number;
   support_language_tags: string[];
+  support_variety_ids: string[];
   target_language_tag: string;
+  target_variety_id: string;
 }

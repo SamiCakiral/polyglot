@@ -52,6 +52,14 @@ def test_due_query_is_authenticated_stable_and_bounded() -> None:
     assert {"401", "403", "422", "503"} <= operation["responses"].keys()
 
 
+def test_profile_prompt_inventory_is_authenticated() -> None:
+    operation = create_app(test_mode=True).openapi()["paths"][
+        "/api/v1/language-profiles/{profile_id}/memory-prompts"
+    ]["get"]
+    assert operation["security"] == [{"SessionCookie": []}]
+    assert {"401", "403", "422", "503"} <= operation["responses"].keys()
+
+
 def test_restore_request_cannot_self_assert_target_availability() -> None:
     document = create_app(test_mode=True).openapi()
     operation = document["paths"]["/api/v1/memory-prompts/{prompt_id}:restore"]["post"]

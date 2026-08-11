@@ -7,17 +7,15 @@
 import type { SynthesizeSpeechRequestParameters } from "./synthesizeSpeechRequestParameters";
 
 export interface SynthesizeSpeechRequest {
+  assessment_item_id?: string | null;
+  assessment_run_id?: string | null;
   /**
    * @minLength 2
    * @maxLength 40
    */
   locale: string;
   parameters?: SynthesizeSpeechRequestParameters;
-  /**
-   * @minLength 1
-   * @maxLength 5000
-   */
-  text: string;
+  text?: string | null;
   /**
    * @minLength 1
    * @maxLength 120

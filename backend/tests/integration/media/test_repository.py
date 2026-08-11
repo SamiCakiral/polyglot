@@ -6,8 +6,12 @@ from urllib.parse import parse_qs, urlparse
 from uuid import UUID
 
 import pytest
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from polyglot.modules.assessments.application import PrepareAssessment
+from polyglot.modules.assessments.domain import AssessmentModality
+from polyglot.modules.assessments.persistence import SqlAssessmentService
 from polyglot.modules.media.application import ReserveMediaUpload, SynthesizeSpeech
 from polyglot.modules.media.domain import MediaKind
 from polyglot.modules.media.persistence import SqlMediaService
@@ -193,6 +197,78 @@ async def test_tts_cache_is_exact_and_returns_private_signed_audio(
             idempotency_key="tts-1",
         )
     assert caught.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
+
+
+async def test_assessment_tts_hides_script_and_enforces_server_play_limit(
+    runtime_factory: async_sessionmaker[AsyncSession],
+    migration_session: AsyncSession,
+    seeded_account: UUID,
+    tmp_path: Path,
+) -> None:
+    profile_id = UUID("019feb39-0000-7000-8100-000000000001")
+    await migration_session.execute(
+        text(
+            "INSERT INTO language_profiles.learner_language_profiles "
+            "(profile_id,account_id,target_variety_id,native_variety_id,status,current_phase,"
+            "goals,interests,excluded_themes,correction_preference,availability_pattern,version,"
+            "created_at,updated_at,archived_at,deleted_at) VALUES "
+            "(:profile,:account,'019fe900-5000-7000-8001-000000000001',"
+            "'019fe900-5000-7000-8001-000000000002','active','module_learning','[]','[]','[]',"
+            "'{}','{}',1,:now,:now,NULL,NULL) ON CONFLICT DO NOTHING"
+        ),
+        {"profile": profile_id, "account": seeded_account, "now": NOW},
+    )
+    await migration_session.commit()
+    assessments = SqlAssessmentService(runtime_factory, clock=MutableClock(NOW))
+    prepared = await assessments.prepare(
+        seeded_account,
+        profile_id,
+        PrepareAssessment(
+            UUID("019feb39-0000-7000-8100-000000000002"),
+            AssessmentModality.LISTENING,
+            "assessment-audio-limit",
+            {},
+            ("tts",),
+        ),
+        idempotency_key="prepare-assessment-audio",
+    )
+    started = await assessments.start(
+        seeded_account,
+        prepared.run_id,
+        expected_version=prepared.version,
+        idempotency_key="start-assessment-audio",
+    )
+    item = started.sections[0].items[0]
+    assert "audio_script" not in item.prompt
+    service = media_service(runtime_factory, tmp_path, MutableClock(NOW))
+    command = SynthesizeSpeech(
+        None,
+        "it-IT",
+        "Alice",
+        {},
+        started.run_id,
+        item.item_id,
+    )
+    first = await service.synthesize(seeded_account, command, idempotency_key="listen-once")
+    replay = await service.synthesize(seeded_account, command, idempotency_key="listen-once")
+    second = await service.synthesize(seeded_account, command, idempotency_key="listen-twice")
+    assert first.media is not None
+    assert replay.media is not None and replay.media.media_id == first.media.media_id
+    assert second.media is not None and second.media.media_id == first.media.media_id
+    with pytest.raises(DomainError) as caught:
+        await service.synthesize(seeded_account, command, idempotency_key="listen-third")
+    assert caught.value.code is ErrorCode.RESPONSE_CONFLICT
+    await migration_session.execute(
+        text("SELECT set_config('app.user_id', :actor, true)"),
+        {"actor": str(seeded_account)},
+    )
+    assert await migration_session.scalar(
+        text(
+            "SELECT count(*) FROM assessments.assessment_item_plays "
+            "WHERE assessment_run_id=:run AND item_id=:item"
+        ),
+        {"run": started.run_id, "item": item.item_id},
+    ) == 2
 
 
 async def test_expired_signed_upload_is_rejected(

@@ -139,15 +139,13 @@ class DiagnosticRun:
         _require_utc(at, "at")
         if at >= self.expires_at:
             raise DomainError(ErrorCode.RUN_EXPIRED)
-        if self.stop_reason is not None:
-            raise DomainError(ErrorCode.INVALID_TRANSITION)
         if response.item_revision_id in {
             item.item_revision_id for item in self.responses
         }:
             raise DomainError(ErrorCode.RESPONSE_CONFLICT)
         responses = (*self.responses, response)
         times = (*self.response_times, at)
-        stop_reason = self._stop_reason(responses, at)
+        stop_reason = self.stop_reason or self._stop_reason(responses, at)
         return replace(self, responses=responses, response_times=times, stop_reason=stop_reason)
 
     def complete(self, *, at: datetime) -> DiagnosticResult:

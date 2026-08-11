@@ -976,8 +976,11 @@ class LanguagePackSummary:
     pack_revision_id: UUID
     pack_code: str
     revision_no: int
+    target_variety_id: UUID
     target_language_tag: str
+    support_variety_ids: tuple[UUID, ...]
     support_language_tags: tuple[str, ...]
+    foundation_revision_id: UUID | None
     channel: str
     compatibility_range: str
 
@@ -1062,10 +1065,13 @@ class SqlCatalogueRepository:
                 await self._session.execute(
                     text(
                         "SELECT pack.pack_id, revision.pack_revision_id, pack.pack_code, "
-                        "revision.revision_no, target.language_tag AS target_language_tag, "
+                        "revision.revision_no, target.variety_id AS target_variety_id, "
+                        "target.language_tag AS target_language_tag, "
+                        "array_agg(support.variety_id ORDER BY support.language_tag) "
+                        "AS support_variety_ids, "
                         "array_agg(support.language_tag ORDER BY support.language_tag) "
                         "AS support_language_tags, publication.channel, "
-                        "publication.compatibility_range "
+                        "publication.compatibility_range, foundation.foundation_revision_id "
                         "FROM catalogue.language_pack_publications AS publication "
                         "JOIN catalogue.language_packs AS pack "
                         "ON pack.pack_id = publication.pack_id "
@@ -1077,12 +1083,17 @@ class SqlCatalogueRepository:
                         "ON member.pack_revision_id = revision.pack_revision_id "
                         "JOIN catalogue.language_varieties AS support "
                         "ON support.variety_id = member.variety_id "
+                        "LEFT JOIN catalogue.foundation_definition_revisions AS foundation "
+                        "ON foundation.pack_revision_id = revision.pack_revision_id "
+                        "AND foundation.status = 'published' "
                         "WHERE publication.retired_at IS NULL AND revision.status = 'published' "
                         "AND (CAST(:after_code AS varchar) IS NULL "
                         "OR (pack.pack_code, revision.pack_revision_id) "
                         "> (CAST(:after_code AS varchar), CAST(:after_id AS uuid))) "
-                        "GROUP BY pack.pack_id, revision.pack_revision_id, target.language_tag, "
-                        "publication.channel, publication.compatibility_range "
+                        "GROUP BY pack.pack_id, revision.pack_revision_id, target.variety_id, "
+                        "target.language_tag, publication.channel, "
+                        "publication.compatibility_range, "
+                        "foundation.foundation_revision_id "
                         "ORDER BY pack.pack_code, revision.pack_revision_id LIMIT :query_limit"
                     ),
                     {
@@ -1102,8 +1113,11 @@ class SqlCatalogueRepository:
                 pack_revision_id=row["pack_revision_id"],
                 pack_code=row["pack_code"],
                 revision_no=row["revision_no"],
+                target_variety_id=row["target_variety_id"],
                 target_language_tag=row["target_language_tag"],
+                support_variety_ids=tuple(row["support_variety_ids"]),
                 support_language_tags=tuple(row["support_language_tags"]),
+                foundation_revision_id=row["foundation_revision_id"],
                 channel=row["channel"],
                 compatibility_range=row["compatibility_range"],
             )
@@ -1347,7 +1361,7 @@ class SqlCatalogueRepository:
                         "reference_kind, status, checksum "
                         "FROM catalogue.foundation_reference_revisions "
                         "WHERE pack_revision_id = :pack_revision_id AND status = 'published' "
-                        "ORDER BY reference_code, reference_revision_id LIMIT 32"
+                        "ORDER BY reference_code, reference_revision_id LIMIT 256"
                     ),
                     {"pack_revision_id": pack_revision_id},
                 )
@@ -1355,7 +1369,7 @@ class SqlCatalogueRepository:
             .mappings()
             .all()
         )
-        if not references or len(references) == 32:
+        if not references:
             return None
         blocks = (
             (
@@ -1391,7 +1405,7 @@ class SqlCatalogueRepository:
                         "FROM catalogue.foundation_item_revisions "
                         "WHERE block_revision_id = ANY(CAST(:block_revision_ids AS uuid[])) "
                         "AND pack_revision_id = :pack_revision_id AND status = 'published' "
-                        "ORDER BY block_revision_id, ordinal, item_revision_id LIMIT 16"
+                        "ORDER BY block_revision_id, ordinal, item_revision_id LIMIT 256"
                     ),
                     {
                         "block_revision_ids": [item["block_revision_id"] for item in blocks],
@@ -1402,7 +1416,7 @@ class SqlCatalogueRepository:
             .mappings()
             .all()
         )
-        if len(items) != 10:
+        if len(items) < 10:
             return None
         gates = (
             (

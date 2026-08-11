@@ -1,10 +1,12 @@
 """Catalogue HTTP contracts."""
 
+from pathlib import Path
 from uuid import UUID
 
 from fastapi.testclient import TestClient
 
 from polyglot.interfaces.http.app import create_app
+from polyglot.modules.catalogue.core.fixtures import load_catalogue_fixture
 from polyglot.modules.catalogue.core.persistence import (
     CatalogueTarget,
     LanguagePackSummary,
@@ -14,8 +16,16 @@ from polyglot.modules.catalogue.core.persistence import (
     Page,
 )
 
+CATALOGUE_FIXTURE_ROOT = (
+    Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
+)
+
 
 class StubCatalogueReader:
+    async def read_foundations(self, *, pack_revision_id: UUID):
+        fixture = load_catalogue_fixture(CATALOGUE_FIXTURE_ROOT)
+        assert pack_revision_id == fixture.pack_revision.pack_revision_id
+        return fixture.foundations
     async def list_language_packs(
         self,
         *,
@@ -31,8 +41,15 @@ class StubCatalogueReader:
                     pack_revision_id=UUID("019fe900-6000-7000-8000-000000000002"),
                     pack_code="it-IT__fr-FR",
                     revision_no=1,
+                    target_variety_id=UUID("019fe900-6000-7000-8000-000000000003"),
                     target_language_tag="it-IT",
+                    support_variety_ids=(
+                        UUID("019fe900-6000-7000-8000-000000000004"),
+                    ),
                     support_language_tags=("fr-FR",),
+                    foundation_revision_id=UUID(
+                        "019fe900-6000-7000-8000-000000000005"
+                    ),
                     channel="stable",
                     compatibility_range=">=2.0.0,<2.1.0",
                 ),
@@ -118,6 +135,9 @@ def test_canonical_catalogue_reads_are_public_paginated_and_closed() -> None:
     assert packs.status_code == 200
     assert packs.json()["next_cursor"] == "next-pack-cursor"
     assert packs.json()["items"][0]["pack_code"] == "it-IT__fr-FR"
+    assert packs.json()["items"][0]["target_variety_id"].endswith("0003")
+    assert packs.json()["items"][0]["support_variety_ids"][0].endswith("0004")
+    assert packs.json()["items"][0]["foundation_revision_id"].endswith("0005")
     assert targets.status_code == 200
     assert targets.json()["items"][0]["required_prerequisite_codes"] == ["IT-GRAM-002"]
     assert lexicon.status_code == 200
@@ -139,3 +159,39 @@ def test_catalogue_query_validation_uses_correlated_rfc9457() -> None:
     assert response.json()["code"] == "validation_failed"
     assert response.json()["request_id"] == response.headers["X-Request-ID"]
     assert response.json()["correlation_id"] == response.headers["X-Correlation-ID"]
+
+
+def test_placement_manifest_exposes_prompts_without_correction_oracles() -> None:
+    app = create_app(test_mode=True, catalogue_service=StubCatalogueReader())
+    pack_revision_id = "019b0000-0000-7000-8000-000000000009"
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get(
+            f"/api/v1/language-packs/{pack_revision_id}/placement-manifest"
+        )
+
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 6
+    assert "checker_values" not in response.text
+    assert {item["block_code"] for item in response.json()["items"]} == {"F1", "F3", "F4", "F5"}
+
+
+def test_foundation_manifest_exposes_all_teaching_activities() -> None:
+    app = create_app(test_mode=True, catalogue_service=StubCatalogueReader())
+    pack_revision_id = "019b0000-0000-7000-8000-000000000009"
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get(
+            f"/api/v1/language-packs/{pack_revision_id}/foundation-manifest"
+        )
+
+    assert response.status_code == 200
+    assert len(response.json()["activities"]) == 32
+    assert {item["block_code"] for item in response.json()["activities"]} == {
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+    }
+    assert "checker_values" not in response.text

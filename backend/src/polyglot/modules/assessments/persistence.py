@@ -136,6 +136,7 @@ class SqlAssessmentService:
                         "ON r.assessment_revision_id=f.assessment_revision_id "
                         "JOIN assessments.assessment_definitions d "
                         "ON d.assessment_definition_id=r.assessment_definition_id "
+                        "AND d.current_revision_id=r.assessment_revision_id "
                         "JOIN assessments.assessment_section_definitions s ON s.form_id=f.form_id "
                         "JOIN assessments.assessment_items i ON i.section_definition_id=s.section_definition_id "
                         "WHERE d.modality=:modality AND d.status='published' AND r.status='published' "

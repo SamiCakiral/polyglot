@@ -150,7 +150,8 @@ class SqlExerciseService:
                             "instance.language_pack_revision_id,instance.seed,"
                             "instance.stimulus_revision_ids,instance.target_bindings,"
                             "instance.lexical_bindings,instance.grammar_bindings,"
-                            "revision.primitive_id,revision.response_kinds "
+                            "revision.primitive_id,revision.response_kinds,"
+                            "revision.stimulus_contract "
                             "FROM exercises.exercise_instances instance "
                             "JOIN exercises.exercise_definition_revisions revision ON "
                             "revision.definition_revision_id=instance.definition_revision_id "
@@ -171,6 +172,9 @@ class SqlExerciseService:
                 primitive_id=str(row["primitive_id"]),
                 response_kinds=tuple(
                     AnswerKind(str(value)) for value in cast(list[object], row["response_kinds"])
+                ),
+                stimulus_contract=dict(
+                    cast(dict[str, JsonValue], row["stimulus_contract"])
                 ),
                 stimulus_revision_ids=tuple(
                     _uuid(value) for value in cast(list[object], row["stimulus_revision_ids"])
@@ -363,6 +367,9 @@ class SqlExerciseService:
             )
             if replay is not None:
                 return replay
+            before = await self._attempt(session, attempt_id, for_update=True)
+            if before is None:
+                raise DomainError(ErrorCode.NOT_FOUND)
             authorized = await session.scalar(
                 text(
                     "SELECT EXISTS (SELECT 1 FROM identity.account_roles "
@@ -371,11 +378,18 @@ class SqlExerciseService:
                 ),
                 {"actor": actor_id},
             )
-            if not authorized:
+            owns_profile = await session.scalar(
+                text(
+                    "SELECT EXISTS (SELECT 1 FROM language_profiles.learner_language_profiles "
+                    "WHERE profile_id=:profile AND account_id=:actor)"
+                ),
+                {"profile": before.profile_id, "actor": actor_id},
+            )
+            learner_self_assessment = (
+                bool(owns_profile) and str(command.result.strategy) == "self_assessment"
+            )
+            if not authorized and not learner_self_assessment:
                 raise DomainError(ErrorCode.FORBIDDEN)
-            before = await self._attempt(session, attempt_id, for_update=True)
-            if before is None:
-                raise DomainError(ErrorCode.NOT_FOUND)
             if before.version != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
             if before.status not in {"submitted", "correcting"}:
@@ -404,6 +418,22 @@ class SqlExerciseService:
                 )
             revision_no = 1 if current is None else int(str(current["revision_no"])) + 1
             result = command.result
+            provenance_id = command.provenance_id
+            if provenance_id is None:
+                raw_provenance_id = await session.scalar(
+                    text(
+                        "SELECT revision.provenance_id FROM exercises.exercise_attempts attempt "
+                        "JOIN exercises.exercise_instances instance ON "
+                        "instance.instance_id=attempt.instance_id "
+                        "JOIN exercises.exercise_definition_revisions revision ON "
+                        "revision.definition_revision_id=instance.definition_revision_id "
+                        "WHERE attempt.attempt_id=:attempt"
+                    ),
+                    {"attempt": attempt_id},
+                )
+                if raw_provenance_id is None:
+                    raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
+                provenance_id = _uuid(raw_provenance_id)
             await session.execute(
                 text(
                     "INSERT INTO exercises.exercise_corrections "
@@ -431,7 +461,7 @@ class SqlExerciseService:
                     "explanation": result.explanation,
                     "errors": _json(result.errors),
                     "criteria": _json(dict(result.criteria_scores)),
-                    "provenance": command.provenance_id,
+                    "provenance": provenance_id,
                     "requires_review": command.requires_review,
                     "supersedes": None
                     if current is None

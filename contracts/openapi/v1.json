@@ -2305,6 +2305,13 @@
             "title": "Seed",
             "type": "integer"
           },
+          "stimulus_contract": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue-Output"
+            },
+            "title": "Stimulus Contract",
+            "type": "object"
+          },
           "stimulus_revision_ids": {
             "items": {
               "format": "uuid",
@@ -2327,6 +2334,7 @@
           "language_pack_revision_id",
           "primitive_id",
           "response_kinds",
+          "stimulus_contract",
           "stimulus_revision_ids",
           "target_bindings",
           "lexical_bindings",
@@ -2334,6 +2342,76 @@
           "seed"
         ],
         "title": "ExerciseInstanceResponse",
+        "type": "object"
+      },
+      "FoundationActivityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "block_code": {
+            "title": "Block Code",
+            "type": "string"
+          },
+          "block_title": {
+            "title": "Block Title",
+            "type": "string"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementChoiceResponse"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "item_code": {
+            "title": "Item Code",
+            "type": "string"
+          },
+          "item_revision_id": {
+            "format": "uuid",
+            "title": "Item Revision Id",
+            "type": "string"
+          },
+          "modality": {
+            "title": "Modality",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "response_kind": {
+            "title": "Response Kind",
+            "type": "string"
+          },
+          "teaching_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teaching Value"
+          }
+        },
+        "required": [
+          "item_revision_id",
+          "item_code",
+          "block_code",
+          "block_title",
+          "ordinal",
+          "prompt",
+          "response_kind",
+          "modality",
+          "teaching_value",
+          "choices"
+        ],
+        "title": "FoundationActivityResponse",
         "type": "object"
       },
       "FoundationAnswerRequest": {
@@ -2360,6 +2438,35 @@
           "answer"
         ],
         "title": "FoundationAnswerRequest",
+        "type": "object"
+      },
+      "FoundationManifestResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "activities": {
+            "items": {
+              "$ref": "#/components/schemas/FoundationActivityResponse"
+            },
+            "title": "Activities",
+            "type": "array"
+          },
+          "foundation_revision_id": {
+            "format": "uuid",
+            "title": "Foundation Revision Id",
+            "type": "string"
+          },
+          "pack_revision_id": {
+            "format": "uuid",
+            "title": "Pack Revision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_revision_id",
+          "foundation_revision_id",
+          "activities"
+        ],
+        "title": "FoundationManifestResponse",
         "type": "object"
       },
       "FoundationResponse": {
@@ -2984,6 +3091,18 @@
             "title": "Compatibility Range",
             "type": "string"
           },
+          "foundation_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Foundation Revision Id"
+          },
           "pack_code": {
             "title": "Pack Code",
             "type": "string"
@@ -3009,8 +3128,21 @@
             "title": "Support Language Tags",
             "type": "array"
           },
+          "support_variety_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Support Variety Ids",
+            "type": "array"
+          },
           "target_language_tag": {
             "title": "Target Language Tag",
+            "type": "string"
+          },
+          "target_variety_id": {
+            "format": "uuid",
+            "title": "Target Variety Id",
             "type": "string"
           }
         },
@@ -3019,8 +3151,11 @@
           "pack_revision_id",
           "pack_code",
           "revision_no",
+          "target_variety_id",
           "target_language_tag",
+          "support_variety_ids",
           "support_language_tags",
+          "foundation_revision_id",
           "channel",
           "compatibility_range"
         ],
@@ -3777,6 +3912,23 @@
         "title": "MediaResponse",
         "type": "object"
       },
+      "MemoryPromptListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryPromptResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "MemoryPromptListResponse",
+        "type": "object"
+      },
       "MemoryPromptResponse": {
         "additionalProperties": false,
         "properties": {
@@ -4238,6 +4390,102 @@
           "paused_at"
         ],
         "title": "PauseEnrollmentRequest",
+        "type": "object"
+      },
+      "PlacementChoiceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "PlacementChoiceResponse",
+        "type": "object"
+      },
+      "PlacementItemResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "block_code": {
+            "title": "Block Code",
+            "type": "string"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementChoiceResponse"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "item_code": {
+            "title": "Item Code",
+            "type": "string"
+          },
+          "item_revision_id": {
+            "format": "uuid",
+            "title": "Item Revision Id",
+            "type": "string"
+          },
+          "ordinal": {
+            "title": "Ordinal",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "response_kind": {
+            "title": "Response Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_revision_id",
+          "item_code",
+          "block_code",
+          "ordinal",
+          "prompt",
+          "response_kind",
+          "choices"
+        ],
+        "title": "PlacementItemResponse",
+        "type": "object"
+      },
+      "PlacementManifestResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "foundation_revision_id": {
+            "format": "uuid",
+            "title": "Foundation Revision Id",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementItemResponse"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "pack_revision_id": {
+            "format": "uuid",
+            "title": "Pack Revision Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_revision_id",
+          "foundation_revision_id",
+          "items"
+        ],
+        "title": "PlacementManifestResponse",
         "type": "object"
       },
       "PlanBlockResponse": {
@@ -5524,6 +5772,35 @@
         "title": "SaveDraftRequest",
         "type": "object"
       },
+      "SelfAssessAttemptRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "form": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Form",
+            "type": "number"
+          },
+          "meaning": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Meaning",
+            "type": "number"
+          },
+          "reviewed_at": {
+            "format": "date-time",
+            "title": "Reviewed At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "meaning",
+          "form",
+          "reviewed_at"
+        ],
+        "title": "SelfAssessAttemptRequest",
+        "type": "object"
+      },
       "SenseNeighborhoodResponse": {
         "additionalProperties": false,
         "properties": {
@@ -6228,6 +6505,30 @@
       "SynthesizeSpeechRequest": {
         "additionalProperties": false,
         "properties": {
+          "assessment_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Item Id"
+          },
+          "assessment_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Run Id"
+          },
           "locale": {
             "maxLength": 40,
             "minLength": 2,
@@ -6242,10 +6543,17 @@
             "type": "object"
           },
           "text": {
-            "maxLength": 5000,
-            "minLength": 1,
-            "title": "Text",
-            "type": "string"
+            "anyOf": [
+              {
+                "maxLength": 5000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           },
           "voice_id": {
             "maxLength": 120,
@@ -6255,7 +6563,6 @@
           }
         },
         "required": [
-          "text",
           "locale",
           "voice_id"
         ],
@@ -7020,6 +7327,17 @@
             "title": "Analysis State",
             "type": "string"
           },
+          "definition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
           "encounter_count": {
             "title": "Encounter Count",
             "type": "integer"
@@ -7086,6 +7404,18 @@
             "format": "uuid",
             "title": "Sense Id",
             "type": "string"
+          },
+          "sense_revision_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sense Revision Id"
           }
         },
         "required": [
@@ -10405,6 +10735,217 @@
           }
         ],
         "summary": "Mark Exercise Correction Read"
+      }
+    },
+    "/api/v1/attempts/{attempt_id}:self-assess": {
+      "post": {
+        "operationId": "self_assess_exercise_attempt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "attempt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attempt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "title": "Origin",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "title": "X-Csrf-Token",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelfAssessAttemptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "ETag": {
+                "description": "Quoted optimistic concurrency version.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Self Assess Exercise Attempt"
       }
     },
     "/api/v1/attempts/{attempt_id}:submit": {
@@ -16128,6 +16669,156 @@
         "summary": "List Language Packs"
       }
     },
+    "/api/v1/language-packs/{pack_revision_id}/foundation-manifest": {
+      "get": {
+        "operationId": "get_foundation_manifest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_revision_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Revision Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoundationManifestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Foundation Manifest"
+      }
+    },
+    "/api/v1/language-packs/{pack_revision_id}/placement-manifest": {
+      "get": {
+        "operationId": "get_placement_manifest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_revision_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Revision Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementManifestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Placement Manifest"
+      }
+    },
     "/api/v1/language-profiles": {
       "get": {
         "operationId": "list_language_profiles",
@@ -19840,6 +20531,159 @@
       }
     },
     "/api/v1/language-profiles/{profile_id}/memory-prompts": {
+      "get": {
+        "operationId": "list_memory_prompts",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "profile_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Profile Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryPromptListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "List Memory Prompts"
+      },
       "post": {
         "operationId": "create_memory_prompt",
         "parameters": [

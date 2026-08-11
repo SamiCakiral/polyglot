@@ -989,6 +989,29 @@ class SqlMemoryService:
                 next_cursor = self._encode_due_cursor(last.due_at, last.prompt_id)
             return tuple(items), next_cursor
 
+    async def list_for_profile(
+        self, actor_id: UUID, profile_id: UUID
+    ) -> tuple[MemoryAggregate, ...]:
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            prompt_ids = (
+                await session.execute(
+                    text(
+                        "SELECT prompt_id FROM memory.memory_prompts "
+                        "WHERE profile_id=:profile AND status IN ('active','suspended') "
+                        "ORDER BY created_at,prompt_id"
+                    ),
+                    {"profile": profile_id},
+                )
+            ).scalars()
+            repository = SqlMemoryRepository(session)
+            aggregates: list[MemoryAggregate] = []
+            for prompt_id in prompt_ids:
+                aggregate = await repository.get(profile_id, UUID(str(prompt_id)))
+                if aggregate is not None:
+                    aggregates.append(aggregate)
+            return tuple(aggregates)
+
     async def _owned_prompt(
         self,
         session: AsyncSession,

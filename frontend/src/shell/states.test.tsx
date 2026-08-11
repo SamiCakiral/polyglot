@@ -115,11 +115,11 @@ it("offers a manual retry after a transport failure", async () => {
   expect(screen.getByRole("button", { name: "Réessayer" })).toBeEnabled();
 });
 
-it("keeps the route context visible in the shell empty state", async () => {
+it("keeps the route context visible while product data loads", async () => {
   renderShell("/today");
 
   expect(await screen.findByRole("heading", { level: 1, name: "Aujourd'hui" })).toBeVisible();
-  expect(screen.getByText("Aucun contenu disponible")).toBeVisible();
+  expect(screen.getByText("Séance du jour")).toBeVisible();
 });
 
 it("contains an unexpected render failure in the application error boundary", async () => {

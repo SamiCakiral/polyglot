@@ -30,8 +30,11 @@ class LanguagePackResponse(ClosedResponse):
     pack_revision_id: UUID
     pack_code: str
     revision_no: int
+    target_variety_id: UUID
     target_language_tag: str
+    support_variety_ids: tuple[UUID, ...]
     support_language_tags: tuple[str, ...]
+    foundation_revision_id: UUID | None
     channel: str
     compatibility_range: str
 
@@ -39,6 +42,46 @@ class LanguagePackResponse(ClosedResponse):
 class LanguagePackPageResponse(ClosedResponse):
     items: tuple[LanguagePackResponse, ...]
     next_cursor: str | None
+
+
+class PlacementChoiceResponse(ClosedResponse):
+    value: str
+    label: str
+
+
+class PlacementItemResponse(ClosedResponse):
+    item_revision_id: UUID
+    item_code: str
+    block_code: str
+    ordinal: int
+    prompt: str
+    response_kind: str
+    choices: tuple[PlacementChoiceResponse, ...]
+
+
+class PlacementManifestResponse(ClosedResponse):
+    pack_revision_id: UUID
+    foundation_revision_id: UUID
+    items: tuple[PlacementItemResponse, ...]
+
+
+class FoundationActivityResponse(ClosedResponse):
+    item_revision_id: UUID
+    item_code: str
+    block_code: str
+    block_title: str
+    ordinal: int
+    prompt: str
+    response_kind: str
+    modality: str
+    teaching_value: str | None
+    choices: tuple[PlacementChoiceResponse, ...]
+
+
+class FoundationManifestResponse(ClosedResponse):
+    pack_revision_id: UUID
+    foundation_revision_id: UUID
+    activities: tuple[FoundationActivityResponse, ...]
 
 
 class CatalogueTargetResponse(ClosedResponse):
@@ -154,6 +197,156 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
     ) -> LanguagePackPageResponse:
         page = await reader().list_language_packs(limit=limit, cursor=cursor)
         return _pack_page(page)
+
+    @router.get(
+        "/api/v1/language-packs/{pack_revision_id}/placement-manifest",
+        operation_id="get_placement_manifest",
+        response_model=PlacementManifestResponse,
+        responses=CATALOGUE_PROBLEM_RESPONSES,
+    )
+    async def get_placement_manifest(pack_revision_id: UUID) -> PlacementManifestResponse:
+        catalogue = await reader().read_foundations(pack_revision_id=pack_revision_id)
+        if catalogue is None:
+            raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
+        presentations: dict[str, tuple[str, str, tuple[tuple[str, str], ...]]] = {
+            "ITF-F1-01": (
+                "Quel couple commence par un son c ou g dur ?",
+                "single_choice",
+                (("casa_gatto", "casa / gatto"), ("cena_gelato", "cena / gelato")),
+            ),
+            "ITF-F1-01-S02": (
+                "Quel couple commence par un son c ou g doux ?",
+                "single_choice",
+                (("cena_gelato", "cena / gelato"), ("casa_gatto", "casa / gatto")),
+            ),
+            "ITF-F3-01": (
+                "Vous entrez dans une boutique. Quelle ouverture convient ?",
+                "single_choice",
+                (("formal_greeting", "Buongiorno"), ("informal_greeting", "Ciao")),
+            ),
+            "ITF-F3-02": (
+                "Présentez-vous comme Luca en commençant par buongiorno.",
+                "text",
+                (),
+            ),
+            "ITF-F4-01": (
+                "Complétez : ___ due binari alla stazione.",
+                "single_choice",
+                (("ci_sono", "Ci sono"), ("ce", "C'è")),
+            ),
+            "ITF-F5-01": (
+                "Demandez poliment à quelqu'un de répéter.",
+                "text",
+                (),
+            ),
+        }
+        items: list[PlacementItemResponse] = []
+        ordinal = 1
+        for block in catalogue.definition.blocks:
+            for item in block.items:
+                presentation = presentations.get(item.item_code)
+                if presentation is None:
+                    continue
+                prompt, response_kind, choices = presentation
+                items.append(
+                    PlacementItemResponse(
+                        item_revision_id=item.item_revision_id,
+                        item_code=item.item_code,
+                        block_code=block.block_code,
+                        ordinal=ordinal,
+                        prompt=prompt,
+                        response_kind=response_kind,
+                        choices=tuple(
+                            PlacementChoiceResponse(value=value, label=label)
+                            for value, label in choices
+                        ),
+                    )
+                )
+                ordinal += 1
+        if len(items) != 6:
+            raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
+        return PlacementManifestResponse(
+            pack_revision_id=pack_revision_id,
+            foundation_revision_id=catalogue.definition.foundation_revision_id,
+            items=tuple(items),
+        )
+
+    @router.get(
+        "/api/v1/language-packs/{pack_revision_id}/foundation-manifest",
+        operation_id="get_foundation_manifest",
+        response_model=FoundationManifestResponse,
+        responses=CATALOGUE_PROBLEM_RESPONSES,
+    )
+    async def get_foundation_manifest(pack_revision_id: UUID) -> FoundationManifestResponse:
+        catalogue = await reader().read_foundations(pack_revision_id=pack_revision_id)
+        if catalogue is None:
+            raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
+        block_titles = {
+            "F1": "Sons et lecture",
+            "F2": "Accent et rythme",
+            "F3": "Saluer et se présenter",
+            "F4": "Construire une phrase simple",
+            "F5": "Réparer un échange",
+        }
+        prompts = {
+            "F1": "Lisez ou écoutez la forme italienne, puis restituez-la exactement.",
+            "F2": "Repérez l'accent tonique, puis répétez la forme à voix haute.",
+            "F3": "Produisez la formule adaptée pour saluer ou vous présenter.",
+            "F4": "Complétez la structure italienne demandée.",
+            "F5": "Produisez une formule courte pour maintenir l'échange.",
+        }
+        choice_decoys = {
+            "casa_gatto": "cena_gelato",
+            "cena_gelato": "casa_gatto",
+            "stress_marked": "stress_unmarked",
+            "formal_greeting": "informal_greeting",
+            "ci_sono": "ce",
+        }
+        labels = {
+            "formal_greeting": "Buongiorno",
+            "informal_greeting": "Ciao",
+            "stress_marked": "Accent repéré",
+            "stress_unmarked": "Accent non repéré",
+            "ci_sono": "Ci sono",
+            "ce": "C'è",
+        }
+        activities: list[FoundationActivityResponse] = []
+        global_ordinal = 1
+        for block in catalogue.definition.blocks:
+            for item in block.items:
+                teaching_value = item.checker_values[0] if item.checker_values else None
+                choices: tuple[PlacementChoiceResponse, ...] = ()
+                if teaching_value in choice_decoys:
+                    values = (teaching_value, choice_decoys[teaching_value])
+                    choices = tuple(
+                        PlacementChoiceResponse(
+                            value=value,
+                            label=labels.get(value, value.replace("_", " / ")),
+                        )
+                        for value in values
+                    )
+                activities.append(
+                    FoundationActivityResponse(
+                        item_revision_id=item.item_revision_id,
+                        item_code=item.item_code,
+                        block_code=block.block_code,
+                        block_title=block_titles[block.block_code],
+                        ordinal=global_ordinal,
+                        prompt=prompts[block.block_code],
+                        response_kind="choice" if choices else "text",
+                        modality=item.modalities[0],
+                        teaching_value=teaching_value,
+                        choices=choices,
+                    )
+                )
+                global_ordinal += 1
+        if len(activities) != 32:
+            raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
+        return FoundationManifestResponse(
+            pack_revision_id=pack_revision_id,
+            foundation_revision_id=catalogue.definition.foundation_revision_id,
+            activities=tuple(activities),
+        )
 
     @router.get(
         "/api/v1/catalogue/targets",

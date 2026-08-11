@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+# ruff: noqa: E501
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import cast
@@ -242,6 +243,14 @@ class SqlCurriculumService:
                 )
             except IntegrityError as error:
                 raise DomainError(ErrorCode.ACTIVE_RUN_EXISTS) from error
+            await self._introduce_day_vocabulary(
+                session,
+                profile_id=profile_id,
+                enrollment_id=aggregate.enrollment_id,
+                module_revision_id=aggregate.module_revision_id,
+                day_ordinal=aggregate.current_day_ordinal,
+                now=now,
+            )
             view = await self._required_enrollment(session, aggregate.enrollment_id)
             await self._record(
                 session,
@@ -255,6 +264,92 @@ class SqlCurriculumService:
             )
             await session.commit()
             return view
+
+    async def _introduce_day_vocabulary(
+        self,
+        session: AsyncSession,
+        *,
+        profile_id: UUID,
+        enrollment_id: UUID,
+        module_revision_id: UUID,
+        day_ordinal: int,
+        now: datetime,
+    ) -> None:
+        rows = (
+            await session.execute(
+                text(
+                    "SELECT entry.sense_id,entry.label,sense_revision.sense_revision_id,"
+                    "form.form_analysis_id FROM curriculum.module_days day "
+                    "JOIN lexicon.lexical_reference_entries entry ON "
+                    "('lexical:' || entry.sense_id::text)=ANY(day.primary_target_refs) "
+                    "JOIN catalogue.lexical_senses sense ON sense.sense_id=entry.sense_id "
+                    "JOIN catalogue.lexical_sense_revisions sense_revision ON "
+                    "sense_revision.sense_id=sense.sense_id AND sense_revision.status='published' "
+                    "LEFT JOIN LATERAL (SELECT analysis.form_analysis_id "
+                    "FROM catalogue.lexical_unit_revisions unit_revision "
+                    "JOIN catalogue.form_analyses analysis USING(unit_revision_id) "
+                    "WHERE unit_revision.lexical_unit_id=sense.lexical_unit_id "
+                    "ORDER BY analysis.form_analysis_id LIMIT 1) form ON true "
+                    "WHERE day.module_revision_id=:revision AND day.ordinal=:ordinal "
+                    "ORDER BY entry.ordinal"
+                ),
+                {"revision": module_revision_id, "ordinal": day_ordinal},
+            )
+        ).mappings()
+        for row in rows:
+            sense_id = _uuid(row["sense_id"])
+            encounter_id = self._ids.new()
+            mention_id = self._ids.new()
+            candidate_id = self._ids.new()
+            resolution_id = self._ids.new()
+            idempotency_key = f"module:{enrollment_id}:day:{day_ordinal}:sense:{sense_id}"
+            fingerprint = canonical_json_fingerprint(
+                {
+                    "profile_id": str(profile_id),
+                    "enrollment_id": str(enrollment_id),
+                    "sense_id": str(sense_id),
+                    "day_ordinal": day_ordinal,
+                }
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO lexicon.lexical_encounters "
+                    "(encounter_id,profile_id,exact_surface,source_type,source_ref,source_revision_ref,"
+                    "modality,lexical_role,operation,help_state,result_state,correction_ref,"
+                    "correction_confidence,context_private,context_fingerprint,context_retention,"
+                    "occurred_at,idempotency_key,request_fingerprint) VALUES "
+                    "(:encounter,:profile,:surface,'module',:source,:revision,'reading','target',"
+                    "'exposure','revealed','not_evaluable','none',0,NULL,:fingerprint,'minimal',"
+                    ":now,:key,:fingerprint)"
+                ),
+                {"encounter": encounter_id, "profile": profile_id, "surface": row["label"], "source": str(enrollment_id), "revision": str(module_revision_id), "fingerprint": fingerprint, "now": now, "key": idempotency_key},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO lexicon.lexical_mentions "
+                    "(mention_id,profile_id,encounter_id,exact_surface,form_analysis_id,"
+                    "analysis_revision_ref,ordinal,created_at) VALUES "
+                    "(:mention,:profile,:encounter,:surface,:form,:revision,1,:now)"
+                ),
+                {"mention": mention_id, "profile": profile_id, "encounter": encounter_id, "surface": row["label"], "form": row["form_analysis_id"], "revision": str(row["sense_revision_id"]), "now": now},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO lexicon.mention_candidates "
+                    "(candidate_id,profile_id,mention_id,sense_id,sense_scope,confidence,source,created_at) "
+                    "VALUES (:candidate,:profile,:mention,:sense,'shared',1,'module_binding',:now)"
+                ),
+                {"candidate": candidate_id, "profile": profile_id, "mention": mention_id, "sense": sense_id, "now": now},
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO lexicon.mention_resolutions "
+                    "(resolution_id,profile_id,mention_id,candidate_id,sense_id,resolver_type,"
+                    "confidence,supersedes_resolution_id,created_at,idempotency_key,request_fingerprint) "
+                    "VALUES (:resolution,:profile,:mention,:candidate,:sense,'system',1,NULL,:now,:key,:fingerprint)"
+                ),
+                {"resolution": resolution_id, "profile": profile_id, "mention": mention_id, "candidate": candidate_id, "sense": sense_id, "now": now, "key": idempotency_key, "fingerprint": fingerprint},
+            )
 
     async def pause(
         self,

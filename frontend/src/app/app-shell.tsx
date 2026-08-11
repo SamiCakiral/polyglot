@@ -8,6 +8,7 @@ import {
   Languages,
   Menu,
   Settings,
+  Wrench,
   UserRound,
   X,
   type LucideIcon,
@@ -16,6 +17,7 @@ import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { getShellRouteTitle } from "./navigation";
+import { useSession } from "./session-context";
 
 interface PrimaryNavigationItem {
   icon: LucideIcon;
@@ -89,6 +91,7 @@ function PrimaryLink({ icon: Icon, label, to }: PrimaryNavigationItem) {
 }
 
 export function AppShell() {
+  const session = useSession();
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -192,6 +195,14 @@ export function AppShell() {
             <PrimaryLink key={item.to} {...item} />
           ))}
         </nav>
+        {session.roles.some((role) => role === "author" || role === "reviewer" || role === "admin") ? (
+          <nav aria-label="Navigation de l'Atelier" className="author-nav">
+            <TooltipNavLink className="primary-nav__link" label="Atelier" to="/authoring" tooltipClassName="control-tooltip--rail">
+              <Wrench aria-hidden="true" size={20} />
+              <span className="primary-nav__label">Atelier</span>
+            </TooltipNavLink>
+          </nav>
+        ) : null}
       </aside>
 
       {menuOpen ? (
@@ -223,6 +234,12 @@ export function AppShell() {
             <Settings aria-hidden="true" size={20} />
             Préférences
           </NavLink>
+          {session.roles.some((role) => role === "author" || role === "reviewer" || role === "admin") ? (
+            <NavLink to="/authoring" onClick={() => { setMenuOpen(false); }}>
+              <Wrench aria-hidden="true" size={20} />
+              Atelier
+            </NavLink>
+          ) : null}
         </nav>
       ) : null}
 

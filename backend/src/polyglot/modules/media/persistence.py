@@ -591,17 +591,109 @@ class SqlMediaService:
                 ),
             )
 
+    async def _assessment_speech_text(
+        self,
+        actor_id: UUID,
+        run_id: UUID,
+        item_id: UUID,
+    ) -> str:
+        async with self._sessions() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            script = await session.scalar(
+                text(
+                    "SELECT item.solution_snapshot->>'audio_script' "
+                    "FROM assessments.assessment_runs AS run "
+                    "JOIN assessments.assessment_section_definitions AS section "
+                    "ON section.form_id=run.form_id "
+                    "JOIN assessments.assessment_items AS item "
+                    "ON item.section_definition_id=section.section_definition_id "
+                    "WHERE run.assessment_run_id=:run AND item.item_id=:item "
+                    "AND run.status='in_progress' AND item.media_ref IS NOT NULL"
+                ),
+                {"run": run_id, "item": item_id},
+            )
+            if not isinstance(script, str) or not script:
+                raise DomainError(ErrorCode.NOT_FOUND)
+            return script
+
+    async def _record_assessment_play(
+        self,
+        session: AsyncSession,
+        actor_id: UUID,
+        run_id: UUID,
+        item_id: UUID,
+        idempotency_key: str,
+        now: datetime,
+    ) -> None:
+        maximum = await session.scalar(
+            text(
+                "SELECT item.max_plays FROM assessments.assessment_runs AS run "
+                "JOIN assessments.assessment_section_definitions AS section "
+                "ON section.form_id=run.form_id "
+                "JOIN assessments.assessment_items AS item "
+                "ON item.section_definition_id=section.section_definition_id "
+                "WHERE run.assessment_run_id=:run AND item.item_id=:item"
+            ),
+            {"run": run_id, "item": item_id},
+        )
+        if maximum is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        play_count = int(
+            await session.scalar(
+                text(
+                    "SELECT count(*) FROM assessments.assessment_item_plays "
+                    "WHERE assessment_run_id=:run AND item_id=:item"
+                ),
+                {"run": run_id, "item": item_id},
+            )
+            or 0
+        )
+        if play_count >= int(maximum):
+            raise DomainError(ErrorCode.RESPONSE_CONFLICT)
+        await session.execute(
+            text(
+                "INSERT INTO assessments.assessment_item_plays "
+                "(play_id,assessment_run_id,item_id,owner_account_id,idempotency_key,played_at) "
+                "VALUES (:play,:run,:item,:owner,:key,:now)"
+            ),
+            {
+                "play": self._ids.new(),
+                "run": run_id,
+                "item": item_id,
+                "owner": actor_id,
+                "key": idempotency_key,
+                "now": now,
+            },
+        )
+
     async def synthesize(
         self, actor_id: UUID, command: SynthesizeSpeech, *, idempotency_key: str
     ) -> TtsSynthesisView:
         now = self._clock.now()
-        if not command.text or len(command.text) > 5000:
+        speech_text = command.text
+        if command.assessment_run_id is not None and command.assessment_item_id is not None:
+            speech_text = await self._assessment_speech_text(
+                actor_id,
+                command.assessment_run_id,
+                command.assessment_item_id,
+            )
+        if not speech_text or len(speech_text) > 5000:
             raise DomainError(ErrorCode.SIZE_LIMIT_EXCEEDED)
         fingerprint_payload: dict[str, JsonValue] = {
-                "text": command.text,
+                "text": speech_text,
                 "locale": command.locale,
                 "voice_id": command.voice_id,
                 "parameters": dict(command.parameters),
+                "assessment_run_id": (
+                    None
+                    if command.assessment_run_id is None
+                    else str(command.assessment_run_id)
+                ),
+                "assessment_item_id": (
+                    None
+                    if command.assessment_item_id is None
+                    else str(command.assessment_item_id)
+                ),
         }
         request_fingerprint = canonical_json_fingerprint(fingerprint_payload)
         request_id = self._ids.new()
@@ -635,6 +727,15 @@ class SqlMediaService:
                     cast(str | None, existing["cache_key"]),
                     media,
                 )
+            if command.assessment_run_id is not None and command.assessment_item_id is not None:
+                await self._record_assessment_play(
+                    session,
+                    actor_id,
+                    command.assessment_run_id,
+                    command.assessment_item_id,
+                    idempotency_key,
+                    now,
+                )
             await session.execute(
                 text(
                     "INSERT INTO media.tts_synthesis_requests "
@@ -660,7 +761,7 @@ class SqlMediaService:
             await self._complete_tts_request(actor_id, request_id, synthesis_view, now)
             return synthesis_view
         result = self._tts.synthesize(
-            TtsRequest(command.text, command.locale, command.voice_id, command.parameters)
+            TtsRequest(speech_text, command.locale, command.voice_id, command.parameters)
         )
         if result.availability is not TtsAvailability.AVAILABLE or result.audio is None or result.cache_key is None:
             synthesis_view = TtsSynthesisView(

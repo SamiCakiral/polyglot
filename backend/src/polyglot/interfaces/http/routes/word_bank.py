@@ -124,7 +124,9 @@ class LexicalProjectionResponse(ClosedModel):
 
 class WordBankItemResponse(ClosedModel):
     sense_id: UUID
+    sense_revision_id: UUID | None = None
     label: str
+    definition: str | None = None
     encounter_count: int
     first_encountered_at: str | None
     last_encountered_at: str | None
@@ -1329,6 +1331,12 @@ class SqlWordBankService:
                             "JOIN lexicon.lexical_encounters e ON e.profile_id=:profile "
                             "AND e.encounter_id=m.encounter_id GROUP BY latest.sense_id) "
                             "SELECT entry.sense_id,entry.label,entry.ordinal,observed.encounters,"
+                            "(SELECT sense_revision_id FROM catalogue.lexical_sense_revisions "
+                            "WHERE sense_id=entry.sense_id AND status='published' "
+                            "ORDER BY revision_no DESC LIMIT 1) AS sense_revision_id,"
+                            "(SELECT definition FROM catalogue.lexical_sense_revisions "
+                            "WHERE sense_id=entry.sense_id AND status='published' "
+                            "ORDER BY revision_no DESC LIMIT 1) AS definition,"
                             "observed.first_at,observed.last_at,(SELECT familiarity FROM "
                             "lexicon.lexical_declarations declaration WHERE declaration.profile_id=:profile "
                             "AND declaration.sense_id=entry.sense_id ORDER BY declaration.declared_at DESC,"
@@ -1368,7 +1376,13 @@ class SqlWordBankService:
                 items = tuple(
                     WordBankItemResponse(
                         sense_id=item.sense_id,
+                        sense_revision_id=(
+                            UUID(str(by_id[item.sense_id]["sense_revision_id"]))
+                            if by_id[item.sense_id]["sense_revision_id"] is not None
+                            else None
+                        ),
                         label=item.label,
+                        definition=str(by_id[item.sense_id]["definition"]),
                         encounter_count=int(by_id[item.sense_id]["encounters"] or 0),
                         first_encountered_at=(
                             by_id[item.sense_id]["first_at"].isoformat()

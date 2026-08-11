@@ -5,6 +5,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AnswerKind } from "./answerKind";
+import type { ExerciseInstanceResponseStimulusContract } from "./exerciseInstanceResponseStimulusContract";
 import type { JsonValueOutput } from "./jsonValueOutput";
 
 export interface ExerciseInstanceResponse {
@@ -16,6 +17,7 @@ export interface ExerciseInstanceResponse {
   primitive_id: string;
   response_kinds: AnswerKind[];
   seed: number;
+  stimulus_contract: ExerciseInstanceResponseStimulusContract;
   stimulus_revision_ids: string[];
   target_bindings: JsonValueOutput[];
 }

@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, Security
 from fastapi.responses import Response as BinaryResponse
 from fastapi.security import APIKeyCookie
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from polyglot.interfaces.http.routes.identity import (
     IDENTITY_PROBLEM_RESPONSES,
@@ -86,10 +86,23 @@ class ReserveMediaUploadRequest(ClosedModel):
 
 
 class SynthesizeSpeechRequest(ClosedModel):
-    text: str = Field(min_length=1, max_length=5000)
+    text: str | None = Field(default=None, min_length=1, max_length=5000)
     locale: str = Field(min_length=2, max_length=40)
     voice_id: str = Field(min_length=1, max_length=120)
     parameters: dict[str, str] = Field(default_factory=dict)
+    assessment_run_id: UUID | None = None
+    assessment_item_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def validate_source(self) -> SynthesizeSpeechRequest:
+        has_assessment_source = (
+            self.assessment_run_id is not None and self.assessment_item_id is not None
+        )
+        if (self.assessment_run_id is None) != (self.assessment_item_id is None):
+            raise ValueError("assessment source requires both identifiers")
+        if (self.text is not None) == has_assessment_source:
+            raise ValueError("provide exactly one speech source")
+        return self
 
 
 class MediaResponse(ClosedModel):

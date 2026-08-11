@@ -3,6 +3,7 @@ import { setupServer } from "msw/node";
 import {
   getGetCurrentSessionMockHandler,
   getGetCurrentSessionResponseMock,
+  getPolyglotV2APIMock,
 } from "../../src/generated/mocks/polyglot.msw";
 
 export const currentSessionFixture = getGetCurrentSessionResponseMock({
@@ -28,4 +29,4 @@ export const currentSessionFixture = getGetCurrentSessionResponseMock({
 
 export const readySessionHandler = getGetCurrentSessionMockHandler(currentSessionFixture);
 
-export const server = setupServer(readySessionHandler);
+export const server = setupServer(...getPolyglotV2APIMock(), readySessionHandler);

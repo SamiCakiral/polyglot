@@ -21,6 +21,7 @@ from polyglot.interfaces.http.routes.identity import (
 from polyglot.modules.exercises.core.application import (
     AttemptView,
     ContestCorrection,
+    CorrectAttempt,
     CorrectionCaseView,
     ExerciseApplicationService,
     MarkCorrectionRead,
@@ -30,12 +31,13 @@ from polyglot.modules.exercises.core.application import (
     SubmitAttempt,
     UseHint,
 )
-from polyglot.modules.exercises.core.domain import AnswerKind, HintLevel
+from polyglot.modules.exercises.core.domain import AnswerKind, CorrectionStrategy, HintLevel
 from polyglot.modules.identity.application import (
     CurrentSessionResult,
     IdentityApplicationService,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
+from polyglot.platform.ids import Uuid7Generator
 from polyglot.platform.json_types import JsonValue
 
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -102,6 +104,12 @@ class SubmitAttemptRequest(ClosedModel):
     submitted_at: datetime
 
 
+class SelfAssessAttemptRequest(ClosedModel):
+    meaning: float = Field(ge=0, le=1)
+    form: float = Field(ge=0, le=1)
+    reviewed_at: datetime
+
+
 class ContestCorrectionRequest(ClosedModel):
     case_id: UUID
     reason_code: str = Field(min_length=1, max_length=80)
@@ -129,6 +137,7 @@ class ExerciseInstanceResponse(ClosedModel):
     language_pack_revision_id: UUID
     primitive_id: str
     response_kinds: tuple[AnswerKind, ...]
+    stimulus_contract: dict[str, JsonValue]
     stimulus_revision_ids: tuple[UUID, ...]
     target_bindings: tuple[JsonValue, ...]
     lexical_bindings: tuple[JsonValue, ...]
@@ -387,6 +396,45 @@ def exercises_router(
             current.account_id,
             attempt_id,
             SubmitAttempt(**payload.model_dump()),
+            expected_version=expected_version(if_match),
+            idempotency_key=idempotency_key,
+        )
+        return attempt_response(response, view)
+
+    @router.post(
+        "/api/v1/attempts/{attempt_id}:self-assess",
+        operation_id="self_assess_exercise_attempt",
+        response_model=AttemptResponse,
+        responses=ETAG_RESPONSE,
+    )
+    async def self_assess_exercise_attempt(
+        attempt_id: UUID,
+        payload: SelfAssessAttemptRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf_token: CsrfHeader,
+        if_match: IfMatchHeader,
+        session_token: SessionCookieToken = None,
+    ) -> AttemptResponse:
+        current = await session_for(request, session_token, csrf_token, origin)
+        result = CorrectionStrategy.self_assessment(
+            required_criteria=("meaning", "form"),
+            passing_score=0.75,
+        ).correct({"meaning": payload.meaning, "form": payload.form})
+        view = await application_service().correct_attempt(
+            current.account_id,
+            attempt_id,
+            CorrectAttempt(
+                correction_id=Uuid7Generator().new(),
+                result=result,
+                provenance_id=None,
+                rubric_revision_id=None,
+                proposed_answer={"meaning": payload.meaning, "form": payload.form},
+                requires_review=False,
+                created_at=payload.reviewed_at,
+            ),
             expected_version=expected_version(if_match),
             idempotency_key=idempotency_key,
         )

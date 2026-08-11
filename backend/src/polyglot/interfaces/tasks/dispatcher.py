@@ -22,6 +22,7 @@ class LocalOutboxDispatcher:
         worker_id: str,
         lease_for: timedelta = timedelta(minutes=5),
         batch_size: int = 100,
+        destination: str | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._publisher = publisher
@@ -29,6 +30,7 @@ class LocalOutboxDispatcher:
         self._worker_id = worker_id
         self._lease_for = lease_for
         self._batch_size = batch_size
+        self._destination = destination
 
     async def run_once(self) -> int:
         async with self._session_factory() as session:
@@ -37,6 +39,7 @@ class LocalOutboxDispatcher:
                 now=self._clock.now(),
                 lease_for=self._lease_for,
                 limit=self._batch_size,
+                destination=self._destination,
             )
             await session.commit()
 

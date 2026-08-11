@@ -236,6 +236,11 @@ async def test_foundation_run_uses_published_blocks_and_completes_only_after_del
         assert first.json()["session_count"] == 1
         assert first.json()["gate_passed"] is False
         assert "two_sessions_required" in first.json()["gate_reasons"]
+        fetched = await client.get(f"/api/v1/foundation-runs/{run_id}")
+        assert fetched.status_code == 200, fetched.text
+        assert fetched.json()["session_count"] == 1
+        assert fetched.json()["gate_passed"] is False
+        assert fetched.json()["gate_reasons"] == first.json()["gate_reasons"]
         first_replay = await client.post(
             f"/api/v1/foundation-runs/{run_id}:complete",
             headers=first_headers,
