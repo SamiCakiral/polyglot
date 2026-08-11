@@ -12,6 +12,7 @@ import type {
   AccountResponse,
   AssessmentRunResponse,
   AttemptResponse,
+  AuthoringArtifactResponse,
   CatalogueTargetPageResponse,
   ConsentResponse,
   ContentRevisionPageResponse,
@@ -1310,6 +1311,56 @@ export const getGetAttemptResponseMock = (
   terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getListAuthoringArtifactsResponseMock =
+  (): AuthoringArtifactResponse[] =>
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      artifact_id: faker.string.uuid(),
+      artifact_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      source_tool_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    }));
+
+export const getGetAuthoringArtifactResponseMock = (
+  overrideResponse: Partial<Extract<AuthoringArtifactResponse, object>> = {},
+): AuthoringArtifactResponse => ({
+  artifact_id: faker.string.uuid(),
+  artifact_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  payload: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
+  source_tool_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   ...overrideResponse,
 });
 

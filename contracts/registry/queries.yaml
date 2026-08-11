@@ -178,6 +178,14 @@
     },
     {
       "method": "GET",
+      "route": "/authoring-artifacts"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring-artifacts/{artifact_id}"
+    },
+    {
+      "method": "GET",
       "route": "/media/{media_id}"
     },
     {
@@ -226,6 +234,8 @@
     "GetAssessmentRun",
     "GetAssessmentResult",
     "GetGenerationJob",
+    "ListAuthoringArtifacts",
+    "GetAuthoringArtifact",
     "ListContentDrafts",
     "GetContentDraft",
     "GetValidationReport",

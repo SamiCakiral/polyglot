@@ -15,6 +15,7 @@ import type {
   AccountResponse,
   AssessmentRunResponse,
   AttemptResponse,
+  AuthoringArtifactResponse,
   CatalogueTargetPageResponse,
   ConsentResponse,
   ContentRevisionPageResponse,
@@ -1313,6 +1314,56 @@ export const getGetAttemptResponseMock = (
   terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getListAuthoringArtifactsResponseMock =
+  (): AuthoringArtifactResponse[] =>
+    Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => ({
+      artifact_id: faker.string.uuid(),
+      artifact_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      source_tool_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    }));
+
+export const getGetAuthoringArtifactResponseMock = (
+  overrideResponse: Partial<Extract<AuthoringArtifactResponse, object>> = {},
+): AuthoringArtifactResponse => ({
+  artifact_id: faker.string.uuid(),
+  artifact_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  checksum: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  payload: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
+  source_tool_name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   ...overrideResponse,
 });
 
@@ -6064,6 +6115,58 @@ export const getGetAttemptMockHandler = (
   );
 };
 
+export const getListAuthoringArtifactsMockHandler = (
+  overrideResponse?:
+    | AuthoringArtifactResponse[]
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<AuthoringArtifactResponse[]> | AuthoringArtifactResponse[]),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/authoring-artifacts",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListAuthoringArtifactsResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetAuthoringArtifactMockHandler = (
+  overrideResponse?:
+    | AuthoringArtifactResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<AuthoringArtifactResponse> | AuthoringArtifactResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/authoring-artifacts/:artifactId",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetAuthoringArtifactResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getGetContentHistoryMockHandler = (
   overrideResponse?:
     | ContentRevisionPageResponse
@@ -9248,6 +9351,8 @@ export const getPolyglotV2APIMock = () => [
   getSelfAssessExerciseAttemptMockHandler(),
   getSubmitExerciseAttemptMockHandler(),
   getGetAttemptMockHandler(),
+  getListAuthoringArtifactsMockHandler(),
+  getGetAuthoringArtifactMockHandler(),
   getGetContentHistoryMockHandler(),
   getListContentDraftsMockHandler(),
   getCreateContentDraftMockHandler(),

@@ -15,6 +15,7 @@ from polyglot.interfaces.tools.executor import (
     ToolInvocation,
     ToolInvocationStatus,
     ToolResult,
+    ToolScope,
 )
 from polyglot.interfaces.tools.registry import TOOL_REGISTRY
 from polyglot.modules.generation.application import (
@@ -22,6 +23,11 @@ from polyglot.modules.generation.application import (
     GenerationJobView,
     RequestGenerationJob,
 )
+from polyglot.modules.generation.orchestration import (
+    build_generation_messages,
+    parse_generation_plan,
+)
+from polyglot.modules.generation.providers import ChatProvider, ChatRequest
 from polyglot.platform.clock import Clock, SystemClock
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
@@ -61,11 +67,21 @@ class SqlGenerationService:
         idempotency_key: str,
     ) -> GenerationJobView:
         now = self._clock.now()
-        if not 1 <= command.max_attempts <= 3:
+        if command.max_attempts != 1:
             raise DomainError(ErrorCode.VALIDATION_FAILED)
-        if not command.tool_allowlist or any(
-            item.split("@", 1)[0] not in TOOL_REGISTRY for item in command.tool_allowlist
+        if (
+            command.provider_code != "lm_studio"
+            or command.model_code != "qwen/qwen3.6-35b-a3b"
         ):
+            raise DomainError(ErrorCode.PROVIDER_UNAVAILABLE, retryable=False)
+        invalid_tools = False
+        for item in command.tool_allowlist:
+            name, separator, version = item.partition("@")
+            definition = TOOL_REGISTRY.get(name)
+            if not separator or definition is None or version != definition.version:
+                invalid_tools = True
+                break
+        if not command.tool_allowlist or invalid_tools:
             raise DomainError(ErrorCode.TOOL_NOT_ALLOWED)
         fingerprint_payload: dict[str, JsonValue] = {
             "task_type": command.task_type,
@@ -220,6 +236,78 @@ class SqlGenerationService:
             )
             return view
 
+    async def process_next_job(
+        self, provider: ChatProvider
+    ) -> GenerationJobView | None:
+        claimed = await self._claim_next_job()
+        if claimed is None:
+            return None
+        job_id = _uuid(claimed["job_id"])
+        actor_id = _uuid(claimed["owner_account_id"])
+        started_at = self._clock.now()
+        input_tokens = 0
+        output_tokens = 0
+        artifact_id: UUID | None = None
+        error_code: str | None = None
+        try:
+            if claimed["provider_code"] != provider.code or claimed["model_code"] != provider.model:
+                raise DomainError(ErrorCode.PROVIDER_UNAVAILABLE, retryable=False)
+            allowlist = tuple(
+                str(item) for item in cast(list[object], claimed["tool_allowlist"])
+            )
+            task_input = cast(dict[str, JsonValue], claimed["task_input"])
+            max_input_tokens = cast(int, claimed["max_input_tokens"])
+            max_output_tokens = cast(int, claimed["max_output_tokens"])
+            messages = build_generation_messages(
+                task_type=str(claimed["task_type"]),
+                task_input=task_input,
+                tool_allowlist=allowlist,
+            )
+            chat = await provider.complete(
+                ChatRequest(
+                    provider.model,
+                    messages,
+                    max_output_tokens,
+                )
+            )
+            input_tokens = chat.input_tokens
+            output_tokens = chat.output_tokens
+            if input_tokens > max_input_tokens or output_tokens > max_output_tokens:
+                raise DomainError(ErrorCode.BUDGET_EXCEEDED, retryable=False)
+            plan = parse_generation_plan(chat.message, allowlist)
+            role = await self._actor_role(actor_id, plan.tool_name)
+            invocation = ToolInvocation(
+                plan.tool_name,
+                plan.tool_version,
+                self._ids.new(),
+                actor_id,
+                role,
+                ToolScope(job_id=job_id),
+                f"generation:{job_id}:attempt:1",
+                None,
+                plan.input,
+                self._ids.new(),
+                job_id,
+                {"prompt": str(claimed["prompt_revision"])},
+            )
+            result = await self.invoke_tool(invocation)
+            if result.status is not ToolInvocationStatus.SUCCEEDED or result.output is None:
+                code = result.error.code if result.error is not None else "internal_error"
+                raise DomainError(code, retryable=False)
+            artifact_id = self._artifact_id(result.output)
+        except DomainError as error:
+            error_code = error.code.value
+        except Exception:
+            error_code = ErrorCode.INTERNAL_ERROR.value
+        return await self._finish_generation_job(
+            claimed,
+            started_at=started_at,
+            artifact_id=artifact_id,
+            error_code=error_code,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+        )
+
     async def invoke_tool(self, invocation: ToolInvocation) -> ToolResult:
         fingerprint_payload: dict[str, JsonValue] = {
             "tool_name": invocation.tool_name,
@@ -320,6 +408,153 @@ class SqlGenerationService:
             if result.status is ToolInvocationStatus.SUCCEEDED and definition.mutating:
                 await self._persist_artifact(session, invocation, result)
             return result
+
+    async def _claim_next_job(self) -> dict[str, object] | None:
+        async with self._sessions() as session, session.begin():
+            row = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT j.job_id,j.requested_by_actor_id FROM platform.jobs j "
+                            "WHERE j.job_type='generation' AND j.status IN ('requested','running') "
+                            "AND NOT EXISTS (SELECT 1 FROM generation.generation_attempts a "
+                            "WHERE a.job_id=j.job_id) ORDER BY j.requested_at,j.job_id "
+                            "FOR UPDATE OF j SKIP LOCKED LIMIT 1"
+                        )
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+            if row is None:
+                return None
+            actor_id = _uuid(row["requested_by_actor_id"])
+            await self._set_actor(session, actor_id)
+            generation = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT j.job_id,g.* FROM platform.jobs j "
+                            "JOIN generation.generation_jobs g ON g.job_id=j.job_id "
+                            "WHERE j.job_id=:job"
+                        ),
+                        {"job": row["job_id"]},
+                    )
+                )
+                .mappings()
+                .one()
+            )
+            await session.execute(
+                text(
+                    "UPDATE platform.jobs SET status='running',started_at=COALESCE(started_at,:now),"
+                    "version=CASE WHEN status='running' THEN version ELSE version+1 END "
+                    "WHERE job_id=:job"
+                ),
+                {"job": row["job_id"], "now": self._clock.now()},
+            )
+            return dict(generation)
+
+    async def _actor_role(self, actor_id: UUID, tool_name: str) -> str:
+        definition = TOOL_REGISTRY[tool_name]
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            granted = {
+                str(value)
+                for value in (
+                    await session.scalars(
+                        text(
+                            "SELECT role FROM identity.account_roles "
+                            "WHERE account_id=:actor AND revoked_at IS NULL"
+                        ),
+                        {"actor": actor_id},
+                    )
+                ).all()
+            }
+        granted.add("learner")
+        for role in ("author", "reviewer", "worker", "learner", "support", "admin"):
+            if role in granted and role in definition.roles:
+                return role
+        raise DomainError(ErrorCode.TOOL_NOT_ALLOWED)
+
+    async def _finish_generation_job(
+        self,
+        claimed: dict[str, object],
+        *,
+        started_at: datetime,
+        artifact_id: UUID | None,
+        error_code: str | None,
+        input_tokens: int,
+        output_tokens: int,
+    ) -> GenerationJobView:
+        job_id = _uuid(claimed["job_id"])
+        actor_id = _uuid(claimed["owner_account_id"])
+        finished_at = self._clock.now()
+        status = "succeeded" if error_code is None and artifact_id is not None else "failed"
+        if status == "failed" and error_code is None:
+            error_code = ErrorCode.TOOL_SCHEMA_INVALID.value
+        async with self._sessions() as session, session.begin():
+            await self._set_actor(session, actor_id)
+            await session.execute(
+                text(
+                    "INSERT INTO generation.generation_attempts "
+                    "(generation_attempt_id,job_id,owner_account_id,attempt_no,provider_code,"
+                    "model_code,prompt_revision,tool_versions,input_fingerprint,status,error_code,"
+                    "input_tokens,output_tokens,cost_micros,started_at,finished_at) VALUES "
+                    "(:attempt,:job,:owner,1,:provider,:model,:prompt,:tools,:fingerprint,:status,"
+                    ":error,:input_tokens,:output_tokens,0,:started,:finished)"
+                ),
+                {
+                    "attempt": self._ids.new(),
+                    "job": job_id,
+                    "owner": actor_id,
+                    "provider": claimed["provider_code"],
+                    "model": claimed["model_code"],
+                    "prompt": claimed["prompt_revision"],
+                    "tools": claimed["tool_allowlist"],
+                    "fingerprint": canonical_json_fingerprint(
+                        {
+                            "task_input": cast(dict[str, JsonValue], claimed["task_input"]),
+                            "prompt_revision": str(claimed["prompt_revision"]),
+                        }
+                    ),
+                    "status": status,
+                    "error": error_code,
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "started": started_at,
+                    "finished": finished_at,
+                },
+            )
+            await session.execute(
+                text(
+                    "UPDATE generation.generation_jobs SET result_draft_id=:artifact "
+                    "WHERE job_id=:job"
+                ),
+                {"artifact": artifact_id, "job": job_id},
+            )
+            await session.execute(
+                text(
+                    "UPDATE platform.jobs SET status=:status,finished_at=:finished,"
+                    "progress_completed=1,result_ref=:artifact,error_code=:error,version=version+1 "
+                    "WHERE job_id=:job"
+                ),
+                {
+                    "status": status,
+                    "finished": finished_at,
+                    "artifact": artifact_id,
+                    "error": error_code,
+                    "job": job_id,
+                },
+            )
+            return await self._read_job(session, job_id)
+
+    @staticmethod
+    def _artifact_id(output: dict[str, JsonValue]) -> UUID | None:
+        for key in ("draft_id", "validation_report_id", "quality_report_id"):
+            value = output.get(key)
+            if isinstance(value, str):
+                return UUID(value)
+        return None
 
     async def list_artifacts(
         self, actor_id: UUID, *, limit: int = 100

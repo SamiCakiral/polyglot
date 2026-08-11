@@ -35,6 +35,7 @@ services:
       POLYGLOT_ALLOWED_ORIGIN: http://127.0.0.1:9001
       POLYGLOT_DATABASE_URL: postgresql+asyncpg://polyglot_runtime_login:${POLYGLOT_RUNTIME_DB_PASSWORD:?required}@postgres:5432/polyglot
       POLYGLOT_MEDIA_SIGNING_SECRET: ${POLYGLOT_MEDIA_SIGNING_SECRET:?required}
+      POLYGLOT_LM_STUDIO_URL: ${POLYGLOT_LM_STUDIO_URL:-http://host.docker.internal:1234}
       POLYGLOT_MIGRATION_DATABASE_URL: postgresql+asyncpg://polyglot_migration_login:${POLYGLOT_MIGRATION_DB_PASSWORD:?required}@postgres:5432/polyglot
       POLYGLOT_NETWORK_DISABLED: "1"
       POLYGLOT_OBJECT_STORAGE_PATH: /data/object-storage

@@ -1723,6 +1723,37 @@ textarea {
   flex-wrap: wrap;
   gap: 10px;
 }
+.generation-workbench,
+.generation-result {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--line-strong);
+  padding: 24px;
+  background: var(--paper);
+}
+.generation-workbench label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+.generation-workbench textarea,
+.generation-workbench select {
+  width: 100%;
+}
+.generation-workbench button {
+  justify-self: start;
+}
+.generation-result pre {
+  max-width: 100%;
+  max-height: 420px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  padding: 16px;
+  background: var(--canvas);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
 @media (max-width: 1199px) and (min-width: 769px) {
   :root {

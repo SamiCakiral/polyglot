@@ -25,6 +25,7 @@ export const shellRoutes: readonly ShellRouteDefinition[] = [
   { path: "/authoring", title: "Atelier" },
   { path: "/authoring/drafts", title: "Brouillons" },
   { path: "/authoring/tools", title: "Outils auteur" },
+  { path: "/authoring/generate", title: "Génération" },
 ] as const;
 
 export function getShellRouteTitle(pathname: string): string {

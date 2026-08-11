@@ -7,11 +7,7 @@
 import type { RequestGenerationJobRequestTaskInput } from "./requestGenerationJobRequestTaskInput";
 
 export interface RequestGenerationJobRequest {
-  /**
-   * @minimum 1
-   * @maximum 3
-   */
-  max_attempts: number;
+  max_attempts: 1;
   /**
    * @minimum 1
    * @maximum 1000000000
@@ -27,21 +23,13 @@ export interface RequestGenerationJobRequest {
    * @maximum 1000000
    */
   max_output_tokens: number;
-  /**
-   * @minLength 1
-   * @maxLength 160
-   */
-  model_code: string;
+  model_code: "qwen/qwen3.6-35b-a3b";
   /**
    * @minLength 1
    * @maxLength 120
    */
   prompt_revision: string;
-  /**
-   * @minLength 1
-   * @maxLength 120
-   */
-  provider_code: string;
+  provider_code: "lm_studio";
   task_input: RequestGenerationJobRequestTaskInput;
   /**
    * @minLength 1

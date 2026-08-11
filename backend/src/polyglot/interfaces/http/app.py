@@ -1,5 +1,7 @@
 import asyncio
+import logging
 import os
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
@@ -50,6 +52,7 @@ from polyglot.modules.language_profiles.application import LanguageProfileApplic
 from polyglot.modules.media.application import MediaApplicationService
 from polyglot.modules.sprints.application import SprintApplicationService
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
+from polyglot.platform.observability import configure_local_logging
 
 
 class LiveStatus(BaseModel):
@@ -192,18 +195,31 @@ def create_app(
             allowed_origin=allowed_origin,
         )
     )
+    http_logger = logging.getLogger("polyglot.http")
 
     @app.middleware("http")
     async def request_context(
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
+        started = time.perf_counter()
         correlation_id = valid_correlation_id(request.headers.get("X-Correlation-ID"))
         request.state.correlation_id = correlation_id or str(generator.new())
         request.state.request_id = str(generator.new())
         response = await call_next(request)
         response.headers["X-Correlation-ID"] = request.state.correlation_id
         response.headers["X-Request-ID"] = request.state.request_id
+        http_logger.info(
+            "request_completed",
+            extra={
+                "request_id": request.state.request_id,
+                "correlation_id": request.state.correlation_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": round((time.perf_counter() - started) * 1000, 3),
+            },
+        )
         return response
 
     @app.get(
@@ -237,6 +253,8 @@ def create_app(
 
 
 def create_runtime_app() -> FastAPI:
+    configure_local_logging()
+    logger = logging.getLogger("polyglot.generation")
     engine = create_database_engine(database_url_from_environment())
     session_factory = create_session_factory(engine)
     identity_service = IdentityApplicationService(
@@ -264,6 +282,7 @@ def create_runtime_app() -> FastAPI:
     from polyglot.modules.curriculum.persistence import SqlCurriculumService
     from polyglot.modules.exercises.core.persistence import SqlExerciseService
     from polyglot.modules.generation.persistence import SqlGenerationService
+    from polyglot.modules.generation.providers import LmStudioChatProvider
     from polyglot.modules.lexicon.exchange.persistence import SqlExchangeService
     from polyglot.modules.media.persistence import SqlMediaService
     from polyglot.modules.media.ports import MacOSTtsPort, TtsAvailability, TtsVoice
@@ -312,6 +331,10 @@ def create_runtime_app() -> FastAPI:
         ),
         id_generator=generation_ids,
     )
+    generation_provider = LmStudioChatProvider(
+        base_url=os.environ.get("POLYGLOT_LM_STUDIO_URL", "http://127.0.0.1:1234"),
+        model="qwen/qwen3.6-35b-a3b",
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -320,13 +343,24 @@ def create_runtime_app() -> FastAPI:
                 await progress_dispatcher.run_once()
                 await asyncio.sleep(0.5)
 
+        async def dispatch_generation() -> None:
+            while True:
+                try:
+                    await generation_service.process_next_job(generation_provider)
+                except Exception:
+                    logger.exception("generation worker cycle failed")
+                await asyncio.sleep(1)
+
         progress_task = asyncio.create_task(dispatch_progress())
+        generation_task = asyncio.create_task(dispatch_generation())
         try:
             yield
         finally:
-            progress_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await progress_task
+            for task in (progress_task, generation_task):
+                task.cancel()
+            for task in (progress_task, generation_task):
+                with suppress(asyncio.CancelledError):
+                    await task
             await engine.dispose()
 
     return create_app(

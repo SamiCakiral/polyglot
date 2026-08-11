@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Header, Request, Response, Security
+from fastapi import APIRouter, Header, Query, Request, Response, Security
 from fastapi.security import APIKeyCookie
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -21,6 +21,7 @@ from polyglot.interfaces.http.routes.identity import (
 from polyglot.interfaces.tools.executor import ToolInvocation, ToolResult, ToolScope
 from polyglot.interfaces.tools.registry import TOOL_DEFINITIONS
 from polyglot.modules.generation.application import (
+    AuthoringArtifactView,
     GenerationApplicationService,
     RequestGenerationJob,
 )
@@ -50,10 +51,10 @@ class RequestGenerationJobRequest(ClosedModel):
     task_type: str = Field(min_length=1, max_length=120)
     task_input: dict[str, JsonValue]
     tool_allowlist: tuple[str, ...] = Field(min_length=1, max_length=11)
-    provider_code: str = Field(min_length=1, max_length=120)
-    model_code: str = Field(min_length=1, max_length=160)
+    provider_code: Literal["lm_studio"]
+    model_code: Literal["qwen/qwen3.6-35b-a3b"]
     prompt_revision: str = Field(min_length=1, max_length=120)
-    max_attempts: int = Field(ge=1, le=3)
+    max_attempts: Literal[1]
     max_input_tokens: int = Field(ge=1, le=1_000_000)
     max_output_tokens: int = Field(ge=1, le=1_000_000)
     max_cost_micros: int = Field(ge=1, le=1_000_000_000)
@@ -101,6 +102,18 @@ class GenerationJobResponse(ClosedModel):
     started_at: datetime | None
     finished_at: datetime | None
     version: int
+
+
+class AuthoringArtifactResponse(ClosedModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    artifact_id: UUID
+    artifact_type: str
+    source_tool_name: str
+    status: str
+    payload: dict[str, JsonValue]
+    checksum: str
+    created_at: datetime
 
 
 class ToolFailureResponse(ClosedModel):
@@ -192,6 +205,40 @@ def generation_router(
             for definition in TOOL_DEFINITIONS
             if roles & definition.roles
         ]
+
+    @router.get(
+        "/api/v1/authoring-artifacts",
+        operation_id="list_authoring_artifacts",
+        response_model=list[AuthoringArtifactResponse],
+        responses=PROBLEM_RESPONSES,
+    )
+    async def list_authoring_artifacts(
+        request: Request,
+        limit: Annotated[int, Query(ge=1, le=200)] = 100,
+        session_token: SessionCookieToken = None,
+    ) -> list[AuthoringArtifactResponse]:
+        current = await session_for(request, session_token)
+        artifacts = await application_service().list_artifacts(
+            current.account_id, limit=limit
+        )
+        return [AuthoringArtifactResponse.model_validate(item) for item in artifacts]
+
+    @router.get(
+        "/api/v1/authoring-artifacts/{artifact_id}",
+        operation_id="get_authoring_artifact",
+        response_model=AuthoringArtifactResponse,
+        responses=PROBLEM_RESPONSES,
+    )
+    async def get_authoring_artifact(
+        artifact_id: UUID,
+        request: Request,
+        session_token: SessionCookieToken = None,
+    ) -> AuthoringArtifactResponse:
+        current = await session_for(request, session_token)
+        artifact: AuthoringArtifactView = await application_service().get_artifact(
+            current.account_id, artifact_id
+        )
+        return AuthoringArtifactResponse.model_validate(artifact)
 
     @router.post(
         "/api/v1/generation-jobs",

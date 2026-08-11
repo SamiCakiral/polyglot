@@ -44,6 +44,16 @@ def test_job_query_is_owner_authenticated() -> None:
     assert operation["security"] == [{"SessionCookie": []}]
 
 
+def test_generated_artifacts_are_owner_authenticated_and_inspectable() -> None:
+    document = create_app(test_mode=True).openapi()
+    for path in (
+        "/api/v1/authoring-artifacts",
+        "/api/v1/authoring-artifacts/{artifact_id}",
+    ):
+        operation = document["paths"][path]["get"]
+        assert operation["security"] == [{"SessionCookie": []}]
+
+
 def test_tool_catalogue_is_authenticated_and_machine_readable() -> None:
     document = create_app(test_mode=True).openapi()
     operation = document["paths"]["/api/v1/tools"]["get"]

@@ -26,6 +26,7 @@ import type {
   AssessmentRunResponse,
   AtRequest,
   AttemptResponse,
+  AuthoringArtifactResponse,
   CatalogueTargetPageResponse,
   ChangeListMembersRequest,
   ChangePasswordRequest,
@@ -73,6 +74,7 @@ import type {
   LanguagePackPageResponse,
   LexicalAnnotationPageResponse,
   LexiconSearchPageResponse,
+  ListAuthoringArtifactsParams,
   ListCatalogueTargetsParams,
   ListContentDraftsParams,
   ListDueMemoryPromptsParams,
@@ -4087,6 +4089,605 @@ export function useGetAttempt<
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
   const queryOptions = getGetAttemptQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type listAuthoringArtifactsResponse200 = {
+  data: AuthoringArtifactResponse[];
+  status: 200;
+};
+
+export type listAuthoringArtifactsResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listAuthoringArtifactsResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listAuthoringArtifactsResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listAuthoringArtifactsResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listAuthoringArtifactsResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listAuthoringArtifactsResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listAuthoringArtifactsResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listAuthoringArtifactsResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listAuthoringArtifactsResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listAuthoringArtifactsResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listAuthoringArtifactsResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listAuthoringArtifactsResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type listAuthoringArtifactsResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listAuthoringArtifactsResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listAuthoringArtifactsResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listAuthoringArtifactsResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listAuthoringArtifactsResponseSuccess =
+  listAuthoringArtifactsResponse200 & {
+    headers: Headers;
+  };
+export type listAuthoringArtifactsResponseError = (
+  | listAuthoringArtifactsResponse401ApplicationJson
+  | listAuthoringArtifactsResponse401ApplicationProblemJson
+  | listAuthoringArtifactsResponse403ApplicationJson
+  | listAuthoringArtifactsResponse403ApplicationProblemJson
+  | listAuthoringArtifactsResponse409ApplicationJson
+  | listAuthoringArtifactsResponse409ApplicationProblemJson
+  | listAuthoringArtifactsResponse422ApplicationJson
+  | listAuthoringArtifactsResponse422ApplicationProblemJson
+  | listAuthoringArtifactsResponse423ApplicationJson
+  | listAuthoringArtifactsResponse423ApplicationProblemJson
+  | listAuthoringArtifactsResponse428ApplicationJson
+  | listAuthoringArtifactsResponse428ApplicationProblemJson
+  | listAuthoringArtifactsResponse429ApplicationJson
+  | listAuthoringArtifactsResponse429ApplicationProblemJson
+  | listAuthoringArtifactsResponse503ApplicationJson
+  | listAuthoringArtifactsResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listAuthoringArtifactsResponse =
+  listAuthoringArtifactsResponseSuccess | listAuthoringArtifactsResponseError;
+
+export const getListAuthoringArtifactsUrl = (
+  params?: ListAuthoringArtifactsParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/authoring-artifacts?${stringifiedParams}`
+    : `/api/v1/authoring-artifacts`;
+};
+
+/**
+ * @summary List Authoring Artifacts
+ */
+export const listAuthoringArtifacts = async (
+  params?: ListAuthoringArtifactsParams,
+  options?: RequestInit,
+): Promise<listAuthoringArtifactsResponse> => {
+  const res = await fetch(getListAuthoringArtifactsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listAuthoringArtifactsResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listAuthoringArtifactsResponse;
+};
+
+export const getListAuthoringArtifactsQueryKey = (
+  params?: ListAuthoringArtifactsParams,
+) => {
+  return [`/api/v1/authoring-artifacts`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAuthoringArtifactsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListAuthoringArtifactsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListAuthoringArtifactsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAuthoringArtifacts>>
+  > = ({ signal }) =>
+    listAuthoringArtifacts(params, { signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListAuthoringArtifactsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAuthoringArtifacts>>
+>;
+export type ListAuthoringArtifactsQueryError = ProblemResponse;
+
+export function useListAuthoringArtifacts<
+  TData = Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+  TError = ProblemResponse,
+>(
+  params: undefined | ListAuthoringArtifactsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+          TError,
+          Awaited<ReturnType<typeof listAuthoringArtifacts>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAuthoringArtifacts<
+  TData = Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListAuthoringArtifactsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+          TError,
+          Awaited<ReturnType<typeof listAuthoringArtifacts>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAuthoringArtifacts<
+  TData = Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListAuthoringArtifactsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Authoring Artifacts
+ */
+
+export function useListAuthoringArtifacts<
+  TData = Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+  TError = ProblemResponse,
+>(
+  params?: ListAuthoringArtifactsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAuthoringArtifacts>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListAuthoringArtifactsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getAuthoringArtifactResponse200 = {
+  data: AuthoringArtifactResponse;
+  status: 200;
+};
+
+export type getAuthoringArtifactResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getAuthoringArtifactResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getAuthoringArtifactResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getAuthoringArtifactResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getAuthoringArtifactResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getAuthoringArtifactResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getAuthoringArtifactResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getAuthoringArtifactResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getAuthoringArtifactResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getAuthoringArtifactResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getAuthoringArtifactResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getAuthoringArtifactResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type getAuthoringArtifactResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getAuthoringArtifactResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getAuthoringArtifactResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getAuthoringArtifactResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getAuthoringArtifactResponseSuccess =
+  getAuthoringArtifactResponse200 & {
+    headers: Headers;
+  };
+export type getAuthoringArtifactResponseError = (
+  | getAuthoringArtifactResponse401ApplicationJson
+  | getAuthoringArtifactResponse401ApplicationProblemJson
+  | getAuthoringArtifactResponse403ApplicationJson
+  | getAuthoringArtifactResponse403ApplicationProblemJson
+  | getAuthoringArtifactResponse409ApplicationJson
+  | getAuthoringArtifactResponse409ApplicationProblemJson
+  | getAuthoringArtifactResponse422ApplicationJson
+  | getAuthoringArtifactResponse422ApplicationProblemJson
+  | getAuthoringArtifactResponse423ApplicationJson
+  | getAuthoringArtifactResponse423ApplicationProblemJson
+  | getAuthoringArtifactResponse428ApplicationJson
+  | getAuthoringArtifactResponse428ApplicationProblemJson
+  | getAuthoringArtifactResponse429ApplicationJson
+  | getAuthoringArtifactResponse429ApplicationProblemJson
+  | getAuthoringArtifactResponse503ApplicationJson
+  | getAuthoringArtifactResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getAuthoringArtifactResponse =
+  getAuthoringArtifactResponseSuccess | getAuthoringArtifactResponseError;
+
+export const getGetAuthoringArtifactUrl = (artifactId: string) => {
+  return `/api/v1/authoring-artifacts/${artifactId}`;
+};
+
+/**
+ * @summary Get Authoring Artifact
+ */
+export const getAuthoringArtifact = async (
+  artifactId: string,
+  options?: RequestInit,
+): Promise<getAuthoringArtifactResponse> => {
+  const res = await fetch(getGetAuthoringArtifactUrl(artifactId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getAuthoringArtifactResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getAuthoringArtifactResponse;
+};
+
+export const getGetAuthoringArtifactQueryKey = (artifactId: string) => {
+  return [`/api/v1/authoring-artifacts/${artifactId}`] as const;
+};
+
+export const getGetAuthoringArtifactQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAuthoringArtifact>>,
+  TError = ProblemResponse,
+>(
+  artifactId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAuthoringArtifact>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetAuthoringArtifactQueryKey(artifactId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAuthoringArtifact>>
+  > = ({ signal }) =>
+    getAuthoringArtifact(artifactId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: artifactId !== null && artifactId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAuthoringArtifact>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAuthoringArtifactQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAuthoringArtifact>>
+>;
+export type GetAuthoringArtifactQueryError = ProblemResponse;
+
+export function useGetAuthoringArtifact<
+  TData = Awaited<ReturnType<typeof getAuthoringArtifact>>,
+  TError = ProblemResponse,
+>(
+  artifactId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAuthoringArtifact>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthoringArtifact>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthoringArtifact>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAuthoringArtifact<
+  TData = Awaited<ReturnType<typeof getAuthoringArtifact>>,
+  TError = ProblemResponse,
+>(
+  artifactId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAuthoringArtifact>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAuthoringArtifact>>,
+          TError,
+          Awaited<ReturnType<typeof getAuthoringArtifact>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetAuthoringArtifact<
+  TData = Awaited<ReturnType<typeof getAuthoringArtifact>>,
+  TError = ProblemResponse,
+>(
+  artifactId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAuthoringArtifact>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Authoring Artifact
+ */
+
+export function useGetAuthoringArtifact<
+  TData = Awaited<ReturnType<typeof getAuthoringArtifact>>,
+  TError = ProblemResponse,
+>(
+  artifactId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getAuthoringArtifact>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetAuthoringArtifactQueryOptions(artifactId, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

@@ -5,6 +5,7 @@ import {
   Play,
   Plus,
   ShieldAlert,
+  Sparkles,
   Wrench,
 } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
@@ -26,9 +27,12 @@ import {
   approveContentRevision,
   createContentDraft,
   publishContentRevision,
+  requestGenerationJob,
   retireContentRevision,
   reviseContentDraft,
   useInvokeAuthoringTool,
+  useGetGenerationJob,
+  useListAuthoringArtifacts,
   useListAuthoringTools,
   useListContentDrafts,
   useListLanguagePacks,
@@ -89,6 +93,15 @@ export function AuthoringPage() {
               </small>
             </span>
           </Link>
+          <Link to="/authoring/generate">
+            <Sparkles aria-hidden="true" />
+            <span>
+              <strong>Génération locale</strong>
+              <small>
+                Préparer un artefact avec LM Studio avant la revue humaine.
+              </small>
+            </span>
+          </Link>
         </div>
         <section className="integrity-note">
           <strong>Publication humaine uniquement</strong>
@@ -97,6 +110,240 @@ export function AuthoringPage() {
             produit aucun crédit de maîtrise.
           </p>
         </section>
+      </div>
+    </AuthorGuard>
+  );
+}
+
+const generationKinds = {
+  exercise: {
+    label: "Exercice",
+    taskType: "exercise_draft",
+    tool: "exercise.submit_draft@1.0.0",
+  },
+  module: {
+    label: "Module",
+    taskType: "module_draft",
+    tool: "curriculum.submit_module_draft@1.0.0",
+  },
+  day: {
+    label: "Journée de module",
+    taskType: "day_draft",
+    tool: "curriculum.submit_day_draft@1.0.0",
+  },
+  quality: {
+    label: "Rapport d'ambiguïté",
+    taskType: "quality_report",
+    tool: "quality.report_ambiguity@1.0.0",
+  },
+} as const;
+
+type GenerationKind = keyof typeof generationKinds;
+
+export function GenerationPage() {
+  const session = useSession();
+  const [kind, setKind] = useState<GenerationKind>("exercise");
+  const [brief, setBrief] = useState(
+    "Créer un exercice italien sur un trajet en train, niveau débutant, avec une consigne sans ambiguïté.",
+  );
+  const [jobId, setJobId] = useState("");
+  const [adoptedRevisionId, setAdoptedRevisionId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const jobQuery = useGetGenerationJob(jobId, {
+    fetch: queryFetch(),
+    query: {
+      enabled: Boolean(jobId),
+      refetchInterval: 1000,
+      retry: false,
+    },
+  });
+  const artifactsQuery = useListAuthoringArtifacts(
+    { limit: 50 },
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(jobId), refetchInterval: 1000, retry: false },
+    },
+  );
+  const packsQuery = useListLanguagePacks(
+    { limit: 20 },
+    { fetch: queryFetch(), query: { retry: false } },
+  );
+  const job = jobQuery.data?.status === 200 ? jobQuery.data.data : undefined;
+  const artifacts =
+    artifactsQuery.data?.status === 200 ? artifactsQuery.data.data : [];
+  const artifact = artifacts.find(
+    (item) => item.artifact_id === job?.result_draft_id,
+  );
+  const pack =
+    packsQuery.data?.status === 200 ? packsQuery.data.data.items[0] : undefined;
+
+  async function generate() {
+    setBusy(true);
+    setError("");
+    setJobId("");
+    const selected = generationKinds[kind];
+    try {
+      const response = await requestGenerationJob(
+        {
+          max_attempts: 1,
+          max_cost_micros: 1,
+          max_input_tokens: 8000,
+          max_output_tokens: 6000,
+          model_code: "qwen/qwen3.6-35b-a3b",
+          prompt_revision: "POLYGLOT_AUTHOR_V1",
+          provider_code: "lm_studio",
+          task_input: {
+            brief,
+            support_language: "fr-FR",
+            target_language: "it-IT",
+          },
+          task_type: selected.taskType,
+          tool_allowlist: [selected.tool],
+        },
+        commandFetch(session),
+      );
+      const problem = responseProblem(response);
+      if (problem) throw new Error(problem);
+      if (response.status === 201) setJobId(response.data.job_id);
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "La génération a échoué.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function adoptArtifact() {
+    if (!artifact || !pack) {
+      setError("Le pack italien publié est indisponible.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await createContentDraft(
+        {
+          content_type: artifact.artifact_type,
+          pack_id: pack.pack_id,
+          payload: {
+            ...artifact.payload,
+            generation_artifact_id: artifact.artifact_id,
+            generation_source_tool: artifact.source_tool_name,
+          },
+          provenance_id: uuid7(),
+          rights_ref: `rights:tool:${artifact.artifact_id}`,
+          variety_id: pack.target_variety_id,
+        },
+        commandFetch(session),
+      );
+      const problem = responseProblem(response);
+      if (problem) throw new Error(problem);
+      if (response.status === 201) {
+        setAdoptedRevisionId(response.data.content_revision_id);
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "L'adoption du brouillon a échoué.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <AuthorGuard>
+      <div className="page-flow page-flow--narrow">
+        <PageHeader eyebrow="Atelier local" title="Génération" />
+        <section className="generation-workbench">
+          <label>
+            Type de contenu
+            <select
+              value={kind}
+              onChange={(event) => {
+                setKind(event.target.value as GenerationKind);
+              }}
+            >
+              {Object.entries(generationKinds).map(([value, item]) => (
+                <option key={value} value={value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Brief
+            <textarea
+              rows={7}
+              value={brief}
+              onChange={(event) => {
+                setBrief(event.target.value);
+              }}
+            />
+          </label>
+          <button
+            type="button"
+            disabled={busy || !brief.trim()}
+            onClick={() => {
+              void generate();
+            }}
+          >
+            <Sparkles aria-hidden="true" size={18} />
+            {busy ? "Envoi…" : "Générer l'artefact"}
+          </button>
+        </section>
+        {error ? <ErrorRegion message={error} /> : null}
+        {job ? (
+          <section className="generation-result" aria-live="polite">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Exécution locale</p>
+                <h2>Résultat</h2>
+              </div>
+              <StatusPill
+                tone={
+                  job.status === "succeeded"
+                    ? "good"
+                    : job.status === "failed"
+                      ? "warn"
+                      : "neutral"
+                }
+              >
+                {job.status}
+              </StatusPill>
+            </div>
+            {job.error_code ? (
+              <p role="alert">Fournisseur indisponible : {job.error_code}</p>
+            ) : null}
+            {artifact ? (
+              <>
+                <p>
+                  <strong>{artifact.artifact_type}</strong> · {artifact.source_tool_name}
+                </p>
+                <pre>{JSON.stringify(artifact.payload, null, 2)}</pre>
+                {adoptedRevisionId ? (
+                  <p>
+                    Brouillon éditorial créé. <Link to="/authoring/drafts">Ouvrir la revue</Link>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy || !pack}
+                    onClick={() => {
+                      void adoptArtifact();
+                    }}
+                  >
+                    <CheckCircle2 aria-hidden="true" size={18} />
+                    Adopter comme brouillon
+                  </button>
+                )}
+              </>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     </AuthorGuard>
   );

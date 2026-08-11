@@ -29,6 +29,7 @@ import {
   AuthoringPage,
   AuthoringToolsPage,
   DraftsPage,
+  GenerationPage,
 } from "../features/authoring/authoring-page";
 import { shellRoutes } from "./navigation";
 import { ProtectedFocus, ProtectedShell } from "./protected-routes";
@@ -53,6 +54,7 @@ const routeElements: Record<string, React.ReactNode> = {
   "/authoring": <AuthoringPage />,
   "/authoring/drafts": <DraftsPage />,
   "/authoring/tools": <AuthoringToolsPage />,
+  "/authoring/generate": <GenerationPage />,
 };
 
 const routes: RouteObject[] = [

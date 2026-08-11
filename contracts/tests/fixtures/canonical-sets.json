@@ -137,6 +137,8 @@
     "GetAssessmentRun",
     "GetAssessmentResult",
     "GetGenerationJob",
+    "ListAuthoringArtifacts",
+    "GetAuthoringArtifact",
     "ListContentDrafts",
     "GetContentDraft",
     "GetValidationReport",
@@ -1046,6 +1048,14 @@
     {
       "method": "GET",
       "route": "/tools"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring-artifacts"
+    },
+    {
+      "method": "GET",
+      "route": "/authoring-artifacts/{artifact_id}"
     },
     {
       "method": "GET",

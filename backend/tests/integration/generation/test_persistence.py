@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 from uuid import UUID
 
@@ -8,6 +9,7 @@ from polyglot.interfaces.tools.deterministic import DeterministicToolHandlers
 from polyglot.interfaces.tools.executor import ToolExecutor, ToolInvocation, ToolScope
 from polyglot.modules.generation.application import RequestGenerationJob
 from polyglot.modules.generation.persistence import SqlGenerationService
+from polyglot.modules.generation.providers import ChatRequest, ChatResult
 from polyglot.platform.errors import DomainError, ErrorCode
 
 from .conftest import NOW
@@ -41,6 +43,38 @@ def service(factory: async_sessionmaker[AsyncSession]) -> SqlGenerationService:
         clock=sequence,
         id_generator=sequence,
     )
+
+
+class FakeProvider:
+    code = "lm_studio"
+    model = "qwen/qwen3.6-35b-a3b"
+
+    def __init__(self, *, unavailable: bool = False) -> None:
+        self.calls = 0
+        self.unavailable = unavailable
+
+    async def complete(self, request: ChatRequest) -> ChatResult:
+        self.calls += 1
+        if self.unavailable:
+            raise DomainError(ErrorCode.PROVIDER_UNAVAILABLE, retryable=False)
+        return ChatResult(
+            json.dumps(
+                {
+                    "tool_name": "quality.report_ambiguity",
+                    "tool_version": "1.0.0",
+                    "input": {
+                        "resource_ref": "exercise:treno",
+                        "resource_revision_id": "it-v1",
+                        "ambiguity_type": "wording",
+                        "location": "prompt",
+                        "description": "La consigne admet deux lectures.",
+                        "candidate_interpretations": ["train", "entraînement"],
+                    },
+                }
+            ),
+            120,
+            80,
+        )
 
 
 def draft_invocation(actor_id: UUID, sequence: Sequence | None = None) -> ToolInvocation:
@@ -80,8 +114,8 @@ async def test_job_request_replays_and_cancels_once(
         "exercise_draft",
         {"topic": "treno"},
         ("exercise.get_blueprint@1.0.0", "exercise.submit_draft@1.0.0"),
-        "offline",
-        "deterministic-v1",
+        "lm_studio",
+        "qwen/qwen3.6-35b-a3b",
         "PROMPT_V1",
         1,
         1000,
@@ -106,6 +140,34 @@ async def test_job_request_replays_and_cancels_once(
     )
     assert cancelled.status == "cancelled"
     assert cancel_replay.version == cancelled.version
+
+
+async def test_job_request_rejects_provider_or_model_substitution(
+    runtime_factory: async_sessionmaker[AsyncSession], seeded_account: UUID
+) -> None:
+    app = service(runtime_factory)
+    for provider, model in (
+        ("remote", "qwen/qwen3.6-35b-a3b"),
+        ("lm_studio", "another-model"),
+    ):
+        with pytest.raises(DomainError) as caught:
+            await app.request_job(
+                seeded_account,
+                RequestGenerationJob(
+                    "quality_report",
+                    {"topic": "treno"},
+                    ("quality.report_ambiguity@1.0.0",),
+                    provider,
+                    model,
+                    "PROMPT_V1",
+                    1,
+                    1000,
+                    1000,
+                    100,
+                ),
+                idempotency_key=f"invalid-{provider}-{model}",
+            )
+        assert caught.value.code is ErrorCode.PROVIDER_UNAVAILABLE
 
 
 async def test_tool_invocation_is_idempotent_and_only_persists_a_draft(
@@ -140,3 +202,69 @@ async def test_tool_invocation_is_idempotent_and_only_persists_a_draft(
     with pytest.raises(DomainError) as caught:
         await app.invoke_tool(conflicting)
     assert caught.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
+
+
+async def test_worker_generates_one_controlled_artifact(
+    runtime_factory: async_sessionmaker[AsyncSession], seeded_account: UUID
+) -> None:
+    app = service(runtime_factory)
+    provider = FakeProvider()
+    created = await app.request_job(
+        seeded_account,
+        RequestGenerationJob(
+            "quality_report",
+            {"topic": "treno"},
+            ("quality.report_ambiguity@1.0.0",),
+            provider.code,
+            provider.model,
+            "PROMPT_V1",
+            1,
+            1000,
+            1000,
+            100,
+        ),
+        idempotency_key="generated-quality-1",
+    )
+
+    processed = await app.process_next_job(provider)
+    assert processed is not None
+    assert processed.job_id == created.job_id
+    assert processed.status == "succeeded"
+    assert processed.attempt_count == 1
+    assert processed.result_draft_id is not None
+    assert provider.calls == 1
+    artifacts = await app.list_artifacts(seeded_account)
+    assert len(artifacts) == 1
+    assert artifacts[0].artifact_type == "quality_report"
+
+
+async def test_worker_records_provider_failure_without_retry(
+    runtime_factory: async_sessionmaker[AsyncSession], seeded_account: UUID
+) -> None:
+    app = service(runtime_factory)
+    provider = FakeProvider(unavailable=True)
+    created = await app.request_job(
+        seeded_account,
+        RequestGenerationJob(
+            "quality_report",
+            {"topic": "treno"},
+            ("quality.report_ambiguity@1.0.0",),
+            provider.code,
+            provider.model,
+            "PROMPT_V1",
+            1,
+            1000,
+            1000,
+            100,
+        ),
+        idempotency_key="failed-quality-1",
+    )
+
+    failed = await app.process_next_job(provider)
+    assert failed is not None
+    assert failed.job_id == created.job_id
+    assert failed.status == "failed"
+    assert failed.error_code == "provider_unavailable"
+    assert failed.attempt_count == 1
+    assert await app.process_next_job(provider) is None
+    assert provider.calls == 1

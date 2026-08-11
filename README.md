@@ -1,40 +1,89 @@
 # Polyglot V2
 
-Polyglot V2 is a greenfield rebuild of the language-learning product. The V1
-implementation is preserved by the `v1.0.0-legacy` Git tag and is not part of
-this branch.
+Polyglot V2 est une application locale d'apprentissage des langues. Le MVP
+couvre le français vers l'italien : diagnostic, fondations, modules, sprint
+quotidien adaptatif, cartes FSRS, Word Bank personnelle, entraînement libre,
+progression sur quatre axes, évaluations et atelier éditorial.
 
-## Current baseline
+La V1 reste disponible dans l'historique via le tag `v1.0.0-legacy`. Aucune
+donnée V1 n'est migrée.
 
-W00 provides the repository baseline and machine-readable contracts. There is
-no application runtime, database, web server, package manager, or deployment
-configuration in this increment.
+## Démarrage local
 
-The normative architecture is in [docs/v2](docs/v2/README.md). The contract
-registry is validated with only the Python standard library:
+Prérequis : Docker Desktop, au moins 4 Go libres, et macOS pour la voix TTS
+italienne `Alice`. LM Studio est facultatif pour apprendre ; il devient requis
+uniquement pour la génération auteur.
 
 ```bash
-python3 scripts/validate_contract_registry.py contracts/registry contracts/tests
-python3 contracts/tests/test_validate_contract_registry.py
+./scripts/local-up.sh
 ```
 
-Generated OpenAPI, application dependencies, PostgreSQL migrations, and the
-runtime bootstrap begin in W01.
+L'interface est ensuite disponible sur <http://127.0.0.1:9001>. Le premier
+démarrage crée un fichier privé `.local/runtime.env`, démarre PostgreSQL,
+applique les migrations et construit le frontend et le backend.
 
-## Repository layout
-
-```text
-contracts/   Machine-readable enums, API surface, events, tools, and fixtures
-docs/v2/     Approved V2 architecture and historical V1 screenshots
-docs/adr/    Implementation decisions recorded for the rebuild
-scripts/     Dependency-free validation utilities
+```bash
+./scripts/local-status.sh
+./scripts/local-down.sh
 ```
 
-## Scope boundaries
+Pour la génération locale, démarrer le serveur LM Studio sur le port `1234`
+avec le modèle exact `qwen/qwen3.6-35b-a3b`. Une indisponibilité est affichée
+comme un échec terminal : aucun retry ni changement de modèle n'est effectué.
 
-- PostgreSQL is the future source of truth; W00 contains no database code.
-- A generated artifact may create a draft only. It cannot publish content or
-  award mastery.
-- The always-on tutor and provider-backed STT are post-V2 capabilities.
-- W19 is split into local release readiness (W19L) and deferred cloud delivery
-  (W19C).
+## Développement
+
+Versions verrouillées : Python `3.13.11`, Node `22.18.0` et pnpm `11.16.0`.
+
+```bash
+cd backend
+uv sync --locked
+uv run ruff check src tests
+uv run mypy src
+uv run pytest tests -q
+
+cd ../frontend
+pnpm install --frozen-lockfile
+pnpm generate:api
+pnpm lint
+pnpm typecheck
+pnpm test --run
+pnpm build
+pnpm exec playwright test
+```
+
+L'OpenAPI versionnée est dans `contracts/openapi/v1.json`. Le client TypeScript
+est généré à partir de ce fichier ; les fichiers de `frontend/src/generated` ne
+doivent pas être modifiés à la main.
+
+## Architecture
+
+- `backend/` : FastAPI, domaines métier, PostgreSQL et migrations Alembic.
+- `frontend/` : React responsive et client API généré.
+- `contracts/` : OpenAPI, registres, événements et contrats des 11 outils.
+- `fixtures/` : données synthétiques déterministes et oracles.
+- `docs/v2/` : architecture produit et plan W00-W19.
+- `docs/runbooks/` : exploitation, sauvegarde et restauration locales.
+- `docs/evidence/` : preuves techniques versionnées.
+
+PostgreSQL est l'unique source de vérité. Les réponses et preuves pédagogiques
+sont immuables ; les projections peuvent être reconstruites. Les outils auteur
+créent uniquement des brouillons. La validation, l'approbation et la publication
+restent des décisions humaines séparées.
+
+## Sécurité et données
+
+Les secrets locaux ne sont jamais versionnés. Les médias restent privés et sont
+servis par URL signée. Les commandes utilisent idempotence, contrôle de version,
+cookie sécurisé, protection CSRF et autorisation propriétaire. Les journaux
+locaux sont structurés et limités aux métadonnées opérationnelles.
+
+La procédure vérifiée de sauvegarde/restauration est décrite dans
+[`docs/runbooks/local-backup-restore.md`](docs/runbooks/local-backup-restore.md).
+La suppression et l'export sont accessibles dans les préférences de l'application.
+
+## Limites MVP
+
+Le professeur conversationnel permanent, le STT, le déploiement cloud et le
+canary sont post-MVP. Sans STT ni revue humaine, l'expression orale reste
+`not_evaluable` et n'attribue jamais de faux crédit.
