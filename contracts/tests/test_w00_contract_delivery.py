@@ -207,11 +207,15 @@ class W00ContractDeliveryTest(unittest.TestCase):
         self.assertEqual(1, result.returncode, result.stdout + result.stderr)
         self.assertIn("canonical command mapping mismatch", result.stdout)
 
-    def test_rejects_published_exercise_draft_output(self) -> None:
+    def test_rejects_publication_capability_in_exercise_draft_output(self) -> None:
         result = self.run_validator("--validate-tool-fixtures")
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         fixture = ROOT / "contracts/tests/fixtures/tools/negative/exercise.submit_draft.json"
-        self.assertIn("published", fixture.read_text())
+        payload = json.loads(fixture.read_text())
+        self.assertEqual("draft", payload["output"]["status"])
+        self.assertFalse(payload["output"]["publish_capability"])
+        self.assertEqual("publish", payload["output"]["forbidden_effect"])
+        self.assertEqual("additional property", payload["expected_error"])
 
     def test_rejects_untracked_v1_and_unapproved_artifacts(self) -> None:
         app = ROOT / "app"

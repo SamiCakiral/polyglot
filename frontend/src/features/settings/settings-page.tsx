@@ -1,6 +1,6 @@
-import { Download, Save, Trash2 } from "lucide-react";
+import { Download, LogOut, Save, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useActiveProfile } from "../../app/profile-state";
 import { useSession } from "../../app/session-context";
@@ -13,6 +13,7 @@ import {
 import {
   deleteLanguageProfile,
   requestExport,
+  revokeSession,
   updateUserPreferences,
 } from "../../generated/polyglot";
 import { commandFetch, responseProblem } from "../../lib/api";
@@ -34,6 +35,7 @@ export function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [reauthRequired, setReauthRequired] = useState(false);
   if (!activeProfile) return <NoProfile />;
   const profile = activeProfile;
 
@@ -69,16 +71,25 @@ export function SettingsPage() {
       {
         requested_at: new Date().toISOString(),
         scope: {
-          format: "json",
-          include: ["profile", "word_bank", "memory", "attempts", "progress"],
+          learning_history: true,
+          memory_prompts: true,
+          vocabulary_lists: true,
+          word_bank: true,
         },
       },
       commandFetch(session),
     );
+    if (response.status === 401) {
+      setReauthRequired(true);
+      setBusy(false);
+      return;
+    }
     const problem = responseProblem(response);
     if (problem) setError(problem);
-    else if (response.status === 202)
+    else if (response.status === 202) {
+      setReauthRequired(false);
       setNotice(`Export demandé. Référence : ${response.data.resource_id}`);
+    }
     setBusy(false);
   }
 
@@ -99,6 +110,24 @@ export function SettingsPage() {
     localStorage.removeItem("polyglot.active-profile");
     localStorage.removeItem("polyglot.active-run");
     void navigate("/language-profile");
+  }
+
+  async function logout() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    const response = await revokeSession(commandFetch(session));
+    const problem = responseProblem(response);
+    if (problem) {
+      setError(problem);
+      setBusy(false);
+      return;
+    }
+    localStorage.removeItem("polyglot.active-profile");
+    localStorage.removeItem("polyglot.active-run");
+    localStorage.removeItem("polyglot.foundation-run");
+    localStorage.removeItem(`polyglot.completed-day.${profile.profile_id}`);
+    void navigate("/login", { replace: true });
   }
 
   return (
@@ -168,6 +197,12 @@ export function SettingsPage() {
             Prépare un export JSON de votre profil, de la Word Bank, de la
             mémoire, des productions et de la progression.
           </p>
+          {reauthRequired ? (
+            <p role="status">
+              Votre identité doit être vérifiée avant cet export.{" "}
+              <Link to="/login?returnTo=/settings">Se reconnecter</Link>
+            </p>
+          ) : null}
         </div>
         <button
           className="secondary-button"
@@ -176,6 +211,21 @@ export function SettingsPage() {
           onClick={() => void exportData()}
         >
           <Download aria-hidden="true" size={18} /> Demander l'export
+        </button>
+      </section>
+      <section className="data-management">
+        <div>
+          <p className="eyebrow">Session</p>
+          <h2>Fermer cet accès</h2>
+          <p>Déconnecte ce navigateur sans supprimer vos données.</p>
+        </div>
+        <button
+          className="secondary-button"
+          disabled={busy}
+          type="button"
+          onClick={() => void logout()}
+        >
+          <LogOut aria-hidden="true" size={18} /> Se déconnecter
         </button>
       </section>
       <section className="danger-zone">

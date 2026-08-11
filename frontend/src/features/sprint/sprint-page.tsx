@@ -7,18 +7,17 @@ import { useActiveProfile } from "../../app/profile-state";
 import {
   ErrorRegion,
   LoadingRegion,
-  StatusPill,
 } from "../../components/product-ui";
 import { TtsAudio } from "../../components/tts-audio";
 import type { AnswerKind, SprintBlockResponse } from "../../generated/model";
 import {
+  completeSprintRun,
+  interruptSprintRun,
   selfAssessExerciseAttempt,
   submitExerciseAttempt,
-  useCompleteSprintRun,
   useGetAttempt,
   useGetExerciseInstance,
   useGetSprintRun,
-  useInterruptSprintRun,
   useOpenExerciseAttempt,
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
@@ -240,7 +239,6 @@ function ExerciseReader({
   return (
     <section className="exercise-reader">
       <div className="exercise-reader__meta">
-        <StatusPill>{exercise.primitive_id.replaceAll("_", " ")}</StatusPill>
         <span>Réponse sauvegardée localement</span>
       </div>
       <div className="exercise-prompt" lang="it">
@@ -358,14 +356,6 @@ export function SprintPage() {
     fetch: queryFetch(),
     query: { retry: false },
   });
-  const runVersion =
-    query.data?.status === 200 ? query.data.data.version : undefined;
-  const interrupt = useInterruptSprintRun({
-    fetch: commandFetch(session, runVersion),
-  });
-  const complete = useCompleteSprintRun({
-    fetch: commandFetch(session, runVersion),
-  });
   const [exerciseOffset, setExerciseOffset] = useState(0);
   const [selectedBlockOffset, setSelectedBlockOffset] = useState<number | null>(
     null,
@@ -398,6 +388,15 @@ export function SprintPage() {
     );
   const currentBlock = block;
 
+  async function refreshRun() {
+    const refreshed = await query.refetch();
+    if (refreshed.data?.status !== 200) {
+      setError("La séance n'a pas pu être synchronisée.");
+      return null;
+    }
+    return refreshed.data;
+  }
+
   async function next() {
     if (exerciseOffset + 1 < currentBlock.exercise_instance_ids.length) {
       setExerciseOffset((value) => value + 1);
@@ -408,10 +407,13 @@ export function SprintPage() {
       setExerciseOffset(0);
       return;
     }
-    const response = await complete.mutateAsync({
+    const latestRun = await refreshRun();
+    if (!latestRun) return;
+    const response = await completeSprintRun(
       runId,
-      data: {},
-    });
+      {},
+      commandFetch(session, latestRun.data.version),
+    );
     const problem = responseProblem(response);
     if (problem) {
       setError(problem);
@@ -428,10 +430,13 @@ export function SprintPage() {
   }
 
   async function pause() {
-    const response = await interrupt.mutateAsync({
+    const latestRun = await refreshRun();
+    if (!latestRun) return;
+    const response = await interruptSprintRun(
       runId,
-      data: { reason: "learner_pause" },
-    });
+      { reason: "learner_pause" },
+      commandFetch(session, latestRun.data.version),
+    );
     const problem = responseProblem(response);
     if (problem) {
       setError(problem);

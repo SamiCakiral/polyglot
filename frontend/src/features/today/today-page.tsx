@@ -75,7 +75,7 @@ export function TodayPage() {
           {plan ? (
             <div className="plan-summary">
               <div className="plan-summary__number">{plan.blocks.length}</div>
-              <div><strong>étapes coordonnées</strong><p>{Math.round(plan.total_p80_seconds / 60)} min au rythme prudent · {plan.novelty_points} points de nouveauté</p></div>
+              <div><strong>étapes coordonnées</strong><p>{Math.round(plan.total_p80_seconds / 60)} min au rythme prudent · {plan.novelty_points > 0 ? "avec de nouvelles notions" : "sans nouvelle notion"}</p></div>
             </div>
           ) : (
             <p className="quiet-copy">La durée ajuste le nombre d'exercices, jamais la qualité de la correction ni la continuité J+1.</p>

@@ -15,19 +15,29 @@
 | Migrations | `PASS` | Empty PostgreSQL database upgraded from `0001_platform` to the single `0019_assessment_audio` head; Alembic reports no drift |
 | Backend quality | `PASS` | Ruff clean; mypy clean on 158 source files |
 | Backend matrix | `PASS` | 1,040 passed, 2 skipped, 1 dependency deprecation warning, with network disabled and three non-privileged database logins |
-| Frontend quality | `PASS` | ESLint and strict TypeScript clean; 42 unit tests passed |
-| Frontend build | `PASS` | Production build generated 164 modules; main bundle 459.70 kB, 134.19 kB gzip |
-| Responsive/accessibility automation | `PASS` | Playwright: 24 passed, 30 intentionally inapplicable combinations skipped across 320, 768, compact, 1,440, reflow and 200% zoom projects |
+| Frontend quality | `PASS` | ESLint and strict TypeScript clean; 50 unit tests passed |
+| Frontend build | `PASS` | Production build generated 167 modules; main bundle 462.13 kB, 135.11 kB gzip |
+| Responsive/accessibility automation | `PASS` | Playwright: 25 passed, 35 intentionally inapplicable combinations skipped across 320, 768, compact, 1,440, reflow and 200% zoom projects |
 | Restore rehearsal | `PASS` | `restore-report.json` verifies isolated restore, logical checksums and tombstone non-resurrection on synthetic FX-OPS data |
 | Secret scan | `PASS` | Repository and history scan is required again after staging and before push |
 
 ## Product-path evidence
 
-The local acceptance run covered registration, a French-to-Italian profile,
-diagnostic, foundations, module enrollment, vocabulary, a complete seven-block
-daily sprint, local Italian TTS, reading assessment, Word Bank and free
-practice. Oral self-assessment remains non-evaluable without human review and
-cannot create mastery credit.
+The local acceptance run used the real API and a clean PostgreSQL database. It
+covered registration, a French-to-Italian profile, beginner foundation gating,
+intermediate placement, module enrollment, a 30-minute plan, vocabulary cards,
+a complete daily sprint, local Italian TTS, J+1 locking, Word Bank, free
+practice and resume/pause behavior. The four assessments were exercised:
+reading and listening produced independent results, writing remained queued for
+review, and oral self-assessment remained explicitly non-evaluable without
+human review and could not create mastery credit.
+
+Settings were also exercised through recent-authentication renewal, successful
+export creation and actual session revocation. The browser run exposed and
+closed three acceptance defects: stale sprint versions at completion, an
+invalid export scope, and stale session/CSRF state after reauthentication. The
+detailed route-by-route record and final captures are in
+`docs/evidence/W19/browser-audit.md` and `docs/evidence/W19/browser/`.
 
 The authoring path used the exact configured LM Studio model, produced a
 structured draft through the controlled tool facade, registered immutable
@@ -39,7 +49,7 @@ capability.
 
 | Gate | Status | Reason |
 |---|---|---|
-| G4 human visual review | `pending_human` | Automated responsive and axe checks pass, but the final real-browser desktop/mobile review is not signed |
+| G4 human visual review | `pending_human` | Automated responsive and axe checks pass and a real-browser engineering review found no blocking layout defect; independent human approval is not signed |
 | P-LING | `pending_human` | The Italian linguistic fixture has no assigned human reviewer |
 | P-PED | `pending_human` | The learning progression has no signed human pedagogical review |
 | G7 / W19C | `deferred` | Cloud infrastructure, canary and production rollback proof are outside W19L |

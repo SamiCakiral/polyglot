@@ -25,14 +25,22 @@ test.beforeEach(async ({ page }, testInfo) => {
         accountControl.getBoundingClientRect().height,
       );
     });
-    await page.addStyleTag({ content: "html body { zoom: 2 !important; }" });
-    await page.evaluate(() => new Promise(requestAnimationFrame));
   }
 });
 
 test("keeps the shell inside the viewport without truncated mobile labels", async ({
   page,
 }, testInfo) => {
+  if (testInfo.project.name === "browser-zoom-200") {
+    await page.evaluate(() => {
+      document.body.style.zoom = "2";
+    });
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.body).zoom))
+      .toBe("2");
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+  }
+
   const metrics = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
     scrollWidth: document.documentElement.scrollWidth,
@@ -343,4 +351,18 @@ test("shows canonical vocabulary and four separate progress axes", async ({
     await expect(page.getByRole("heading", { name: label })).toBeVisible();
   }
   await expect(page.getByText("Non évaluable")).toBeVisible();
+});
+
+test("lets the learner close the current session", async ({ page }, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "shell-1440",
+    "Session closure is viewport-independent",
+  );
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Se déconnecter" }).click();
+
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Se connecter" }),
+  ).toBeVisible();
 });

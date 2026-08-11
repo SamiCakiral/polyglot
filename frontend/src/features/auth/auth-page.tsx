@@ -1,12 +1,19 @@
 import { Languages } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
-import { useAuthenticateSession, useRegisterAccount } from "../../generated/polyglot";
+import {
+  useAuthenticateSession,
+  useRegisterAccount,
+} from "../../generated/polyglot";
 import { commandFetch, responseProblem } from "../../lib/api";
+import { safeReturnTo } from "./auth-return";
 
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const authenticate = useAuthenticateSession({ fetch: commandFetch() });
   const register = useRegisterAccount({ fetch: commandFetch() });
   const [identifier, setIdentifier] = useState("");
@@ -33,6 +40,12 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     const sessionError = responseProblem(session);
     if (sessionError) {
       setError(sessionError);
+      return;
+    }
+    queryClient.clear();
+    const destination = safeReturnTo(searchParams.get("returnTo"));
+    if (destination) {
+      window.location.replace(destination);
       return;
     }
     void navigate("/language-profile", { replace: true });

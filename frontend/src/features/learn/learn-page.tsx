@@ -9,6 +9,7 @@ import {
 } from "../../components/product-ui";
 import { useListLearningModules } from "../../generated/polyglot";
 import { queryFetch } from "../../lib/api";
+import { modulePresentation } from "./module-presentation";
 
 export function LearnPage() {
   const query = useListLearningModules({
@@ -29,15 +30,19 @@ export function LearnPage() {
         <ErrorRegion message="Le catalogue des modules n'est pas disponible." />
       ) : null}
       <div className="module-list">
-        {modules.map((module, index) => (
-          <article className="module-row" key={module.module_id}>
+        {modules.map((module, index) => {
+          const presentation = modulePresentation(
+            module.module_code,
+            module.primary_intention,
+          );
+          return <article className="module-row" key={module.module_id}>
             <div className="module-row__index">
               {String(index + 1).padStart(2, "0")}
             </div>
             <div className="module-row__body">
               <div>
-                <p className="eyebrow">{module.primary_intention}</p>
-                <h2>{module.module_code.replaceAll("_", " ")}</h2>
+                <p className="eyebrow">Mission {index + 1}</p>
+                <h2>{presentation.title}</h2>
               </div>
               <p>
                 Un fil de {module.nominal_days} jours, adaptable entre{" "}
@@ -57,14 +62,14 @@ export function LearnPage() {
               </div>
             </div>
             <Link
-              aria-label={`Ouvrir ${module.module_code}`}
+              aria-label={`Ouvrir ${presentation.title}`}
               className="icon-link"
               to={`/learn/modules/${module.module_id}`}
             >
               <ArrowRight aria-hidden="true" />
             </Link>
-          </article>
-        ))}
+          </article>;
+        })}
         {modules.length === 0 ? (
           <section className="empty-panel">
             <h2>Aucun module publié</h2>
@@ -102,12 +107,16 @@ export function ModuleDetailPage() {
         </Link>
       </div>
     );
+  const presentation = modulePresentation(
+    module.module_code,
+    module.primary_intention,
+  );
   return (
     <div className="page-flow page-flow--narrow">
       <PageHeader
         eyebrow="Module italien"
-        title={module.module_code.replaceAll("_", " ")}
-        description={module.primary_intention}
+        title={presentation.title}
+        description={presentation.description}
         action={<StatusPill tone="good">Publié</StatusPill>}
       />
       <section className="module-brief">

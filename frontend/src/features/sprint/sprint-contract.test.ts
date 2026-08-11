@@ -12,8 +12,27 @@ describe("sprint completion contract", () => {
       "utf8",
     );
 
-    expect(source).toContain('runId,\n      data: {},');
+    expect(source).toContain("completeSprintRun(\n      runId,\n      {},");
     expect(source).not.toContain('reason: "completed_by_learner"');
+  });
+
+  it("refreshes the run version before a terminal transition", () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, "sprint-page.tsx"),
+      "utf8",
+    );
+
+    expect(source).toContain("await query.refetch()");
+    expect(source).toContain("commandFetch(session, latestRun.data.version)");
+  });
+
+  it("keeps internal primitive identifiers out of the learner view", () => {
+    const source = readFileSync(
+      resolve(import.meta.dirname, "sprint-page.tsx"),
+      "utf8",
+    );
+
+    expect(source).not.toContain("exercise.primitive_id.replaceAll");
   });
 
   it("resumes at the first unfinished block after a reload", () => {
