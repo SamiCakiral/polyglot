@@ -292,12 +292,15 @@ class W00ContractDeliveryTest(unittest.TestCase):
 
     def test_allows_synced_python_cache_only_for_tracked_source(self) -> None:
         cache = ROOT / "backend/src/polyglot/__pycache__/__init__.cpython-313 2.pyc"
+        cache_directory_existed = cache.parent.exists()
         cache.parent.mkdir(parents=True, exist_ok=True)
         cache.write_bytes(b"reproducible bytecode cache")
         try:
             result = self.run_validator("--check-artifacts")
         finally:
             cache.unlink()
+            if not cache_directory_existed:
+                cache.parent.rmdir()
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
     def test_allows_exact_frontend_typescript_build_cache(self) -> None:
