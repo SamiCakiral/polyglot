@@ -1,4 +1,10 @@
-import { ArrowRight, Check, Languages, Milestone } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Dumbbell,
+  Languages,
+  Milestone,
+} from "lucide-react";
 import { type SyntheticEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -10,19 +16,28 @@ import {
   PageHeader,
   StatusPill,
 } from "../../components/product-ui";
-import type { PlacementItemResponse } from "../../generated/model";
+import type {
+  EntryPath,
+  PlacementChoice,
+  PlacementItemResponse,
+} from "../../generated/model";
 import {
+  choosePlacement,
   completeDiagnostic,
   completeFoundationGate,
+  createAccountLanguage,
   enrollInModule,
   getDiagnosticSummary,
   startDiagnostic,
   startFoundationRun,
+  startOnboarding,
   submitDiagnosticResponse,
   useCreateLanguageProfile,
-  useGetPlacementManifest,
   useGetFoundationManifest,
   useGetFoundationRun,
+  useGetOnboardingState,
+  useGetPlacementManifest,
+  useListAccountLanguages,
   useListLanguagePacks,
   useListLearningModules,
   useUpdateLearningGoals,
@@ -42,6 +57,52 @@ const goalOptions = [
   "Écrire avec précision",
 ] as const;
 
+const entryPaths: {
+  value: EntryPath;
+  title: string;
+  description: string;
+  duration: string;
+}[] = [
+  {
+    value: "complete_beginner",
+    title: "Je pars de zéro",
+    description:
+      "Commencer par les sons, l'écriture et les premiers moules utiles.",
+    duration: "entraînement immédiat",
+  },
+  {
+    value: "already_started",
+    title: "J'ai déjà commencé",
+    description:
+      "Faire six tâches courtes pour retrouver un point de départ crédible.",
+    duration: "5 à 8 minutes",
+  },
+  {
+    value: "advanced",
+    title: "Je suis déjà autonome",
+    description:
+      "Commencer plus haut et chercher rapidement les zones fragiles.",
+    duration: "8 à 10 minutes",
+  },
+];
+
+const skillLabels: Record<string, string> = {
+  script: "Écriture et sons",
+  reading: "Lecture",
+  listening: "Écoute",
+  vocabulary: "Vocabulaire",
+  production: "Production",
+  grammar_functions: "Moules grammaticaux",
+};
+
+const bandLabels: Record<string, string> = {
+  foundations: "Fondations",
+  emerging: "En construction",
+  functional: "Fonctionnel",
+  independent: "Autonome",
+  advanced: "Avancé",
+};
+
 export function LanguageProfilePage() {
   const session = useSession();
   const navigate = useNavigate();
@@ -55,16 +116,28 @@ export function LanguageProfilePage() {
     fetch: queryFetch(),
     query: { retry: false },
   });
-  const packs = packsQuery.data?.status === 200 ? packsQuery.data.data.items : [];
+  const accountLanguagesQuery = useListAccountLanguages({
+    fetch: queryFetch(),
+    query: { retry: false },
+  });
+  const packs =
+    packsQuery.data?.status === 200 ? packsQuery.data.data.items : [];
   const pack = activeProfile
-    ? packs.find((item) => item.target_variety_id === activeProfile.target_variety_id)
-    : packs.find((item) => item.pack_revision_id === selectedPackRevisionId) ?? packs[0];
+    ? packs.find(
+        (item) => item.target_variety_id === activeProfile.target_variety_id,
+      )
+    : (packs.find((item) => item.pack_revision_id === selectedPackRevisionId) ??
+      packs[0]);
   const displayNames = new Intl.DisplayNames(["fr"], { type: "language" });
   const targetName = pack
-    ? (displayNames.of(pack.target_language_tag) ?? pack.target_language_tag)
+    ? (displayNames.of(new Intl.Locale(pack.target_language_tag).language) ??
+      pack.target_language_tag)
     : "la langue cible";
   const supportName = pack?.support_language_tags[0]
-    ? (displayNames.of(pack.support_language_tags[0]) ?? pack.support_language_tags[0])
+    ? (displayNames.of(
+        new Intl.Locale(pack.support_language_tags[0]).language,
+      ) ??
+      pack.support_language_tags[0])
     : "la langue d'appui";
   const manifestQuery = useGetPlacementManifest(pack?.pack_revision_id ?? "", {
     fetch: queryFetch(),
@@ -76,6 +149,16 @@ export function LanguageProfilePage() {
   const updateGoals = useUpdateLearningGoals({
     fetch: commandFetch(session, activeProfile?.version),
   });
+  const onboardingQuery = useGetOnboardingState(
+    activeProfile?.profile_id ?? "",
+    {
+      fetch: queryFetch(),
+      query: {
+        enabled: Boolean(activeProfile && activeProfile.goals.length > 0),
+        retry: false,
+      },
+    },
+  );
   const [goals, setGoals] = useState<string[]>([
     goalOptions[0],
     goalOptions[1],
@@ -86,11 +169,21 @@ export function LanguageProfilePage() {
     () => localStorage.getItem("polyglot.foundation-run") ?? "",
   );
   const [error, setError] = useState("");
+  const [supportRelationship, setSupportRelationship] = useState<
+    "native" | "fluent" | "studied"
+  >("native");
 
   const manifest =
     manifestQuery.data?.status === 200 ? manifestQuery.data.data : null;
   const modules =
     modulesQuery.data?.status === 200 ? modulesQuery.data.data : [];
+  const accountLanguages =
+    accountLanguagesQuery.data?.status === 200
+      ? accountLanguagesQuery.data.data.items
+      : [];
+  const onboarding =
+    onboardingQuery.data?.status === 200 ? onboardingQuery.data.data : null;
+  const onboardingMissing = onboardingQuery.data?.status === 404;
   const allAnswered = useMemo(
     () =>
       Boolean(
@@ -114,6 +207,28 @@ export function LanguageProfilePage() {
     event.preventDefault();
     if (!pack?.support_variety_ids[0]) return;
     setError("");
+    if (
+      !accountLanguages.some(
+        (item) => item.variety_id === pack.support_variety_ids[0],
+      )
+    ) {
+      const declared = await createAccountLanguage(
+        {
+          variety_id: pack.support_variety_ids[0],
+          relationship: supportRelationship,
+          self_assessed_band:
+            supportRelationship === "studied" ? "independent" : "advanced",
+          use_for_explanations: true,
+          use_for_contrasts: true,
+        },
+        commandFetch(session),
+      );
+      const declarationProblem = responseProblem(declared);
+      if (declarationProblem) {
+        setError(declarationProblem);
+        return;
+      }
+    }
     const response = await createProfile.mutateAsync({
       data: {
         native_variety_id: pack.support_variety_ids[0],
@@ -126,6 +241,96 @@ export function LanguageProfilePage() {
       return;
     }
     await refresh();
+    await accountLanguagesQuery.refetch();
+  }
+
+  async function chooseEntryPath(entryPath: EntryPath) {
+    if (!activeProfile || !pack) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (
+        !accountLanguages.some(
+          (item) => item.variety_id === pack.target_variety_id,
+        )
+      ) {
+        const targetLanguage = await createAccountLanguage(
+          {
+            variety_id: pack.target_variety_id,
+            relationship: "studied",
+            self_assessed_band:
+              entryPath === "complete_beginner"
+                ? "new"
+                : entryPath === "advanced"
+                  ? "independent"
+                  : "familiar",
+            use_for_explanations: false,
+            use_for_contrasts: false,
+          },
+          commandFetch(session),
+        );
+        const targetProblem = responseProblem(targetLanguage);
+        if (targetProblem) throw new Error(targetProblem);
+      }
+      const started = await startOnboarding(
+        activeProfile.profile_id,
+        { entry_path: entryPath },
+        commandFetch(session),
+      );
+      const startProblem = responseProblem(started);
+      if (startProblem || started.status !== 200) {
+        throw new Error(
+          startProblem || "Le point de départ n'a pas été enregistré.",
+        );
+      }
+      if (entryPath === "complete_beginner") {
+        const chosen = await choosePlacement(
+          activeProfile.profile_id,
+          { choice: "start_now" },
+          commandFetch(session, started.data.version),
+        );
+        const choiceProblem = responseProblem(chosen);
+        if (choiceProblem) throw new Error(choiceProblem);
+        await refresh();
+        void navigate("/practice");
+        return;
+      }
+      await onboardingQuery.refetch();
+      await accountLanguagesQuery.refetch();
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "L'onboarding n'a pas pu démarrer.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function acceptPlacement(choice: PlacementChoice) {
+    if (!activeProfile || !onboarding) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await choosePlacement(
+        activeProfile.profile_id,
+        { choice },
+        commandFetch(session, onboarding.version),
+      );
+      const problem = responseProblem(response);
+      if (problem) throw new Error(problem);
+      await refresh();
+      void navigate("/practice");
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Le choix n'a pas été enregistré.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveGoals() {
@@ -146,7 +351,9 @@ export function LanguageProfilePage() {
   async function enroll(profileId: string) {
     const module = modules[0];
     if (!module)
-      throw new Error(`Aucun module ${targetName.toLocaleLowerCase("fr")} publié n'est disponible.`);
+      throw new Error(
+        `Aucun module ${targetName.toLocaleLowerCase("fr")} publié n'est disponible.`,
+      );
     const enrollmentId = uuid7();
     const response = await enrollInModule(
       profileId,
@@ -224,11 +431,7 @@ export function LanguageProfilePage() {
       if (completed.status !== 200)
         throw new Error("Le placement n'a pas pu être calculé.");
       localStorage.removeItem(storageKey);
-      await refresh();
-      if (completed.data.classification === "intermediate") {
-        await enroll(activeProfile.profile_id);
-        void navigate("/today");
-      }
+      await onboardingQuery.refetch();
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -301,15 +504,38 @@ export function LanguageProfilePage() {
               }}
             >
               {packs.map((item) => (
-                <option key={item.pack_revision_id} value={item.pack_revision_id}>
-                  {(displayNames.of(item.support_language_tags[0] ?? "") ?? item.support_language_tags[0])}
+                <option
+                  key={item.pack_revision_id}
+                  value={item.pack_revision_id}
+                >
+                  {displayNames.of(item.support_language_tags[0] ?? "") ??
+                    item.support_language_tags[0]}
                   {" → "}
-                  {(displayNames.of(item.target_language_tag) ?? item.target_language_tag)}
+                  {displayNames.of(item.target_language_tag) ??
+                    item.target_language_tag}
                 </option>
               ))}
             </select>
           </label>
-          <div className="language-pair" aria-label={`${supportName} vers ${targetName}`}>
+          <label className="answer-field">
+            Votre rapport avec {supportName}
+            <select
+              value={supportRelationship}
+              onChange={(event) => {
+                setSupportRelationship(
+                  event.target.value as "native" | "fluent" | "studied",
+                );
+              }}
+            >
+              <option value="native">Langue maternelle</option>
+              <option value="fluent">Parlée couramment</option>
+              <option value="studied">Apprise et bien comprise</option>
+            </select>
+          </label>
+          <div
+            className="language-pair"
+            aria-label={`${supportName} vers ${targetName}`}
+          >
             <div>
               <span>Langue d'appui</span>
               <strong>{supportName}</strong>
@@ -323,8 +549,8 @@ export function LanguageProfilePage() {
             </div>
           </div>
           <p>
-            Les explications utilisent {supportName.toLocaleLowerCase("fr")} et les activités
-            travaillent {targetName.toLocaleLowerCase("fr")}.
+            Les explications utilisent {supportName.toLocaleLowerCase("fr")} et
+            les activités travaillent {targetName.toLocaleLowerCase("fr")}.
           </p>
           {error ? <ErrorRegion message={error} /> : null}
           <button disabled={createProfile.isPending} type="submit">
@@ -380,12 +606,121 @@ export function LanguageProfilePage() {
     );
   }
 
+  if (onboardingQuery.isPending) {
+    return <LoadingRegion label="Chargement de votre point de départ" />;
+  }
+
+  if (onboardingMissing) {
+    return (
+      <div className="page-flow page-flow--narrow">
+        <PageHeader
+          eyebrow="Point de départ"
+          title={`Où en êtes-vous en ${targetName.toLocaleLowerCase("fr")} ?`}
+          description="Choisissez l'option la plus proche. Rien ne vous empêchera de vous entraîner ensuite."
+        />
+        <section
+          className="entry-paths"
+          aria-label="Choisir un point de départ"
+        >
+          {entryPaths.map((entry) => (
+            <button
+              className="entry-path"
+              disabled={busy}
+              key={entry.value}
+              type="button"
+              onClick={() => void chooseEntryPath(entry.value)}
+            >
+              <span>
+                <strong>{entry.title}</strong>
+                <small>{entry.duration}</small>
+              </span>
+              <p>{entry.description}</p>
+              <ArrowRight aria-hidden="true" size={19} />
+            </button>
+          ))}
+        </section>
+        {error ? <ErrorRegion message={error} /> : null}
+      </div>
+    );
+  }
+
+  if (onboarding?.detected_band && !onboarding.placement_choice) {
+    const confidence = Math.round((onboarding.placement_confidence ?? 0) * 100);
+    return (
+      <div className="page-flow page-flow--narrow">
+        <PageHeader
+          eyebrow="Placement terminé"
+          title={`Point de départ : ${bandLabels[onboarding.detected_band] ?? onboarding.detected_band}`}
+          description="Cette estimation décrit vos preuves actuelles. Vous gardez le dernier mot sur le niveau de départ."
+          action={<StatusPill>{confidence}% de confiance</StatusPill>}
+        />
+        <section className="placement-result">
+          <div className="placement-summary">
+            <Milestone aria-hidden="true" size={24} />
+            <div>
+              <strong>{bandLabels[onboarding.resolved_band]}</strong>
+              <span>Trois premières séances continueront la calibration.</span>
+            </div>
+          </div>
+          <div
+            className="skill-map"
+            aria-label="Carte des compétences détectées"
+            role="region"
+          >
+            {onboarding.skill_profile.map((skill) => (
+              <div className="skill-line" key={skill.dimension}>
+                <span>{skillLabels[skill.dimension]}</span>
+                <strong>{bandLabels[skill.band]}</strong>
+                <small>
+                  {skill.evidence_count > 0
+                    ? `${String(Math.round(skill.confidence * 100))}% de confiance`
+                    : "à calibrer"}
+                </small>
+              </div>
+            ))}
+          </div>
+          <div
+            className="placement-actions"
+            aria-label="Ajuster le niveau de départ"
+          >
+            <button
+              className="secondary-button"
+              disabled={busy}
+              type="button"
+              onClick={() => void acceptPlacement("start_easier")}
+            >
+              Commencer plus doucement
+            </button>
+            <button
+              disabled={busy}
+              type="button"
+              onClick={() => void acceptPlacement("accept")}
+            >
+              Accepter et s'entraîner <Dumbbell aria-hidden="true" size={18} />
+            </button>
+            <button
+              className="secondary-button"
+              disabled={busy}
+              type="button"
+              onClick={() => void acceptPlacement("challenge")}
+            >
+              Me mettre au défi
+            </button>
+          </div>
+          {error ? <ErrorRegion message={error} /> : null}
+        </section>
+      </div>
+    );
+  }
+
   if (activeProfile.status === "foundations") {
     if (foundationRunId) {
       return (
         <FoundationFlow
           packRevisionId={pack.pack_revision_id}
           runId={foundationRunId}
+          targetLanguageTag={pack.target_language_tag}
+          targetName={targetName}
           onComplete={refresh}
           onMissing={() => {
             localStorage.removeItem("polyglot.foundation-run");
@@ -469,7 +804,9 @@ export function LanguageProfilePage() {
     return <LoadingRegion label="Préparation du diagnostic" />;
   if (!manifest)
     return (
-      <ErrorRegion message={`Le diagnostic ${targetName.toLocaleLowerCase("fr")} n'est pas disponible.`} />
+      <ErrorRegion
+        message={`Le diagnostic ${targetName.toLocaleLowerCase("fr")} n'est pas disponible.`}
+      />
     );
 
   return (
@@ -538,11 +875,15 @@ export function LanguageProfilePage() {
 function FoundationFlow({
   packRevisionId,
   runId,
+  targetLanguageTag,
+  targetName,
   onComplete,
   onMissing,
 }: {
   packRevisionId: string;
   runId: string;
+  targetLanguageTag: string;
+  targetName: string;
   onComplete: () => Promise<unknown>;
   onMissing: () => void;
 }) {
@@ -571,7 +912,8 @@ function FoundationFlow({
 
   if (runQuery.isPending || manifestQuery.isPending)
     return <LoadingRegion label="Préparation des fondations" />;
-  if (runMissing) return <LoadingRegion label="Réinitialisation des fondations" />;
+  if (runMissing)
+    return <LoadingRegion label="Réinitialisation des fondations" />;
   if (!run || !manifest)
     return (
       <ErrorRegion message="La session de fondations n'est plus disponible." />
@@ -637,7 +979,7 @@ function FoundationFlow({
     return (
       <div className="page-flow page-flow--narrow">
         <PageHeader
-          eyebrow="Fondations italiennes"
+          eyebrow={`Fondations ${targetName.toLocaleLowerCase("fr")}`}
           title="Contrôle différé à J+1"
           description="La première session est enregistrée. Le second passage reste fermé pendant 24 heures pour mesurer un rappel réel."
         />
@@ -669,7 +1011,7 @@ function FoundationFlow({
         {teachingPass ? (
           <div className="teaching-value">
             <span>Forme à mémoriser</span>
-            <strong lang="it">
+            <strong lang={targetLanguageTag}>
               {activity.teaching_value?.replaceAll("_", " ") ??
                 "Répétez à voix haute"}
             </strong>

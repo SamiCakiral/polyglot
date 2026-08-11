@@ -72,6 +72,7 @@ async def test_0004_creates_profile_tables_constraints_and_rls(
         "foundation_run_blocks",
         "foundation_measurements",
         "foundation_gate_results",
+        "onboarding_states",
     }
     assert await migration_session.scalar(
         text(

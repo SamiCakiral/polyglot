@@ -21,6 +21,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AccountLanguagePageResponse,
+  AccountLanguageResponse,
   AccountResponse,
   ApproveContentRevisionRequest,
   AssessmentRunResponse,
@@ -30,6 +32,7 @@ import type {
   CatalogueTargetPageResponse,
   ChangeListMembersRequest,
   ChangePasswordRequest,
+  ChoosePlacementRequest,
   CloneVocabularyListRequest,
   CommandPayload,
   CommitImportRequest,
@@ -43,6 +46,7 @@ import type {
   ContentRevisionResponse,
   ContestCorrectionRequest,
   CorrectionCaseResponse,
+  CreateAccountLanguageRequest,
   CreateContentDraftRequest,
   CreateImportRequest,
   CreateMemoryPromptRequest,
@@ -95,6 +99,7 @@ import type {
   ModuleResponse,
   MutationResponse,
   OidcCredentialsRequest,
+  OnboardingResponse,
   OpenAttemptRequest,
   PauseEnrollmentRequest,
   PlacementManifestResponse,
@@ -113,6 +118,7 @@ import type {
   ReadyStatus,
   ReasonRequest,
   RecommendationPageResponse,
+  RecordPlacementRequest,
   RequestExportRequest,
   RequestGenerationJobRequest,
   ReserveMediaUploadRequest,
@@ -124,6 +130,7 @@ import type {
   ResourcePageResponse,
   RestoreMemoryPromptRequest,
   ResumeMemoryPromptRequest,
+  ReviseAccountLanguageRequest,
   ReviseContentDraftRequest,
   ReviseVocabularyListRequest,
   SaveAssessmentResponseRequest,
@@ -136,6 +143,7 @@ import type {
   SprintRunResponse,
   StartDiagnosticRequest,
   StartFoundationRunRequest,
+  StartOnboardingRequest,
   StartRunRequest,
   SubmitAttemptRequest,
   SubmitDiagnosticResponseRequest,
@@ -169,6 +177,884 @@ const withQueryKey = <T extends object, K>(
     });
   }
   return result;
+};
+
+export type listAccountLanguagesResponse200 = {
+  data: AccountLanguagePageResponse;
+  status: 200;
+};
+
+export type listAccountLanguagesResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listAccountLanguagesResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type listAccountLanguagesResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listAccountLanguagesResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type listAccountLanguagesResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listAccountLanguagesResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type listAccountLanguagesResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listAccountLanguagesResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type listAccountLanguagesResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listAccountLanguagesResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type listAccountLanguagesResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listAccountLanguagesResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type listAccountLanguagesResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listAccountLanguagesResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type listAccountLanguagesResponseSuccess =
+  listAccountLanguagesResponse200 & {
+    headers: Headers;
+  };
+export type listAccountLanguagesResponseError = (
+  | listAccountLanguagesResponse401ApplicationJson
+  | listAccountLanguagesResponse401ApplicationProblemJson
+  | listAccountLanguagesResponse403ApplicationJson
+  | listAccountLanguagesResponse403ApplicationProblemJson
+  | listAccountLanguagesResponse409ApplicationJson
+  | listAccountLanguagesResponse409ApplicationProblemJson
+  | listAccountLanguagesResponse422ApplicationJson
+  | listAccountLanguagesResponse422ApplicationProblemJson
+  | listAccountLanguagesResponse423ApplicationJson
+  | listAccountLanguagesResponse423ApplicationProblemJson
+  | listAccountLanguagesResponse429ApplicationJson
+  | listAccountLanguagesResponse429ApplicationProblemJson
+  | listAccountLanguagesResponse503ApplicationJson
+  | listAccountLanguagesResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type listAccountLanguagesResponse =
+  listAccountLanguagesResponseSuccess | listAccountLanguagesResponseError;
+
+export const getListAccountLanguagesUrl = () => {
+  return `/api/v1/account-languages`;
+};
+
+/**
+ * @summary List Account Languages
+ */
+export const listAccountLanguages = async (
+  options?: RequestInit,
+): Promise<listAccountLanguagesResponse> => {
+  const res = await fetch(getListAccountLanguagesUrl(), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listAccountLanguagesResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listAccountLanguagesResponse;
+};
+
+export const getListAccountLanguagesQueryKey = () => {
+  return [`/api/v1/account-languages`] as const;
+};
+
+export const getListAccountLanguagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAccountLanguages>>,
+  TError = ProblemResponse,
+>(options?: {
+  query?: Partial<
+    UseQueryOptions<
+      Awaited<ReturnType<typeof listAccountLanguages>>,
+      TError,
+      TData
+    >
+  >;
+  fetch?: RequestInit;
+}) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAccountLanguagesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listAccountLanguages>>
+  > = ({ signal }) => listAccountLanguages({ signal, ...fetchOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listAccountLanguages>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListAccountLanguagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAccountLanguages>>
+>;
+export type ListAccountLanguagesQueryError = ProblemResponse;
+
+export function useListAccountLanguages<
+  TData = Awaited<ReturnType<typeof listAccountLanguages>>,
+  TError = ProblemResponse,
+>(
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAccountLanguages>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAccountLanguages>>,
+          TError,
+          Awaited<ReturnType<typeof listAccountLanguages>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAccountLanguages<
+  TData = Awaited<ReturnType<typeof listAccountLanguages>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAccountLanguages>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAccountLanguages>>,
+          TError,
+          Awaited<ReturnType<typeof listAccountLanguages>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useListAccountLanguages<
+  TData = Awaited<ReturnType<typeof listAccountLanguages>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAccountLanguages>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary List Account Languages
+ */
+
+export function useListAccountLanguages<
+  TData = Awaited<ReturnType<typeof listAccountLanguages>>,
+  TError = ProblemResponse,
+>(
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof listAccountLanguages>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getListAccountLanguagesQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type createAccountLanguageResponse201 = {
+  data: AccountLanguageResponse;
+  status: 201;
+};
+
+export type createAccountLanguageResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createAccountLanguageResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type createAccountLanguageResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createAccountLanguageResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type createAccountLanguageResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createAccountLanguageResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type createAccountLanguageResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createAccountLanguageResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type createAccountLanguageResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createAccountLanguageResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type createAccountLanguageResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createAccountLanguageResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type createAccountLanguageResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createAccountLanguageResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type createAccountLanguageResponseSuccess =
+  createAccountLanguageResponse201 & {
+    headers: Headers;
+  };
+export type createAccountLanguageResponseError = (
+  | createAccountLanguageResponse401ApplicationJson
+  | createAccountLanguageResponse401ApplicationProblemJson
+  | createAccountLanguageResponse403ApplicationJson
+  | createAccountLanguageResponse403ApplicationProblemJson
+  | createAccountLanguageResponse409ApplicationJson
+  | createAccountLanguageResponse409ApplicationProblemJson
+  | createAccountLanguageResponse422ApplicationJson
+  | createAccountLanguageResponse422ApplicationProblemJson
+  | createAccountLanguageResponse423ApplicationJson
+  | createAccountLanguageResponse423ApplicationProblemJson
+  | createAccountLanguageResponse429ApplicationJson
+  | createAccountLanguageResponse429ApplicationProblemJson
+  | createAccountLanguageResponse503ApplicationJson
+  | createAccountLanguageResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type createAccountLanguageResponse =
+  createAccountLanguageResponseSuccess | createAccountLanguageResponseError;
+
+export const getCreateAccountLanguageUrl = () => {
+  return `/api/v1/account-languages`;
+};
+
+/**
+ * @summary Create Account Language
+ */
+export const createAccountLanguage = async (
+  createAccountLanguageRequest: CreateAccountLanguageRequest,
+  options?: RequestInit,
+): Promise<createAccountLanguageResponse> => {
+  const res = await fetch(getCreateAccountLanguageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createAccountLanguageRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: createAccountLanguageResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as createAccountLanguageResponse;
+};
+
+export const getCreateAccountLanguageMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAccountLanguage>>,
+    TError,
+    { data: CreateAccountLanguageRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAccountLanguage>>,
+  TError,
+  { data: CreateAccountLanguageRequest },
+  TContext
+> => {
+  const mutationKey = ["createAccountLanguage"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAccountLanguage>>,
+    { data: CreateAccountLanguageRequest }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createAccountLanguage(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAccountLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAccountLanguage>>
+>;
+export type CreateAccountLanguageMutationBody = CreateAccountLanguageRequest;
+export type CreateAccountLanguageMutationError = ProblemResponse;
+
+/**
+ * @summary Create Account Language
+ */
+export const useCreateAccountLanguage = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof createAccountLanguage>>,
+      TError,
+      { data: CreateAccountLanguageRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof createAccountLanguage>>,
+  TError,
+  { data: CreateAccountLanguageRequest },
+  TContext
+> => {
+  return useMutation(
+    getCreateAccountLanguageMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type reviseAccountLanguageResponse200 = {
+  data: AccountLanguageResponse;
+  status: 200;
+};
+
+export type reviseAccountLanguageResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviseAccountLanguageResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type reviseAccountLanguageResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviseAccountLanguageResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type reviseAccountLanguageResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviseAccountLanguageResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type reviseAccountLanguageResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviseAccountLanguageResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type reviseAccountLanguageResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviseAccountLanguageResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type reviseAccountLanguageResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviseAccountLanguageResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type reviseAccountLanguageResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviseAccountLanguageResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type reviseAccountLanguageResponseSuccess =
+  reviseAccountLanguageResponse200 & {
+    headers: Headers;
+  };
+export type reviseAccountLanguageResponseError = (
+  | reviseAccountLanguageResponse401ApplicationJson
+  | reviseAccountLanguageResponse401ApplicationProblemJson
+  | reviseAccountLanguageResponse403ApplicationJson
+  | reviseAccountLanguageResponse403ApplicationProblemJson
+  | reviseAccountLanguageResponse409ApplicationJson
+  | reviseAccountLanguageResponse409ApplicationProblemJson
+  | reviseAccountLanguageResponse422ApplicationJson
+  | reviseAccountLanguageResponse422ApplicationProblemJson
+  | reviseAccountLanguageResponse423ApplicationJson
+  | reviseAccountLanguageResponse423ApplicationProblemJson
+  | reviseAccountLanguageResponse429ApplicationJson
+  | reviseAccountLanguageResponse429ApplicationProblemJson
+  | reviseAccountLanguageResponse503ApplicationJson
+  | reviseAccountLanguageResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type reviseAccountLanguageResponse =
+  reviseAccountLanguageResponseSuccess | reviseAccountLanguageResponseError;
+
+export const getReviseAccountLanguageUrl = (languageId: string) => {
+  return `/api/v1/account-languages/${languageId}`;
+};
+
+/**
+ * @summary Revise Account Language
+ */
+export const reviseAccountLanguage = async (
+  languageId: string,
+  reviseAccountLanguageRequest: ReviseAccountLanguageRequest,
+  options?: RequestInit,
+): Promise<reviseAccountLanguageResponse> => {
+  const res = await fetch(getReviseAccountLanguageUrl(languageId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviseAccountLanguageRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: reviseAccountLanguageResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as reviseAccountLanguageResponse;
+};
+
+export const getReviseAccountLanguageMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviseAccountLanguage>>,
+    TError,
+    { languageId: string; data: ReviseAccountLanguageRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviseAccountLanguage>>,
+  TError,
+  { languageId: string; data: ReviseAccountLanguageRequest },
+  TContext
+> => {
+  const mutationKey = ["reviseAccountLanguage"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviseAccountLanguage>>,
+    { languageId: string; data: ReviseAccountLanguageRequest }
+  > = (props) => {
+    const { languageId, data } = props ?? {};
+
+    return reviseAccountLanguage(languageId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviseAccountLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviseAccountLanguage>>
+>;
+export type ReviseAccountLanguageMutationBody = ReviseAccountLanguageRequest;
+export type ReviseAccountLanguageMutationError = ProblemResponse;
+
+/**
+ * @summary Revise Account Language
+ */
+export const useReviseAccountLanguage = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reviseAccountLanguage>>,
+      TError,
+      { languageId: string; data: ReviseAccountLanguageRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reviseAccountLanguage>>,
+  TError,
+  { languageId: string; data: ReviseAccountLanguageRequest },
+  TContext
+> => {
+  return useMutation(
+    getReviseAccountLanguageMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type archiveAccountLanguageResponse200 = {
+  data: AccountLanguageResponse;
+  status: 200;
+};
+
+export type archiveAccountLanguageResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveAccountLanguageResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type archiveAccountLanguageResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveAccountLanguageResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type archiveAccountLanguageResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveAccountLanguageResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type archiveAccountLanguageResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveAccountLanguageResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type archiveAccountLanguageResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveAccountLanguageResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type archiveAccountLanguageResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveAccountLanguageResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type archiveAccountLanguageResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveAccountLanguageResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type archiveAccountLanguageResponseSuccess =
+  archiveAccountLanguageResponse200 & {
+    headers: Headers;
+  };
+export type archiveAccountLanguageResponseError = (
+  | archiveAccountLanguageResponse401ApplicationJson
+  | archiveAccountLanguageResponse401ApplicationProblemJson
+  | archiveAccountLanguageResponse403ApplicationJson
+  | archiveAccountLanguageResponse403ApplicationProblemJson
+  | archiveAccountLanguageResponse409ApplicationJson
+  | archiveAccountLanguageResponse409ApplicationProblemJson
+  | archiveAccountLanguageResponse422ApplicationJson
+  | archiveAccountLanguageResponse422ApplicationProblemJson
+  | archiveAccountLanguageResponse423ApplicationJson
+  | archiveAccountLanguageResponse423ApplicationProblemJson
+  | archiveAccountLanguageResponse429ApplicationJson
+  | archiveAccountLanguageResponse429ApplicationProblemJson
+  | archiveAccountLanguageResponse503ApplicationJson
+  | archiveAccountLanguageResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type archiveAccountLanguageResponse =
+  archiveAccountLanguageResponseSuccess | archiveAccountLanguageResponseError;
+
+export const getArchiveAccountLanguageUrl = (languageId: string) => {
+  return `/api/v1/account-languages/${languageId}:archive`;
+};
+
+/**
+ * @summary Archive Account Language
+ */
+export const archiveAccountLanguage = async (
+  languageId: string,
+  options?: RequestInit,
+): Promise<archiveAccountLanguageResponse> => {
+  const res = await fetch(getArchiveAccountLanguageUrl(languageId), {
+    ...options,
+    method: "POST",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: archiveAccountLanguageResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as archiveAccountLanguageResponse;
+};
+
+export const getArchiveAccountLanguageMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof archiveAccountLanguage>>,
+    TError,
+    { languageId: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof archiveAccountLanguage>>,
+  TError,
+  { languageId: string },
+  TContext
+> => {
+  const mutationKey = ["archiveAccountLanguage"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof archiveAccountLanguage>>,
+    { languageId: string }
+  > = (props) => {
+    const { languageId } = props ?? {};
+
+    return archiveAccountLanguage(languageId, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ArchiveAccountLanguageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof archiveAccountLanguage>>
+>;
+
+export type ArchiveAccountLanguageMutationError = ProblemResponse;
+
+/**
+ * @summary Archive Account Language
+ */
+export const useArchiveAccountLanguage = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof archiveAccountLanguage>>,
+      TError,
+      { languageId: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof archiveAccountLanguage>>,
+  TError,
+  { languageId: string },
+  TContext
+> => {
+  return useMutation(
+    getArchiveAccountLanguageMutationOptions(options),
+    queryClient,
+  );
 };
 
 export type changePasswordResponse200 = {
@@ -18053,6 +18939,937 @@ export const useEnrollInModule = <TError = ProblemResponse, TContext = unknown>(
   TContext
 > => {
   return useMutation(getEnrollInModuleMutationOptions(options), queryClient);
+};
+
+export type getOnboardingStateResponse200 = {
+  data: OnboardingResponse;
+  status: 200;
+};
+
+export type getOnboardingStateResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getOnboardingStateResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getOnboardingStateResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getOnboardingStateResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getOnboardingStateResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getOnboardingStateResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type getOnboardingStateResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getOnboardingStateResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getOnboardingStateResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getOnboardingStateResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getOnboardingStateResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getOnboardingStateResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getOnboardingStateResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getOnboardingStateResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getOnboardingStateResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getOnboardingStateResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getOnboardingStateResponseSuccess =
+  getOnboardingStateResponse200 & {
+    headers: Headers;
+  };
+export type getOnboardingStateResponseError = (
+  | getOnboardingStateResponse401ApplicationJson
+  | getOnboardingStateResponse401ApplicationProblemJson
+  | getOnboardingStateResponse403ApplicationJson
+  | getOnboardingStateResponse403ApplicationProblemJson
+  | getOnboardingStateResponse404ApplicationJson
+  | getOnboardingStateResponse404ApplicationProblemJson
+  | getOnboardingStateResponse409ApplicationJson
+  | getOnboardingStateResponse409ApplicationProblemJson
+  | getOnboardingStateResponse422ApplicationJson
+  | getOnboardingStateResponse422ApplicationProblemJson
+  | getOnboardingStateResponse423ApplicationJson
+  | getOnboardingStateResponse423ApplicationProblemJson
+  | getOnboardingStateResponse429ApplicationJson
+  | getOnboardingStateResponse429ApplicationProblemJson
+  | getOnboardingStateResponse503ApplicationJson
+  | getOnboardingStateResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getOnboardingStateResponse =
+  getOnboardingStateResponseSuccess | getOnboardingStateResponseError;
+
+export const getGetOnboardingStateUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/onboarding`;
+};
+
+/**
+ * @summary Get Onboarding State
+ */
+export const getOnboardingState = async (
+  profileId: string,
+  options?: RequestInit,
+): Promise<getOnboardingStateResponse> => {
+  const res = await fetch(getGetOnboardingStateUrl(profileId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getOnboardingStateResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getOnboardingStateResponse;
+};
+
+export const getGetOnboardingStateQueryKey = (profileId: string) => {
+  return [`/api/v1/language-profiles/${profileId}/onboarding`] as const;
+};
+
+export const getGetOnboardingStateQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOnboardingState>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetOnboardingStateQueryKey(profileId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getOnboardingState>>
+  > = ({ signal }) =>
+    getOnboardingState(profileId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: profileId !== null && profileId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOnboardingState>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetOnboardingStateQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOnboardingState>>
+>;
+export type GetOnboardingStateQueryError = ProblemResponse;
+
+export function useGetOnboardingState<
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOnboardingState>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOnboardingState>>,
+          TError,
+          Awaited<ReturnType<typeof getOnboardingState>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOnboardingState<
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOnboardingState>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOnboardingState>>,
+          TError,
+          Awaited<ReturnType<typeof getOnboardingState>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetOnboardingState<
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOnboardingState>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Onboarding State
+ */
+
+export function useGetOnboardingState<
+  TData = Awaited<ReturnType<typeof getOnboardingState>>,
+  TError = ProblemResponse,
+>(
+  profileId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getOnboardingState>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetOnboardingStateQueryOptions(profileId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type startOnboardingResponse200 = {
+  data: OnboardingResponse;
+  status: 200;
+};
+
+export type startOnboardingResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startOnboardingResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startOnboardingResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startOnboardingResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startOnboardingResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type startOnboardingResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type startOnboardingResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startOnboardingResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startOnboardingResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startOnboardingResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startOnboardingResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startOnboardingResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startOnboardingResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startOnboardingResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startOnboardingResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startOnboardingResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startOnboardingResponseSuccess = startOnboardingResponse200 & {
+  headers: Headers;
+};
+export type startOnboardingResponseError = (
+  | startOnboardingResponse401ApplicationJson
+  | startOnboardingResponse401ApplicationProblemJson
+  | startOnboardingResponse403ApplicationJson
+  | startOnboardingResponse403ApplicationProblemJson
+  | startOnboardingResponse404ApplicationJson
+  | startOnboardingResponse404ApplicationProblemJson
+  | startOnboardingResponse409ApplicationJson
+  | startOnboardingResponse409ApplicationProblemJson
+  | startOnboardingResponse422ApplicationJson
+  | startOnboardingResponse422ApplicationProblemJson
+  | startOnboardingResponse423ApplicationJson
+  | startOnboardingResponse423ApplicationProblemJson
+  | startOnboardingResponse429ApplicationJson
+  | startOnboardingResponse429ApplicationProblemJson
+  | startOnboardingResponse503ApplicationJson
+  | startOnboardingResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startOnboardingResponse =
+  startOnboardingResponseSuccess | startOnboardingResponseError;
+
+export const getStartOnboardingUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/onboarding`;
+};
+
+/**
+ * @summary Start Onboarding
+ */
+export const startOnboarding = async (
+  profileId: string,
+  startOnboardingRequest: StartOnboardingRequest,
+  options?: RequestInit,
+): Promise<startOnboardingResponse> => {
+  const res = await fetch(getStartOnboardingUrl(profileId), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startOnboardingRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startOnboardingResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startOnboardingResponse;
+};
+
+export const getStartOnboardingMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startOnboarding>>,
+    TError,
+    { profileId: string; data: StartOnboardingRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startOnboarding>>,
+  TError,
+  { profileId: string; data: StartOnboardingRequest },
+  TContext
+> => {
+  const mutationKey = ["startOnboarding"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startOnboarding>>,
+    { profileId: string; data: StartOnboardingRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return startOnboarding(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartOnboardingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startOnboarding>>
+>;
+export type StartOnboardingMutationBody = StartOnboardingRequest;
+export type StartOnboardingMutationError = ProblemResponse;
+
+/**
+ * @summary Start Onboarding
+ */
+export const useStartOnboarding = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startOnboarding>>,
+      TError,
+      { profileId: string; data: StartOnboardingRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startOnboarding>>,
+  TError,
+  { profileId: string; data: StartOnboardingRequest },
+  TContext
+> => {
+  return useMutation(getStartOnboardingMutationOptions(options), queryClient);
+};
+
+export type recordPlacementProfileResponse200 = {
+  data: OnboardingResponse;
+  status: 200;
+};
+
+export type recordPlacementProfileResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type recordPlacementProfileResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type recordPlacementProfileResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type recordPlacementProfileResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type recordPlacementProfileResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type recordPlacementProfileResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type recordPlacementProfileResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type recordPlacementProfileResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type recordPlacementProfileResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type recordPlacementProfileResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type recordPlacementProfileResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type recordPlacementProfileResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type recordPlacementProfileResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type recordPlacementProfileResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type recordPlacementProfileResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type recordPlacementProfileResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type recordPlacementProfileResponseSuccess =
+  recordPlacementProfileResponse200 & {
+    headers: Headers;
+  };
+export type recordPlacementProfileResponseError = (
+  | recordPlacementProfileResponse401ApplicationJson
+  | recordPlacementProfileResponse401ApplicationProblemJson
+  | recordPlacementProfileResponse403ApplicationJson
+  | recordPlacementProfileResponse403ApplicationProblemJson
+  | recordPlacementProfileResponse404ApplicationJson
+  | recordPlacementProfileResponse404ApplicationProblemJson
+  | recordPlacementProfileResponse409ApplicationJson
+  | recordPlacementProfileResponse409ApplicationProblemJson
+  | recordPlacementProfileResponse422ApplicationJson
+  | recordPlacementProfileResponse422ApplicationProblemJson
+  | recordPlacementProfileResponse423ApplicationJson
+  | recordPlacementProfileResponse423ApplicationProblemJson
+  | recordPlacementProfileResponse429ApplicationJson
+  | recordPlacementProfileResponse429ApplicationProblemJson
+  | recordPlacementProfileResponse503ApplicationJson
+  | recordPlacementProfileResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type recordPlacementProfileResponse =
+  recordPlacementProfileResponseSuccess | recordPlacementProfileResponseError;
+
+export const getRecordPlacementProfileUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/onboarding/placement`;
+};
+
+/**
+ * @summary Record Placement Profile
+ */
+export const recordPlacementProfile = async (
+  profileId: string,
+  recordPlacementRequest: RecordPlacementRequest,
+  options?: RequestInit,
+): Promise<recordPlacementProfileResponse> => {
+  const res = await fetch(getRecordPlacementProfileUrl(profileId), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(recordPlacementRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: recordPlacementProfileResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as recordPlacementProfileResponse;
+};
+
+export const getRecordPlacementProfileMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof recordPlacementProfile>>,
+    TError,
+    { profileId: string; data: RecordPlacementRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof recordPlacementProfile>>,
+  TError,
+  { profileId: string; data: RecordPlacementRequest },
+  TContext
+> => {
+  const mutationKey = ["recordPlacementProfile"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof recordPlacementProfile>>,
+    { profileId: string; data: RecordPlacementRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return recordPlacementProfile(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RecordPlacementProfileMutationResult = NonNullable<
+  Awaited<ReturnType<typeof recordPlacementProfile>>
+>;
+export type RecordPlacementProfileMutationBody = RecordPlacementRequest;
+export type RecordPlacementProfileMutationError = ProblemResponse;
+
+/**
+ * @summary Record Placement Profile
+ */
+export const useRecordPlacementProfile = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof recordPlacementProfile>>,
+      TError,
+      { profileId: string; data: RecordPlacementRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof recordPlacementProfile>>,
+  TError,
+  { profileId: string; data: RecordPlacementRequest },
+  TContext
+> => {
+  return useMutation(
+    getRecordPlacementProfileMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type choosePlacementResponse200 = {
+  data: OnboardingResponse;
+  status: 200;
+};
+
+export type choosePlacementResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type choosePlacementResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type choosePlacementResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type choosePlacementResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type choosePlacementResponse404ApplicationJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type choosePlacementResponse404ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 404;
+};
+
+export type choosePlacementResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type choosePlacementResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type choosePlacementResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type choosePlacementResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type choosePlacementResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type choosePlacementResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type choosePlacementResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type choosePlacementResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type choosePlacementResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type choosePlacementResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type choosePlacementResponseSuccess = choosePlacementResponse200 & {
+  headers: Headers;
+};
+export type choosePlacementResponseError = (
+  | choosePlacementResponse401ApplicationJson
+  | choosePlacementResponse401ApplicationProblemJson
+  | choosePlacementResponse403ApplicationJson
+  | choosePlacementResponse403ApplicationProblemJson
+  | choosePlacementResponse404ApplicationJson
+  | choosePlacementResponse404ApplicationProblemJson
+  | choosePlacementResponse409ApplicationJson
+  | choosePlacementResponse409ApplicationProblemJson
+  | choosePlacementResponse422ApplicationJson
+  | choosePlacementResponse422ApplicationProblemJson
+  | choosePlacementResponse423ApplicationJson
+  | choosePlacementResponse423ApplicationProblemJson
+  | choosePlacementResponse429ApplicationJson
+  | choosePlacementResponse429ApplicationProblemJson
+  | choosePlacementResponse503ApplicationJson
+  | choosePlacementResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type choosePlacementResponse =
+  choosePlacementResponseSuccess | choosePlacementResponseError;
+
+export const getChoosePlacementUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/onboarding:choose`;
+};
+
+/**
+ * @summary Choose Placement
+ */
+export const choosePlacement = async (
+  profileId: string,
+  choosePlacementRequest: ChoosePlacementRequest,
+  options?: RequestInit,
+): Promise<choosePlacementResponse> => {
+  const res = await fetch(getChoosePlacementUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(choosePlacementRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: choosePlacementResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as choosePlacementResponse;
+};
+
+export const getChoosePlacementMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof choosePlacement>>,
+    TError,
+    { profileId: string; data: ChoosePlacementRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof choosePlacement>>,
+  TError,
+  { profileId: string; data: ChoosePlacementRequest },
+  TContext
+> => {
+  const mutationKey = ["choosePlacement"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof choosePlacement>>,
+    { profileId: string; data: ChoosePlacementRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return choosePlacement(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChoosePlacementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof choosePlacement>>
+>;
+export type ChoosePlacementMutationBody = ChoosePlacementRequest;
+export type ChoosePlacementMutationError = ProblemResponse;
+
+/**
+ * @summary Choose Placement
+ */
+export const useChoosePlacement = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof choosePlacement>>,
+      TError,
+      { profileId: string; data: ChoosePlacementRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof choosePlacement>>,
+  TError,
+  { profileId: string; data: ChoosePlacementRequest },
+  TContext
+> => {
+  return useMutation(getChoosePlacementMutationOptions(options), queryClient);
 };
 
 export type addPrivateLexicalUnitResponse200 = {

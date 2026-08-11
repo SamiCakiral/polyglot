@@ -2,6 +2,7 @@
 
 import re
 import unicodedata
+from collections import Counter
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -34,6 +35,13 @@ from polyglot.modules.language_profiles.foundations import (
     FoundationGate,
     FoundationMeasurement,
 )
+from polyglot.modules.language_profiles.onboarding import (
+    PlacementBand,
+    SkillDimension,
+    SkillEstimate,
+    skill_profile_from_diagnostic,
+)
+from polyglot.modules.language_profiles.onboarding_persistence import SqlOnboardingRepository
 from polyglot.modules.language_profiles.persistence import (
     SqlLanguageProfileRepository,
     diagnostic_responses,
@@ -79,6 +87,8 @@ class DiagnosticRunSummary:
     classification: str | None
     confidence: float | None
     stop_reason: str | None
+    detected_band: PlacementBand | None = None
+    skill_profile: tuple[SkillEstimate, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,9 +126,7 @@ class LanguageProfileApplicationService:
     async def _published_foundations(self, pack_revision_id: UUID) -> PublishedFoundationCatalogue:
         if self._catalogue_reader is None:
             raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
-        catalogue = await self._catalogue_reader.read_foundations(
-            pack_revision_id=pack_revision_id
-        )
+        catalogue = await self._catalogue_reader.read_foundations(pack_revision_id=pack_revision_id)
         if catalogue is None:
             raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
         return catalogue
@@ -147,22 +155,16 @@ class LanguageProfileApplicationService:
             return 0.0, True
         if item.checker_kind is FoundationCheckerKind.NORMALIZED_ALTERNATIVES:
             normalized = cls._normalized_foundation_answer(value)
-            expected = {
-                cls._normalized_foundation_answer(item) for item in item.checker_values
-            }
+            expected = {cls._normalized_foundation_answer(item) for item in item.checker_values}
             return float(normalized in expected), True
         if item.checker_kind is FoundationCheckerKind.EXACT_RECONSTRUCTION:
             normalized = cls._normalized_foundation_answer(value)
-            expected = {
-                cls._normalized_foundation_answer(item) for item in item.checker_values
-            }
+            expected = {cls._normalized_foundation_answer(item) for item in item.checker_values}
             return float(normalized in expected), True
         if value in item.checker_values:
             return 1.0, True
         normalized = cls._normalized_foundation_answer(value)
-        expected = {
-            cls._normalized_foundation_answer(item) for item in item.checker_values
-        }
+        expected = {cls._normalized_foundation_answer(item) for item in item.checker_values}
         return float(normalized in expected), True
 
     @staticmethod
@@ -473,6 +475,20 @@ class LanguageProfileApplicationService:
             if values["confidence"] is not None
             else None,
             stop_reason=cast(str | None, values["stop_reason"]),
+            detected_band=(
+                None
+                if values.get("detected_band") is None
+                else PlacementBand(cast(str, values["detected_band"]))
+            ),
+            skill_profile=tuple(
+                SkillEstimate(
+                    dimension=SkillDimension(cast(str, item["dimension"])),
+                    band=PlacementBand(cast(str, item["band"])),
+                    confidence=cast(float, item["confidence"]),
+                    evidence_count=cast(int, item["evidence_count"]),
+                )
+                for item in cast(list[dict[str, object]], values.get("skill_profile") or [])
+            ),
         )
 
     async def start_diagnostic(
@@ -531,25 +547,36 @@ class LanguageProfileApplicationService:
             if not reservation.created:
                 self._replayed_error(reservation.receipt)
                 row = (
-                    await session.execute(
-                        select(diagnostic_runs).where(
-                            diagnostic_runs.c.diagnostic_run_id == reservation.receipt.result_ref
+                    (
+                        await session.execute(
+                            select(diagnostic_runs).where(
+                                diagnostic_runs.c.diagnostic_run_id
+                                == reservation.receipt.result_ref
+                            )
                         )
                     )
-                ).mappings().one()
+                    .mappings()
+                    .one()
+                )
                 await uow.commit()
                 return self._diagnostic_summary(dict(row))
             active = (
-                await session.execute(
-                    select(diagnostic_runs)
-                    .where(
-                        diagnostic_runs.c.profile_id == profile_id,
-                        diagnostic_runs.c.status.in_(("prepared", "in_progress", "interrupted")),
-                        diagnostic_runs.c.expires_at > now,
+                (
+                    await session.execute(
+                        select(diagnostic_runs)
+                        .where(
+                            diagnostic_runs.c.profile_id == profile_id,
+                            diagnostic_runs.c.status.in_(
+                                ("prepared", "in_progress", "interrupted")
+                            ),
+                            diagnostic_runs.c.expires_at > now,
+                        )
+                        .with_for_update()
                     )
-                    .with_for_update()
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if active is not None:
                 active_summary = self._diagnostic_summary(dict(active))
                 await self._complete(
@@ -575,6 +602,8 @@ class LanguageProfileApplicationService:
                         completed_at=None,
                         classification=None,
                         confidence=None,
+                        detected_band=None,
+                        skill_profile=[],
                         stop_reason=None,
                         version=1,
                     )
@@ -618,10 +647,14 @@ class LanguageProfileApplicationService:
             repository = SqlLanguageProfileRepository(session)
             await repository.set_actor(account_id)
             row = (
-                await session.execute(
-                    select(diagnostic_runs).where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                (
+                    await session.execute(
+                        select(diagnostic_runs).where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
@@ -642,12 +675,16 @@ class LanguageProfileApplicationService:
             repository = SqlLanguageProfileRepository(session)
             await repository.set_actor(account_id)
             row = (
-                await session.execute(
-                    select(diagnostic_runs)
-                    .where(diagnostic_runs.c.diagnostic_run_id == run_id)
-                    .with_for_update()
+                (
+                    await session.execute(
+                        select(diagnostic_runs)
+                        .where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                        .with_for_update()
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
@@ -692,10 +729,14 @@ class LanguageProfileApplicationService:
             repository = SqlLanguageProfileRepository(session)
             await repository.set_actor(account_id)
             row = (
-                await session.execute(
-                    select(diagnostic_runs).where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                (
+                    await session.execute(
+                        select(diagnostic_runs).where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             profile = await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
@@ -718,9 +759,9 @@ class LanguageProfileApplicationService:
             previous_count = cast(
                 int,
                 await session.scalar(
-                    select(func.count()).select_from(diagnostic_responses).where(
-                        diagnostic_responses.c.diagnostic_run_id == run_id
-                    )
+                    select(func.count())
+                    .select_from(diagnostic_responses)
+                    .where(diagnostic_responses.c.diagnostic_run_id == run_id)
                 )
                 or 0,
             )
@@ -817,22 +858,30 @@ class LanguageProfileApplicationService:
             repository = SqlLanguageProfileRepository(session)
             await repository.set_actor(account_id)
             row = (
-                await session.execute(
-                    select(diagnostic_runs).where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                (
+                    await session.execute(
+                        select(diagnostic_runs).where(diagnostic_runs.c.diagnostic_run_id == run_id)
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             profile = await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
             if row["status"] != "in_progress" or cast(int, row["version"]) != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
             answers = (
-                await session.execute(
-                    select(diagnostic_responses)
-                    .where(diagnostic_responses.c.diagnostic_run_id == run_id)
-                    .order_by(diagnostic_responses.c.ordinal)
+                (
+                    await session.execute(
+                        select(diagnostic_responses)
+                        .where(diagnostic_responses.c.diagnostic_run_id == run_id)
+                        .order_by(diagnostic_responses.c.ordinal)
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
             run = DiagnosticRun.start(
                 diagnostic_run_id=run_id,
                 profile_id=profile.profile_id,
@@ -854,6 +903,28 @@ class LanguageProfileApplicationService:
                     at=cast(datetime, item["submitted_at"]),
                 )
             result = run.complete(at=now)
+            target_scores = {target.value: score for target, score in result.target_scores}
+            target_confidences = {
+                target.value: confidence for target, confidence in result.target_confidences
+            }
+            evidence_counts = Counter(
+                cast(str, cast(dict[str, object], item["answer"])["_w03_target"])
+                for item in answers
+            )
+            detected_band, placement_confidence, skill_profile = skill_profile_from_diagnostic(
+                scores=target_scores,
+                confidences=target_confidences,
+                evidence_counts=dict(evidence_counts),
+            )
+            serialized_skill_profile = [
+                {
+                    "dimension": item.dimension.value,
+                    "band": item.band.value,
+                    "confidence": item.confidence,
+                    "evidence_count": item.evidence_count,
+                }
+                for item in skill_profile
+            ]
             receipt = self._receipt(
                 command_type="CompleteDiagnostic",
                 account_id=account_id,
@@ -877,14 +948,44 @@ class LanguageProfileApplicationService:
                     status="completed",
                     completed_at=now,
                     classification=result.classification.value,
-                    confidence=0.0,
+                    confidence=placement_confidence,
+                    detected_band=detected_band.value,
+                    skill_profile=serialized_skill_profile,
                     stop_reason=result.stop_reason.value,
                     version=version,
                 )
             )
-            next_status = LanguageProfileStatus(result.next_profile_status)
-            updated_profile = profile.transition(next_status, now=now)
-            await repository.update(updated_profile)
+            try:
+                onboarding_repository = SqlOnboardingRepository(session)
+                onboarding = await onboarding_repository.get(profile.profile_id, account_id)
+            except DomainError as error:
+                if error.code is not ErrorCode.NOT_FOUND:
+                    raise
+            else:
+                placed = onboarding.record_placement(
+                    detected_band=detected_band,
+                    confidence=placement_confidence,
+                    skills=skill_profile,
+                    expected_version=onboarding.version,
+                    now=now,
+                )
+                await onboarding_repository.update(placed, onboarding.version)
+                await self._event(
+                    session,
+                    event_type="placement_profile_recorded",
+                    profile=profile,
+                    account_id=account_id,
+                    command_id=receipt.command_id,
+                    context=context,
+                    now=now,
+                    payload={
+                        "profile_id": str(profile.profile_id),
+                        "detected_band": detected_band.value,
+                    },
+                    aggregate_type="onboarding_state",
+                    aggregate_id=profile.profile_id,
+                    aggregate_version=placed.version,
+                )
             await self._event(
                 session,
                 event_type="diagnostic_completed",
@@ -901,16 +1002,6 @@ class LanguageProfileApplicationService:
                 aggregate_id=run_id,
                 aggregate_version=version,
             )
-            await self._event(
-                session,
-                event_type="placement_decided",
-                profile=updated_profile,
-                account_id=account_id,
-                command_id=receipt.command_id,
-                context=context,
-                now=now,
-                payload={"profile_id": str(profile.profile_id), "next_status": next_status.value},
-            )
             await self._complete(store, receipt, run_id, version)
             await uow.commit()
             return replace(
@@ -918,15 +1009,15 @@ class LanguageProfileApplicationService:
                 status="completed",
                 completed_at=now,
                 classification=result.classification.value,
-                confidence=0.0,
+                confidence=placement_confidence,
                 stop_reason=result.stop_reason.value,
                 version=version,
+                detected_band=detected_band,
+                skill_profile=skill_profile,
             )
         raise RuntimeError("diagnostic completion was unexpectedly suppressed")
 
-    async def _foundation_summary(
-        self, session: AsyncSession, row: object
-    ) -> FoundationRunSummary:
+    async def _foundation_summary(self, session: AsyncSession, row: object) -> FoundationRunSummary:
         values = cast(dict[str, object], row)
         run_id = cast(UUID, values["foundation_run_id"])
         session_count = cast(
@@ -939,16 +1030,20 @@ class LanguageProfileApplicationService:
             or 0,
         )
         gate = (
-            await session.execute(
-                select(foundation_gate_results)
-                .where(foundation_gate_results.c.foundation_run_id == run_id)
-                .order_by(
-                    foundation_gate_results.c.decided_at.desc(),
-                    foundation_gate_results.c.gate_result_id.desc(),
+            (
+                await session.execute(
+                    select(foundation_gate_results)
+                    .where(foundation_gate_results.c.foundation_run_id == run_id)
+                    .order_by(
+                        foundation_gate_results.c.decided_at.desc(),
+                        foundation_gate_results.c.gate_result_id.desc(),
+                    )
+                    .limit(1)
                 )
-                .limit(1)
             )
-        ).mappings().one_or_none()
+            .mappings()
+            .one_or_none()
+        )
         return FoundationRunSummary(
             foundation_run_id=run_id,
             profile_id=cast(UUID, values["profile_id"]),
@@ -970,10 +1065,14 @@ class LanguageProfileApplicationService:
             repository = SqlLanguageProfileRepository(session)
             await repository.set_actor(account_id)
             row = (
-                await session.execute(
-                    select(foundation_runs).where(foundation_runs.c.foundation_run_id == run_id)
+                (
+                    await session.execute(
+                        select(foundation_runs).where(foundation_runs.c.foundation_run_id == run_id)
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
@@ -1115,10 +1214,14 @@ class LanguageProfileApplicationService:
             repository = SqlLanguageProfileRepository(session)
             await repository.set_actor(account_id)
             row = (
-                await session.execute(
-                    select(foundation_runs).where(foundation_runs.c.foundation_run_id == run_id)
+                (
+                    await session.execute(
+                        select(foundation_runs).where(foundation_runs.c.foundation_run_id == run_id)
+                    )
                 )
-            ).mappings().one_or_none()
+                .mappings()
+                .one_or_none()
+            )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
             profile = await repository.get_owned(cast(UUID, row["profile_id"]), account_id)
@@ -1191,6 +1294,7 @@ class LanguageProfileApplicationService:
             if set(block_rows) != {item.block_revision_id for item in definition.blocks}:
                 raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
             session_id = self._id_generator.new()
+
             def criterion_for(item_code: str) -> FoundationCriterion | None:
                 for prefix, criterion in (
                     (
@@ -1226,18 +1330,22 @@ class LanguageProfileApplicationService:
                 )
 
             persisted = (
-                await session.execute(
-                    select(
-                        foundation_measurements.c.session_id,
-                        foundation_measurements.c.item_revision_id,
-                        foundation_measurements.c.criterion,
-                        foundation_measurements.c.score,
-                        foundation_measurements.c.evaluable,
-                        foundation_measurements.c.revealed,
-                        foundation_measurements.c.measured_at,
-                    ).where(foundation_measurements.c.foundation_run_id == run_id)
+                (
+                    await session.execute(
+                        select(
+                            foundation_measurements.c.session_id,
+                            foundation_measurements.c.item_revision_id,
+                            foundation_measurements.c.criterion,
+                            foundation_measurements.c.score,
+                            foundation_measurements.c.evaluable,
+                            foundation_measurements.c.revealed,
+                            foundation_measurements.c.measured_at,
+                        ).where(foundation_measurements.c.foundation_run_id == run_id)
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
             grouped: dict[tuple[UUID, str, str | None], list[object]] = {}
             item_blocks = {
                 item.item_revision_id: block.block_code

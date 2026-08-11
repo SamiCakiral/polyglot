@@ -102,6 +102,7 @@ async def test_0002_identity_creates_the_owned_schema_and_tables(
         "user_preferences",
         "consent_purposes",
         "consent_grants",
+        "account_languages",
     }
     assert owner == "polyglot_migration"
 
@@ -189,6 +190,7 @@ async def test_0002_identity_has_strict_constraints_indexes_rls_and_runtime_gran
         "auth_sessions",
         "user_preferences",
         "consent_grants",
+        "account_languages",
     }
     assert forced_rls_tables == set()
     assert await migration_session.scalar(

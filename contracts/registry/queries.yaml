@@ -10,11 +10,19 @@
     },
     {
       "method": "GET",
+      "route": "/account-languages"
+    },
+    {
+      "method": "GET",
       "route": "/language-profiles"
     },
     {
       "method": "GET",
       "route": "/language-profiles/{id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-profiles/{profile_id}/onboarding"
     },
     {
       "method": "GET",

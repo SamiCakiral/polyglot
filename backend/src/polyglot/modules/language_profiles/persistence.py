@@ -104,6 +104,8 @@ diagnostic_runs = _table(
     Column("completed_at", DateTime(timezone=True)),
     Column("classification", String(24)),
     Column("confidence", Numeric(5, 4)),
+    Column("detected_band", String(24)),
+    Column("skill_profile", JSONB, nullable=False),
     Column("stop_reason", String(120)),
     Column("version", Integer, nullable=False),
 )
@@ -180,6 +182,31 @@ foundation_gate_results = _table(
     Column("waiver_reason", String(120)),
     Column("waiver_evidence_ids", ARRAY(PG_UUID(as_uuid=True)), nullable=False),
     Column("decided_at", DateTime(timezone=True), nullable=False),
+)
+
+onboarding_states = _table(
+    "onboarding_states",
+    Column(
+        "profile_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("language_profiles.learner_language_profiles.profile_id"),
+        primary_key=True,
+    ),
+    Column(
+        "account_id",
+        PG_UUID(as_uuid=True),
+        ForeignKey("identity.accounts.account_id"),
+        nullable=False,
+    ),
+    Column("entry_path", String(24), nullable=False),
+    Column("detected_band", String(24)),
+    Column("placement_confidence", Numeric(4, 3)),
+    Column("skill_profile", JSONB, nullable=False),
+    Column("placement_choice", String(24)),
+    Column("calibration_sessions_remaining", Integer, nullable=False),
+    Column("version", Integer, nullable=False),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("updated_at", DateTime(timezone=True), nullable=False),
 )
 foundation_measurements = _table(
     "foundation_measurements",

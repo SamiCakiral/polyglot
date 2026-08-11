@@ -26,7 +26,7 @@ const session = getGetCurrentSessionResponseMock({
   },
 });
 
-const profile = {
+const profileFixture = {
   account_id: session.account_id,
   archived_at: null,
   created_at: "2026-08-01T08:00:00Z",
@@ -44,6 +44,23 @@ const profile = {
 };
 
 let hasProfile = true;
+let currentProfile = { ...profileFixture };
+let accountLanguages: Record<string, unknown>[] = [];
+let onboardingState: Record<string, unknown> | null = {
+  calibration_sessions_remaining: 2,
+  can_train: true,
+  created_at: "2026-08-10T08:00:00Z",
+  detected_band: "functional",
+  entry_path: "already_started",
+  is_provisional: true,
+  placement_choice: "accept",
+  placement_confidence: 0.74,
+  profile_id: profileFixture.profile_id,
+  resolved_band: "functional",
+  skill_profile: [],
+  updated_at: "2026-08-10T08:10:00Z",
+  version: 3,
+};
 
 const canonicalHandlers = [
   http.get("*/api/v1/language-packs", () =>
@@ -68,6 +85,9 @@ const canonicalHandlers = [
   ),
   http.post("*/api/v1/accounts", () => {
     hasProfile = false;
+    accountLanguages = [];
+    onboardingState = null;
+    currentProfile = { ...profileFixture };
     return HttpResponse.json(
       { account_id: session.account_id, version: 1 },
       { status: 201 },
@@ -87,17 +107,19 @@ const canonicalHandlers = [
     ),
   ),
   http.get("*/api/v1/language-profiles", () =>
-    HttpResponse.json({ items: hasProfile ? [profile] : [] }),
+    HttpResponse.json({ items: hasProfile ? [currentProfile] : [] }),
   ),
   http.post("*/api/v1/language-profiles", () => {
     hasProfile = true;
+    currentProfile = {
+      ...profileFixture,
+      current_phase: "diagnostic",
+      goals: [],
+      status: "onboarding",
+      version: 1,
+    };
     return HttpResponse.json(
-      {
-        ...profile,
-        current_phase: "diagnostic",
-        status: "onboarding",
-        version: 1,
-      },
+      currentProfile,
       { status: 201 },
     );
   }),
@@ -105,11 +127,79 @@ const canonicalHandlers = [
     "*/api/v1/language-profiles/:profileId/goals",
     async ({ request }) => {
       const body = (await request.json()) as { goals?: string[] };
-      return HttpResponse.json({
-        ...profile,
-        goals: body.goals ?? profile.goals,
+      currentProfile = {
+        ...currentProfile,
+        goals: body.goals ?? currentProfile.goals,
         version: 3,
-      });
+      };
+      return HttpResponse.json(currentProfile);
+    },
+  ),
+  http.get("*/api/v1/account-languages", () =>
+    HttpResponse.json({ items: accountLanguages, next_cursor: null }),
+  ),
+  http.post("*/api/v1/account-languages", async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    const language = {
+      ...body,
+      account_language_id: `019fe900-6000-7000-8000-${String(accountLanguages.length + 20).padStart(12, "0")}`,
+      archived_at: null,
+      created_at: "2026-08-10T08:00:00Z",
+      grants_mastery: false,
+      updated_at: "2026-08-10T08:00:00Z",
+      version: 1,
+    };
+    accountLanguages = [...accountLanguages, language];
+    return HttpResponse.json(language, { status: 201 });
+  }),
+  http.get("*/api/v1/language-profiles/:profileId/onboarding", () =>
+    onboardingState
+      ? HttpResponse.json(onboardingState)
+      : HttpResponse.json(
+          { title: "Not found", status: 404, detail: "Onboarding not started." },
+          { status: 404 },
+        ),
+  ),
+  http.put(
+    "*/api/v1/language-profiles/:profileId/onboarding",
+    async ({ request }) => {
+      const body = (await request.json()) as { entry_path: string };
+      onboardingState = {
+        calibration_sessions_remaining: 3,
+        can_train: true,
+        created_at: "2026-08-10T08:00:00Z",
+        detected_band: null,
+        entry_path: body.entry_path,
+        is_provisional: true,
+        placement_choice: null,
+        placement_confidence: null,
+        profile_id: profileFixture.profile_id,
+        resolved_band:
+          body.entry_path === "complete_beginner" ? "foundations" : "emerging",
+        skill_profile: [],
+        updated_at: "2026-08-10T08:00:00Z",
+        version: 1,
+      };
+      return HttpResponse.json(onboardingState);
+    },
+  ),
+  http.post(
+    "*/api/v1/language-profiles/:profileId/onboarding:choose",
+    async ({ request }) => {
+      const body = (await request.json()) as { choice: string };
+      onboardingState = {
+        ...onboardingState,
+        placement_choice: body.choice,
+        updated_at: "2026-08-10T08:15:00Z",
+        version: 2,
+      };
+      currentProfile = {
+        ...currentProfile,
+        current_phase: "active",
+        status: "active",
+        version: currentProfile.version + 1,
+      };
+      return HttpResponse.json(onboardingState);
     },
   ),
   http.get("*/api/v1/modules", () =>
@@ -221,7 +311,7 @@ const canonicalHandlers = [
       ],
       next_cursor: null,
       policy_revision: "mastery-v1",
-      profile_id: profile.profile_id,
+          profile_id: profileFixture.profile_id,
     }),
   ),
 ];

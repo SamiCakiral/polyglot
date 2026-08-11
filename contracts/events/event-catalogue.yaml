@@ -5,6 +5,18 @@
   ],
   "events": [
     {
+      "event_type": "account_language_archived",
+      "schema_version": 1
+    },
+    {
+      "event_type": "account_language_declared",
+      "schema_version": 1
+    },
+    {
+      "event_type": "account_language_revised",
+      "schema_version": 1
+    },
+    {
       "event_type": "account_registered",
       "schema_version": 1
     },
@@ -309,11 +321,23 @@
       "schema_version": 1
     },
     {
+      "event_type": "onboarding_started",
+      "schema_version": 1
+    },
+    {
       "event_type": "password_changed",
       "schema_version": 1
     },
     {
+      "event_type": "placement_choice_recorded",
+      "schema_version": 1
+    },
+    {
       "event_type": "placement_decided",
+      "schema_version": 1
+    },
+    {
+      "event_type": "placement_profile_recorded",
       "schema_version": 1
     },
     {

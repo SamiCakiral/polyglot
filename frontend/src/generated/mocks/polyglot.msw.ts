@@ -10,8 +10,18 @@ import { faker } from "@faker-js/faker";
 import { HttpResponse, delay, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
-import { AnswerKind } from "../model";
+import {
+  AnswerKind,
+  EntryPath,
+  LanguageRelationship,
+  PlacementBand,
+  PlacementChoice,
+  SelfAssessedBand,
+  SkillDimension,
+} from "../model";
 import type {
+  AccountLanguagePageResponse,
+  AccountLanguageResponse,
   AccountResponse,
   AssessmentRunResponse,
   AttemptResponse,
@@ -44,6 +54,7 @@ import type {
   MemoryPromptResponse,
   ModuleResponse,
   MutationResponse,
+  OnboardingResponse,
   PlacementManifestResponse,
   PreferencesResponse,
   ProfileResponse,
@@ -65,6 +76,101 @@ import type {
   VocabularyListResponse,
   WordBankOverviewResponse,
 } from "../model";
+
+export const getListAccountLanguagesResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguagePageResponse, object>> = {},
+): AccountLanguagePageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    account_language_id: faker.string.uuid(),
+    archived_at: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 19) + "Z",
+      null,
+    ]),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    grants_mastery: faker.datatype.boolean(),
+    relationship: faker.helpers.arrayElement(
+      Object.values(LanguageRelationship),
+    ),
+    self_assessed_band: faker.helpers.arrayElement(
+      Object.values(SelfAssessedBand),
+    ),
+    updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    use_for_contrasts: faker.datatype.boolean(),
+    use_for_explanations: faker.datatype.boolean(),
+    variety_id: faker.string.uuid(),
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreateAccountLanguageResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguageResponse, object>> = {},
+): AccountLanguageResponse => ({
+  account_language_id: faker.string.uuid(),
+  archived_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  grants_mastery: faker.datatype.boolean(),
+  relationship: faker.helpers.arrayElement(Object.values(LanguageRelationship)),
+  self_assessed_band: faker.helpers.arrayElement(
+    Object.values(SelfAssessedBand),
+  ),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  use_for_contrasts: faker.datatype.boolean(),
+  use_for_explanations: faker.datatype.boolean(),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getReviseAccountLanguageResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguageResponse, object>> = {},
+): AccountLanguageResponse => ({
+  account_language_id: faker.string.uuid(),
+  archived_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  grants_mastery: faker.datatype.boolean(),
+  relationship: faker.helpers.arrayElement(Object.values(LanguageRelationship)),
+  self_assessed_band: faker.helpers.arrayElement(
+    Object.values(SelfAssessedBand),
+  ),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  use_for_contrasts: faker.datatype.boolean(),
+  use_for_explanations: faker.datatype.boolean(),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getArchiveAccountLanguageResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguageResponse, object>> = {},
+): AccountLanguageResponse => ({
+  account_language_id: faker.string.uuid(),
+  archived_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  grants_mastery: faker.datatype.boolean(),
+  relationship: faker.helpers.arrayElement(Object.values(LanguageRelationship)),
+  self_assessed_band: faker.helpers.arrayElement(
+    Object.values(SelfAssessedBand),
+  ),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  use_for_contrasts: faker.datatype.boolean(),
+  use_for_explanations: faker.datatype.boolean(),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
 
 export const getChangePasswordResponseMock = (
   overrideResponse: Partial<Extract<AccountResponse, object>> = {},
@@ -2174,11 +2280,24 @@ export const getGetDiagnosticSummaryResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -2204,11 +2323,24 @@ export const getSubmitDiagnosticResponseResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -2234,11 +2366,24 @@ export const getCompleteDiagnosticResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -3296,11 +3441,24 @@ export const getStartDiagnosticResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -3612,6 +3770,150 @@ export const getEnrollInModuleResponseMock = (
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
   ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getGetOnboardingStateResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartOnboardingResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getRecordPlacementProfileResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getChoosePlacementResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
   ...overrideResponse,
 });
 
@@ -5722,6 +6024,110 @@ export const getMergeVocabularyListsResponseMock = (
   ...overrideResponse,
 });
 
+export const getListAccountLanguagesMockHandler = (
+  overrideResponse?:
+    | AccountLanguagePageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<AccountLanguagePageResponse> | AccountLanguagePageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/account-languages",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getListAccountLanguagesResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getCreateAccountLanguageMockHandler = (
+  overrideResponse?:
+    | AccountLanguageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AccountLanguageResponse> | AccountLanguageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/account-languages",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getCreateAccountLanguageResponseMock(),
+        { status: 201 },
+      );
+    },
+    options,
+  );
+};
+
+export const getReviseAccountLanguageMockHandler = (
+  overrideResponse?:
+    | AccountLanguageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<AccountLanguageResponse> | AccountLanguageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.patch(
+    "*/api/v1/account-languages/:languageId",
+    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getReviseAccountLanguageResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getArchiveAccountLanguageMockHandler = (
+  overrideResponse?:
+    | AccountLanguageResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AccountLanguageResponse> | AccountLanguageResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/account-languages/:languageId\\:archive",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getArchiveAccountLanguageResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getChangePasswordMockHandler = (
   overrideResponse?:
     | AccountResponse
@@ -7701,6 +8107,110 @@ export const getEnrollInModuleMockHandler = (
   );
 };
 
+export const getGetOnboardingStateMockHandler = (
+  overrideResponse?:
+    | OnboardingResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<OnboardingResponse> | OnboardingResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-profiles/:profileId/onboarding",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetOnboardingStateResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getStartOnboardingMockHandler = (
+  overrideResponse?:
+    | OnboardingResponse
+    | ((
+        info: Parameters<Parameters<typeof http.put>[1]>[0],
+      ) => Promise<OnboardingResponse> | OnboardingResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.put(
+    "*/api/v1/language-profiles/:profileId/onboarding",
+    async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getStartOnboardingResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getRecordPlacementProfileMockHandler = (
+  overrideResponse?:
+    | OnboardingResponse
+    | ((
+        info: Parameters<Parameters<typeof http.patch>[1]>[0],
+      ) => Promise<OnboardingResponse> | OnboardingResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.patch(
+    "*/api/v1/language-profiles/:profileId/onboarding/placement",
+    async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getRecordPlacementProfileResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getChoosePlacementMockHandler = (
+  overrideResponse?:
+    | OnboardingResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<OnboardingResponse> | OnboardingResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/onboarding\\:choose",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getChoosePlacementResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getAddPrivateLexicalUnitMockHandler = (
   overrideResponse?:
     | MutationResponse
@@ -9408,6 +9918,10 @@ export const getMergeVocabularyListsMockHandler = (
   );
 };
 export const getPolyglotV2APIMock = () => [
+  getListAccountLanguagesMockHandler(),
+  getCreateAccountLanguageMockHandler(),
+  getReviseAccountLanguageMockHandler(),
+  getArchiveAccountLanguageMockHandler(),
   getChangePasswordMockHandler(),
   getUpdateUserPreferencesMockHandler(),
   getRegisterAccountMockHandler(),
@@ -9484,6 +9998,10 @@ export const getPolyglotV2APIMock = () => [
   getListMemoryPromptsMockHandler(),
   getCreateMemoryPromptMockHandler(),
   getEnrollInModuleMockHandler(),
+  getGetOnboardingStateMockHandler(),
+  getStartOnboardingMockHandler(),
+  getRecordPlacementProfileMockHandler(),
+  getChoosePlacementMockHandler(),
   getAddPrivateLexicalUnitMockHandler(),
   getMergeLexicalUnitsMockHandler(),
   getCreateVocabularyListMockHandler(),

@@ -4,16 +4,20 @@
  * Polyglot V2 API
  * OpenAPI spec version: 0.1.0
  */
+import type { DiagnosticSkillEstimateResponse } from "./diagnosticSkillEstimateResponse";
+import type { PlacementBand } from "./placementBand";
 
 export interface DiagnosticResponse {
   classification: string | null;
   completed_at: string | null;
   confidence: number | null;
+  detected_band: PlacementBand | null;
   diagnostic_run_id: string;
   expires_at: string;
   pack_revision_id: string;
   policy_revision_id: string;
   profile_id: string;
+  skill_profile: DiagnosticSkillEstimateResponse[];
   started_at: string;
   status: string;
   stop_reason: string | null;

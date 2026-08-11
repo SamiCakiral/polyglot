@@ -24,6 +24,7 @@ from polyglot.modules.language_profiles.application import (
     LanguageProfileApplicationService,
 )
 from polyglot.modules.language_profiles.domain import LanguageProfileStatus, LearnerLanguageProfile
+from polyglot.modules.language_profiles.onboarding import PlacementBand, SkillDimension
 from polyglot.platform.errors import DomainError, ErrorCode
 
 IdempotencyKey = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=255)]
@@ -42,9 +43,7 @@ _ETAG_OPENAPI = {
         }
     }
 }
-PRECONDITION_RESPONSES: dict[int | str, dict[str, Any]] = {
-    428: IDENTITY_PROBLEM_RESPONSES[422]
-}
+PRECONDITION_RESPONSES: dict[int | str, dict[str, Any]] = {428: IDENTITY_PROBLEM_RESPONSES[422]}
 RESOURCE_RESPONSES: dict[int | str, dict[str, Any]] = {
     **IDENTITY_PROBLEM_RESPONSES,
     **PRECONDITION_RESPONSES,
@@ -134,6 +133,15 @@ class DiagnosticResponse(ClosedModel):
     classification: str | None
     confidence: float | None
     stop_reason: str | None
+    detected_band: PlacementBand | None
+    skill_profile: list["DiagnosticSkillEstimateResponse"]
+
+
+class DiagnosticSkillEstimateResponse(ClosedModel):
+    dimension: SkillDimension
+    band: PlacementBand
+    confidence: float
+    evidence_count: int
 
 
 class FoundationResponse(ClosedModel):
@@ -324,15 +332,15 @@ def language_profiles_router(
     ) -> DiagnosticResponse:
         account_id = await account_for(request, session_token, csrf_token, origin)
         summary = await application_service().start_diagnostic(
-                profile_id=profile_id,
-                account_id=account_id,
-                policy_revision_id=payload.policy_revision_id,
-                pack_revision_id=payload.pack_revision_id,
-                seed=payload.seed,
-                expected_version=_required_version(if_match),
-                idempotency_key=idempotency_key,
-                context=_context(request),
-            )
+            profile_id=profile_id,
+            account_id=account_id,
+            policy_revision_id=payload.policy_revision_id,
+            pack_revision_id=payload.pack_revision_id,
+            seed=payload.seed,
+            expected_version=_required_version(if_match),
+            idempotency_key=idempotency_key,
+            context=_context(request),
+        )
         _etag(response, summary.version)
         return _diagnostic_response(summary)
 

@@ -7,8 +7,18 @@
  */
 import { faker } from "@faker-js/faker";
 
-import { AnswerKind } from "../model";
+import {
+  AnswerKind,
+  EntryPath,
+  LanguageRelationship,
+  PlacementBand,
+  PlacementChoice,
+  SelfAssessedBand,
+  SkillDimension,
+} from "../model";
 import type {
+  AccountLanguagePageResponse,
+  AccountLanguageResponse,
   AccountResponse,
   AssessmentRunResponse,
   AttemptResponse,
@@ -41,6 +51,7 @@ import type {
   MemoryPromptResponse,
   ModuleResponse,
   MutationResponse,
+  OnboardingResponse,
   PlacementManifestResponse,
   PreferencesResponse,
   ProfileResponse,
@@ -62,6 +73,101 @@ import type {
   VocabularyListResponse,
   WordBankOverviewResponse,
 } from "../model";
+
+export const getListAccountLanguagesResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguagePageResponse, object>> = {},
+): AccountLanguagePageResponse => ({
+  items: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    account_language_id: faker.string.uuid(),
+    archived_at: faker.helpers.arrayElement([
+      faker.date.past().toISOString().slice(0, 19) + "Z",
+      null,
+    ]),
+    created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    grants_mastery: faker.datatype.boolean(),
+    relationship: faker.helpers.arrayElement(
+      Object.values(LanguageRelationship),
+    ),
+    self_assessed_band: faker.helpers.arrayElement(
+      Object.values(SelfAssessedBand),
+    ),
+    updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    use_for_contrasts: faker.datatype.boolean(),
+    use_for_explanations: faker.datatype.boolean(),
+    variety_id: faker.string.uuid(),
+    version: faker.number.int(),
+  })),
+  ...overrideResponse,
+});
+
+export const getCreateAccountLanguageResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguageResponse, object>> = {},
+): AccountLanguageResponse => ({
+  account_language_id: faker.string.uuid(),
+  archived_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  grants_mastery: faker.datatype.boolean(),
+  relationship: faker.helpers.arrayElement(Object.values(LanguageRelationship)),
+  self_assessed_band: faker.helpers.arrayElement(
+    Object.values(SelfAssessedBand),
+  ),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  use_for_contrasts: faker.datatype.boolean(),
+  use_for_explanations: faker.datatype.boolean(),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getReviseAccountLanguageResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguageResponse, object>> = {},
+): AccountLanguageResponse => ({
+  account_language_id: faker.string.uuid(),
+  archived_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  grants_mastery: faker.datatype.boolean(),
+  relationship: faker.helpers.arrayElement(Object.values(LanguageRelationship)),
+  self_assessed_band: faker.helpers.arrayElement(
+    Object.values(SelfAssessedBand),
+  ),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  use_for_contrasts: faker.datatype.boolean(),
+  use_for_explanations: faker.datatype.boolean(),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getArchiveAccountLanguageResponseMock = (
+  overrideResponse: Partial<Extract<AccountLanguageResponse, object>> = {},
+): AccountLanguageResponse => ({
+  account_language_id: faker.string.uuid(),
+  archived_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  grants_mastery: faker.datatype.boolean(),
+  relationship: faker.helpers.arrayElement(Object.values(LanguageRelationship)),
+  self_assessed_band: faker.helpers.arrayElement(
+    Object.values(SelfAssessedBand),
+  ),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  use_for_contrasts: faker.datatype.boolean(),
+  use_for_explanations: faker.datatype.boolean(),
+  variety_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
 
 export const getChangePasswordResponseMock = (
   overrideResponse: Partial<Extract<AccountResponse, object>> = {},
@@ -2171,11 +2277,24 @@ export const getGetDiagnosticSummaryResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -2201,11 +2320,24 @@ export const getSubmitDiagnosticResponseResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -2231,11 +2363,24 @@ export const getCompleteDiagnosticResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -3293,11 +3438,24 @@ export const getStartDiagnosticResponseMock = (
     faker.number.float({ fractionDigits: 2 }),
     null,
   ]),
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
   diagnostic_run_id: faker.string.uuid(),
   expires_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   pack_revision_id: faker.string.uuid(),
   policy_revision_id: faker.string.uuid(),
   profile_id: faker.string.uuid(),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
   started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
   status: faker.string.alpha({ length: { min: 10, max: 20 } }),
   stop_reason: faker.helpers.arrayElement([
@@ -3609,6 +3767,150 @@ export const getEnrollInModuleResponseMock = (
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
   ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  ...overrideResponse,
+});
+
+export const getGetOnboardingStateResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartOnboardingResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getRecordPlacementProfileResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getChoosePlacementResponseMock = (
+  overrideResponse: Partial<Extract<OnboardingResponse, object>> = {},
+): OnboardingResponse => ({
+  calibration_sessions_remaining: faker.number.int(),
+  can_train: faker.datatype.boolean(),
+  created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  detected_band: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementBand)),
+    null,
+  ]),
+  entry_path: faker.helpers.arrayElement(Object.values(EntryPath)),
+  is_provisional: faker.datatype.boolean(),
+  placement_choice: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(PlacementChoice)),
+    null,
+  ]),
+  placement_confidence: faker.helpers.arrayElement([
+    faker.number.float({ fractionDigits: 2 }),
+    null,
+  ]),
+  profile_id: faker.string.uuid(),
+  resolved_band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+  skill_profile: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    band: faker.helpers.arrayElement(Object.values(PlacementBand)),
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    dimension: faker.helpers.arrayElement(Object.values(SkillDimension)),
+    evidence_count: faker.number.int(),
+  })),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
   ...overrideResponse,
 });
 

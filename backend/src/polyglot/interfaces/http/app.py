@@ -22,6 +22,7 @@ from polyglot.bootstrap.database import (
 from polyglot.bootstrap.object_storage import FilesystemObjectStorageProbe
 from polyglot.interfaces.http.dependencies import ReadinessCheck, valid_correlation_id
 from polyglot.interfaces.http.errors import register_error_handlers
+from polyglot.interfaces.http.routes.account_languages import account_languages_router
 from polyglot.interfaces.http.routes.assessments import assessments_router
 from polyglot.interfaces.http.routes.catalogue import catalogue_router
 from polyglot.interfaces.http.routes.content import content_router
@@ -33,6 +34,7 @@ from polyglot.interfaces.http.routes.identity import identity_router
 from polyglot.interfaces.http.routes.language_profiles import language_profiles_router
 from polyglot.interfaces.http.routes.media import media_router
 from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
+from polyglot.interfaces.http.routes.onboarding import onboarding_router
 from polyglot.interfaces.http.routes.progress import ProgressService, progress_router
 from polyglot.interfaces.http.routes.sprints import sprints_router
 from polyglot.interfaces.http.routes.word_bank import (
@@ -48,7 +50,9 @@ from polyglot.modules.exercises.core.application import ExerciseApplicationServi
 from polyglot.modules.generation.application import GenerationApplicationService
 from polyglot.modules.identity.application import IdentityApplicationService
 from polyglot.modules.identity.domain import FakeOidcProvider, SessionSecrets
+from polyglot.modules.identity.language_persistence import AccountLanguageApplicationService
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
+from polyglot.modules.language_profiles.onboarding_persistence import OnboardingApplicationService
 from polyglot.modules.media.application import MediaApplicationService
 from polyglot.modules.sprints.application import SprintApplicationService
 from polyglot.platform.ids import IdGenerator, Uuid7Generator
@@ -88,7 +92,9 @@ def create_app(
     lifespan: Lifespan[FastAPI] | None = None,
     test_mode: bool = False,
     identity_service: IdentityApplicationService | None = None,
+    account_language_service: AccountLanguageApplicationService | None = None,
     language_profile_service: LanguageProfileApplicationService | None = None,
+    onboarding_service: OnboardingApplicationService | None = None,
     catalogue_service: CatalogueReader | None = None,
     content_service: ContentApplicationService | None = None,
     word_bank_service: WordBankService | None = None,
@@ -125,8 +131,22 @@ def create_app(
         identity_router(identity_service, allowed_origin=allowed_origin),
     )
     app.include_router(
+        account_languages_router(
+            account_language_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
+    app.include_router(
         language_profiles_router(
             language_profile_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
+    app.include_router(
+        onboarding_router(
+            onboarding_service,
             identity_service,
             allowed_origin=allowed_origin,
         )
@@ -264,11 +284,13 @@ def create_runtime_app() -> FastAPI:
         registration_enabled=_enabled_from_environment("POLYGLOT_REGISTRATION_ENABLED"),
         oidc_enabled=_enabled_from_environment("POLYGLOT_OIDC_ENABLED"),
     )
+    account_language_service = AccountLanguageApplicationService(session_factory)
     catalogue_service = CatalogueApplicationService(session_factory)
     content_service = ContentApplicationService(session_factory)
     language_profile_service = LanguageProfileApplicationService(
         session_factory, catalogue_reader=catalogue_service
     )
+    onboarding_service = OnboardingApplicationService(session_factory)
     word_bank_service = SqlWordBankService(session_factory)
     from polyglot.modules.lexicon.memory.persistence import SqlMemoryService
     from polyglot.modules.lexicon.memory.providers.fsrs_v6 import FsrsV6Scheduler
@@ -370,9 +392,11 @@ def create_runtime_app() -> FastAPI:
         readiness_checks=(DatabaseReadinessProbe(engine), object_storage),
         lifespan=lifespan,
         identity_service=identity_service,
+        account_language_service=account_language_service,
         catalogue_service=catalogue_service,
         content_service=content_service,
         language_profile_service=language_profile_service,
+        onboarding_service=onboarding_service,
         word_bank_service=word_bank_service,
         memory_service=memory_service,
         exchange_service=exchange_service,

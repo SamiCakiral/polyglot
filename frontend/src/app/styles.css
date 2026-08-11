@@ -598,6 +598,102 @@ textarea {
   color: var(--forest);
   font-weight: 750;
 }
+.entry-paths {
+  display: grid;
+  border-top: 1px solid var(--line-strong);
+}
+.entry-path {
+  display: grid;
+  min-height: 112px;
+  grid-template-columns: minmax(170px, 0.8fr) minmax(240px, 1.4fr) auto;
+  align-items: center;
+  gap: 28px;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
+  padding: 22px 4px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+}
+.entry-path:hover {
+  color: var(--ink);
+  background: var(--forest-soft);
+}
+.entry-path > span {
+  display: grid;
+  gap: 5px;
+}
+.entry-path strong {
+  font-size: 18px;
+}
+.entry-path small,
+.entry-path p {
+  color: var(--muted);
+}
+.entry-path small {
+  font-size: 12px;
+}
+.entry-path p {
+  margin: 0;
+  line-height: 1.45;
+}
+.entry-path > svg {
+  color: var(--forest);
+}
+.placement-result {
+  display: grid;
+  gap: 28px;
+}
+.placement-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-top: 4px solid var(--vermilion);
+  padding: 22px 0 0;
+}
+.placement-summary > svg {
+  color: var(--vermilion);
+}
+.placement-summary > div {
+  display: grid;
+  gap: 4px;
+}
+.placement-summary strong {
+  font-family: Georgia, serif;
+  font-size: 27px;
+}
+.placement-summary span {
+  color: var(--muted);
+}
+.skill-map {
+  border-top: 1px solid var(--line-strong);
+}
+.skill-line {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: minmax(160px, 1.2fr) minmax(130px, 0.8fr) 120px;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.skill-line strong {
+  font-size: 14px;
+}
+.skill-line small {
+  color: var(--muted);
+  text-align: right;
+}
+.placement-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.placement-actions button {
+  min-height: 52px;
+  height: auto;
+  padding-block: 8px;
+}
 .next-step-band {
   border-left: 4px solid var(--mustard);
   margin-top: 22px;
@@ -1944,6 +2040,32 @@ textarea {
   .modality-grid,
   .assessment-grid,
   .authoring-launcher {
+    grid-template-columns: 1fr;
+  }
+  .entry-path {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 16px;
+    padding: 20px 2px;
+  }
+  .entry-path p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .entry-path > svg {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .skill-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    padding: 12px 0;
+  }
+  .skill-line small {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+  .placement-actions {
     grid-template-columns: 1fr;
   }
   .tool-workbench {

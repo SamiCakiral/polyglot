@@ -184,6 +184,20 @@ async def _profile_in_foundations(client: AsyncClient, csrf: str) -> tuple[str, 
         headers=_headers(csrf, "complete-foundation-diagnostic", diagnostic_version),
     )
     assert completed.status_code == 200, completed.text
+    engine = create_async_engine(migration_database_url_from_environment())
+    async with engine.begin() as connection:
+        await connection.execute(
+            text(
+                "UPDATE language_profiles.learner_language_profiles "
+                "SET status = 'foundations', current_phase = 'foundations', "
+                "version = version + 1, updated_at = :now WHERE profile_id = :profile_id"
+            ),
+            {
+                "profile_id": UUID(profile_id),
+                "now": datetime(2026, 8, 10, 12, 0, tzinfo=UTC),
+            },
+        )
+    await engine.dispose()
     profile = await client.get(f"/api/v1/language-profiles/{profile_id}")
     assert profile.json()["status"] == "foundations"
     return profile_id, profile.json()["version"]

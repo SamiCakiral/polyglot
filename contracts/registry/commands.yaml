@@ -84,6 +84,77 @@
       "idempotency": "required"
     },
     {
+      "name": "CreateAccountLanguage",
+      "method": "POST",
+      "route": "/api/v1/account-languages",
+      "events": [
+        "account_language_declared"
+      ],
+      "errors": [
+        "identity_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ReviseAccountLanguage",
+      "method": "PATCH",
+      "route": "/api/v1/account-languages/{language_id}",
+      "events": [
+        "account_language_revised"
+      ],
+      "errors": [
+        "version_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ArchiveAccountLanguage",
+      "method": "POST",
+      "route": "/api/v1/account-languages/{language_id}:archive",
+      "events": [
+        "account_language_archived"
+      ],
+      "errors": [
+        "version_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "StartOnboarding",
+      "method": "PUT",
+      "route": "/api/v1/language-profiles/{profile_id}/onboarding",
+      "events": [
+        "onboarding_started"
+      ],
+      "errors": [],
+      "idempotency": "required"
+    },
+    {
+      "name": "RecordPlacementProfile",
+      "method": "PATCH",
+      "route": "/api/v1/language-profiles/{profile_id}/onboarding/placement",
+      "events": [
+        "placement_profile_recorded"
+      ],
+      "errors": [
+        "version_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
+      "name": "ChoosePlacement",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/onboarding:choose",
+      "events": [
+        "placement_choice_recorded"
+      ],
+      "errors": [
+        "invalid_transition",
+        "version_conflict"
+      ],
+      "idempotency": "required"
+    },
+    {
       "name": "UpdateLearningGoals",
       "method": "PATCH",
       "route": "/api/v1/language-profiles/{profile_id}/goals",
@@ -123,7 +194,7 @@
       "route": "/api/v1/diagnostics/{run_id}:complete",
       "events": [
         "diagnostic_completed",
-        "placement_decided"
+        "placement_profile_recorded"
       ],
       "errors": [
         "insufficient_coverage"
