@@ -3,7 +3,6 @@ import {
   BookOpen,
   CalendarDays,
   CheckCircle2,
-  ChevronDown,
   Dumbbell,
   Languages,
   Menu,
@@ -17,6 +16,7 @@ import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { getShellRouteTitle } from "./navigation";
+import { useActiveProfile } from "./profile-state";
 import { useSession } from "./session-context";
 
 interface PrimaryNavigationItem {
@@ -92,12 +92,22 @@ function PrimaryLink({ icon: Icon, label, to }: PrimaryNavigationItem) {
 
 export function AppShell() {
   const session = useSession();
+  const { activeProfile, packs, profiles, selectProfile } = useActiveProfile();
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const menuTooltipId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
   const routeTitle = getShellRouteTitle(location.pathname);
+  const displayNames = new Intl.DisplayNames(["fr"], { type: "language" });
+
+  function profileLabel(targetVarietyId: string): string {
+    const pack = packs.find((item) => item.target_variety_id === targetVarietyId);
+    if (pack) {
+      return displayNames.of(pack.target_language_tag) ?? pack.target_language_tag;
+    }
+    return "Autre langue";
+  }
 
   useEffect(() => {
     if (!menuOpen) {
@@ -134,17 +144,24 @@ export function AppShell() {
         <div className="topbar__brand">Polyglot</div>
         <div className="topbar__context">
           <span className="topbar__route">{routeTitle}</span>
-          <TooltipNavLink
-            accessibleLabel="Langue active : Italien"
-            className="language-switcher"
-            label="Langue active : Italien"
-            to="/language-profile"
-            tooltipClassName="control-tooltip--below"
-          >
+          <label className="language-switcher">
             <Languages aria-hidden="true" size={18} />
-            <span>Italien</span>
-            <ChevronDown aria-hidden="true" size={16} />
-          </TooltipNavLink>
+            <span className="sr-only">Langue active</span>
+            <select
+              aria-label="Langue active"
+              value={activeProfile?.profile_id ?? ""}
+              onChange={(event) => {
+                selectProfile(event.target.value);
+              }}
+            >
+              {profiles.length === 0 ? <option value="">Aucune langue</option> : null}
+              {profiles.map((profile) => (
+                <option key={profile.profile_id} value={profile.profile_id}>
+                  {profileLabel(profile.target_variety_id)}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <nav aria-label="Actions du compte" className="account-nav">
           <TooltipNavLink

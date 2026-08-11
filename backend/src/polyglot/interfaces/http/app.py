@@ -317,7 +317,10 @@ def create_runtime_app() -> FastAPI:
         FilesystemObjectStorage(object_storage.path),
         LocalSignedUrlSigner(os.environ["POLYGLOT_MEDIA_SIGNING_SECRET"].encode()),
         MacOSTtsPort(
-            voices=(TtsVoice("Alice", "it-IT", TtsAvailability.AVAILABLE, "local-v1"),),
+            voices=(
+                TtsVoice("Alice", "it-IT", TtsAvailability.AVAILABLE, "local-v1"),
+                TtsVoice("Kyoko", "ja-JP", TtsAvailability.AVAILABLE, "local-v1"),
+            ),
             cache_dir=object_storage.path / "tts-cache",
         ),
     )

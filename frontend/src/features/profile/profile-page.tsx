@@ -46,6 +46,7 @@ export function LanguageProfilePage() {
   const session = useSession();
   const navigate = useNavigate();
   const { activeProfile, isPending, refresh } = useActiveProfile();
+  const [selectedPackRevisionId, setSelectedPackRevisionId] = useState("");
   const packsQuery = useListLanguagePacks(
     { limit: 20 },
     { fetch: queryFetch(), query: { retry: false } },
@@ -54,14 +55,17 @@ export function LanguageProfilePage() {
     fetch: queryFetch(),
     query: { retry: false },
   });
-  const pack =
-    packsQuery.data?.status === 200
-      ? packsQuery.data.data.items.find(
-          (item) =>
-            item.target_language_tag === "it-IT" &&
-            item.support_language_tags.includes("fr-FR"),
-        )
-      : undefined;
+  const packs = packsQuery.data?.status === 200 ? packsQuery.data.data.items : [];
+  const pack = activeProfile
+    ? packs.find((item) => item.target_variety_id === activeProfile.target_variety_id)
+    : packs.find((item) => item.pack_revision_id === selectedPackRevisionId) ?? packs[0];
+  const displayNames = new Intl.DisplayNames(["fr"], { type: "language" });
+  const targetName = pack
+    ? (displayNames.of(pack.target_language_tag) ?? pack.target_language_tag)
+    : "la langue cible";
+  const supportName = pack?.support_language_tags[0]
+    ? (displayNames.of(pack.support_language_tags[0]) ?? pack.support_language_tags[0])
+    : "la langue d'appui";
   const manifestQuery = useGetPlacementManifest(pack?.pack_revision_id ?? "", {
     fetch: queryFetch(),
     query: { enabled: Boolean(pack), retry: false },
@@ -100,8 +104,8 @@ export function LanguageProfilePage() {
   if (isPending || packsQuery.isPending) {
     return (
       <div className="page-flow page-flow--narrow">
-        <PageHeader eyebrow="Profil de langue" title="Votre parcours italien" />
-        <LoadingRegion label="Chargement du parcours italien" />
+        <PageHeader eyebrow="Profil de langue" title="Votre parcours" />
+        <LoadingRegion label="Chargement des parcours" />
       </div>
     );
   }
@@ -142,7 +146,7 @@ export function LanguageProfilePage() {
   async function enroll(profileId: string) {
     const module = modules[0];
     if (!module)
-      throw new Error("Aucun module italien publié n'est disponible.");
+      throw new Error(`Aucun module ${targetName.toLocaleLowerCase("fr")} publié n'est disponible.`);
     const enrollmentId = uuid7();
     const response = await enrollInModule(
       profileId,
@@ -272,7 +276,7 @@ export function LanguageProfilePage() {
 
   if (!pack) {
     return (
-      <ErrorRegion message="Le parcours français vers italien n'est pas publié sur cette installation." />
+      <ErrorRegion message="Aucun parcours linguistique n'est publié sur cette installation." />
     );
   }
 
@@ -282,28 +286,45 @@ export function LanguageProfilePage() {
         <PageHeader
           eyebrow="Étape 1 sur 3"
           title="Votre profil de langue"
-          description="Nous commençons avec le parcours pilote français vers italien."
+          description="Choisissez la langue à apprendre et la langue utilisée pour les explications."
         />
         <form
           className="onboarding-panel"
           onSubmit={(event) => void create(event)}
         >
-          <div className="language-pair" aria-label="Français vers italien">
+          <label className="answer-field">
+            Parcours
+            <select
+              value={pack.pack_revision_id}
+              onChange={(event) => {
+                setSelectedPackRevisionId(event.target.value);
+              }}
+            >
+              {packs.map((item) => (
+                <option key={item.pack_revision_id} value={item.pack_revision_id}>
+                  {(displayNames.of(item.support_language_tags[0] ?? "") ?? item.support_language_tags[0])}
+                  {" → "}
+                  {(displayNames.of(item.target_language_tag) ?? item.target_language_tag)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="language-pair" aria-label={`${supportName} vers ${targetName}`}>
             <div>
               <span>Langue d'appui</span>
-              <strong>Français</strong>
-              <small>fr-FR</small>
+              <strong>{supportName}</strong>
+              <small>{pack.support_language_tags[0]}</small>
             </div>
             <Languages aria-hidden="true" />
             <div>
               <span>Langue cible</span>
-              <strong>Italien</strong>
-              <small>it-IT</small>
+              <strong>{targetName}</strong>
+              <small>{pack.target_language_tag}</small>
             </div>
           </div>
           <p>
-            Ce choix garde les explications en français et toutes les activités
-            d'apprentissage en italien.
+            Les explications utilisent {supportName.toLocaleLowerCase("fr")} et les activités
+            travaillent {targetName.toLocaleLowerCase("fr")}.
           </p>
           {error ? <ErrorRegion message={error} /> : null}
           <button disabled={createProfile.isPending} type="submit">
@@ -319,7 +340,7 @@ export function LanguageProfilePage() {
       <div className="page-flow page-flow--narrow">
         <PageHeader
           eyebrow="Étape 2 sur 3"
-          title="Français → Italien"
+          title={`${supportName} → ${targetName}`}
           description="Vos choix orientent les situations proposées, sans masquer les lacunes à retravailler."
           action={<StatusPill tone="warn">objectifs</StatusPill>}
         />
@@ -405,7 +426,7 @@ export function LanguageProfilePage() {
       <div className="page-flow page-flow--narrow">
         <PageHeader
           eyebrow="Profil prêt"
-          title="Votre parcours italien"
+          title={`Votre parcours ${targetName.toLocaleLowerCase("fr")}`}
           description="Le placement est terminé. Le premier module peut maintenant commencer."
         />
         <section className="onboarding-panel">
@@ -448,7 +469,7 @@ export function LanguageProfilePage() {
     return <LoadingRegion label="Préparation du diagnostic" />;
   if (!manifest)
     return (
-      <ErrorRegion message="Le diagnostic italien n'est pas disponible." />
+      <ErrorRegion message={`Le diagnostic ${targetName.toLocaleLowerCase("fr")} n'est pas disponible.`} />
     );
 
   return (

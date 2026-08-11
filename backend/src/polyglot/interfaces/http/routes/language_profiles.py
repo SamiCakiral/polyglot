@@ -106,6 +106,7 @@ class ProfileResponse(ClosedModel):
     native_variety_id: UUID
     status: str
     current_phase: str
+    training_access: str
     goals: list[str]
     interests: list[str]
     excluded_themes: list[str]
@@ -158,6 +159,7 @@ def _profile_response(profile: LearnerLanguageProfile) -> ProfileResponse:
         native_variety_id=profile.native_variety_id,
         status=profile.status.value,
         current_phase=profile.current_phase.value,
+        training_access=profile.training_access.value,
         goals=list(profile.goals),
         interests=list(profile.interests),
         excluded_themes=list(profile.excluded_themes),

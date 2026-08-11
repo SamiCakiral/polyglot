@@ -32,6 +32,11 @@ class LanguagePackResponse(ClosedResponse):
     revision_no: int
     target_variety_id: UUID
     target_language_tag: str
+    target_script_codes: tuple[str, ...]
+    text_direction: str
+    segmentation_policy_revision_id: UUID
+    media_capabilities: dict[str, JsonValue]
+    capability_manifest: dict[str, JsonValue]
     support_variety_ids: tuple[UUID, ...]
     support_language_tags: tuple[str, ...]
     foundation_revision_id: UUID | None

@@ -118,7 +118,7 @@ export function AssessPage() {
 
 export function AssessmentProtocolPage() {
   const { modality = "reading" } = useParams();
-  const { activeProfile } = useActiveProfile();
+  const { activePack, activeProfile } = useActiveProfile();
   const session = useSession();
   const navigate = useNavigate();
   const prepare = usePrepareAssessment({ fetch: commandFetch(session) });
@@ -132,7 +132,7 @@ export function AssessmentProtocolPage() {
     const capabilities: string[] = [];
     if (meta.id === "listening") {
       const response = await getTtsCapabilities(
-        { language: "it-IT" },
+        { language: activePack?.target_language_tag ?? "und" },
         queryFetch(),
       );
       const problem = responseProblem(response);
@@ -142,13 +142,10 @@ export function AssessmentProtocolPage() {
       }
       if (
         response.status !== 200 ||
-        !response.data.voices.some(
-          (voice) =>
-            voice.voice_id === "Alice" && voice.availability === "available",
-        )
+        !response.data.voices.some((voice) => voice.availability === "available")
       ) {
         setError(
-          "La voix italienne Alice est indisponible. Le test d'écoute ne peut pas démarrer.",
+          "Aucune voix adaptée à cette langue n'est disponible. Le test d'écoute ne peut pas démarrer.",
         );
         return;
       }
@@ -328,6 +325,7 @@ function AssessmentItemControl({
   modality,
   runId,
   session,
+  targetLanguageTag,
   showContext,
   value,
   onChange,
@@ -336,6 +334,7 @@ function AssessmentItemControl({
   modality: string;
   runId: string;
   session: CurrentSessionResponse;
+  targetLanguageTag: string;
   showContext: boolean;
   value: string;
   onChange: (value: string) => void;
@@ -348,12 +347,13 @@ function AssessmentItemControl({
   return (
     <article className="assessment-item">
       {showContext && title ? <h2>{title}</h2> : null}
-      {showContext && body ? <p lang="it">{body}</p> : null}
+      {showContext && body ? <p lang={targetLanguageTag}>{body}</p> : null}
       {modality === "listening" ? (
         <TtsAudio
           assessmentItemId={item.item_id}
           assessmentRunId={runId}
           label="Écouter le segment"
+          locale={targetLanguageTag}
           maxPlays={item.max_plays}
           session={session}
         />
@@ -426,6 +426,8 @@ function AssessmentItemControl({
 export function AssessmentRunPage() {
   const { assessmentRunId = "" } = useParams();
   const session = useSession();
+  const { activePack } = useActiveProfile();
+  const targetLanguageTag = activePack?.target_language_tag ?? "und";
   const navigate = useNavigate();
   const query = useGetAssessmentRun(assessmentRunId, {
     fetch: queryFetch(),
@@ -518,6 +520,7 @@ export function AssessmentRunPage() {
                   runId={run.run_id}
                   session={session}
                   showContext={showContext}
+                  targetLanguageTag={targetLanguageTag}
                   value={answers[item.item_id] ?? ""}
                   onChange={(value) => {
                     setAnswers((current) => ({

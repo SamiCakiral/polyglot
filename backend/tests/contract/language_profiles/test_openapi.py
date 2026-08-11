@@ -3,6 +3,17 @@
 from polyglot.interfaces.http.app import create_app
 
 
+def test_profile_contract_exposes_training_access_separately_from_foundations() -> None:
+    document = create_app(test_mode=True).openapi()
+    schema = document["components"]["schemas"]["ProfileResponse"]
+
+    assert "training_access" in schema["required"]
+    assert schema["properties"]["training_access"] == {
+        "type": "string",
+        "title": "Training Access",
+    }
+
+
 def test_foundation_openapi_exposes_versioned_complete_workflow() -> None:
     document = create_app(test_mode=True).openapi()
     start = document["paths"]["/api/v1/language-profiles/{profile_id}/foundation-runs"][

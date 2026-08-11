@@ -18,6 +18,7 @@ export interface ProfileResponse {
   profile_id: string;
   status: string;
   target_variety_id: string;
+  training_access: string;
   updated_at: string;
   version: number;
 }

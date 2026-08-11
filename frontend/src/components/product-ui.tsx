@@ -47,7 +47,7 @@ export function NoProfile() {
   return (
     <section className="empty-panel">
       <p className="eyebrow">Première étape</p>
-      <h2>Créez votre profil italien</h2>
+      <h2>Créez votre profil de langue</h2>
       <p>Votre parcours, votre vocabulaire et vos preuves seront rattachés à ce profil.</p>
       <Link className="button-link" to="/language-profile">
         Commencer <ArrowRight aria-hidden="true" size={17} />

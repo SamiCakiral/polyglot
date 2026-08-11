@@ -24,6 +24,12 @@ class LearningPhase(StrEnum):
     ARCHIVED = "archived"
 
 
+class TrainingAccess(StrEnum):
+    ADAPTED = "adapted"
+    FULL = "full"
+    UNAVAILABLE = "unavailable"
+
+
 def _invalid(detail: str) -> DomainError:
     return DomainError(ErrorCode.VALIDATION_FAILED, detail=detail)
 
@@ -44,6 +50,17 @@ class LearnerLanguageProfile:
     updated_at: datetime
     archived_at: datetime | None = None
     deleted_at: datetime | None = None
+
+    @property
+    def training_access(self) -> TrainingAccess:
+        if self.status in {
+            LanguageProfileStatus.ONBOARDING,
+            LanguageProfileStatus.FOUNDATIONS,
+        }:
+            return TrainingAccess.ADAPTED
+        if self.status is LanguageProfileStatus.ACTIVE:
+            return TrainingAccess.FULL
+        return TrainingAccess.UNAVAILABLE
 
     @classmethod
     def create(

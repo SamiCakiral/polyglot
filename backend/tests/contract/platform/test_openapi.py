@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import subprocess
 import sys
@@ -285,6 +286,7 @@ def test_committed_openapi_is_deterministic_and_current() -> None:
             str(OPENAPI_PATH),
         ],
         cwd=ROOT / "backend",
+        env={**os.environ, "PYTHONPATH": str(ROOT / "backend" / "src")},
         capture_output=True,
         text=True,
         check=False,

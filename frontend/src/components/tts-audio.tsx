@@ -2,8 +2,9 @@ import { Volume2 } from "lucide-react";
 import { useState } from "react";
 
 import type { CurrentSessionResponse } from "../generated/model";
-import { synthesizeSpeech } from "../generated/polyglot";
-import { commandFetch, responseProblem } from "../lib/api";
+import { getTtsCapabilities, synthesizeSpeech } from "../generated/polyglot";
+import { commandFetch, queryFetch, responseProblem } from "../lib/api";
+import { selectAvailableVoice } from "./tts-voice";
 
 type SpeechSource =
   | { text: string; assessmentRunId?: never; assessmentItemId?: never }
@@ -11,12 +12,14 @@ type SpeechSource =
 
 type TtsAudioProps = SpeechSource & {
   session: CurrentSessionResponse;
+  locale: string;
   label?: string;
   maxPlays?: number | null;
 };
 
 export function TtsAudio({
   session,
+  locale,
   label = "Écouter",
   maxPlays = null,
   ...source
@@ -30,11 +33,24 @@ export function TtsAudio({
   async function play() {
     setBusy(true);
     setError("");
+    const capabilities = await getTtsCapabilities({ language: locale }, queryFetch());
+    const capabilitiesProblem = responseProblem(capabilities);
+    if (capabilitiesProblem || capabilities.status !== 200) {
+      setError(capabilitiesProblem || "La synthèse vocale est indisponible.");
+      setBusy(false);
+      return;
+    }
+    const voice = selectAvailableVoice(capabilities.data.voices, locale);
+    if (!voice) {
+      setError(`Aucune voix ${locale} n'est disponible. Aucune écoute n'est comptabilisée.`);
+      setBusy(false);
+      return;
+    }
     const response = await synthesizeSpeech(
       {
-        locale: "it-IT",
+        locale,
         parameters: {},
-        voice_id: "Alice",
+        voice_id: voice.voice_id,
         ...(source.text !== undefined
           ? { text: source.text }
           : {
@@ -55,9 +71,7 @@ export function TtsAudio({
       response.data.availability !== "available" ||
       !response.data.media?.read_url
     ) {
-      setError(
-        "La voix italienne est indisponible. Aucune écoute n'est comptabilisée.",
-      );
+      setError("La synthèse vocale est indisponible. Aucune écoute n'est comptabilisée.");
       setBusy(false);
       return;
     }

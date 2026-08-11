@@ -43,6 +43,13 @@ class StubCatalogueReader:
                     revision_no=1,
                     target_variety_id=UUID("019fe900-6000-7000-8000-000000000003"),
                     target_language_tag="it-IT",
+                    target_script_codes=("Latn",),
+                    text_direction="ltr",
+                    segmentation_policy_revision_id=UUID(
+                        "019fe900-6000-7000-8000-000000000006"
+                    ),
+                    media_capabilities={"schema_version": 1, "tts": True},
+                    capability_manifest={"schema_version": 1, "grammar": True},
                     support_variety_ids=(
                         UUID("019fe900-6000-7000-8000-000000000004"),
                     ),
@@ -138,6 +145,8 @@ def test_canonical_catalogue_reads_are_public_paginated_and_closed() -> None:
     assert packs.json()["items"][0]["target_variety_id"].endswith("0003")
     assert packs.json()["items"][0]["support_variety_ids"][0].endswith("0004")
     assert packs.json()["items"][0]["foundation_revision_id"].endswith("0005")
+    assert packs.json()["items"][0]["target_script_codes"] == ["Latn"]
+    assert packs.json()["items"][0]["text_direction"] == "ltr"
     assert targets.status_code == 200
     assert targets.json()["items"][0]["required_prerequisite_codes"] == ["IT-GRAM-002"]
     assert lexicon.status_code == 200

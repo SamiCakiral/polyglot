@@ -90,6 +90,8 @@ export * from "./jsonValueInput";
 export * from "./jsonValueOutput";
 export * from "./languagePackPageResponse";
 export * from "./languagePackResponse";
+export * from "./languagePackResponseCapabilityManifest";
+export * from "./languagePackResponseMediaCapabilities";
 export * from "./lexicalAnalysisResponse";
 export * from "./lexicalAnalysisResponseMorphologicalFeatures";
 export * from "./lexicalAnnotationPageResponse";

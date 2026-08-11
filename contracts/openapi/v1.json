@@ -3138,6 +3138,13 @@
       "LanguagePackResponse": {
         "additionalProperties": false,
         "properties": {
+          "capability_manifest": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue-Output"
+            },
+            "title": "Capability Manifest",
+            "type": "object"
+          },
           "channel": {
             "title": "Channel",
             "type": "string"
@@ -3158,6 +3165,13 @@
             ],
             "title": "Foundation Revision Id"
           },
+          "media_capabilities": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue-Output"
+            },
+            "title": "Media Capabilities",
+            "type": "object"
+          },
           "pack_code": {
             "title": "Pack Code",
             "type": "string"
@@ -3175,6 +3189,11 @@
           "revision_no": {
             "title": "Revision No",
             "type": "integer"
+          },
+          "segmentation_policy_revision_id": {
+            "format": "uuid",
+            "title": "Segmentation Policy Revision Id",
+            "type": "string"
           },
           "support_language_tags": {
             "items": {
@@ -3195,9 +3214,20 @@
             "title": "Target Language Tag",
             "type": "string"
           },
+          "target_script_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Target Script Codes",
+            "type": "array"
+          },
           "target_variety_id": {
             "format": "uuid",
             "title": "Target Variety Id",
+            "type": "string"
+          },
+          "text_direction": {
+            "title": "Text Direction",
             "type": "string"
           }
         },
@@ -3208,6 +3238,11 @@
           "revision_no",
           "target_variety_id",
           "target_language_tag",
+          "target_script_codes",
+          "text_direction",
+          "segmentation_policy_revision_id",
+          "media_capabilities",
+          "capability_manifest",
           "support_variety_ids",
           "support_language_tags",
           "foundation_revision_id",
@@ -5030,6 +5065,10 @@
             "title": "Target Variety Id",
             "type": "string"
           },
+          "training_access": {
+            "title": "Training Access",
+            "type": "string"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -5047,6 +5086,7 @@
           "native_variety_id",
           "status",
           "current_phase",
+          "training_access",
           "goals",
           "interests",
           "excluded_themes",

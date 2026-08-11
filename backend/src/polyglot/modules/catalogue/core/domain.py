@@ -133,6 +133,121 @@ class LanguageVariety:
 
 
 @dataclass(frozen=True, slots=True)
+class ScriptDefinition:
+    code: str
+    direction: str
+    segmentation: str
+    requires_foundations: bool
+
+    def __post_init__(self) -> None:
+        if fullmatch(r"[A-Z][a-z]{3}", self.code) is None:
+            raise _invalid("script code must be ISO 15924")
+        if self.direction not in {"ltr", "rtl"}:
+            raise _invalid("script direction is not canonical")
+        if self.segmentation not in {"whitespace", "morphological", "dictionary", "mixed"}:
+            raise _invalid("script segmentation is not supported")
+
+
+@dataclass(frozen=True, slots=True)
+class FunctionConcept:
+    code: str
+    family: str
+    labels: dict[str, str]
+
+    def __post_init__(self) -> None:
+        require_stable_code(self.code, "function code")
+        require_stable_code(self.family, "function family")
+        if not self.labels or any(
+            "-" not in tag or not label.strip() for tag, label in self.labels.items()
+        ):
+            raise _invalid("function labels require regional language tags")
+
+
+@dataclass(frozen=True, slots=True)
+class GrammarRealization:
+    code: str
+    function_code: str
+    template: str
+    examples: tuple[str, ...]
+    prerequisite_codes: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        require_stable_code(self.code, "grammar realization code")
+        require_stable_code(self.function_code, "grammar function code")
+        if not self.template.strip() or not self.examples:
+            raise _invalid("grammar realization requires a template and examples")
+
+
+@dataclass(frozen=True, slots=True)
+class ContrastiveBridge:
+    support_language_tag: str
+    target_language_tag: str
+    function_code: str
+    explanation: str
+    warnings: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if "-" not in self.support_language_tag or "-" not in self.target_language_tag:
+            raise _invalid("contrastive bridge requires regional language tags")
+        require_stable_code(self.function_code, "bridge function code")
+        if not self.explanation.strip():
+            raise _invalid("contrastive bridge requires an explanation")
+
+
+@dataclass(frozen=True, slots=True)
+class LanguagePackManifest:
+    pack_revision_id: UUID
+    target_language_tag: str
+    display_names: dict[str, str]
+    scripts: tuple[ScriptDefinition, ...]
+    tts_locale: str | None
+    functions: tuple[FunctionConcept, ...]
+    grammar_realizations: tuple[GrammarRealization, ...]
+    contrastive_bridges: tuple[ContrastiveBridge, ...]
+    version: str
+
+    def __post_init__(self) -> None:
+        require_uuid7(self.pack_revision_id, "pack_revision_id")
+        if "-" not in self.target_language_tag or not self.display_names or not self.scripts:
+            raise _invalid("language pack manifest requires locale metadata")
+        function_codes = {function.code for function in self.functions}
+        if len(function_codes) != len(self.functions):
+            raise _invalid("language pack function codes must be unique")
+        for realization in self.grammar_realizations:
+            if realization.function_code not in function_codes:
+                raise _invalid("grammar realization references unknown function")
+        for bridge in self.contrastive_bridges:
+            if bridge.target_language_tag != self.target_language_tag:
+                raise _invalid("contrastive bridge targets another language")
+            if bridge.function_code not in function_codes:
+                raise _invalid("contrastive bridge references unknown function")
+
+    @property
+    def primary_script(self) -> ScriptDefinition:
+        return self.scripts[0]
+
+    def realizations_for(self, function_code: str) -> tuple[GrammarRealization, ...]:
+        return tuple(
+            realization
+            for realization in self.grammar_realizations
+            if realization.function_code == function_code
+        )
+
+    def bridge_for(
+        self, support_language_tag: str, function_code: str
+    ) -> ContrastiveBridge | None:
+        return next(
+            (
+                bridge
+                for bridge in self.contrastive_bridges
+                if bridge.support_language_tag == support_language_tag
+                and bridge.function_code == function_code
+            ),
+            None,
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class LanguagePack:
     pack_id: UUID
     pack_code: str

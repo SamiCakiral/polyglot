@@ -38,6 +38,19 @@ def test_openapi_exposes_all_required_w04_queries_and_parameters() -> None:
     validate_registry_compatibility(document, ROOT / "contracts/registry")
 
 
+def test_language_pack_response_exposes_runtime_language_metadata() -> None:
+    document = create_app(test_mode=True).openapi()
+    schema = document["components"]["schemas"]["LanguagePackResponse"]
+
+    assert set(schema["required"]) >= {
+        "target_script_codes",
+        "text_direction",
+        "segmentation_policy_revision_id",
+        "media_capabilities",
+        "capability_manifest",
+    }
+
+
 def test_registry_compatibility_rejects_a_missing_w04_query() -> None:
     document = deepcopy(create_app(test_mode=True).openapi())
     del document["paths"]["/api/v1/lexicon/search"]

@@ -4,17 +4,24 @@
  * Polyglot V2 API
  * OpenAPI spec version: 0.1.0
  */
+import type { LanguagePackResponseCapabilityManifest } from "./languagePackResponseCapabilityManifest";
+import type { LanguagePackResponseMediaCapabilities } from "./languagePackResponseMediaCapabilities";
 
 export interface LanguagePackResponse {
+  capability_manifest: LanguagePackResponseCapabilityManifest;
   channel: string;
   compatibility_range: string;
   foundation_revision_id: string | null;
+  media_capabilities: LanguagePackResponseMediaCapabilities;
   pack_code: string;
   pack_id: string;
   pack_revision_id: string;
   revision_no: number;
+  segmentation_policy_revision_id: string;
   support_language_tags: string[];
   support_variety_ids: string[];
   target_language_tag: string;
+  target_script_codes: string[];
   target_variety_id: string;
+  text_direction: string;
 }

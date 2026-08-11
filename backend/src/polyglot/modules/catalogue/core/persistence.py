@@ -978,6 +978,11 @@ class LanguagePackSummary:
     revision_no: int
     target_variety_id: UUID
     target_language_tag: str
+    target_script_codes: tuple[str, ...]
+    text_direction: str
+    segmentation_policy_revision_id: UUID
+    media_capabilities: dict[str, JsonValue]
+    capability_manifest: dict[str, JsonValue]
     support_variety_ids: tuple[UUID, ...]
     support_language_tags: tuple[str, ...]
     foundation_revision_id: UUID | None
@@ -1067,6 +1072,9 @@ class SqlCatalogueRepository:
                         "SELECT pack.pack_id, revision.pack_revision_id, pack.pack_code, "
                         "revision.revision_no, target.variety_id AS target_variety_id, "
                         "target.language_tag AS target_language_tag, "
+                        "target.script_codes AS target_script_codes, "
+                        "target.text_direction, target.segmentation_policy_revision_id, "
+                        "target.media_capabilities, revision.capability_manifest, "
                         "array_agg(support.variety_id ORDER BY support.language_tag) "
                         "AS support_variety_ids, "
                         "array_agg(support.language_tag ORDER BY support.language_tag) "
@@ -1091,7 +1099,9 @@ class SqlCatalogueRepository:
                         "OR (pack.pack_code, revision.pack_revision_id) "
                         "> (CAST(:after_code AS varchar), CAST(:after_id AS uuid))) "
                         "GROUP BY pack.pack_id, revision.pack_revision_id, target.variety_id, "
-                        "target.language_tag, publication.channel, "
+                        "target.language_tag, target.script_codes, target.text_direction, "
+                        "target.segmentation_policy_revision_id, target.media_capabilities, "
+                        "revision.capability_manifest, publication.channel, "
                         "publication.compatibility_range, "
                         "foundation.foundation_revision_id "
                         "ORDER BY pack.pack_code, revision.pack_revision_id LIMIT :query_limit"
@@ -1115,6 +1125,11 @@ class SqlCatalogueRepository:
                 revision_no=row["revision_no"],
                 target_variety_id=row["target_variety_id"],
                 target_language_tag=row["target_language_tag"],
+                target_script_codes=tuple(row["target_script_codes"]),
+                text_direction=row["text_direction"],
+                segmentation_policy_revision_id=row["segmentation_policy_revision_id"],
+                media_capabilities=dict(row["media_capabilities"]),
+                capability_manifest=dict(row["capability_manifest"]),
                 support_variety_ids=tuple(row["support_variety_ids"]),
                 support_language_tags=tuple(row["support_language_tags"]),
                 foundation_revision_id=row["foundation_revision_id"],

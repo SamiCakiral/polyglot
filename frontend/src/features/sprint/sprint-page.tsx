@@ -79,7 +79,8 @@ function ExerciseReader({
   onDone: () => void;
 }) {
   const session = useSession();
-  const { activeProfile } = useActiveProfile();
+  const { activePack, activeProfile } = useActiveProfile();
+  const targetLanguageTag = activePack?.target_language_tag ?? "und";
   const query = useGetExerciseInstance(instanceId, {
     fetch: queryFetch(),
     query: { retry: false },
@@ -131,7 +132,7 @@ function ExerciseReader({
     ]
       .map(readableBinding)
       .find(Boolean) ??
-    "Produisez une réponse en italien en respectant la consigne de cette étape.";
+    "Produisez une réponse dans la langue cible en respectant la consigne de cette étape.";
   const modelAnswer =
     typeof exercise.stimulus_contract.model_answer === "string"
       ? exercise.stimulus_contract.model_answer
@@ -180,7 +181,7 @@ function ExerciseReader({
     const response = await submitExerciseAttempt(
       attemptId,
       {
-        input_locale: "it-IT",
+        input_locale: targetLanguageTag,
         input_method: "keyboard",
         kind: responseKind,
         raw_value:
@@ -241,11 +242,11 @@ function ExerciseReader({
       <div className="exercise-reader__meta">
         <span>Réponse sauvegardée localement</span>
       </div>
-      <div className="exercise-prompt" lang="it">
+      <div className="exercise-prompt" lang={targetLanguageTag}>
         {prompt}
       </div>
       {exercise.primitive_id.includes("ORAL") ? (
-        <TtsAudio session={session} text={modelAnswer} />
+        <TtsAudio locale={targetLanguageTag} session={session} text={modelAnswer} />
       ) : null}
       {effectiveSubmittedVersion !== null ? (
         <div className="feedback-panel">
@@ -259,7 +260,7 @@ function ExerciseReader({
           </div>
           <div>
             <span>Réponse modèle</span>
-            <p lang="it">{modelAnswer}</p>
+            <p lang={targetLanguageTag}>{modelAnswer}</p>
           </div>
           <fieldset>
             <legend>Le sens est-il juste ?</legend>
