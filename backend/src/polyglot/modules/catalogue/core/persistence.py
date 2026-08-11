@@ -1058,6 +1058,69 @@ class SqlCatalogueRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def get_language_pack(self, *, pack_revision_id: UUID) -> LanguagePackSummary | None:
+        row = (
+            (
+                await self._session.execute(
+                    text(
+                        "SELECT pack.pack_id, revision.pack_revision_id, pack.pack_code, "
+                        "revision.revision_no, target.variety_id AS target_variety_id, "
+                        "target.language_tag AS target_language_tag, "
+                        "target.script_codes AS target_script_codes, target.text_direction, "
+                        "target.segmentation_policy_revision_id, target.media_capabilities, "
+                        "revision.capability_manifest, publication.channel, "
+                        "publication.compatibility_range, foundation.foundation_revision_id, "
+                        "ARRAY(SELECT support.variety_id FROM "
+                        "catalogue.language_pack_support_varieties member "
+                        "JOIN catalogue.language_varieties support "
+                        "ON support.variety_id=member.variety_id "
+                        "WHERE member.pack_revision_id=revision.pack_revision_id "
+                        "ORDER BY support.language_tag) AS support_variety_ids, "
+                        "ARRAY(SELECT support.language_tag FROM "
+                        "catalogue.language_pack_support_varieties member "
+                        "JOIN catalogue.language_varieties support "
+                        "ON support.variety_id=member.variety_id "
+                        "WHERE member.pack_revision_id=revision.pack_revision_id "
+                        "ORDER BY support.language_tag) AS support_language_tags "
+                        "FROM catalogue.language_pack_publications publication "
+                        "JOIN catalogue.language_packs pack ON pack.pack_id=publication.pack_id "
+                        "JOIN catalogue.language_pack_revisions revision "
+                        "ON revision.pack_revision_id=publication.pack_revision_id "
+                        "JOIN catalogue.language_varieties target "
+                        "ON target.variety_id=revision.target_variety_id "
+                        "LEFT JOIN catalogue.foundation_definition_revisions foundation "
+                        "ON foundation.pack_revision_id=revision.pack_revision_id "
+                        "AND foundation.status='published' "
+                        "WHERE publication.retired_at IS NULL AND revision.status='published' "
+                        "AND revision.pack_revision_id=:pack_revision"
+                    ),
+                    {"pack_revision": pack_revision_id},
+                )
+            )
+            .mappings()
+            .one_or_none()
+        )
+        if row is None:
+            return None
+        return LanguagePackSummary(
+            pack_id=row["pack_id"],
+            pack_revision_id=row["pack_revision_id"],
+            pack_code=row["pack_code"],
+            revision_no=row["revision_no"],
+            target_variety_id=row["target_variety_id"],
+            target_language_tag=row["target_language_tag"],
+            target_script_codes=tuple(row["target_script_codes"]),
+            text_direction=row["text_direction"],
+            segmentation_policy_revision_id=row["segmentation_policy_revision_id"],
+            media_capabilities=dict(row["media_capabilities"]),
+            capability_manifest=dict(row["capability_manifest"]),
+            support_variety_ids=tuple(row["support_variety_ids"]),
+            support_language_tags=tuple(row["support_language_tags"]),
+            foundation_revision_id=row["foundation_revision_id"],
+            channel=row["channel"],
+            compatibility_range=row["compatibility_range"],
+        )
+
     async def list_language_packs(
         self,
         *,
@@ -1546,7 +1609,7 @@ class SqlCatalogueRepository:
                     gate=published_gate,
                     status=ContentRevisionStatus(definition["status"]),
                     checksum=definition["checksum"],
-                )
+                ),
             )
         except (KeyError, TypeError, ValueError, DomainError):
             return None

@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from polyglot.modules.exercises.core.application import (
     ContestCorrection,
     CorrectAttempt,
+    EvaluateAttempt,
     MarkCorrectionRead,
     OpenAttempt,
     ResolveCorrectionCase,
@@ -94,6 +95,25 @@ async def test_open_save_and_hint_are_replayable_versioned_commands(
     assert hinted.version == 3
 
 
+async def test_instance_exposes_the_versioned_reader_and_evidence_contract(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_attempt(migration_session)
+    await migration_session.commit()
+
+    instance = await SqlExerciseService(runtime_factory).get_instance(
+        ACCOUNT_ID, INSTANCE_ID
+    )
+
+    assert instance.primitive_version == 1
+    assert instance.reader_adapter == "flashcard"
+    assert instance.learning_operation == "recall"
+    assert instance.evidence_format == "self_grade"
+    assert instance.correction_strategies == ("accepted_set",)
+    assert instance.response_contract == {}
+
+
 async def test_submit_is_exactly_replayable_and_rejects_key_reuse(
     migration_session: AsyncSession,
     runtime_factory: async_sessionmaker[AsyncSession],
@@ -144,6 +164,83 @@ async def test_submit_is_exactly_replayable_and_rejects_key_reuse(
             idempotency_key="submit-exact",
         )
     assert conflict.value.code is ErrorCode.IDEMPOTENCY_CONFLICT
+
+
+async def test_learner_can_request_a_trusted_deterministic_evaluation(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_attempt(
+        migration_session,
+        primitive_id="EX-DISC-04",
+        response_kinds='["single_choice"]',
+        response_contract='{"expected_answer":"natural"}',
+    )
+    await migration_session.commit()
+    service = SqlExerciseService(runtime_factory)
+    submitted = await service.submit_attempt(
+        ACCOUNT_ID,
+        ATTEMPT_ID,
+        SubmitAttempt(AnswerKind.SINGLE_CHOICE, "natural", "keyboard", "it-IT", NOW),
+        expected_version=1,
+        idempotency_key="submit-before-evaluate",
+    )
+
+    evaluated = await service.evaluate_attempt(
+        ACCOUNT_ID,
+        ATTEMPT_ID,
+        EvaluateAttempt(NOW),
+        expected_version=submitted.version,
+        idempotency_key="evaluate-closed-answer",
+    )
+
+    assert evaluated.status == "corrected"
+    correction = (
+        await migration_session.execute(
+            text(
+                "SELECT verdict,strategy,requires_review FROM exercises.exercise_corrections "
+                "WHERE attempt_id=:attempt"
+            ),
+            {"attempt": ATTEMPT_ID},
+        )
+    ).mappings().one()
+    assert correction == {
+        "verdict": "correct",
+        "strategy": "exact_value",
+        "requires_review": False,
+    }
+
+
+async def test_open_production_evaluation_is_recorded_without_credit(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_attempt(
+        migration_session,
+        primitive_id="EX-PROD-03",
+        response_kinds='["text"]',
+        stimulus_contract='{"model_answer":"Domani visiterò Roma."}',
+    )
+    await migration_session.commit()
+    service = SqlExerciseService(runtime_factory)
+    submitted = await service.submit_attempt(
+        ACCOUNT_ID,
+        ATTEMPT_ID,
+        SubmitAttempt(AnswerKind.TEXT, "Vorrei visitare Roma.", "keyboard", "it-IT", NOW),
+        expected_version=1,
+        idempotency_key="submit-open-production",
+    )
+
+    evaluated = await service.evaluate_attempt(
+        ACCOUNT_ID,
+        ATTEMPT_ID,
+        EvaluateAttempt(NOW),
+        expected_version=submitted.version,
+        idempotency_key="evaluate-open-production",
+    )
+
+    assert evaluated.status == "not_evaluable"
+    assert evaluated.terminal_reason == "correction_unavailable"
 
 
 async def test_concurrent_double_submit_returns_one_frozen_result(

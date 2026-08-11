@@ -2672,12 +2672,38 @@
         "title": "EntryPath",
         "type": "string"
       },
+      "EvaluateAttemptRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "evaluated_at": {
+            "format": "date-time",
+            "title": "Evaluated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evaluated_at"
+        ],
+        "title": "EvaluateAttemptRequest",
+        "type": "object"
+      },
       "ExerciseInstanceResponse": {
         "additionalProperties": false,
         "properties": {
+          "correction_strategies": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Correction Strategies",
+            "type": "array"
+          },
           "definition_revision_id": {
             "format": "uuid",
             "title": "Definition Revision Id",
+            "type": "string"
+          },
+          "evidence_format": {
+            "title": "Evidence Format",
             "type": "string"
           },
           "grammar_bindings": {
@@ -2697,6 +2723,10 @@
             "title": "Language Pack Revision Id",
             "type": "string"
           },
+          "learning_operation": {
+            "title": "Learning Operation",
+            "type": "string"
+          },
           "lexical_bindings": {
             "items": {
               "$ref": "#/components/schemas/JsonValue-Output"
@@ -2707,6 +2737,21 @@
           "primitive_id": {
             "title": "Primitive Id",
             "type": "string"
+          },
+          "primitive_version": {
+            "title": "Primitive Version",
+            "type": "integer"
+          },
+          "reader_adapter": {
+            "title": "Reader Adapter",
+            "type": "string"
+          },
+          "response_contract": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue-Output"
+            },
+            "title": "Response Contract",
+            "type": "object"
           },
           "response_kinds": {
             "items": {
@@ -2747,7 +2792,13 @@
           "definition_revision_id",
           "language_pack_revision_id",
           "primitive_id",
+          "primitive_version",
+          "reader_adapter",
+          "learning_operation",
+          "evidence_format",
+          "correction_strategies",
           "response_kinds",
+          "response_contract",
           "stimulus_contract",
           "stimulus_revision_ids",
           "target_bindings",
@@ -3100,6 +3151,169 @@
           "version"
         ],
         "title": "GenerationJobResponse",
+        "type": "object"
+      },
+      "GrammarFamilyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "realization_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Realization Codes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "realization_codes"
+        ],
+        "title": "GrammarFamilyResponse",
+        "type": "object"
+      },
+      "GrammarRealizationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "compatible_primitives": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Compatible Primitives",
+            "type": "array"
+          },
+          "examples": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Examples",
+            "type": "array"
+          },
+          "family_code": {
+            "title": "Family Code",
+            "type": "string"
+          },
+          "function_code": {
+            "title": "Function Code",
+            "type": "string"
+          },
+          "pitfalls": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pitfalls",
+            "type": "array"
+          },
+          "prerequisite_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Prerequisite Codes",
+            "type": "array"
+          },
+          "realization_code": {
+            "title": "Realization Code",
+            "type": "string"
+          },
+          "support_template": {
+            "title": "Support Template",
+            "type": "string"
+          },
+          "target_template": {
+            "title": "Target Template",
+            "type": "string"
+          },
+          "transformations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Transformations",
+            "type": "array"
+          },
+          "variants": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "realization_code",
+          "function_code",
+          "family_code",
+          "support_template",
+          "target_template",
+          "examples",
+          "prerequisite_codes",
+          "variants",
+          "pitfalls",
+          "compatible_primitives",
+          "transformations"
+        ],
+        "title": "GrammarRealizationResponse",
+        "type": "object"
+      },
+      "GrammarToolboxResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "families": {
+            "items": {
+              "$ref": "#/components/schemas/GrammarFamilyResponse"
+            },
+            "title": "Families",
+            "type": "array"
+          },
+          "pack_revision_id": {
+            "format": "uuid",
+            "title": "Pack Revision Id",
+            "type": "string"
+          },
+          "priority_realization_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Priority Realization Codes",
+            "type": "array"
+          },
+          "realizations": {
+            "items": {
+              "$ref": "#/components/schemas/GrammarRealizationResponse"
+            },
+            "title": "Realizations",
+            "type": "array"
+          },
+          "support_language_tag": {
+            "title": "Support Language Tag",
+            "type": "string"
+          },
+          "target_language_tag": {
+            "title": "Target Language Tag",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_revision_id",
+          "target_language_tag",
+          "support_language_tag",
+          "version",
+          "families",
+          "realizations",
+          "priority_realization_codes"
+        ],
+        "title": "GrammarToolboxResponse",
         "type": "object"
       },
       "GymCreditResponse": {
@@ -12525,6 +12739,217 @@
         "summary": "Capture Lexical Gap"
       }
     },
+    "/api/v1/attempts/{attempt_id}:evaluate": {
+      "post": {
+        "operationId": "evaluate_exercise_attempt",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "attempt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Attempt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "title": "Idempotency-Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Origin",
+            "required": true,
+            "schema": {
+              "title": "Origin",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "title": "X-Csrf-Token",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "If-Match",
+            "required": true,
+            "schema": {
+              "title": "If-Match",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvaluateAttemptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttemptResponse"
+                }
+              }
+            },
+            "description": "Successful Response",
+            "headers": {
+              "ETag": {
+                "description": "Quoted optimistic concurrency version.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Locked"
+          },
+          "428": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Precondition Required"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "SessionCookie": []
+          }
+        ],
+        "summary": "Evaluate Exercise Attempt"
+      }
+    },
     "/api/v1/attempts/{attempt_id}:mark-correction-read": {
       "post": {
         "operationId": "review_correction",
@@ -19132,6 +19557,92 @@
           }
         },
         "summary": "Get Foundation Manifest"
+      }
+    },
+    "/api/v1/language-packs/{pack_revision_id}/grammar-functions": {
+      "get": {
+        "operationId": "get_grammar_toolbox",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_revision_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Revision Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "support_language_tag",
+            "required": true,
+            "schema": {
+              "maxLength": 35,
+              "minLength": 4,
+              "title": "Support Language Tag",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrammarToolboxResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              },
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Grammar Toolbox"
       }
     },
     "/api/v1/language-packs/{pack_revision_id}/placement-manifest": {

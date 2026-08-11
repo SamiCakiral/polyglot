@@ -921,18 +921,16 @@ class SqlSprintService:
         self, session: AsyncSession, primitive_ids: tuple[str, ...]
     ) -> tuple[UUID, ...]:
         statement = text(
-            "SELECT DISTINCT ON (primitive_id) definition_revision_id "
+            "SELECT DISTINCT ON (primitive_id) definition_revision_id,primitive_id "
             "FROM exercises.exercise_definition_revisions "
             "WHERE status='published' AND primitive_id IN :primitives "
             "ORDER BY primitive_id,revision_no DESC,definition_revision_id DESC LIMIT 16"
         ).bindparams(bindparam("primitives", expanding=True))
-        values = tuple(
-            _uuid(item)
-            for item in (await session.execute(statement, {"primitives": primitive_ids})).scalars()
-        )
-        if not values:
+        rows = (await session.execute(statement, {"primitives": primitive_ids})).mappings().all()
+        found = {str(row["primitive_id"]) for row in rows}
+        if found != set(primitive_ids):
             raise DomainError(ErrorCode.PRIMITIVE_UNKNOWN)
-        return values
+        return tuple(_uuid(row["definition_revision_id"]) for row in rows)
 
     @staticmethod
     async def _profile_pack_revision(session: AsyncSession, profile_id: UUID) -> UUID:

@@ -5,16 +5,23 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { AnswerKind } from "./answerKind";
+import type { ExerciseInstanceResponseResponseContract } from "./exerciseInstanceResponseResponseContract";
 import type { ExerciseInstanceResponseStimulusContract } from "./exerciseInstanceResponseStimulusContract";
 import type { JsonValueOutput } from "./jsonValueOutput";
 
 export interface ExerciseInstanceResponse {
+  correction_strategies: string[];
   definition_revision_id: string;
+  evidence_format: string;
   grammar_bindings: JsonValueOutput[];
   instance_id: string;
   language_pack_revision_id: string;
+  learning_operation: string;
   lexical_bindings: JsonValueOutput[];
   primitive_id: string;
+  primitive_version: number;
+  reader_adapter: string;
+  response_contract: ExerciseInstanceResponseResponseContract;
   response_kinds: AnswerKind[];
   seed: number;
   stimulus_contract: ExerciseInstanceResponseStimulusContract;

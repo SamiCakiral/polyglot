@@ -12,12 +12,14 @@ from sqlalchemy import text
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from polyglot.modules.catalogue.core.grammar_registry import grammar_realization_for
 from polyglot.modules.exercises.core.application import (
     AttemptView,
     ContestCorrection,
     CorrectAttempt,
     CorrectionCaseView,
     CorrectionView,
+    EvaluateAttempt,
     ExerciseInstanceView,
     MarkCorrectionRead,
     OpenAttempt,
@@ -26,11 +28,13 @@ from polyglot.modules.exercises.core.application import (
     SubmitAttempt,
     UseHint,
 )
+from polyglot.modules.exercises.core.correction import correct_published_answer
 from polyglot.modules.exercises.core.domain import (
     Answer,
     AnswerKind,
     CorrectionResult,
     CorrectionVerdict,
+    primitive_spec,
 )
 from polyglot.platform.errors import DomainError, ErrorCode
 from polyglot.platform.fingerprint import canonical_json_fingerprint
@@ -76,6 +80,43 @@ def _uuid(value: object) -> UUID:
     return UUID(str(value))
 
 
+def _resolved_stimulus(
+    primitive_id: str,
+    stimulus: dict[str, JsonValue],
+    grammar_bindings: tuple[JsonValue, ...],
+) -> dict[str, JsonValue]:
+    reference = next(
+        (
+            value.removeprefix("grammar:")
+            for value in grammar_bindings
+            if isinstance(value, str) and value.startswith("grammar:")
+        ),
+        None,
+    )
+    realization = None if reference is None else grammar_realization_for(reference)
+    if realization is None:
+        return stimulus
+    spec = primitive_spec(primitive_id)
+    prompt = (
+        f"Comprenez la fonction « {realization.support_template} », puis observez "
+        f"le moule « {realization.target_template} »."
+        if spec.learning_operation == "exposure"
+        else f"Utilisez puis transformez le moule « {realization.target_template} »."
+    )
+    return {
+        **stimulus,
+        "prompt": prompt,
+        "model_answer": realization.examples[0],
+        "grammar_function_code": realization.function_code,
+        "grammar_realization_code": realization.realization_code,
+        "support_template": realization.support_template,
+        "target_template": realization.target_template,
+        "examples": list(realization.examples),
+        "pitfalls": list(realization.pitfalls),
+        "transformations": list(realization.transformations),
+    }
+
+
 def _attempt_from_payload(payload: object) -> AttemptView:
     data = _mapping(payload)
     return AttemptView(
@@ -89,15 +130,9 @@ def _attempt_from_payload(payload: object) -> AttemptView:
         if data.get("answer_kind") is None
         else AnswerKind(str(data["answer_kind"])),
         raw_answer=cast(JsonValue, data.get("raw_answer")),
-        input_method=None
-        if data.get("input_method") is None
-        else str(data["input_method"]),
-        input_locale=None
-        if data.get("input_locale") is None
-        else str(data["input_locale"]),
-        submitted_at=None
-        if data.get("submitted_at") is None
-        else _dt(data["submitted_at"]),
+        input_method=None if data.get("input_method") is None else str(data["input_method"]),
+        input_locale=None if data.get("input_locale") is None else str(data["input_locale"]),
+        submitted_at=None if data.get("submitted_at") is None else _dt(data["submitted_at"]),
         active_duration_ms=int(str(data["active_duration_ms"])),
         correction_reviewed_at=None
         if data.get("correction_reviewed_at") is None
@@ -115,17 +150,13 @@ def _case_from_payload(payload: object) -> CorrectionCaseView:
         attempt_id=_uuid(data["attempt_id"]),
         status=str(data["status"]),
         reason_code=str(data["reason_code"]),
-        user_comment=None
-        if data.get("user_comment") is None
-        else str(data["user_comment"]),
+        user_comment=None if data.get("user_comment") is None else str(data["user_comment"]),
         resolution_correction_id=None
         if data.get("resolution_correction_id") is None
         else _uuid(data["resolution_correction_id"]),
         version=int(str(data["version"])),
         opened_at=_dt(data["opened_at"]),
-        resolved_at=None
-        if data.get("resolved_at") is None
-        else _dt(data["resolved_at"]),
+        resolved_at=None if data.get("resolved_at") is None else _dt(data["resolved_at"]),
     )
 
 
@@ -139,9 +170,7 @@ class SqlExerciseService:
         self._sessions = session_factory
         self._ids = id_generator or Uuid7Generator()
 
-    async def get_instance(
-        self, actor_id: UUID, instance_id: UUID
-    ) -> ExerciseInstanceView:
+    async def get_instance(self, actor_id: UUID, instance_id: UUID) -> ExerciseInstanceView:
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
             row = (
@@ -152,7 +181,8 @@ class SqlExerciseService:
                             "instance.language_pack_revision_id,instance.seed,"
                             "instance.stimulus_revision_ids,instance.target_bindings,"
                             "instance.lexical_bindings,instance.grammar_bindings,"
-                            "revision.primitive_id,revision.response_kinds,"
+                            "revision.primitive_id,revision.schema_version,"
+                            "revision.response_kinds,revision.response_contract,"
                             "revision.stimulus_contract "
                             "FROM exercises.exercise_instances instance "
                             "JOIN exercises.exercise_definition_revisions revision ON "
@@ -167,23 +197,35 @@ class SqlExerciseService:
             )
             if row is None:
                 raise DomainError(ErrorCode.NOT_FOUND)
+            primitive_id = str(row["primitive_id"])
+            spec = primitive_spec(primitive_id)
+            grammar_bindings = tuple(cast(list[JsonValue], row["grammar_bindings"]))
+            stimulus = _resolved_stimulus(
+                primitive_id,
+                dict(cast(dict[str, JsonValue], row["stimulus_contract"])),
+                grammar_bindings,
+            )
             return ExerciseInstanceView(
                 instance_id=_uuid(row["instance_id"]),
                 definition_revision_id=_uuid(row["definition_revision_id"]),
                 language_pack_revision_id=_uuid(row["language_pack_revision_id"]),
-                primitive_id=str(row["primitive_id"]),
+                primitive_id=primitive_id,
+                primitive_version=int(row["schema_version"]),
+                reader_adapter=spec.reader_adapter,
+                learning_operation=spec.learning_operation,
+                evidence_format=spec.evidence_format,
+                correction_strategies=spec.correction_strategies,
                 response_kinds=tuple(
                     AnswerKind(str(value)) for value in cast(list[object], row["response_kinds"])
                 ),
-                stimulus_contract=dict(
-                    cast(dict[str, JsonValue], row["stimulus_contract"])
-                ),
+                response_contract=dict(cast(dict[str, JsonValue], row["response_contract"])),
+                stimulus_contract=stimulus,
                 stimulus_revision_ids=tuple(
                     _uuid(value) for value in cast(list[object], row["stimulus_revision_ids"])
                 ),
                 target_bindings=tuple(cast(list[JsonValue], row["target_bindings"])),
                 lexical_bindings=tuple(cast(list[JsonValue], row["lexical_bindings"])),
-                grammar_bindings=tuple(cast(list[JsonValue], row["grammar_bindings"])),
+                grammar_bindings=grammar_bindings,
                 seed=int(str(row["seed"])),
             )
 
@@ -195,9 +237,7 @@ class SqlExerciseService:
                 raise DomainError(ErrorCode.NOT_FOUND)
             return view
 
-    async def get_correction(
-        self, actor_id: UUID, correction_id: UUID
-    ) -> CorrectionView:
+    async def get_correction(self, actor_id: UUID, correction_id: UUID) -> CorrectionView:
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
             row = (
@@ -239,9 +279,7 @@ class SqlExerciseService:
                 created_at=cast(datetime, row["created_at"]),
             )
 
-    async def get_correction_case(
-        self, actor_id: UUID, case_id: UUID
-    ) -> CorrectionCaseView:
+    async def get_correction_case(self, actor_id: UUID, case_id: UUID) -> CorrectionCaseView:
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
             view, _ = await self._case(session, case_id)
@@ -269,9 +307,7 @@ class SqlExerciseService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
-            await self._lock_command(
-                session, actor_id, "SubmitExerciseAttempt", idempotency_key
-            )
+            await self._lock_command(session, actor_id, "SubmitExerciseAttempt", idempotency_key)
             replay = await self._attempt_replay(
                 session,
                 actor_id,
@@ -346,6 +382,85 @@ class SqlExerciseService:
         expected_version: int,
         idempotency_key: str,
     ) -> AttemptView:
+        return await self._correct_attempt(
+            actor_id,
+            attempt_id,
+            command,
+            expected_version=expected_version,
+            idempotency_key=idempotency_key,
+            trusted_learner_evaluation=False,
+        )
+
+    async def evaluate_attempt(
+        self,
+        actor_id: UUID,
+        attempt_id: UUID,
+        command: EvaluateAttempt,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+    ) -> AttemptView:
+        async with self._sessions() as session:
+            await self._set_actor(session, actor_id)
+            row = (
+                (
+                    await session.execute(
+                        text(
+                            "SELECT attempt.answer_kind,attempt.raw_answer,"
+                            "revision.primitive_id,revision.response_contract,"
+                            "revision.stimulus_contract,revision.provenance_id "
+                            "FROM exercises.exercise_attempts attempt "
+                            "JOIN exercises.exercise_instances instance ON "
+                            "instance.instance_id=attempt.instance_id "
+                            "JOIN exercises.exercise_definition_revisions revision ON "
+                            "revision.definition_revision_id=instance.definition_revision_id "
+                            "WHERE attempt.attempt_id=:attempt"
+                        ),
+                        {"attempt": attempt_id},
+                    )
+                )
+                .mappings()
+                .one_or_none()
+            )
+        if row is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        if row["answer_kind"] is None:
+            raise DomainError(ErrorCode.ATTEMPT_NOT_SUBMITTED)
+        result = correct_published_answer(
+            primitive_id=str(row["primitive_id"]),
+            answer_kind=AnswerKind(str(row["answer_kind"])),
+            raw_value=cast(JsonValue, row["raw_answer"]),
+            response_contract=dict(cast(dict[str, JsonValue], row["response_contract"])),
+            stimulus_contract=dict(cast(dict[str, JsonValue], row["stimulus_contract"])),
+        )
+        return await self._correct_attempt(
+            actor_id,
+            attempt_id,
+            CorrectAttempt(
+                correction_id=self._ids.new(),
+                result=result,
+                provenance_id=_uuid(row["provenance_id"]),
+                rubric_revision_id=None,
+                proposed_answer=None,
+                requires_review=result.verdict
+                in {CorrectionVerdict.AMBIGUOUS, CorrectionVerdict.NOT_EVALUABLE},
+                created_at=command.evaluated_at,
+            ),
+            expected_version=expected_version,
+            idempotency_key=idempotency_key,
+            trusted_learner_evaluation=True,
+        )
+
+    async def _correct_attempt(
+        self,
+        actor_id: UUID,
+        attempt_id: UUID,
+        command: CorrectAttempt,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+        trusted_learner_evaluation: bool,
+    ) -> AttemptView:
         fingerprint = canonical_json_fingerprint(
             _encode(
                 {
@@ -357,9 +472,7 @@ class SqlExerciseService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
-            await self._lock_command(
-                session, actor_id, "CorrectExerciseAttempt", idempotency_key
-            )
+            await self._lock_command(session, actor_id, "CorrectExerciseAttempt", idempotency_key)
             replay = await self._attempt_replay(
                 session,
                 actor_id,
@@ -390,7 +503,9 @@ class SqlExerciseService:
             learner_self_assessment = (
                 bool(owns_profile) and str(command.result.strategy) == "self_assessment"
             )
-            if not authorized and not learner_self_assessment:
+            if not authorized and not learner_self_assessment and not (
+                trusted_learner_evaluation and bool(owns_profile)
+            ):
                 raise DomainError(ErrorCode.FORBIDDEN)
             if before.version != expected_version:
                 raise DomainError(ErrorCode.VERSION_CONFLICT)
@@ -481,9 +596,7 @@ class SqlExerciseService:
                     "criteria": _json(dict(result.criteria_scores)),
                     "provenance": provenance_id,
                     "requires_review": command.requires_review,
-                    "supersedes": None
-                    if current is None
-                    else current["correction_id"],
+                    "supersedes": None if current is None else current["correction_id"],
                     "result": _json(result),
                     "created": command.created_at,
                 },
@@ -509,9 +622,7 @@ class SqlExerciseService:
                     "attempt": attempt_id,
                 },
             )
-            await self._complete_planned_block_if_terminal(
-                session, attempt_id, command.created_at
-            )
+            await self._complete_planned_block_if_terminal(session, attempt_id, command.created_at)
             after = await self._attempt(session, attempt_id)
             assert after is not None
             await self._record_effect(
@@ -548,9 +659,7 @@ class SqlExerciseService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
-            await self._lock_command(
-                session, actor_id, "OpenExerciseAttempt", idempotency_key
-            )
+            await self._lock_command(session, actor_id, "OpenExerciseAttempt", idempotency_key)
             replay = await self._attempt_replay(
                 session,
                 actor_id,
@@ -985,10 +1094,7 @@ class SqlExerciseService:
             if not has_correction:
                 raise DomainError(ErrorCode.CORRECTION_PATH_MISSING)
             existing = await session.scalar(
-                text(
-                    "SELECT case_id FROM exercises.correction_cases "
-                    "WHERE attempt_id=:attempt"
-                ),
+                text("SELECT case_id FROM exercises.correction_cases WHERE attempt_id=:attempt"),
                 {"attempt": attempt_id},
             )
             if existing is not None:
@@ -1049,9 +1155,7 @@ class SqlExerciseService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
-            await self._lock_command(
-                session, actor_id, "ReviewCorrection", idempotency_key
-            )
+            await self._lock_command(session, actor_id, "ReviewCorrection", idempotency_key)
             replay = await self._attempt_replay(
                 session,
                 actor_id,
@@ -1114,9 +1218,7 @@ class SqlExerciseService:
         )
         async with self._sessions() as session:
             await self._set_actor(session, actor_id)
-            await self._lock_command(
-                session, actor_id, "ReviewCorrectionCase", idempotency_key
-            )
+            await self._lock_command(session, actor_id, "ReviewCorrectionCase", idempotency_key)
             replay = await self._case_replay(
                 session,
                 actor_id,
@@ -1154,8 +1256,7 @@ class SqlExerciseService:
                 raise DomainError(ErrorCode.REVIEW_CONFLICT)
             review_no = await session.scalar(
                 text(
-                    "SELECT current_review_no+1 FROM exercises.correction_cases "
-                    "WHERE case_id=:case"
+                    "SELECT current_review_no+1 FROM exercises.correction_cases WHERE case_id=:case"
                 ),
                 {"case": case_id},
             )
@@ -1244,16 +1345,10 @@ class SqlExerciseService:
             attempt_no=int(str(row["attempt_no"])),
             status=str(row["status"]),
             terminal_reason=str(row["terminal_reason"]),
-            answer_kind=None
-            if row["answer_kind"] is None
-            else AnswerKind(str(row["answer_kind"])),
+            answer_kind=None if row["answer_kind"] is None else AnswerKind(str(row["answer_kind"])),
             raw_answer=cast(JsonValue, row["raw_answer"]),
-            input_method=None
-            if row["input_method"] is None
-            else str(row["input_method"]),
-            input_locale=None
-            if row["input_locale"] is None
-            else str(row["input_locale"]),
+            input_method=None if row["input_method"] is None else str(row["input_method"]),
+            input_locale=None if row["input_locale"] is None else str(row["input_locale"]),
             submitted_at=cast(datetime | None, row["submitted_at"]),
             active_duration_ms=int(str(row["active_duration_ms"])),
             correction_reviewed_at=cast(datetime | None, row["correction_reviewed_at"]),
@@ -1263,9 +1358,7 @@ class SqlExerciseService:
         )
 
     @staticmethod
-    def _require_draft_version(
-        attempt: AttemptView | None, expected_version: int
-    ) -> None:
+    def _require_draft_version(attempt: AttemptView | None, expected_version: int) -> None:
         if attempt is None:
             raise DomainError(ErrorCode.NOT_FOUND)
         if attempt.version != expected_version:
@@ -1274,9 +1367,7 @@ class SqlExerciseService:
             raise DomainError(ErrorCode.INVALID_TRANSITION)
 
     @staticmethod
-    async def _bump_attempt(
-        session: AsyncSession, attempt_id: UUID, updated_at: datetime
-    ) -> None:
+    async def _bump_attempt(session: AsyncSession, attempt_id: UUID, updated_at: datetime) -> None:
         await session.execute(
             text(
                 "UPDATE exercises.exercise_attempts SET version=version+1,updated_at=:at "
@@ -1331,9 +1422,7 @@ class SqlExerciseService:
                 attempt_id=_uuid(row["attempt_id"]),
                 status=str(row["status"]),
                 reason_code=str(row["reason_code"]),
-                user_comment=None
-                if row["user_comment"] is None
-                else str(row["user_comment"]),
+                user_comment=None if row["user_comment"] is None else str(row["user_comment"]),
                 resolution_correction_id=None
                 if row["resolution_correction_id"] is None
                 else _uuid(row["resolution_correction_id"]),
@@ -1396,10 +1485,7 @@ class SqlExerciseService:
         )
         if row is None:
             return None
-        if (
-            row["request_fingerprint"] != fingerprint
-            or row["result_type"] != "correction_case"
-        ):
+        if row["request_fingerprint"] != fingerprint or row["result_type"] != "correction_case":
             raise DomainError(ErrorCode.IDEMPOTENCY_CONFLICT)
         return _case_from_payload(row["result_payload"])
 

@@ -16,16 +16,22 @@ from polyglot.modules.catalogue.core.persistence import (
     Page,
 )
 
-CATALOGUE_FIXTURE_ROOT = (
-    Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
-)
+CATALOGUE_FIXTURE_ROOT = Path(__file__).resolve().parents[4] / "fixtures/canonical/FX-CATALOGUE-IT"
 
 
 class StubCatalogueReader:
+    async def get_language_pack(self, *, pack_revision_id: UUID):
+        page = await self.list_language_packs(limit=20, cursor=None)
+        return next(
+            (item for item in page.items if item.pack_revision_id == pack_revision_id),
+            None,
+        )
+
     async def read_foundations(self, *, pack_revision_id: UUID):
         fixture = load_catalogue_fixture(CATALOGUE_FIXTURE_ROOT)
         assert pack_revision_id == fixture.pack_revision.pack_revision_id
         return fixture.foundations
+
     async def list_language_packs(
         self,
         *,
@@ -45,18 +51,12 @@ class StubCatalogueReader:
                     target_language_tag="it-IT",
                     target_script_codes=("Latn",),
                     text_direction="ltr",
-                    segmentation_policy_revision_id=UUID(
-                        "019fe900-6000-7000-8000-000000000006"
-                    ),
+                    segmentation_policy_revision_id=UUID("019fe900-6000-7000-8000-000000000006"),
                     media_capabilities={"schema_version": 1, "tts": True},
                     capability_manifest={"schema_version": 1, "grammar": True},
-                    support_variety_ids=(
-                        UUID("019fe900-6000-7000-8000-000000000004"),
-                    ),
+                    support_variety_ids=(UUID("019fe900-6000-7000-8000-000000000004"),),
                     support_language_tags=("fr-FR",),
-                    foundation_revision_id=UUID(
-                        "019fe900-6000-7000-8000-000000000005"
-                    ),
+                    foundation_revision_id=UUID("019fe900-6000-7000-8000-000000000005"),
                     channel="stable",
                     compatibility_range=">=2.0.0,<2.1.0",
                 ),
@@ -112,9 +112,7 @@ class StubCatalogueReader:
                     senses=(
                         LexicalSenseSummary(
                             sense_id=UUID("019fe900-6000-7000-8002-000000000003"),
-                            sense_revision_id=UUID(
-                                "019fe900-6000-7000-8002-000000000004"
-                            ),
+                            sense_revision_id=UUID("019fe900-6000-7000-8002-000000000004"),
                             sense_code="ability",
                             definition="pouvoir ou permission",
                         ),
@@ -175,9 +173,7 @@ def test_placement_manifest_exposes_prompts_without_correction_oracles() -> None
     pack_revision_id = "019b0000-0000-7000-8000-000000000009"
 
     with TestClient(app, raise_server_exceptions=False) as client:
-        response = client.get(
-            f"/api/v1/language-packs/{pack_revision_id}/placement-manifest"
-        )
+        response = client.get(f"/api/v1/language-packs/{pack_revision_id}/placement-manifest")
 
     assert response.status_code == 200
     assert len(response.json()["items"]) == 6
@@ -190,9 +186,7 @@ def test_foundation_manifest_exposes_all_teaching_activities() -> None:
     pack_revision_id = "019b0000-0000-7000-8000-000000000009"
 
     with TestClient(app, raise_server_exceptions=False) as client:
-        response = client.get(
-            f"/api/v1/language-packs/{pack_revision_id}/foundation-manifest"
-        )
+        response = client.get(f"/api/v1/language-packs/{pack_revision_id}/foundation-manifest")
 
     assert response.status_code == 200
     assert len(response.json()["activities"]) == 32
@@ -204,3 +198,22 @@ def test_foundation_manifest_exposes_all_teaching_activities() -> None:
         "F5",
     }
     assert "checker_values" not in response.text
+
+
+def test_grammar_toolbox_exposes_functions_and_italian_realizations_separately() -> None:
+    app = create_app(test_mode=True, catalogue_service=StubCatalogueReader())
+    pack_revision_id = "019fe900-6000-7000-8000-000000000002"
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get(
+            f"/api/v1/language-packs/{pack_revision_id}/grammar-functions",
+            params={"support_language_tag": "fr-FR"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["version"] == "it-grammar-1.0.0"
+    assert len(payload["families"]) == 18
+    assert len(payload["realizations"]) == 30
+    assert payload["realizations"][0]["function_code"] == "express_will"
+    assert payload["realizations"][0]["realization_code"] == "IT-GRAM-001"

@@ -45,6 +45,7 @@ import type {
   GenerationJobResponse,
   GetExport200,
   GetSharedVocabularyList200,
+  GrammarToolboxResponse,
   ImportPreviewPageResponse,
   ImportRunResponse,
   LanguagePackPageResponse,
@@ -1248,6 +1249,52 @@ export const getCaptureLexicalGapResponseMock = (
   ...overrideResponse,
 });
 
+export const getEvaluateExerciseAttemptResponseMock = (
+  overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
+): AttemptResponse => ({
+  active_duration_ms: faker.number.int(),
+  answer_kind: faker.helpers.arrayElement([
+    faker.helpers.arrayElement(Object.values(AnswerKind)),
+    null,
+  ]),
+  attempt_id: faker.string.uuid(),
+  attempt_no: faker.number.int(),
+  correction_reviewed_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  input_locale: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  input_method: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  instance_id: faker.string.uuid(),
+  profile_id: faker.string.uuid(),
+  raw_answer: faker.helpers.arrayElement([
+    faker.helpers.arrayElement([
+      faker.datatype.boolean(),
+      faker.number.int(),
+      faker.number.float({ fractionDigits: 2 }),
+      faker.string.alpha({ length: { min: 10, max: 20 } }),
+      null,
+    ]),
+    [],
+  ]),
+  started_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  submitted_at: faker.helpers.arrayElement([
+    faker.date.past().toISOString().slice(0, 19) + "Z",
+    null,
+  ]),
+  terminal_reason: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
 export const getReviewCorrectionResponseMock = (
   overrideResponse: Partial<Extract<AttemptResponse, object>> = {},
 ): AttemptResponse => ({
@@ -2406,7 +2453,12 @@ export const getCompleteDiagnosticResponseMock = (
 export const getGetExerciseInstanceResponseMock = (
   overrideResponse: Partial<Extract<ExerciseInstanceResponse, object>> = {},
 ): ExerciseInstanceResponse => ({
+  correction_strategies: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
   definition_revision_id: faker.string.uuid(),
+  evidence_format: faker.string.alpha({ length: { min: 10, max: 20 } }),
   grammar_bindings: Array.from(
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
@@ -2424,6 +2476,7 @@ export const getGetExerciseInstanceResponseMock = (
   ),
   instance_id: faker.string.uuid(),
   language_pack_revision_id: faker.string.uuid(),
+  learning_operation: faker.string.alpha({ length: { min: 10, max: 20 } }),
   lexical_bindings: Array.from(
     { length: faker.number.int({ min: 1, max: 10 }) },
     (_, i) => i + 1,
@@ -2440,6 +2493,20 @@ export const getGetExerciseInstanceResponseMock = (
     ]),
   ),
   primitive_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  primitive_version: faker.number.int(),
+  reader_adapter: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  response_contract: {
+    [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+      faker.helpers.arrayElement([
+        faker.datatype.boolean(),
+        faker.number.int(),
+        faker.number.float({ fractionDigits: 2 }),
+        faker.string.alpha({ length: { min: 10, max: 20 } }),
+        null,
+      ]),
+      [],
+    ]),
+  },
   response_kinds: faker.helpers.arrayElements(Object.values(AnswerKind)),
   seed: faker.number.int(),
   stimulus_contract: {
@@ -2932,6 +2999,65 @@ export const getGetFoundationManifestResponseMock = (
   })),
   foundation_revision_id: faker.string.uuid(),
   pack_revision_id: faker.string.uuid(),
+  ...overrideResponse,
+});
+
+export const getGetGrammarToolboxResponseMock = (
+  overrideResponse: Partial<Extract<GrammarToolboxResponse, object>> = {},
+): GrammarToolboxResponse => ({
+  families: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    label: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    realization_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  pack_revision_id: faker.string.uuid(),
+  priority_realization_codes: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  realizations: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    compatible_primitives: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    examples: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    family_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    function_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    pitfalls: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    prerequisite_codes: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    realization_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    support_template: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    target_template: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    transformations: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+    variants: Array.from(
+      { length: faker.number.int({ min: 1, max: 10 }) },
+      (_, i) => i + 1,
+    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+  })),
+  support_language_tag: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  target_language_tag: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  version: faker.string.alpha({ length: { min: 10, max: 20 } }),
   ...overrideResponse,
 });
 
@@ -6934,6 +7060,32 @@ export const getCaptureLexicalGapMockHandler = (
   );
 };
 
+export const getEvaluateExerciseAttemptMockHandler = (
+  overrideResponse?:
+    | AttemptResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<AttemptResponse> | AttemptResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/attempts/:attemptId\\:evaluate",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getEvaluateExerciseAttemptResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
 export const getReviewCorrectionMockHandler = (
   overrideResponse?:
     | AttemptResponse
@@ -7941,6 +8093,32 @@ export const getGetFoundationManifestMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getGetFoundationManifestResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetGrammarToolboxMockHandler = (
+  overrideResponse?:
+    | GrammarToolboxResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<GrammarToolboxResponse> | GrammarToolboxResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/language-packs/:packRevisionId/grammar-functions",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetGrammarToolboxResponseMock(),
         { status: 200 },
       );
     },
@@ -10716,6 +10894,7 @@ export const getPolyglotV2APIMock = () => [
   getSaveAttemptDraftMockHandler(),
   getUseExerciseHintMockHandler(),
   getCaptureLexicalGapMockHandler(),
+  getEvaluateExerciseAttemptMockHandler(),
   getReviewCorrectionMockHandler(),
   getSelfAssessExerciseAttemptMockHandler(),
   getSubmitExerciseAttemptMockHandler(),
@@ -10755,6 +10934,7 @@ export const getPolyglotV2APIMock = () => [
   getGetGenerationJobMockHandler(),
   getListLanguagePacksMockHandler(),
   getGetFoundationManifestMockHandler(),
+  getGetGrammarToolboxMockHandler(),
   getGetPlacementManifestMockHandler(),
   getListLanguageProfilesMockHandler(),
   getCreateLanguageProfileMockHandler(),

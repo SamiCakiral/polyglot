@@ -63,18 +63,21 @@ import type {
   EmptyRequest,
   EnrollInModuleRequest,
   EnrollmentResponse,
+  EvaluateAttemptRequest,
   ExerciseInstanceResponse,
   FoundationManifestResponse,
   FoundationResponse,
   GenerationJobResponse,
   GetContentHistoryParams,
   GetExport200,
+  GetGrammarToolboxParams,
   GetImportPreviewParams,
   GetLexicalSenseParams,
   GetProgressOverviewParams,
   GetSharedVocabularyList200,
   GetTtsCapabilitiesParams,
   GetWordBankOverviewParams,
+  GrammarToolboxResponse,
   ImportPreviewPageResponse,
   ImportRunResponse,
   InjectPracticeStackRequest,
@@ -4078,6 +4081,223 @@ export const useCaptureLexicalGap = <
   TContext
 > => {
   return useMutation(getCaptureLexicalGapMutationOptions(options), queryClient);
+};
+
+export type evaluateExerciseAttemptResponse200 = {
+  data: AttemptResponse;
+  status: 200;
+};
+
+export type evaluateExerciseAttemptResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type evaluateExerciseAttemptResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type evaluateExerciseAttemptResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type evaluateExerciseAttemptResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type evaluateExerciseAttemptResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type evaluateExerciseAttemptResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type evaluateExerciseAttemptResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type evaluateExerciseAttemptResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type evaluateExerciseAttemptResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type evaluateExerciseAttemptResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type evaluateExerciseAttemptResponse428ApplicationJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type evaluateExerciseAttemptResponse428ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 428;
+};
+
+export type evaluateExerciseAttemptResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type evaluateExerciseAttemptResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type evaluateExerciseAttemptResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type evaluateExerciseAttemptResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type evaluateExerciseAttemptResponseSuccess =
+  evaluateExerciseAttemptResponse200 & {
+    headers: Headers;
+  };
+export type evaluateExerciseAttemptResponseError = (
+  | evaluateExerciseAttemptResponse401ApplicationJson
+  | evaluateExerciseAttemptResponse401ApplicationProblemJson
+  | evaluateExerciseAttemptResponse403ApplicationJson
+  | evaluateExerciseAttemptResponse403ApplicationProblemJson
+  | evaluateExerciseAttemptResponse409ApplicationJson
+  | evaluateExerciseAttemptResponse409ApplicationProblemJson
+  | evaluateExerciseAttemptResponse422ApplicationJson
+  | evaluateExerciseAttemptResponse422ApplicationProblemJson
+  | evaluateExerciseAttemptResponse423ApplicationJson
+  | evaluateExerciseAttemptResponse423ApplicationProblemJson
+  | evaluateExerciseAttemptResponse428ApplicationJson
+  | evaluateExerciseAttemptResponse428ApplicationProblemJson
+  | evaluateExerciseAttemptResponse429ApplicationJson
+  | evaluateExerciseAttemptResponse429ApplicationProblemJson
+  | evaluateExerciseAttemptResponse503ApplicationJson
+  | evaluateExerciseAttemptResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type evaluateExerciseAttemptResponse =
+  evaluateExerciseAttemptResponseSuccess | evaluateExerciseAttemptResponseError;
+
+export const getEvaluateExerciseAttemptUrl = (attemptId: string) => {
+  return `/api/v1/attempts/${attemptId}:evaluate`;
+};
+
+/**
+ * @summary Evaluate Exercise Attempt
+ */
+export const evaluateExerciseAttempt = async (
+  attemptId: string,
+  evaluateAttemptRequest: EvaluateAttemptRequest,
+  options?: RequestInit,
+): Promise<evaluateExerciseAttemptResponse> => {
+  const res = await fetch(getEvaluateExerciseAttemptUrl(attemptId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(evaluateAttemptRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: evaluateExerciseAttemptResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as evaluateExerciseAttemptResponse;
+};
+
+export const getEvaluateExerciseAttemptMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof evaluateExerciseAttempt>>,
+    TError,
+    { attemptId: string; data: EvaluateAttemptRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof evaluateExerciseAttempt>>,
+  TError,
+  { attemptId: string; data: EvaluateAttemptRequest },
+  TContext
+> => {
+  const mutationKey = ["evaluateExerciseAttempt"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof evaluateExerciseAttempt>>,
+    { attemptId: string; data: EvaluateAttemptRequest }
+  > = (props) => {
+    const { attemptId, data } = props ?? {};
+
+    return evaluateExerciseAttempt(attemptId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EvaluateExerciseAttemptMutationResult = NonNullable<
+  Awaited<ReturnType<typeof evaluateExerciseAttempt>>
+>;
+export type EvaluateExerciseAttemptMutationBody = EvaluateAttemptRequest;
+export type EvaluateExerciseAttemptMutationError = ProblemResponse;
+
+/**
+ * @summary Evaluate Exercise Attempt
+ */
+export const useEvaluateExerciseAttempt = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof evaluateExerciseAttempt>>,
+      TError,
+      { attemptId: string; data: EvaluateAttemptRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof evaluateExerciseAttempt>>,
+  TError,
+  { attemptId: string; data: EvaluateAttemptRequest },
+  TContext
+> => {
+  return useMutation(
+    getEvaluateExerciseAttemptMutationOptions(options),
+    queryClient,
+  );
 };
 
 export type reviewCorrectionResponse200 = {
@@ -13422,6 +13642,269 @@ export function useGetFoundationManifest<
 } {
   const queryOptions = getGetFoundationManifestQueryOptions(
     packRevisionId,
+    options,
+  );
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getGrammarToolboxResponse200 = {
+  data: GrammarToolboxResponse;
+  status: 200;
+};
+
+export type getGrammarToolboxResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getGrammarToolboxResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getGrammarToolboxResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getGrammarToolboxResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getGrammarToolboxResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getGrammarToolboxResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getGrammarToolboxResponseSuccess = getGrammarToolboxResponse200 & {
+  headers: Headers;
+};
+export type getGrammarToolboxResponseError = (
+  | getGrammarToolboxResponse409ApplicationJson
+  | getGrammarToolboxResponse409ApplicationProblemJson
+  | getGrammarToolboxResponse422ApplicationJson
+  | getGrammarToolboxResponse422ApplicationProblemJson
+  | getGrammarToolboxResponse503ApplicationJson
+  | getGrammarToolboxResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getGrammarToolboxResponse =
+  getGrammarToolboxResponseSuccess | getGrammarToolboxResponseError;
+
+export const getGetGrammarToolboxUrl = (
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/language-packs/${packRevisionId}/grammar-functions?${stringifiedParams}`
+    : `/api/v1/language-packs/${packRevisionId}/grammar-functions`;
+};
+
+/**
+ * @summary Get Grammar Toolbox
+ */
+export const getGrammarToolbox = async (
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+  options?: RequestInit,
+): Promise<getGrammarToolboxResponse> => {
+  const res = await fetch(getGetGrammarToolboxUrl(packRevisionId, params), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getGrammarToolboxResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getGrammarToolboxResponse;
+};
+
+export const getGetGrammarToolboxQueryKey = (
+  packRevisionId: string,
+  params?: GetGrammarToolboxParams,
+) => {
+  return [
+    `/api/v1/language-packs/${packRevisionId}/grammar-functions`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetGrammarToolboxQueryOptions = <
+  TData = Awaited<ReturnType<typeof getGrammarToolbox>>,
+  TError = ProblemResponse,
+>(
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGrammarToolbox>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getGetGrammarToolboxQueryKey(packRevisionId, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getGrammarToolbox>>
+  > = ({ signal }) =>
+    getGrammarToolbox(packRevisionId, params, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: packRevisionId !== null && packRevisionId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getGrammarToolbox>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetGrammarToolboxQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getGrammarToolbox>>
+>;
+export type GetGrammarToolboxQueryError = ProblemResponse;
+
+export function useGetGrammarToolbox<
+  TData = Awaited<ReturnType<typeof getGrammarToolbox>>,
+  TError = ProblemResponse,
+>(
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGrammarToolbox>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getGrammarToolbox>>,
+          TError,
+          Awaited<ReturnType<typeof getGrammarToolbox>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetGrammarToolbox<
+  TData = Awaited<ReturnType<typeof getGrammarToolbox>>,
+  TError = ProblemResponse,
+>(
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGrammarToolbox>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getGrammarToolbox>>,
+          TError,
+          Awaited<ReturnType<typeof getGrammarToolbox>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetGrammarToolbox<
+  TData = Awaited<ReturnType<typeof getGrammarToolbox>>,
+  TError = ProblemResponse,
+>(
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGrammarToolbox>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Grammar Toolbox
+ */
+
+export function useGetGrammarToolbox<
+  TData = Awaited<ReturnType<typeof getGrammarToolbox>>,
+  TError = ProblemResponse,
+>(
+  packRevisionId: string,
+  params: GetGrammarToolboxParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getGrammarToolbox>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetGrammarToolboxQueryOptions(
+    packRevisionId,
+    params,
     options,
   );
 

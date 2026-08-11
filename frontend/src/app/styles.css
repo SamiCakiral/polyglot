@@ -937,7 +937,7 @@ textarea {
   background: var(--forest-soft);
 }
 .practice-workspace-tabs {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 .practice-workspace-tabs .segment[aria-selected="true"] {
   color: #fff;
@@ -988,6 +988,43 @@ textarea {
   gap: 6px;
   font-size: 12px;
   font-weight: 750;
+}
+.grammar-toolbox {
+  display: grid;
+  gap: 20px;
+}
+.grammar-family-filter {
+  display: grid;
+  max-width: 420px;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 750;
+}
+.grammar-realization-list {
+  border-top: 1px solid var(--line-strong);
+}
+.grammar-realization-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  padding: 20px 0;
+}
+.grammar-realization-list p,
+.grammar-realization-list h3,
+.grammar-realization-list small {
+  margin: 0;
+}
+.grammar-realization-list p,
+.grammar-realization-list small {
+  color: var(--muted);
+}
+.grammar-realization-list h3 {
+  margin: 4px 0;
+  font-family: Georgia, serif;
+  font-size: 21px;
+  font-weight: 500;
 }
 .practice-run-shell {
   display: grid;
@@ -1427,6 +1464,56 @@ textarea {
   border-top: 1px solid var(--line-strong);
   margin-top: 26px;
   padding-top: 28px;
+}
+.primitive-options,
+.primitive-mapping,
+.primitive-order,
+.primitive-cells {
+  display: grid;
+  gap: 10px;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.primitive-options legend,
+.primitive-mapping legend,
+.primitive-order legend,
+.primitive-cells legend {
+  margin-bottom: 8px;
+  font-weight: 750;
+}
+.primitive-options label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  padding: 10px 14px;
+  background: var(--paper);
+}
+.primitive-options label:has(input:checked) {
+  border-color: var(--forest);
+  background: var(--forest-soft);
+}
+.primitive-mapping label,
+.primitive-cells label {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+.primitive-order > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 44px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  padding: 8px 10px 8px 14px;
+  background: var(--paper);
+}
+.primitive-order button {
+  min-height: 38px;
+  padding: 0;
 }
 .exercise-reader__meta {
   display: flex;
@@ -2206,7 +2293,15 @@ textarea {
     grid-template-columns: repeat(3, 1fr);
   }
   .practice-workspace-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
+  }
+  .grammar-realization-list article,
+  .primitive-mapping label,
+  .primitive-cells label {
+    grid-template-columns: 1fr;
+  }
+  .grammar-realization-list article button {
+    justify-self: stretch;
   }
   .segment {
     border-bottom: 1px solid var(--line);

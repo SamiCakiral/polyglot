@@ -534,3 +534,32 @@ async def test_free_practice_never_consumes_a_module_day(
     )
     assert enrollment_count == 0
     assert PACK_REVISION_ID is not None
+
+
+async def test_free_practice_never_silently_drops_an_unavailable_primitive(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_sprint_dependencies(migration_session)
+    await migration_session.commit()
+
+    with pytest.raises(DomainError) as rejected:
+        await sprint_service(runtime_factory).compose_free(
+            ACCOUNT_ID,
+            PROFILE_ID,
+            ComposeFreePractice(
+                plan_id=new_id(),
+                snapshot_id=new_id(),
+                pedagogical_day=NOW.date(),
+                budget_minutes=20,
+                target_refs=("lexicon:review",),
+                primitive_ids=("EX-RECALL-01", "EX-DISC-02"),
+                modalities=("reading",),
+                challenge="matched",
+                allow_novelty=False,
+            ),
+            idempotency_key="free-missing-primitive",
+            context=context(),
+        )
+
+    assert rejected.value.code is ErrorCode.PRIMITIVE_UNKNOWN

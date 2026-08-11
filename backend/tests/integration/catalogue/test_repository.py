@@ -18,6 +18,9 @@ async def test_repository_lists_active_pack_and_deterministic_paginated_targets(
     repository = SqlCatalogueRepository(session)
 
     packs = await repository.list_language_packs(limit=10, cursor=None)
+    pack = await repository.get_language_pack(
+        pack_revision_id=IDS["pack_revision"]
+    )
     first = await repository.list_targets(pack_code="it-IT__fr-FR", limit=2, cursor=None)
     second = await repository.list_targets(
         pack_code="it-IT__fr-FR",
@@ -28,6 +31,9 @@ async def test_repository_lists_active_pack_and_deterministic_paginated_targets(
     assert [(item.pack_code, item.target_language_tag) for item in packs.items] == [
         ("it-IT__fr-FR", "it-IT")
     ]
+    assert pack is not None
+    assert pack.pack_code == "it-IT__fr-FR"
+    assert pack.support_language_tags == ("fr-FR",)
     assert [item.skill_code for item in first.items] == ["IT-GRAM-002", "IT-GRAM-004"]
     assert first.next_cursor is not None
     assert [item.skill_code for item in second.items] == ["IT-PRAG-001"]

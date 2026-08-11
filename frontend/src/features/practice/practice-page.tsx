@@ -21,6 +21,7 @@ import {
 } from "../../components/product-ui";
 import {
   createMemoryPrompt,
+  useGetGrammarToolbox,
   listMemoryPrompts,
   prepareSessionPlan,
   startSprintRun,
@@ -33,6 +34,7 @@ import {
   useStartPracticeRun,
 } from "../../generated/polyglot";
 import type {
+  GrammarRealizationResponse,
   MemoryPromptResponse,
   PracticeDirection,
   PracticeMode,
@@ -45,27 +47,7 @@ import {
   todayIso,
 } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
-
-const focusOptions = [
-  {
-    id: "grammar",
-    label: "Transformer des phrases",
-    primitives: ["EX-RECALL-04", "EX-REPAIR-01", "EX-TRANSFORM-01"],
-    target: "grammar:review",
-  },
-  {
-    id: "writing",
-    label: "Écrire dans une situation",
-    primitives: ["EX-RECALL-04", "EX-COMP-03", "EX-PROD-01"],
-    target: "communication:writing",
-  },
-  {
-    id: "vocabulary",
-    label: "Réactiver du vocabulaire",
-    primitives: ["EX-EXPOSE-01", "EX-RECALL-04", "EX-DISC-04"],
-    target: "lexicon:due",
-  },
-] as const;
+import { focusOptions } from "./practice-focus";
 
 const stackKindLabels: Record<string, string> = {
   daily: "Pile quotidienne",
@@ -182,10 +164,13 @@ function PracticeStackLauncher({
 }
 
 export function PracticePage() {
-  const { activeProfile } = useActiveProfile();
+  const { activePack, activeProfile } = useActiveProfile();
   const session = useSession();
   const navigate = useNavigate();
-  const [workspace, setWorkspace] = useState<"stacks" | "free">("stacks");
+  const [workspace, setWorkspace] = useState<"stacks" | "grammar" | "free">(
+    "stacks",
+  );
+  const [grammarFamily, setGrammarFamily] = useState("priority_productive");
   const [focus, setFocus] = useState<(typeof focusOptions)[number]>(
     focusOptions[0],
   );
@@ -198,13 +183,23 @@ export function PracticePage() {
     fetch: queryFetch(),
     query: { enabled: Boolean(activeProfile), retry: false },
   });
+  const grammarQuery = useGetGrammarToolbox(
+    activePack?.pack_revision_id ?? "",
+    { support_language_tag: activePack?.support_language_tags[0] ?? "fr-FR" },
+    {
+      fetch: queryFetch(),
+      query: { enabled: Boolean(activePack), retry: false },
+    },
+  );
   const activeRunId = localStorage.getItem("polyglot.active-run");
 
   if (!activeProfile) return <NoProfile />;
   const stacks =
     stacksQuery.data?.status === 200 ? stacksQuery.data.data.items : [];
+  const grammarToolbox =
+    grammarQuery.data?.status === 200 ? grammarQuery.data.data : null;
 
-  async function launchFreePractice() {
+  async function launchFreePractice(grammar?: GrammarRealizationResponse) {
     setError("");
     const planId = uuid7();
     const response = await compose.mutateAsync({
@@ -213,13 +208,16 @@ export function PracticePage() {
         allow_novelty: false,
         budget_minutes: budget,
         challenge,
-        modalities:
-          focus.id === "writing" ? ["writing"] : ["reading", "writing"],
+        modalities: grammar ? ["reading", "writing"] : [...focus.modalities],
         pedagogical_day: todayIso(),
         plan_id: planId,
-        primitive_ids: [...focus.primitives],
+        primitive_ids: grammar
+          ? ["EX-EXPOSE-01", "EX-RECALL-02", "EX-TRANSFORM-01"]
+          : [...focus.primitives],
         snapshot_id: uuid7(),
-        target_refs: [focus.target],
+        target_refs: [
+          grammar ? `grammar:${grammar.realization_code}` : focus.target,
+        ],
       },
     });
     const problem = responseProblem(response);
@@ -278,6 +276,17 @@ export function PracticePage() {
         </button>
         <button
           className="segment"
+          aria-selected={workspace === "grammar"}
+          role="tab"
+          type="button"
+          onClick={() => {
+            setWorkspace("grammar");
+          }}
+        >
+          <Dumbbell aria-hidden="true" size={17} /> Boîte grammaticale
+        </button>
+        <button
+          className="segment"
           aria-selected={workspace === "free"}
           role="tab"
           type="button"
@@ -324,6 +333,69 @@ export function PracticePage() {
             </div>
           )}
         </section>
+      ) : workspace === "grammar" ? (
+        <section className="grammar-toolbox">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Fonction → moule</p>
+              <h2>Boîte grammaticale</h2>
+            </div>
+            <StatusPill>{grammarToolbox?.realizations.length ?? 0}</StatusPill>
+          </div>
+          {grammarQuery.isPending ? (
+            <LoadingRegion label="Ouverture de la boîte grammaticale" />
+          ) : !grammarToolbox ? (
+            <ErrorRegion message="La boîte grammaticale n'est pas encore disponible pour ce profil." />
+          ) : (
+            <>
+              <label className="grammar-family-filter">
+                Famille
+                <select
+                  value={grammarFamily}
+                  onChange={(event) => {
+                    setGrammarFamily(event.target.value);
+                  }}
+                >
+                  {grammarToolbox.families.map((family) => (
+                    <option key={family.code} value={family.code}>
+                      {family.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="grammar-realization-list">
+                {grammarToolbox.realizations
+                  .filter(
+                    (item) =>
+                      grammarFamily === "priority_productive" ||
+                      item.family_code === grammarFamily,
+                  )
+                  .map((item) => (
+                    <article key={item.realization_code}>
+                      <div>
+                        <p>{item.support_template}</p>
+                        <h3 lang={grammarToolbox.target_language_tag}>
+                          {item.target_template}
+                        </h3>
+                        <small lang={grammarToolbox.target_language_tag}>
+                          {item.examples[0]}
+                        </small>
+                      </div>
+                      <button
+                        disabled={compose.isPending}
+                        type="button"
+                        onClick={() => void launchFreePractice(item)}
+                      >
+                        Étudier puis transformer
+                        <ArrowRight aria-hidden="true" size={17} />
+                      </button>
+                    </article>
+                  ))}
+              </div>
+            </>
+          )}
+          {error ? <ErrorRegion message={error} /> : null}
+        </section>
       ) : (
         <section className="practice-configurator">
           <div>
@@ -343,13 +415,7 @@ export function PracticePage() {
                   <Dumbbell aria-hidden="true" size={20} />
                   <span>
                     {option.label}
-                    <small>
-                      {option.id === "grammar"
-                        ? "Boîte grammaticale et Gym"
-                        : option.id === "writing"
-                          ? "Production avec correction"
-                          : "Rappel actif et contexte"}
-                    </small>
+                    <small>{option.description}</small>
                   </span>
                 </button>
               ))}
@@ -441,7 +507,8 @@ export function PracticeRunPage() {
           <Check aria-hidden="true" size={28} />
           <p className="eyebrow">Pile terminée</p>
           <h1>
-            {run.member_count} {run.member_count === 1 ? "carte parcourue" : "cartes parcourues"}
+            {run.member_count}{" "}
+            {run.member_count === 1 ? "carte parcourue" : "cartes parcourues"}
           </h1>
           <p>Cette lecture n'attribue pas de maîtrise sans réponse corrigée.</p>
           <Link className="button-link" to="/practice">
@@ -550,10 +617,14 @@ export function PracticeRunPage() {
       );
       const reviewProblem = responseProblem(reviewResponse);
       if (reviewProblem || reviewResponse.status !== 200) {
-        throw new Error(reviewProblem || "La révision n'a pas pu être enregistrée.");
+        throw new Error(
+          reviewProblem || "La révision n'a pas pu être enregistrée.",
+        );
       }
       if (reviewResponse.data.version <= prompt.version) {
-        throw new Error("La révision n'a pas produit de nouvelle planification.");
+        throw new Error(
+          "La révision n'a pas produit de nouvelle planification.",
+        );
       }
       const response = await advance.mutateAsync({
         runId: practiceRunId,

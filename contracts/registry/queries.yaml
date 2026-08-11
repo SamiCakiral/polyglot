@@ -219,6 +219,10 @@
     {
       "method": "GET",
       "route": "/practice-runs/{run_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/language-packs/{pack_revision_id}/grammar-functions"
     }
   ],
   "application_query_names": [

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel, ConfigDict
 
 from polyglot.interfaces.http.routes.identity import ProblemResponse
+from polyglot.modules.catalogue.core.grammar_registry import grammar_toolbox_for
 from polyglot.modules.catalogue.core.persistence import (
     CatalogueTarget,
     LanguagePackSummary,
@@ -132,13 +133,41 @@ class LexiconSearchPageResponse(ClosedResponse):
     next_cursor: str | None
 
 
+class GrammarFamilyResponse(ClosedResponse):
+    code: str
+    label: str
+    realization_codes: tuple[str, ...]
+
+
+class GrammarRealizationResponse(ClosedResponse):
+    realization_code: str
+    function_code: str
+    family_code: str
+    support_template: str
+    target_template: str
+    examples: tuple[str, ...]
+    prerequisite_codes: tuple[str, ...]
+    variants: tuple[str, ...]
+    pitfalls: tuple[str, ...]
+    compatible_primitives: tuple[str, ...]
+    transformations: tuple[str, ...]
+
+
+class GrammarToolboxResponse(ClosedResponse):
+    pack_revision_id: UUID
+    target_language_tag: str
+    support_language_tag: str
+    version: str
+    families: tuple[GrammarFamilyResponse, ...]
+    realizations: tuple[GrammarRealizationResponse, ...]
+    priority_realization_codes: tuple[str, ...]
+
+
 CATALOGUE_PROBLEM_RESPONSES: dict[int | str, dict[str, Any]] = {
     problem_status: {
         "model": ProblemResponse,
         "content": {
-            "application/problem+json": {
-                "schema": {"$ref": "#/components/schemas/ProblemResponse"}
-            }
+            "application/problem+json": {"schema": {"$ref": "#/components/schemas/ProblemResponse"}}
         },
     }
     for problem_status in (409, 422, 503)
@@ -371,6 +400,47 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
             pack_revision_id=pack_revision_id,
             foundation_revision_id=catalogue.definition.foundation_revision_id,
             activities=tuple(activities),
+        )
+
+    @router.get(
+        "/api/v1/language-packs/{pack_revision_id}/grammar-functions",
+        operation_id="get_grammar_toolbox",
+        response_model=GrammarToolboxResponse,
+        responses=CATALOGUE_PROBLEM_RESPONSES,
+    )
+    async def get_grammar_toolbox(
+        pack_revision_id: UUID,
+        support_language_tag: Annotated[str, Query(min_length=4, max_length=35)],
+    ) -> GrammarToolboxResponse:
+        pack = await reader().get_language_pack(pack_revision_id=pack_revision_id)
+        if pack is None:
+            raise DomainError(ErrorCode.NOT_FOUND)
+        if support_language_tag not in pack.support_language_tags:
+            raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
+        toolbox = grammar_toolbox_for(pack.target_language_tag, support_language_tag)
+        if toolbox is None:
+            raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
+        return GrammarToolboxResponse(
+            pack_revision_id=pack_revision_id,
+            target_language_tag=toolbox.target_language_tag,
+            support_language_tag=toolbox.support_language_tag,
+            version=toolbox.version,
+            families=tuple(
+                GrammarFamilyResponse(
+                    code=family.code,
+                    label=family.label,
+                    realization_codes=tuple(
+                        item.realization_code
+                        for item in toolbox.realizations
+                        if item.family_code == family.code
+                    ),
+                )
+                for family in toolbox.families
+            ),
+            realizations=tuple(
+                GrammarRealizationResponse.model_validate(item) for item in toolbox.realizations
+            ),
+            priority_realization_codes=toolbox.priority_realization_codes,
         )
 
     @router.get(

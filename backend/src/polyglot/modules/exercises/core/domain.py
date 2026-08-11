@@ -162,6 +162,78 @@ class PrimitiveSpec:
     answer_kinds: tuple[AnswerKind, ...]
     operation_cap: float
 
+    @property
+    def reader_adapter(self) -> str:
+        return _PRIMITIVE_CONTRACTS[self.primitive_id][0]
+
+    @property
+    def learning_operation(self) -> str:
+        return _PRIMITIVE_CONTRACTS[self.primitive_id][1]
+
+    @property
+    def evidence_format(self) -> str:
+        return _PRIMITIVE_CONTRACTS[self.primitive_id][2]
+
+    @property
+    def correction_strategies(self) -> tuple[str, ...]:
+        return _PRIMITIVE_CONTRACTS[self.primitive_id][3]
+
+
+_PRIMITIVE_CONTRACTS: dict[str, tuple[str, str, str, tuple[str, ...]]] = {
+    "EX-EXPOSE-01": ("explanation", "exposure", "activity", ("none",)),
+    "EX-DISC-01": ("guided_observation", "recognition", "selection", ("accepted_set", "rubric")),
+    "EX-DISC-02": ("matching", "recognition", "pairing", ("exact_value",)),
+    "EX-DISC-03": ("classification", "recognition", "grouping", ("exact_value",)),
+    "EX-DISC-04": ("choice", "recognition", "choice", ("accepted_set",)),
+    "EX-DISC-06": ("target_detection", "recognition", "spans", ("exact_value",)),
+    "EX-RECALL-01": ("flashcard", "recall", "self_grade", ("accepted_set",)),
+    "EX-RECALL-02": ("cloze", "recall", "tokens", ("exact_normalized", "morphological")),
+    "EX-RECALL-03": (
+        "cued_recall",
+        "recall",
+        "short_text_or_audio",
+        ("exact_normalized", "rubric"),
+    ),
+    "EX-RECALL-04": ("dictation", "recall", "text", ("exact_normalized", "morphological")),
+    "EX-RECALL-05": ("partial_transcription", "recall", "tokens", ("accepted_set",)),
+    "EX-RECALL-06": ("morphology_grid", "recall", "cells", ("morphological",)),
+    "EX-RECALL-07": ("ordered_reconstruction", "recall", "ordered_items", ("exact_value",)),
+    "EX-TRANSFORM-01": (
+        "controlled_transformation",
+        "transformation",
+        "before_after",
+        ("morphological", "structural_constraints"),
+    ),
+    "EX-COMP-01": (
+        "reading_comprehension",
+        "comprehension",
+        "comprehension",
+        ("accepted_set", "rubric"),
+    ),
+    "EX-COMP-02": (
+        "listening_comprehension",
+        "comprehension",
+        "comprehension",
+        ("accepted_set", "rubric"),
+    ),
+    "EX-COMP-03": (
+        "translation",
+        "comprehension",
+        "translation",
+        ("bounded_translation", "rubric"),
+    ),
+    "EX-PROD-01": (
+        "guided_production",
+        "production",
+        "rubric",
+        ("structural_constraints", "rubric"),
+    ),
+    "EX-PROD-02": ("dialogue_turn", "interaction", "rubric", ("rubric",)),
+    "EX-PROD-03": ("free_production", "production", "rubric", ("rubric",)),
+    "EX-ORAL-01": ("oral_rehearsal", "production", "self_assessment", ("self_assessment",)),
+    "EX-REPAIR-01": ("error_repair", "repair", "before_after", ("before_after", "rubric")),
+}
+
 
 _SPECS = (
     PrimitiveSpec("EX-EXPOSE-01", (AnswerKind.ACKNOWLEDGEMENT,), 0.0),

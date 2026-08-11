@@ -33,6 +33,8 @@ async def seed_attempt(
     *,
     primitive_id: str = "EX-RECALL-01",
     response_kinds: str = '["self_grade"]',
+    response_contract: str = "{}",
+    stimulus_contract: str = "{}",
 ) -> None:
     await session.execute(
         text(
@@ -82,7 +84,8 @@ async def seed_attempt(
             "observation_policy_id,accessibility_features,min_duration_ms,p50_duration_ms,"
             "p80_duration_ms,example_revision_ids,provenance_id,created_at) VALUES "
             "(:revision,:definition,1,1,:primitive,'published',CAST(:response_kinds AS jsonb),"
-            "'[]','[\"cards\"]','[[\"lexical\",0.55]]','{}','{}','[]','{}','[]',"
+            "'[]','[\"cards\"]','[[\"lexical\",0.55]]',CAST(:response_contract AS jsonb),"
+            "CAST(:stimulus_contract AS jsonb),'[]','{}','[]',"
             "'correction:v1','hint:v1','observation:v1',"
             "'[\"keyboard\",\"screen_reader\",\"untimed\"]',1000,2000,3000,'[]',"
             ":provenance,:now)"
@@ -92,6 +95,8 @@ async def seed_attempt(
             "definition": DEFINITION_ID,
             "primitive": primitive_id,
             "response_kinds": response_kinds,
+            "response_contract": response_contract,
+            "stimulus_contract": stimulus_contract,
             "provenance": uid(22),
             "now": NOW,
         },

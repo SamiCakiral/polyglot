@@ -80,6 +80,26 @@ def test_core_registry_is_closed_and_fixture_covers_every_core_primitive() -> No
         assert {"positive", "negative", "ambiguous", "not_evaluable"}.issubset(item["case_ids"])
 
 
+def test_each_core_primitive_declares_its_reader_and_evidence_contract() -> None:
+    from polyglot.modules.exercises.core.domain import CORE_PRIMITIVE_IDS, primitive_spec
+
+    for primitive_id in CORE_PRIMITIVE_IDS:
+        spec = primitive_spec(primitive_id)
+        assert spec.reader_adapter
+        assert spec.evidence_format
+        assert spec.correction_strategies
+        assert spec.learning_operation in {
+            "exposure",
+            "recognition",
+            "recall",
+            "transformation",
+            "comprehension",
+            "production",
+            "interaction",
+            "repair",
+        }
+
+
 def test_fixture_payload_is_hash_locked_for_offline_replay() -> None:
     metadata = json.loads(FIXTURE_METADATA.read_text())
 

@@ -15,7 +15,13 @@ class ExerciseInstanceView:
     definition_revision_id: UUID
     language_pack_revision_id: UUID
     primitive_id: str
+    primitive_version: int
+    reader_adapter: str
+    learning_operation: str
+    evidence_format: str
+    correction_strategies: tuple[str, ...]
     response_kinds: tuple[AnswerKind, ...]
+    response_contract: dict[str, JsonValue]
     stimulus_contract: dict[str, JsonValue]
     stimulus_revision_ids: tuple[UUID, ...]
     target_bindings: tuple[JsonValue, ...]
@@ -144,6 +150,11 @@ class CorrectAttempt:
     created_at: datetime
 
 
+@dataclass(frozen=True, slots=True)
+class EvaluateAttempt:
+    evaluated_at: datetime
+
+
 class ExerciseApplicationService(Protocol):
     async def get_instance(self, actor_id: UUID, instance_id: UUID) -> ExerciseInstanceView: ...
 
@@ -204,6 +215,16 @@ class ExerciseApplicationService(Protocol):
         idempotency_key: str,
     ) -> AttemptView: ...
 
+    async def evaluate_attempt(
+        self,
+        actor_id: UUID,
+        attempt_id: UUID,
+        command: EvaluateAttempt,
+        *,
+        expected_version: int,
+        idempotency_key: str,
+    ) -> AttemptView: ...
+
     async def contest_correction(
         self,
         actor_id: UUID,
@@ -241,6 +262,7 @@ __all__ = [
     "CorrectAttempt",
     "CorrectionCaseView",
     "CorrectionView",
+    "EvaluateAttempt",
     "ExerciseApplicationService",
     "ExerciseInstanceView",
     "MarkCorrectionRead",

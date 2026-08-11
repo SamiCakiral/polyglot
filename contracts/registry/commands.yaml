@@ -1006,6 +1006,19 @@
       "idempotency": "required"
     },
     {
+      "name": "EvaluateExerciseAttempt",
+      "method": "POST",
+      "route": "/api/v1/attempts/{attempt_id}:evaluate",
+      "events": [
+        "exercise_attempt_corrected"
+      ],
+      "errors": [
+        "attempt_not_submitted",
+        "correction_path_missing"
+      ],
+      "idempotency": "required"
+    },
+    {
       "name": "ContestCorrection",
       "method": "POST",
       "route": "/api/v1/attempts/{attempt_id}/correction-case",

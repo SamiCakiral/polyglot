@@ -23,6 +23,7 @@ from polyglot.modules.exercises.core.application import (
     ContestCorrection,
     CorrectAttempt,
     CorrectionCaseView,
+    EvaluateAttempt,
     ExerciseApplicationService,
     MarkCorrectionRead,
     OpenAttempt,
@@ -110,6 +111,10 @@ class SelfAssessAttemptRequest(ClosedModel):
     reviewed_at: datetime
 
 
+class EvaluateAttemptRequest(ClosedModel):
+    evaluated_at: datetime
+
+
 class ContestCorrectionRequest(ClosedModel):
     case_id: UUID
     reason_code: str = Field(min_length=1, max_length=80)
@@ -136,7 +141,13 @@ class ExerciseInstanceResponse(ClosedModel):
     definition_revision_id: UUID
     language_pack_revision_id: UUID
     primitive_id: str
+    primitive_version: int
+    reader_adapter: str
+    learning_operation: str
+    evidence_format: str
+    correction_strategies: tuple[str, ...]
     response_kinds: tuple[AnswerKind, ...]
+    response_contract: dict[str, JsonValue]
     stimulus_contract: dict[str, JsonValue]
     stimulus_revision_ids: tuple[UUID, ...]
     target_bindings: tuple[JsonValue, ...]
@@ -396,6 +407,33 @@ def exercises_router(
             current.account_id,
             attempt_id,
             SubmitAttempt(**payload.model_dump()),
+            expected_version=expected_version(if_match),
+            idempotency_key=idempotency_key,
+        )
+        return attempt_response(response, view)
+
+    @router.post(
+        "/api/v1/attempts/{attempt_id}:evaluate",
+        operation_id="evaluate_exercise_attempt",
+        response_model=AttemptResponse,
+        responses=ETAG_RESPONSE,
+    )
+    async def evaluate_exercise_attempt(
+        attempt_id: UUID,
+        payload: EvaluateAttemptRequest,
+        request: Request,
+        response: Response,
+        idempotency_key: IdempotencyKey,
+        origin: OriginHeader,
+        csrf_token: CsrfHeader,
+        if_match: IfMatchHeader,
+        session_token: SessionCookieToken = None,
+    ) -> AttemptResponse:
+        current = await session_for(request, session_token, csrf_token, origin)
+        view = await application_service().evaluate_attempt(
+            current.account_id,
+            attempt_id,
+            EvaluateAttempt(payload.evaluated_at),
             expected_version=expected_version(if_match),
             idempotency_key=idempotency_key,
         )

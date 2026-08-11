@@ -4,16 +4,17 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useSession } from "../../app/session-context";
 import { useActiveProfile } from "../../app/profile-state";
-import {
-  ErrorRegion,
-  LoadingRegion,
-} from "../../components/product-ui";
+import { ErrorRegion, LoadingRegion } from "../../components/product-ui";
 import { TtsAudio } from "../../components/tts-audio";
-import type { AnswerKind, SprintBlockResponse } from "../../generated/model";
+import type {
+  AnswerKind,
+  JsonValueInput,
+  SprintBlockResponse,
+} from "../../generated/model";
 import {
   completeSprintRun,
+  evaluateExerciseAttempt,
   interruptSprintRun,
-  selfAssessExerciseAttempt,
   submitExerciseAttempt,
   useGetAttempt,
   useGetExerciseInstance,
@@ -22,6 +23,12 @@ import {
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
+import { PrimitiveResponseEditor } from "../exercises/primitive-response-editor";
+import {
+  isResponseComplete,
+  normalizeResponse,
+  type PrimitiveResponse,
+} from "../exercises/primitive-response";
 import { resumeBlockOffset } from "./sprint-position";
 
 const familyLabels: Record<string, string> = {
@@ -42,17 +49,6 @@ const familyLabels: Record<string, string> = {
   reflection_close: "Bilan de séance",
 };
 
-const meaningChoices: readonly (readonly [number, string])[] = [
-  [0, "Non"],
-  [0.5, "En partie"],
-  [1, "Oui"],
-];
-const formChoices: readonly (readonly [number, string])[] = [
-  [0, "Non"],
-  [0.5, "Presque"],
-  [1, "Oui"],
-];
-
 function readableBinding(value: unknown): string | null {
   if (typeof value === "string") return value;
   if (typeof value !== "object" || value === null) return null;
@@ -69,6 +65,22 @@ function readableBinding(value: unknown): string | null {
     if (typeof record[key] === "string") return record[key];
   }
   return null;
+}
+
+function storedResponse(key: string): PrimitiveResponse {
+  const stored = localStorage.getItem(key);
+  if (stored === null) return "";
+  try {
+    return JSON.parse(stored) as PrimitiveResponse;
+  } catch {
+    return stored;
+  }
+}
+
+function responseLabel(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value === null || value === undefined) return "Activité effectuée";
+  return JSON.stringify(value);
 }
 
 function ExerciseReader({
@@ -99,19 +111,17 @@ function ExerciseReader({
   });
   const [attemptVersion, setAttemptVersion] = useState<number | null>(null);
   const storageKey = `polyglot.draft.${instanceId}`;
-  const [answer, setAnswer] = useState(
-    () => localStorage.getItem(storageKey) ?? "",
+  const [answer, setAnswer] = useState<PrimitiveResponse>(() =>
+    storedResponse(storageKey),
   );
   const [opened, setOpened] = useState(false);
   const [submittedVersion, setSubmittedVersion] = useState<number | null>(null);
-  const [meaningScore, setMeaningScore] = useState<number | null>(null);
-  const [formScore, setFormScore] = useState<number | null>(null);
   const [error, setError] = useState("");
   const openAttempt = useOpenExerciseAttempt({ fetch: commandFetch(session) });
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      localStorage.setItem(storageKey, answer);
+      localStorage.setItem(storageKey, JSON.stringify(answer));
     }, 250);
     return () => {
       window.clearTimeout(timeout);
@@ -139,17 +149,19 @@ function ExerciseReader({
       : "Comparez votre production à la consigne.";
   const responseKind: AnswerKind = exercise.response_kinds[0] ?? "text";
   const isAcknowledgement =
-    responseKind === "acknowledgement" || responseKind === "self_assessment";
+    responseKind === "acknowledgement" ||
+    responseKind === "self_assessment" ||
+    responseKind === "no_answer";
   const persistedAttempt =
     attemptQuery.data?.status === 200 ? attemptQuery.data.data : null;
   const effectiveSubmittedVersion =
     submittedVersion ??
     (persistedAttempt?.submitted_at ? persistedAttempt.version : null);
-  const effectiveAnswer =
-    answer ||
-    (typeof persistedAttempt?.raw_answer === "string"
-      ? persistedAttempt.raw_answer
-      : "");
+  const effectiveAnswer: PrimitiveResponse =
+    (typeof answer === "string" && answer.length === 0) ||
+    (Array.isArray(answer) && answer.length === 0)
+      ? ((persistedAttempt?.raw_answer as JsonValueInput | undefined) ?? answer)
+      : answer;
 
   async function submit() {
     setError("");
@@ -189,7 +201,7 @@ function ExerciseReader({
             ? true
             : responseKind === "self_assessment"
               ? { confidence: 1 }
-              : answer,
+              : normalizeResponse(responseKind, answer),
         submitted_at: new Date().toISOString(),
       },
       commandFetch(session, version),
@@ -207,20 +219,13 @@ function ExerciseReader({
     localStorage.removeItem(storageKey);
   }
 
-  async function selfAssess() {
-    if (
-      effectiveSubmittedVersion === null ||
-      meaningScore === null ||
-      formScore === null
-    )
-      return;
+  async function evaluate() {
+    if (effectiveSubmittedVersion === null) return;
     setError("");
-    const response = await selfAssessExerciseAttempt(
+    const response = await evaluateExerciseAttempt(
       attemptId,
       {
-        meaning: meaningScore,
-        form: formScore,
-        reviewed_at: new Date().toISOString(),
+        evaluated_at: new Date().toISOString(),
       },
       commandFetch(session, effectiveSubmittedVersion),
     );
@@ -230,7 +235,7 @@ function ExerciseReader({
       return;
     }
     if (response.status !== 200) {
-      setError("L'auto-évaluation n'a pas pu être enregistrée.");
+      setError("La correction n'a pas pu être enregistrée.");
       return;
     }
     localStorage.removeItem(attemptStorageKey);
@@ -246,7 +251,11 @@ function ExerciseReader({
         {prompt}
       </div>
       {exercise.primitive_id.includes("ORAL") ? (
-        <TtsAudio locale={targetLanguageTag} session={session} text={modelAnswer} />
+        <TtsAudio
+          locale={targetLanguageTag}
+          session={session}
+          text={modelAnswer}
+        />
       ) : null}
       {effectiveSubmittedVersion !== null ? (
         <div className="feedback-panel">
@@ -255,49 +264,18 @@ function ExerciseReader({
             <p>
               {isAcknowledgement
                 ? "Activité effectuée à voix haute"
-                : effectiveAnswer}
+                : responseLabel(effectiveAnswer)}
             </p>
           </div>
           <div>
             <span>Réponse modèle</span>
             <p lang={targetLanguageTag}>{modelAnswer}</p>
           </div>
-          <fieldset>
-            <legend>Le sens est-il juste ?</legend>
-            <div className="score-options">
-              {meaningChoices.map(([score, label]) => (
-                <label key={label}>
-                  <input
-                    checked={meaningScore === score}
-                    name={`${attemptId}-meaning`}
-                    type="radio"
-                    onChange={() => {
-                      setMeaningScore(score);
-                    }}
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset>
-            <legend>La forme est-elle naturelle ?</legend>
-            <div className="score-options">
-              {formChoices.map(([score, label]) => (
-                <label key={label}>
-                  <input
-                    checked={formScore === score}
-                    name={`${attemptId}-form`}
-                    type="radio"
-                    onChange={() => {
-                      setFormScore(score);
-                    }}
-                  />
-                  <span>{label}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <p className="feedback-panel__policy">
+            Les réponses fermées sont vérifiées automatiquement. Une production
+            ouverte est conservée pour le professeur et ne crée aucun crédit de
+            maîtrise sans correction légitime.
+          </p>
         </div>
       ) : isAcknowledgement ? (
         <div className="self-check">
@@ -311,17 +289,15 @@ function ExerciseReader({
           </div>
         </div>
       ) : (
-        <label className="answer-field">
-          Votre réponse
-          <textarea
-            autoFocus
-            rows={6}
-            value={answer}
-            onChange={(event) => {
-              setAnswer(event.target.value);
-            }}
-          />
-        </label>
+        <PrimitiveResponseEditor
+          contract={{
+            ...exercise.response_contract,
+            ...exercise.stimulus_contract,
+          }}
+          kind={responseKind}
+          value={answer}
+          onChange={setAnswer}
+        />
       )}
       {error ? <ErrorRegion message={error} /> : null}
       {effectiveSubmittedVersion === null ? (
@@ -329,7 +305,7 @@ function ExerciseReader({
           disabled={
             openAttempt.isPending ||
             attemptQuery.isPending ||
-            (!isAcknowledgement && answer.trim().length === 0)
+            (!isAcknowledgement && !isResponseComplete(responseKind, answer))
           }
           type="button"
           onClick={() => void submit()}
@@ -338,11 +314,10 @@ function ExerciseReader({
         </button>
       ) : (
         <button
-          disabled={meaningScore === null || formScore === null}
           type="button"
-          onClick={() => void selfAssess()}
+          onClick={() => void evaluate()}
         >
-          Enregistrer et continuer <ArrowRight aria-hidden="true" size={18} />
+          Corriger et continuer <ArrowRight aria-hidden="true" size={18} />
         </button>
       )}
     </section>
@@ -509,8 +484,8 @@ export function SprintPage() {
         ) : currentBlock.family === "reflection_close" ? (
           <section className="exercise-reader reflection-close">
             <div className="exercise-prompt">
-              Repérez mentalement un mot devenu plus accessible et une
-              structure à reprendre demain.
+              Repérez mentalement un mot devenu plus accessible et une structure
+              à reprendre demain.
             </div>
             <p>
               Les réponses, rappels et auto-évaluations de cette séance sont

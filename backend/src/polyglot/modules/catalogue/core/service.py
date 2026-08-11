@@ -14,6 +14,12 @@ from polyglot.modules.catalogue.core.persistence import (
 
 
 class CatalogueReader(Protocol):
+    async def get_language_pack(
+        self,
+        *,
+        pack_revision_id: UUID,
+    ) -> LanguagePackSummary | None: ...
+
     async def read_foundations(
         self,
         *,
@@ -56,6 +62,16 @@ class CatalogueApplicationService:
     ) -> PublishedFoundationCatalogue | None:
         async with self._session_factory() as session:
             return await SqlCatalogueRepository(session).read_foundations(
+                pack_revision_id=pack_revision_id,
+            )
+
+    async def get_language_pack(
+        self,
+        *,
+        pack_revision_id: UUID,
+    ) -> LanguagePackSummary | None:
+        async with self._session_factory() as session:
+            return await SqlCatalogueRepository(session).get_language_pack(
                 pack_revision_id=pack_revision_id,
             )
 
