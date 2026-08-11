@@ -74,10 +74,14 @@ def _family_for(primitive_id: str, target_refs: tuple[str, ...]) -> BlockFamily:
         return BlockFamily.TRANSFORMATION_GYM
     if primitive_id.startswith("EX-ORAL"):
         return BlockFamily.SHADOWING
+    if primitive_id == "EX-PROD-03":
+        return BlockFamily.FREE_WRITING
     if primitive_id.startswith("EX-PROD"):
         return BlockFamily.GUIDED_OUTPUT
-    if primitive_id.startswith("EX-COMP"):
+    if primitive_id == "EX-COMP-02":
         return BlockFamily.LISTENING
+    if primitive_id.startswith("EX-COMP"):
+        return BlockFamily.VERSION_INPUT
     if primitive_id.startswith("EX-REPAIR"):
         return BlockFamily.GRAMMAR_TOOLBOX
     return BlockFamily.VERSION_INPUT
@@ -273,20 +277,39 @@ class SqlSprintService:
             )
             if profile is None or str(profile["status"]) != "active":
                 raise DomainError(ErrorCode.NOT_FOUND)
+            effective_plan_kind = plan_kind
+            target_refs: tuple[str, ...]
+            definition_ids: tuple[UUID, ...]
+            content_ids: tuple[UUID, ...]
+            enrollment_id: UUID | None
+            module_revision_id: UUID | None
+            module_day_id: UUID | None
+            grammar_families: tuple[str, ...]
             if plan_kind is PlanKind.DAILY:
                 context_row = await self._daily_context(session, profile_id)
-                target_refs = tuple(str(item) for item in context_row["primary_target_refs"])
-                definition_ids = tuple(
-                    _uuid(item) for item in context_row["exercise_definition_revision_ids"]
-                )
-                content_ids = tuple(_uuid(item) for item in context_row["content_revision_ids"])
-                enrollment_id = _uuid(context_row["enrollment_id"])
-                module_revision_id = _uuid(context_row["module_revision_id"])
-                module_day_id = _uuid(context_row["module_day_id"])
-                pack_revision_id = _uuid(context_row["pack_revision_id"])
-                grammar_families = tuple(
-                    str(item) for item in context_row["new_grammar_family_codes"]
-                )
+                if context_row is None:
+                    effective_plan_kind = PlanKind.FOUNDATION
+                    target_refs = ("grammar:foundation", "skill:calibration")
+                    definition_ids = await self._foundation_definition_ids(session)
+                    content_ids = ()
+                    enrollment_id = None
+                    module_revision_id = None
+                    module_day_id = None
+                    pack_revision_id = await self._profile_pack_revision(session, profile_id)
+                    grammar_families = ("foundation",)
+                else:
+                    target_refs = tuple(str(item) for item in context_row["primary_target_refs"])
+                    definition_ids = tuple(
+                        _uuid(item) for item in context_row["exercise_definition_revision_ids"]
+                    )
+                    content_ids = tuple(_uuid(item) for item in context_row["content_revision_ids"])
+                    enrollment_id = _uuid(context_row["enrollment_id"])
+                    module_revision_id = _uuid(context_row["module_revision_id"])
+                    module_day_id = _uuid(context_row["module_day_id"])
+                    pack_revision_id = _uuid(context_row["pack_revision_id"])
+                    grammar_families = tuple(
+                        str(item) for item in context_row["new_grammar_family_codes"]
+                    )
             else:
                 assert free_command is not None
                 target_refs = free_command.target_refs
@@ -313,10 +336,17 @@ class SqlSprintService:
             if plan_kind is PlanKind.DAILY:
                 due_ids = await self._due_recode_ids(session, profile_id, now)
                 candidates = self._attach_due_recodes(snapshot_id, candidates, due_ids)
+            stack_ids = (
+                await self._daily_stack_ids(session, profile_id, pedagogical_day)
+                if plan_kind is PlanKind.DAILY
+                else free_command.vocabulary_list_snapshot_ids
+                if free_command is not None
+                else ()
+            )
             snapshot = PlanningSnapshot(
                 snapshot_id=snapshot_id,
                 profile_id=profile_id,
-                plan_kind=plan_kind,
+                plan_kind=effective_plan_kind,
                 budget_minutes=budget_minutes,
                 pedagogical_day=pedagogical_day,
                 timezone=str(profile["timezone"]),
@@ -325,7 +355,7 @@ class SqlSprintService:
                     f"{profile_id}:{pedagogical_day}:{snapshot_id}".encode()
                 ).hexdigest(),
                 policy_revision="SPRINT_PRIORITY_V0",
-                planner_revision="COMPOSER_V0",
+                planner_revision="COMPOSER_V1",
                 profile_band="P-ABS",
                 mastered_refs=frozenset(),
                 candidates=candidates,
@@ -333,9 +363,7 @@ class SqlSprintService:
                 module_revision_id=module_revision_id,
                 module_day_id=module_day_id,
                 due_delayed_recode_ids=due_ids,
-                word_bank_snapshot_ids=(
-                    () if free_command is None else free_command.vocabulary_list_snapshot_ids
-                ),
+                word_bank_snapshot_ids=stack_ids,
                 private_context=None if free_command is None else free_command.private_context,
             )
             try:
@@ -887,7 +915,9 @@ class SqlSprintService:
             {"actor": str(actor_id)},
         )
 
-    async def _daily_context(self, session: AsyncSession, profile_id: UUID) -> RowMapping:
+    async def _daily_context(
+        self, session: AsyncSession, profile_id: UUID
+    ) -> RowMapping | None:
         row = (
             (
                 await session.execute(
@@ -913,9 +943,56 @@ class SqlSprintService:
             .mappings()
             .one_or_none()
         )
-        if row is None:
-            raise DomainError(ErrorCode.NO_VALID_COMPOSITION)
         return row
+
+    async def _foundation_definition_ids(self, session: AsyncSession) -> tuple[UUID, ...]:
+        preferred = (
+            "EX-RECALL-01",
+            "EX-RECALL-02",
+            "EX-RECALL-03",
+            "EX-RECALL-04",
+            "EX-RECALL-05",
+            "EX-RECALL-06",
+            "EX-RECALL-07",
+            "EX-COMP-01",
+            "EX-COMP-02",
+            "EX-COMP-03",
+            "EX-EXPOSE-01",
+            "EX-TRANSFORM-01",
+            "EX-PROD-01",
+            "EX-ORAL-01",
+        )
+        statement = text(
+            "SELECT DISTINCT ON (primitive_id) definition_revision_id,primitive_id "
+            "FROM exercises.exercise_definition_revisions "
+            "WHERE status='published' AND primitive_id IN :primitives "
+            "ORDER BY primitive_id,revision_no DESC,definition_revision_id DESC"
+        ).bindparams(bindparam("primitives", expanding=True))
+        rows = (await session.execute(statement, {"primitives": preferred})).mappings().all()
+        found = {str(row["primitive_id"]) for row in rows}
+        if not {"EX-EXPOSE-01", "EX-TRANSFORM-01"}.issubset(found) or not any(
+            value.startswith(("EX-COMP", "EX-RECALL")) for value in found
+        ):
+            raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
+        return tuple(_uuid(row["definition_revision_id"]) for row in rows)
+
+    @staticmethod
+    async def _daily_stack_ids(
+        session: AsyncSession, profile_id: UUID, pedagogical_day: date
+    ) -> tuple[UUID, ...]:
+        rows = await session.execute(
+            text(
+                "SELECT DISTINCT stack.stack_id FROM practice.practice_stacks stack "
+                "LEFT JOIN practice.sprint_stack_injections injection "
+                "ON injection.profile_id=stack.profile_id AND injection.stack_id=stack.stack_id "
+                "AND injection.status='pending' "
+                "WHERE stack.profile_id=:profile AND "
+                "(stack.pedagogical_day=:day OR injection.injection_id IS NOT NULL) "
+                "ORDER BY stack.stack_id LIMIT 20"
+            ),
+            {"profile": profile_id, "day": pedagogical_day},
+        )
+        return tuple(_uuid(value) for value in rows.scalars())
 
     async def _free_definition_ids(
         self, session: AsyncSession, primitive_ids: tuple[str, ...]
@@ -1040,18 +1117,7 @@ class SqlSprintService:
                     corrector_ready=bool(row["correction_policy_id"]),
                 )
             )
-        candidates = self._assign_core_roles(candidates)
-        candidates.append(
-            CandidateBlock(
-                candidate_id=self._derived_uuid(snapshot_id, "reflection"),
-                family=BlockFamily.REFLECTION_CLOSE,
-                roles=frozenset({"reflection"}),
-                p50_seconds=60,
-                p80_seconds=90,
-                module_criticality=1,
-            )
-        )
-        return tuple(candidates)
+        return tuple(self._assign_core_roles(candidates))
 
     @staticmethod
     def _assign_core_roles(candidates: list[CandidateBlock]) -> list[CandidateBlock]:
@@ -1070,14 +1136,16 @@ class SqlSprintService:
             (
                 item
                 for item in candidates
-                if item.family
-                in {
-                    BlockFamily.GUIDED_OUTPUT,
-                    BlockFamily.FREE_WRITING,
-                    BlockFamily.TRANSFORMATION_GYM,
-                }
+                if item.family is BlockFamily.TRANSFORMATION_GYM
             ),
-            None,
+            next(
+                (
+                    item
+                    for item in candidates
+                    if item.family in {BlockFamily.GUIDED_OUTPUT, BlockFamily.FREE_WRITING}
+                ),
+                None,
+            ),
         )
         if activation is None or production is None:
             raise DomainError(ErrorCode.NO_VALID_COMPOSITION)
@@ -1087,7 +1155,7 @@ class SqlSprintService:
             if item.candidate_id == activation.candidate_id:
                 roles.add("activation")
             if item.candidate_id == production.candidate_id:
-                roles.update({"primary_objective", "unsupported_production"})
+                roles.update({"primary_objective", "unsupported_production", "reflection"})
             result.append(replace(item, roles=frozenset(roles)))
         return result
 
@@ -1130,7 +1198,15 @@ class SqlSprintService:
                 template,
                 candidate_id=self._derived_uuid(snapshot_id, f"recode:{value}"),
                 family=BlockFamily.DELAYED_RECODE,
-                roles=frozenset({"activation", "j1_due"}),
+                roles=frozenset(
+                    {
+                        "activation",
+                        "primary_objective",
+                        "unsupported_production",
+                        "reflection",
+                        "j1_due",
+                    }
+                ),
                 delayed_recode_id=value,
                 novelty_points=0,
                 memory_due=1,
@@ -1298,6 +1374,20 @@ class SqlSprintService:
                         "now": now,
                         "profile": snapshot.profile_id,
                         "recodes": snapshot.due_delayed_recode_ids,
+                    },
+                )
+            if snapshot.word_bank_snapshot_ids:
+                stack_statement = text(
+                    "UPDATE practice.sprint_stack_injections SET status='consumed',"
+                    "consumed_by_plan_revision_id=:revision,version=version+1 "
+                    "WHERE profile_id=:profile AND stack_id IN :stacks AND status='pending'"
+                ).bindparams(bindparam("stacks", expanding=True))
+                await session.execute(
+                    stack_statement,
+                    {
+                        "revision": plan.revision_id,
+                        "profile": snapshot.profile_id,
+                        "stacks": snapshot.word_bank_snapshot_ids,
                     },
                 )
         except IntegrityError as error:

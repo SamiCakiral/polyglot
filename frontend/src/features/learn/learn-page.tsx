@@ -1,15 +1,26 @@
 import { ArrowRight, CalendarRange, Route } from "lucide-react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { useActiveProfile } from "../../app/profile-state";
+import { useSession } from "../../app/session-context";
 import {
   ErrorRegion,
   LoadingRegion,
   PageHeader,
   StatusPill,
 } from "../../components/product-ui";
-import { useListLearningModules } from "../../generated/polyglot";
-import { queryFetch } from "../../lib/api";
+import {
+  useEnrollInModule,
+  useListLearningModules,
+} from "../../generated/polyglot";
+import {
+  commandFetch,
+  queryFetch,
+  responseProblem,
+  todayIso,
+} from "../../lib/api";
+import { uuid7 } from "../../lib/ids";
 import { modulePresentation } from "./module-presentation";
 
 export function LearnPage() {
@@ -92,7 +103,10 @@ export function LearnPage() {
 
 export function ModuleDetailPage() {
   const { moduleId = "" } = useParams();
-  const { activePack } = useActiveProfile();
+  const { activePack, activeProfile } = useActiveProfile();
+  const session = useSession();
+  const [error, setError] = useState("");
+  const enroll = useEnrollInModule({ fetch: commandFetch(session) });
   const moduleEyebrow = activePack
     ? `Module · ${activePack.target_language_tag}`
     : "Module";
@@ -121,6 +135,27 @@ export function ModuleDetailPage() {
     module.module_code,
     module.primary_intention,
   );
+  const moduleRevisionId = module.module_revision_id;
+
+  async function beginModule() {
+    if (!activeProfile) return;
+    setError("");
+    const response = await enroll.mutateAsync({
+      profileId: activeProfile.profile_id,
+      data: {
+        enrollment_id: uuid7(),
+        module_revision_id: moduleRevisionId,
+        pedagogical_day: todayIso(),
+        waiver_refs: [],
+      },
+    });
+    const problem = responseProblem(response);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    window.location.assign("/today");
+  }
   return (
     <div className="page-flow page-flow--narrow">
       <PageHeader
@@ -147,9 +182,15 @@ export function ModuleDetailPage() {
           </span>
         </div>
       </section>
-      <Link className="button-link" to="/today">
-        Préparer la séance
-      </Link>
+      {error ? <ErrorRegion message={error} /> : null}
+      <button
+        disabled={!activeProfile || enroll.isPending}
+        type="button"
+        onClick={() => void beginModule()}
+      >
+        {enroll.isPending ? "Inscription..." : "Commencer ce module"}
+        <ArrowRight aria-hidden="true" size={18} />
+      </button>
     </div>
   );
 }

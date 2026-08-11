@@ -22,6 +22,7 @@ import {
   useOpenExerciseAttempt,
 } from "../../generated/polyglot";
 import { commandFetch, queryFetch, responseProblem } from "../../lib/api";
+import { activeRunStorageKey } from "../../lib/browser-storage";
 import { uuid7 } from "../../lib/ids";
 import { PrimitiveResponseEditor } from "../exercises/primitive-response-editor";
 import {
@@ -362,6 +363,7 @@ export function SprintPage() {
         <Link to="/today">Retour à aujourd'hui</Link>
       </div>
     );
+  const currentRun = run;
   const currentBlock = block;
 
   async function refreshRun() {
@@ -395,13 +397,15 @@ export function SprintPage() {
       setError(problem);
       return;
     }
-    if (run?.plan_kind === "daily") {
+    if (currentRun.plan_kind === "daily") {
       localStorage.setItem(
-        `polyglot.completed-day.${run.profile_id}`,
+        `polyglot.completed-day.${currentRun.profile_id}`,
         new Date().toISOString().slice(0, 10),
       );
     }
-    localStorage.removeItem("polyglot.active-run");
+    localStorage.removeItem(
+      activeRunStorageKey(session.account_id, currentRun.profile_id),
+    );
     void navigate("/progress");
   }
 

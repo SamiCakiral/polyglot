@@ -46,6 +46,7 @@ import {
   responseProblem,
   todayIso,
 } from "../../lib/api";
+import { activeRunStorageKey } from "../../lib/browser-storage";
 import { uuid7 } from "../../lib/ids";
 import { focusOptions } from "./practice-focus";
 
@@ -191,7 +192,8 @@ export function PracticePage() {
       query: { enabled: Boolean(activePack), retry: false },
     },
   );
-  const activeRunId = localStorage.getItem("polyglot.active-run");
+  const activeRunKey = activeRunStorageKey(session.account_id, profileId);
+  const activeRunId = localStorage.getItem(activeRunKey);
 
   if (!activeProfile) return <NoProfile />;
   const stacks =
@@ -246,7 +248,7 @@ export function PracticePage() {
       setError(startProblem);
       return;
     }
-    localStorage.setItem("polyglot.active-run", runId);
+    localStorage.setItem(activeRunKey, runId);
     void navigate(`/sprints/${runId}`);
   }
 

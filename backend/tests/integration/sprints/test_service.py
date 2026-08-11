@@ -41,6 +41,7 @@ PRIMITIVES = (
     "EX-RECALL-01",
     "EX-EXPOSE-01",
     "EX-TRANSFORM-01",
+    "EX-COMP-02",
     "EX-PROD-01",
 )
 
@@ -243,6 +244,7 @@ async def test_daily_plan_is_replayable_preparable_and_resumable(
     assert {"activation", "primary_objective", "reflection"} <= {
         role for block in plan.blocks for role in block.roles
     }
+
 
     ready = await service.prepare(
         ACCOUNT_ID,
@@ -563,3 +565,94 @@ async def test_free_practice_never_silently_drops_an_unavailable_primitive(
         )
 
     assert rejected.value.code is ErrorCode.PRIMITIVE_UNKNOWN
+
+
+async def test_daily_composition_without_enrollment_returns_foundation_session(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_sprint_dependencies(migration_session)
+    await migration_session.commit()
+
+    plan = await sprint_service(runtime_factory).compose_daily(
+        ACCOUNT_ID,
+        PROFILE_ID,
+        ComposeDailySession(new_id(), new_id(), NOW.date(), 10),
+        idempotency_key="foundation-without-enrollment",
+        context=context(),
+    )
+
+    assert plan.plan_kind == "foundation"
+    assert len(plan.blocks) <= 4
+    families = {block.family for block in plan.blocks}
+    assert {"recall_warmup", "grammar_toolbox", "transformation_gym"} <= families
+    assert families & {"version_input", "listening"}
+
+
+async def test_daily_snapshot_consumes_pending_personal_stack_injection(
+    migration_session: AsyncSession,
+    runtime_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    await seed_sprint_dependencies(migration_session)
+    await migration_session.execute(
+        text("SELECT set_config('app.user_id',:actor,true)"),
+        {"actor": str(ACCOUNT_ID)},
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO practice.practice_stacks "
+            "(stack_id,profile_id,language_pack_revision_id,name,stack_kind,pedagogical_day,"
+            "source_refs,member_count,checksum,created_at) VALUES "
+            "(:stack,:profile,:pack,'Pile injectée','selection',NULL,'[]',1,:checksum,:now)"
+        ),
+        {
+            "stack": uid(480),
+            "profile": PROFILE_ID,
+            "pack": PACK_REVISION_ID,
+            "checksum": "a" * 64,
+            "now": NOW,
+        },
+    )
+    await migration_session.execute(
+        text(
+            "INSERT INTO practice.sprint_stack_injections "
+            "(injection_id,profile_id,stack_id,status,requested_at,version) "
+            "VALUES (:injection,:profile,:stack,'pending',:now,1)"
+        ),
+        {"injection": uid(481), "profile": PROFILE_ID, "stack": uid(480), "now": NOW},
+    )
+    await migration_session.commit()
+
+    plan = await sprint_service(runtime_factory).compose_daily(
+        ACCOUNT_ID,
+        PROFILE_ID,
+        ComposeDailySession(new_id(), new_id(), NOW.date(), 10),
+        idempotency_key="daily-with-injected-stack",
+        context=context(),
+    )
+
+    await migration_session.execute(
+        text("SELECT set_config('app.user_id',:actor,true)"),
+        {"actor": str(ACCOUNT_ID)},
+    )
+    snapshot_stack_ids = await migration_session.scalar(
+        text(
+            "SELECT word_bank_snapshot_ids FROM planning.planning_snapshots "
+            "WHERE snapshot_id=:snapshot"
+        ),
+        {"snapshot": plan.snapshot_id},
+    )
+    injection = (
+        await migration_session.execute(
+            text(
+                "SELECT status,consumed_by_plan_revision_id FROM practice.sprint_stack_injections "
+                "WHERE injection_id=:injection"
+            ),
+            {"injection": uid(481)},
+        )
+    ).mappings().one()
+    assert uid(480) in snapshot_stack_ids
+    assert injection == {
+        "status": "consumed",
+        "consumed_by_plan_revision_id": plan.plan_revision_id,
+    }

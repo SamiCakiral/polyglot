@@ -9,6 +9,7 @@ from .domain import (
     CORE_ROLES,
     BlockFamily,
     CandidateBlock,
+    PlanKind,
     PlannedBlock,
     PlanningSnapshot,
     PlanStatus,
@@ -92,6 +93,29 @@ class DailySprintComposer:
             return None
         if sum(item.novelty_points for item in subset) > snapshot.novelty_limit:
             return None
+        families = {item.family for item in subset}
+        if (
+            snapshot.planner_revision == "COMPOSER_V1"
+            and snapshot.plan_kind in {PlanKind.DAILY, PlanKind.FOUNDATION}
+        ):
+            if not families & {BlockFamily.VERSION_INPUT, BlockFamily.LISTENING}:
+                return None
+            if BlockFamily.GRAMMAR_TOOLBOX not in families:
+                return None
+            if BlockFamily.TRANSFORMATION_GYM not in families:
+                return None
+            if snapshot.budget_minutes >= 30 and not families & {
+                BlockFamily.LISTENING,
+                BlockFamily.SHADOWING,
+            }:
+                return None
+            if snapshot.budget_minutes >= 45 and not families & {
+                BlockFamily.GUIDED_OUTPUT,
+                BlockFamily.FREE_WRITING,
+            }:
+                return None
+            if snapshot.budget_minutes >= 60 and BlockFamily.SHADOWING not in families:
+                return None
         grammar_families = {item.grammar_family for item in subset if item.grammar_family}
         if len(grammar_families) > 1:
             return None

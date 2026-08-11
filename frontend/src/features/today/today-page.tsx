@@ -1,13 +1,22 @@
 import { ArrowRight, Clock3, RefreshCw, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useActiveProfile } from "../../app/profile-state";
 import { useSession } from "../../app/session-context";
 import { ErrorRegion, LoadingRegion, NoProfile, PageHeader, StatusPill } from "../../components/product-ui";
 import type { SessionPlanResponse } from "../../generated/model";
-import { useComposeDailySession, usePrepareSessionPlan, useStartSprintRun } from "../../generated/polyglot";
-import { commandFetch, responseProblem, todayIso } from "../../lib/api";
+import { useComposeDailySession, useGetSessionPlan, usePrepareSessionPlan, useStartSprintRun } from "../../generated/polyglot";
+import {
+  commandFetch,
+  queryFetch,
+  responseProblem,
+  todayIso,
+} from "../../lib/api";
+import {
+  activeRunStorageKey,
+  pendingDailyPlanStorageKey,
+} from "../../lib/browser-storage";
 import { uuid7 } from "../../lib/ids";
 import { DailyVocabulary } from "./daily-vocabulary";
 
@@ -18,16 +27,40 @@ export function TodayPage() {
   const session = useSession();
   const navigate = useNavigate();
   const [budget, setBudget] = useState(30);
-  const [plan, setPlan] = useState<SessionPlanResponse | null>(null);
+  const [composedPlan, setComposedPlan] = useState<SessionPlanResponse | null>(null);
   const [error, setError] = useState("");
+  const profileId = activeProfile?.profile_id ?? "";
+  const pedagogicalDay = todayIso();
+  const activeRunKey = activeRunStorageKey(session.account_id, profileId);
+  const pendingPlanKey = pendingDailyPlanStorageKey(
+    session.account_id,
+    profileId,
+    pedagogicalDay,
+  );
+  const pendingPlanId = profileId ? localStorage.getItem(pendingPlanKey) ?? "" : "";
+  const pendingPlanQuery = useGetSessionPlan(pendingPlanId, {
+    fetch: queryFetch(),
+    query: { enabled: Boolean(pendingPlanId), retry: false },
+  });
+  const restoredPlan =
+    pendingPlanQuery.data?.status === 200 &&
+    ["draft", "preparing", "ready"].includes(pendingPlanQuery.data.data.status)
+      ? pendingPlanQuery.data.data
+      : null;
+  const plan = composedPlan ?? restoredPlan;
+  const displayedBudget = plan?.budget_minutes ?? budget;
   const compose = useComposeDailySession({ fetch: commandFetch(session) });
   const prepare = usePrepareSessionPlan({ fetch: commandFetch(session, plan?.version) });
   const start = useStartSprintRun({ fetch: commandFetch(session) });
 
+  useEffect(() => {
+    if (!pendingPlanId || !pendingPlanQuery.data) return;
+    if (pendingPlanQuery.data.status !== 200) localStorage.removeItem(pendingPlanKey);
+  }, [pendingPlanId, pendingPlanKey, pendingPlanQuery.data]);
+
   if (isPending) return <LoadingRegion label="Préparation de votre journée" />;
   if (!activeProfile) return <NoProfile />;
-  const profileId = activeProfile.profile_id;
-  const activeRunId = localStorage.getItem("polyglot.active-run");
+  const activeRunId = localStorage.getItem(activeRunKey);
   const completedToday =
     localStorage.getItem(`polyglot.completed-day.${profileId}`) === todayIso();
 
@@ -37,14 +70,17 @@ export function TodayPage() {
       profileId,
       data: {
         budget_minutes: budget,
-        pedagogical_day: todayIso(),
+        pedagogical_day: pedagogicalDay,
         plan_id: uuid7(),
         snapshot_id: uuid7(),
       },
     });
     const problem = responseProblem(response);
     if (problem) { setError(problem); return; }
-    if (response.status === 201) setPlan(response.data);
+    if (response.status === 201) {
+      localStorage.setItem(pendingPlanKey, response.data.plan_id);
+      setComposedPlan(response.data);
+    }
   }
 
   async function begin() {
@@ -57,7 +93,8 @@ export function TodayPage() {
     const started = await start.mutateAsync({ planId: plan.plan_id, data: { run_id: runId } });
     const startProblem = responseProblem(started);
     if (startProblem) { setError(startProblem); return; }
-    localStorage.setItem("polyglot.active-run", runId);
+    localStorage.removeItem(pendingPlanKey);
+    localStorage.setItem(activeRunKey, runId);
     void navigate(`/sprints/${runId}`);
   }
 
@@ -70,7 +107,7 @@ export function TodayPage() {
           <div className="section-heading"><div><p className="eyebrow">Séance du jour</p><h2>{completedToday ? "Séance terminée aujourd'hui" : activeRunId ? "Votre séance vous attend" : plan ? "Votre parcours est prêt" : "Combien de temps avez-vous ?"}</h2></div><Clock3 aria-hidden="true" /></div>
           {completedToday ? <p className="quiet-copy">Vos réponses et vos rappels sont enregistrés. La prochaine séance sera disponible demain.</p> : activeRunId ? <button type="button" onClick={() => { void navigate(`/sprints/${activeRunId}`); }}>Reprendre la séance <ArrowRight aria-hidden="true" size={18} /></button> : <>
           <div aria-label="Durée de la séance" className="segmented-control">
-            {budgets.map((minutes) => <button aria-pressed={budget === minutes} className="segment" key={minutes} type="button" onClick={() => { setBudget(minutes); }}>{minutes}<small>min</small></button>)}
+            {budgets.map((minutes) => <button aria-pressed={displayedBudget === minutes} className="segment" disabled={Boolean(plan)} key={minutes} type="button" onClick={() => { setBudget(minutes); }}>{minutes}<small>min</small></button>)}
           </div>
           {plan ? (
             <div className="plan-summary">
@@ -81,7 +118,7 @@ export function TodayPage() {
             <p className="quiet-copy">La durée ajuste le nombre d'exercices, jamais la qualité de la correction ni la continuité J+1.</p>
           )}
           {error ? <ErrorRegion message={error} /> : null}
-          {plan ? <button disabled={prepare.isPending || start.isPending} type="button" onClick={() => void begin()}>Commencer la séance <ArrowRight aria-hidden="true" size={18} /></button> : <button disabled={compose.isPending} type="button" onClick={() => void composePlan()}>{compose.isPending ? "Composition..." : "Composer ma séance"} <Sparkles aria-hidden="true" size={18} /></button>}
+          {plan ? <button disabled={prepare.isPending || start.isPending} type="button" onClick={() => void begin()}>Commencer la séance <ArrowRight aria-hidden="true" size={18} /></button> : <button disabled={compose.isPending || pendingPlanQuery.isPending} type="button" onClick={() => void composePlan()}>{compose.isPending ? "Composition..." : "Composer ma séance"} <Sparkles aria-hidden="true" size={18} /></button>}
           </>}
         </div>
         <aside className="today-workbench__aside">

@@ -151,3 +151,63 @@ def test_prerequisite_teaching_is_ordered_before_dependent_block() -> None:
     positions = {block.candidate_id: block.ordinal for block in plan.blocks}
     if uid(8) in positions:
         assert positions[uid(6)] < positions[uid(8)]
+
+
+def test_daily_budget_bands_preserve_the_pedagogical_chain() -> None:
+    families = (
+        (BlockFamily.VERSION_INPUT, frozenset({"activation"})),
+        (BlockFamily.GRAMMAR_TOOLBOX, frozenset({"grammar_explanation"})),
+        (
+            BlockFamily.TRANSFORMATION_GYM,
+            frozenset({"primary_objective", "unsupported_production", "reflection"}),
+        ),
+        (BlockFamily.LISTENING, frozenset({"contextual_encounter"})),
+        (BlockFamily.SHADOWING, frozenset({"second_modality"})),
+        (BlockFamily.GUIDED_OUTPUT, frozenset({"production"})),
+        (BlockFamily.FREE_WRITING, frozenset({"production"})),
+    )
+    candidates_by_band = tuple(
+        CandidateBlock(
+            candidate_id=uid(700 + index),
+            family=family,
+            roles=roles,
+            p50_seconds=60,
+            p80_seconds=90,
+            module_criticality=0.8,
+        )
+        for index, (family, roles) in enumerate(families)
+    )
+
+    for budget in (10, 20, 30, 45, 60):
+        snapshot = PlanningSnapshot(
+            snapshot_id=uid(800 + budget),
+            profile_id=uid(900),
+            plan_kind=PlanKind.DAILY,
+            budget_minutes=budget,
+            pedagogical_day=date(2026, 8, 10),
+            timezone="Europe/Paris",
+            cutoff_at=datetime(2026, 8, 10, 8, tzinfo=UTC),
+            seed=f"band-{budget}",
+            policy_revision="SPRINT_PRIORITY_V1",
+            planner_revision="COMPOSER_V1",
+            profile_band="P-ABS",
+            mastered_refs=frozenset(),
+            enrollment_id=uid(901),
+            module_revision_id=uid(902),
+            module_day_id=uid(903),
+            candidates=candidates_by_band,
+        )
+        selected = {
+            block.family
+            for block in DailySprintComposer().compose(uid(950 + budget), snapshot).blocks
+        }
+
+        assert BlockFamily.VERSION_INPUT in selected or BlockFamily.LISTENING in selected
+        assert BlockFamily.GRAMMAR_TOOLBOX in selected
+        assert BlockFamily.TRANSFORMATION_GYM in selected
+        if budget >= 30:
+            assert BlockFamily.LISTENING in selected or BlockFamily.SHADOWING in selected
+        if budget >= 45:
+            assert BlockFamily.GUIDED_OUTPUT in selected or BlockFamily.FREE_WRITING in selected
+        if budget >= 60:
+            assert BlockFamily.SHADOWING in selected
