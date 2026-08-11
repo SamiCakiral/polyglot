@@ -59,6 +59,15 @@ def test_ci_gates_migration_round_trip_drift_and_installed_wheel() -> None:
     assert "test_installed_artifact.py" in workflow
 
 
+def test_registry_validation_does_not_create_forbidden_bytecode_artifacts() -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+    registry_job = workflow.split("  registry-validation:", 1)[1].split(
+        "\n  backend-quality:", 1
+    )[0]
+
+    assert 'PYTHONDONTWRITEBYTECODE: "1"' in registry_job
+
+
 def test_ci_prepares_dependency_image_and_repository_security_gates() -> None:
     workflow = (ROOT / ".github/workflows/ci.yml").read_text()
 
