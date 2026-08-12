@@ -1637,8 +1637,9 @@ async def bootstrap_pilot(database_url: str, fixture_root: Path) -> PilotBootstr
             italian_existing = bool(
                 await session.scalar(
                     text(
-                        "SELECT count(*) FROM catalogue.language_packs "
-                        "WHERE pack_code='it-IT__fr-FR'"
+                        "SELECT count(*) FROM catalogue.language_packs pack "
+                        "JOIN catalogue.language_pack_revisions revision USING(pack_id) "
+                        "WHERE pack.pack_code='it-IT__fr-FR'"
                     )
                 )
             )
@@ -1689,8 +1690,9 @@ async def bootstrap_pilot(database_url: str, fixture_root: Path) -> PilotBootstr
             japanese_existing = bool(
                 await session.scalar(
                     text(
-                        "SELECT count(*) FROM catalogue.language_packs "
-                        "WHERE pack_code='ja-JP__fr-FR'"
+                        "SELECT count(*) FROM catalogue.language_packs pack "
+                        "JOIN catalogue.language_pack_revisions revision USING(pack_id) "
+                        "WHERE pack.pack_code='ja-JP__fr-FR'"
                     )
                 )
             )
