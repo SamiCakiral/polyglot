@@ -511,6 +511,32 @@ class SqlTeacherService:
             ),
             {"profile": profile_id},
         )
+        placement_rows = (
+            (
+                await session.execute(
+                    text(
+                        "SELECT DISTINCT ON (estimate.skill_ref) estimate.skill_ref,estimate.status,"
+                        "estimate.probable_level,estimate.confidence,estimate.independent_evidence_count "
+                        "FROM placement.runs run JOIN placement.skill_estimate_revisions estimate "
+                        "USING(run_id) WHERE run.profile_id=:profile "
+                        "ORDER BY estimate.skill_ref,estimate.created_at DESC"
+                    ),
+                    {"profile": profile_id},
+                )
+            )
+            .mappings()
+            .all()
+        )
+        placement_payload: list[JsonValue] = [
+            {
+                "skill": str(item["skill_ref"]),
+                "status": str(item["status"]),
+                "probable_level": item["probable_level"],
+                "confidence": float(item["confidence"]),
+                "evidence_count": int(item["independent_evidence_count"]),
+            }
+            for item in placement_rows
+        ]
         known_payload: list[JsonValue] = [
             {
                 "language_tag": str(item["language_tag"]),
@@ -530,6 +556,8 @@ class SqlTeacherService:
             "goals": cast(list[JsonValue], profile["goals"]),
             "interests": cast(list[JsonValue], profile["interests"]),
             "active_module": None if module_code is None else str(module_code),
+            "placement_profile": placement_payload,
+            "placement_authority": "read_only_provisional_context",
             "page": page_context,
         }
 

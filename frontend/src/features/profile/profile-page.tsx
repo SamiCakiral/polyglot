@@ -5,7 +5,7 @@ import {
   Languages,
   Milestone,
 } from "lucide-react";
-import { type SyntheticEvent, useEffect, useMemo, useState } from "react";
+import { type SyntheticEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useSession } from "../../app/session-context";
@@ -19,24 +19,18 @@ import {
 import type {
   EntryPath,
   PlacementChoice,
-  PlacementItemResponse,
 } from "../../generated/model";
 import {
   choosePlacement,
-  completeDiagnostic,
   completeFoundationGate,
   createAccountLanguage,
   enrollInModule,
-  getDiagnosticSummary,
-  startDiagnostic,
   startFoundationRun,
   startOnboarding,
-  submitDiagnosticResponse,
   useCreateLanguageProfile,
   useGetFoundationManifest,
   useGetFoundationRun,
   useGetOnboardingState,
-  useGetPlacementManifest,
   useListAccountLanguages,
   useListLanguagePacks,
   useListLearningModules,
@@ -49,6 +43,7 @@ import {
   todayIso,
 } from "../../lib/api";
 import { uuid7 } from "../../lib/ids";
+import { AdaptivePlacementPanel } from "./placement-page";
 
 const goalOptions = [
   "Voyager avec autonomie",
@@ -74,8 +69,8 @@ const entryPaths: {
     value: "already_started",
     title: "J'ai déjà commencé",
     description:
-      "Faire six tâches courtes pour retrouver un point de départ crédible.",
-    duration: "5 à 8 minutes",
+      "Explorer progressivement compréhension, production et structures utiles.",
+    duration: "8 à 12 minutes",
   },
   {
     value: "advanced",
@@ -162,10 +157,6 @@ export function LanguageProfilePage() {
       ) ??
       pack.support_language_tags[0])
     : "la langue d'appui";
-  const manifestQuery = useGetPlacementManifest(pack?.pack_revision_id ?? "", {
-    fetch: queryFetch(),
-    query: { enabled: Boolean(pack), retry: false },
-  });
   const createProfile = useCreateLanguageProfile({
     fetch: commandFetch(session),
   });
@@ -186,7 +177,6 @@ export function LanguageProfilePage() {
     goalOptions[0],
     goalOptions[1],
   ]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [foundationRunId, setFoundationRunId] = useState(
     () => localStorage.getItem("polyglot.foundation-run") ?? "",
@@ -196,8 +186,6 @@ export function LanguageProfilePage() {
     "native" | "fluent" | "studied"
   >("native");
 
-  const manifest =
-    manifestQuery.data?.status === 200 ? manifestQuery.data.data : null;
   const modules =
     modulesQuery.data?.status === 200 ? modulesQuery.data.data : [];
   const accountLanguages =
@@ -207,15 +195,6 @@ export function LanguageProfilePage() {
   const onboarding =
     onboardingQuery.data?.status === 200 ? onboardingQuery.data.data : null;
   const onboardingMissing = onboardingQuery.data?.status === 404;
-  const allAnswered = useMemo(
-    () =>
-      Boolean(
-        manifest?.items.every((item) =>
-          (answers[item.item_revision_id] ?? "").trim(),
-        ),
-      ),
-    [answers, manifest],
-  );
 
   if (isPending || packsQuery.isPending) {
     return (
@@ -311,18 +290,6 @@ export function LanguageProfilePage() {
           startProblem || "Le point de départ n'a pas été enregistré.",
         );
       }
-      if (entryPath === "complete_beginner") {
-        const chosen = await choosePlacement(
-          activeProfile.profile_id,
-          { choice: "start_now" },
-          commandFetch(session, started.data.version),
-        );
-        const choiceProblem = responseProblem(chosen);
-        if (choiceProblem) throw new Error(choiceProblem);
-        await refresh();
-        void navigate("/practice");
-        return;
-      }
       await onboardingQuery.refetch();
       await accountLanguagesQuery.refetch();
     } catch (caught) {
@@ -395,80 +362,6 @@ export function LanguageProfilePage() {
     const problem = responseProblem(response);
     if (problem) throw new Error(problem);
     localStorage.setItem("polyglot.active-enrollment", enrollmentId);
-  }
-
-  async function finishDiagnostic() {
-    if (!activeProfile || !pack || !manifest) return;
-    setBusy(true);
-    setError("");
-    try {
-      const storageKey = `polyglot.diagnostic-run.${activeProfile.profile_id}`;
-      const storedRunId = localStorage.getItem(storageKey);
-      let runId = storedRunId ?? "";
-      let version = 1;
-      if (storedRunId) {
-        const existing = await getDiagnosticSummary(storedRunId, queryFetch());
-        if (existing.status === 200 && existing.data.status === "in_progress") {
-          version = existing.data.version;
-        } else {
-          localStorage.removeItem(storageKey);
-          runId = "";
-        }
-      }
-      if (!runId) {
-        const started = await startDiagnostic(
-          activeProfile.profile_id,
-          {
-            pack_revision_id: pack.pack_revision_id,
-            policy_revision_id: uuid7(),
-            seed: uuid7(),
-          },
-          commandFetch(session, activeProfile.version),
-        );
-        const startProblem = responseProblem(started);
-        if (startProblem) throw new Error(startProblem);
-        if (started.status !== 201)
-          throw new Error("Le diagnostic n'a pas pu démarrer.");
-        runId = started.data.diagnostic_run_id;
-        version = started.data.version;
-        localStorage.setItem(storageKey, runId);
-      }
-      for (const item of manifest.items) {
-        if (item.ordinal < version) continue;
-        const response = await submitDiagnosticResponse(
-          runId,
-          {
-            answer: { value: answers[item.item_revision_id] ?? "" },
-            item_revision_id: item.item_revision_id,
-            ordinal: item.ordinal,
-          },
-          commandFetch(session, version),
-        );
-        const problem = responseProblem(response);
-        if (problem) throw new Error(problem);
-        if (response.status !== 200)
-          throw new Error("Une réponse du diagnostic n'a pas été enregistrée.");
-        version = response.data.version;
-      }
-      const completed = await completeDiagnostic(
-        runId,
-        commandFetch(session, version),
-      );
-      const completionProblem = responseProblem(completed);
-      if (completionProblem) throw new Error(completionProblem);
-      if (completed.status !== 200)
-        throw new Error("Le placement n'a pas pu être calculé.");
-      localStorage.removeItem(storageKey);
-      await onboardingQuery.refetch();
-    } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "Le diagnostic a été interrompu.",
-      );
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function beginFoundations() {
@@ -882,75 +775,15 @@ export function LanguageProfilePage() {
     );
   }
 
-  if (manifestQuery.isPending)
-    return <LoadingRegion label="Préparation du diagnostic" />;
-  if (!manifest)
-    return (
-      <ErrorRegion
-        message={`Le diagnostic ${targetName.toLocaleLowerCase("fr")} n'est pas disponible.`}
-      />
-    );
-
-  return (
-    <div className="page-flow page-flow--narrow">
-      <PageHeader
-        eyebrow="Étape 3 sur 3"
-        title="Point de départ"
-        description="Six tâches courtes déterminent si les fondations sont nécessaires avant le premier module."
-        action={<StatusPill>{manifest.items.length} tâches</StatusPill>}
-      />
-      <section className="diagnostic-sheet">
-        {manifest.items.map((item: PlacementItemResponse) => (
-          <fieldset className="diagnostic-item" key={item.item_revision_id}>
-            <legend>
-              <span>{item.ordinal}</span>
-              {item.prompt}
-            </legend>
-            {item.choices.length ? (
-              item.choices.map((choice) => (
-                <label className="choice-row" key={choice.value}>
-                  <input
-                    checked={answers[item.item_revision_id] === choice.value}
-                    name={item.item_revision_id}
-                    type="radio"
-                    value={choice.value}
-                    onChange={() => {
-                      setAnswers((current) => ({
-                        ...current,
-                        [item.item_revision_id]: choice.value,
-                      }));
-                    }}
-                  />
-                  <span>{choice.label}</span>
-                </label>
-              ))
-            ) : (
-              <label className="answer-field">
-                Votre réponse
-                <input
-                  value={answers[item.item_revision_id] ?? ""}
-                  onChange={(event) => {
-                    setAnswers((current) => ({
-                      ...current,
-                      [item.item_revision_id]: event.target.value,
-                    }));
-                  }}
-                />
-              </label>
-            )}
-          </fieldset>
-        ))}
-        {error ? <ErrorRegion message={error} /> : null}
-        <button
-          disabled={!allAnswered || busy}
-          type="button"
-          onClick={() => void finishDiagnostic()}
-        >
-          {busy ? "Calcul du placement..." : "Terminer le diagnostic"}{" "}
-          <ArrowRight aria-hidden="true" size={18} />
-        </button>
-      </section>
-    </div>
+  return onboarding ? (
+    <AdaptivePlacementPanel
+      entryPath={onboarding.entry_path}
+      packRevisionId={pack.pack_revision_id}
+      profileId={activeProfile.profile_id}
+      targetName={targetName}
+    />
+  ) : (
+    <LoadingRegion label="Préparation du placement adaptatif" />
   );
 }
 

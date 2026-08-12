@@ -1320,6 +1320,30 @@
       "events": ["teacher_action_reverted"],
       "errors": ["invalid_transition"],
       "idempotency": "required"
+    },
+    {
+      "name": "StartPlacementRun",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/placement-runs",
+      "events": ["placement_run_started", "placement_item_selected"],
+      "errors": ["active_run_exists", "content_unavailable"],
+      "idempotency": "required"
+    },
+    {
+      "name": "SubmitPlacementResponse",
+      "method": "POST",
+      "route": "/api/v1/placement-runs/{run_id}/responses",
+      "events": ["placement_response_recorded", "placement_item_selected"],
+      "errors": ["response_stale", "provider_unavailable"],
+      "idempotency": "required"
+    },
+    {
+      "name": "ChoosePlacementStart",
+      "method": "POST",
+      "route": "/api/v1/placement-runs/{run_id}:choose",
+      "events": ["placement_start_chosen"],
+      "errors": ["not_found"],
+      "idempotency": "required"
     }
   ]
 }

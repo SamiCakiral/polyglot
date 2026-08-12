@@ -29,6 +29,8 @@ JAPANESE_PUBLICATION_ID = UUID("019c0000-0000-7000-9000-000000004001")
 JAPANESE_MODULE_ID = UUID("019c0000-0000-7000-9000-000000004002")
 JAPANESE_MODULE_REVISION_ID = UUID("019c0000-0000-7000-9000-000000004003")
 JAPANESE_REFERENCE_SET_ID = UUID("019c0000-0000-7000-9000-000000004004")
+PLACEMENT_POLICY_REVISION_ID = UUID("019d0000-0000-7000-8000-000000000001")
+PLACEMENT_RUBRIC_REVISION_ID = UUID("019d0000-0000-7000-8000-000000000002")
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +160,101 @@ def fixture_root_from_environment() -> Path:
 
 def _json(value: object) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+async def _seed_placement_bank(
+    session: AsyncSession,
+    root: Path,
+    fixture_code: str,
+    now: datetime,
+) -> int:
+    payload = json.loads((root / fixture_code / "catalogue.json").read_text())
+    pack_revision_id = UUID(payload["pack_revision_id"])
+    target_variety_id = await session.scalar(
+        text(
+            "SELECT target_variety_id FROM catalogue.language_pack_revisions "
+            "WHERE pack_revision_id=:pack"
+        ),
+        {"pack": pack_revision_id},
+    )
+    if target_variety_id is None:
+        raise DomainError(ErrorCode.PACK_NOT_PUBLISHED)
+    await session.execute(
+        text(
+            "INSERT INTO placement.policy_revisions "
+            "(policy_revision_id,policy_code,revision_no,status,configuration,created_at) "
+            "VALUES (:id,'adaptive-placement-v1',1,'published',CAST(:configuration AS jsonb),:now) "
+            "ON CONFLICT DO NOTHING"
+        ),
+        {
+            "id": PLACEMENT_POLICY_REVISION_ID,
+            "configuration": _json({"minimum_seconds": 480, "target_seconds": 720, "maximum_seconds": 1200}),
+            "now": now,
+        },
+    )
+    await session.execute(
+        text(
+            "INSERT INTO placement.rubric_revisions "
+            "(rubric_revision_id,rubric_code,revision_no,schema_payload,created_at) "
+            "VALUES (:id,'placement-open-v1',1,CAST(:schema AS jsonb),:now) ON CONFLICT DO NOTHING"
+        ),
+        {
+            "id": PLACEMENT_RUBRIC_REVISION_ID,
+            "schema": _json({"criteria": ["task", "grammar", "vocabulary", "coherence"]}),
+            "now": now,
+        },
+    )
+    for item in payload["items"]:
+        blueprint_id = UUID(item["blueprint_revision_id"])
+        await session.execute(
+            text(
+                "INSERT INTO placement.item_blueprints "
+                "(blueprint_id,blueprint_code,target_variety_id,status,created_at) "
+                "VALUES (:id,:code,:target,'published',:now) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": blueprint_id,
+                "code": item["variant_pool_id"],
+                "target": target_variety_id,
+                "now": now,
+            },
+        )
+        await session.execute(
+            text(
+                "INSERT INTO placement.item_blueprint_revisions "
+                "(blueprint_revision_id,blueprint_id,language_pack_revision_id,revision_no,primitive_ref,primary_skill_ref,level,estimated_seconds,prerequisites,scorer_kind,content,created_at) "
+                "VALUES (:id,:blueprint,:pack,1,:primitive,:skill,:level,:seconds,'[]'::jsonb,:scorer,CAST(:content AS jsonb),:now) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": blueprint_id,
+                "blueprint": blueprint_id,
+                "pack": pack_revision_id,
+                "primitive": item["primitive_ref"],
+                "skill": item["primary_skill_ref"],
+                "level": item["level"],
+                "seconds": item["estimated_seconds"],
+                "scorer": item["scoring_kind"],
+                "content": _json(item["payload"]),
+                "now": now,
+            },
+        )
+        await session.execute(
+            text(
+                "INSERT INTO placement.variant_revisions "
+                "(variant_revision_id,blueprint_revision_id,rubric_revision_id,variant_pool_id,revision_no,payload,answer_key,media_asset_id,status,created_at) "
+                "VALUES (:id,:blueprint,:rubric,:pool,1,CAST(:payload AS jsonb),CAST(:answer AS jsonb),NULL,'published',:now) ON CONFLICT DO NOTHING"
+            ),
+            {
+                "id": UUID(item["variant_revision_id"]),
+                "blueprint": blueprint_id,
+                "rubric": PLACEMENT_RUBRIC_REVISION_ID if item["scoring_kind"] == "structured_lm" else None,
+                "pool": item["variant_pool_id"],
+                "payload": _json(item["payload"]),
+                "answer": _json(item["answer_key"]) if item["answer_key"] is not None else None,
+                "now": now,
+            },
+        )
+    return len(payload["items"])
 
 
 def _definition_id(index: int) -> UUID:
@@ -1653,6 +1750,17 @@ async def bootstrap_pilot(database_url: str, fixture_root: Path) -> PilotBootstr
                 )
                 japanese_counts = (japanese_foundations, japanese_exercises, japanese_days)
 
+            italian_placement_items = await _seed_placement_bank(
+                session, fixture_root, "FX-PLACEMENT-IT", now
+            )
+            japanese_placement_items = await _seed_placement_bank(
+                session, fixture_root, "FX-PLACEMENT-JA", now
+            )
+            if (italian_placement_items, japanese_placement_items) != (72, 72):
+                raise DomainError(
+                    ErrorCode.CONTENT_UNAVAILABLE,
+                    detail="Placement banks are incomplete",
+                )
             if italian_counts != (32, 43, 3):
                 raise DomainError(
                     ErrorCode.CONTENT_UNAVAILABLE,

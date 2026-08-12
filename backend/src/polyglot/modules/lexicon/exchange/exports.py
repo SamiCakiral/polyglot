@@ -10,6 +10,7 @@ ALLOWED_EXPORT_SCOPES = frozenset(
         "vocabulary_lists",
         "memory_prompts",
         "learning_history",
+        "placement_history",
     }
 )
 FORBIDDEN_ENCRYPTION_SCHEMES = frozenset({"", "none", "plaintext", "identity"})

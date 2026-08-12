@@ -55,22 +55,6 @@ class PlacementChoiceResponse(ClosedResponse):
     label: str
 
 
-class PlacementItemResponse(ClosedResponse):
-    item_revision_id: UUID
-    item_code: str
-    block_code: str
-    ordinal: int
-    prompt: str
-    response_kind: str
-    choices: tuple[PlacementChoiceResponse, ...]
-
-
-class PlacementManifestResponse(ClosedResponse):
-    pack_revision_id: UUID
-    foundation_revision_id: UUID
-    items: tuple[PlacementItemResponse, ...]
-
-
 class FoundationActivityResponse(ClosedResponse):
     item_revision_id: UUID
     item_code: str
@@ -231,101 +215,6 @@ def catalogue_router(service: CatalogueReader | None) -> APIRouter:
     ) -> LanguagePackPageResponse:
         page = await reader().list_language_packs(limit=limit, cursor=cursor)
         return _pack_page(page)
-
-    @router.get(
-        "/api/v1/language-packs/{pack_revision_id}/placement-manifest",
-        operation_id="get_placement_manifest",
-        response_model=PlacementManifestResponse,
-        responses=CATALOGUE_PROBLEM_RESPONSES,
-    )
-    async def get_placement_manifest(pack_revision_id: UUID) -> PlacementManifestResponse:
-        catalogue = await reader().read_foundations(pack_revision_id=pack_revision_id)
-        if catalogue is None:
-            raise DomainError(ErrorCode.FOUNDATION_PACK_MISSING)
-        is_japanese = catalogue.definition.foundation_code.startswith("FOUNDATIONS_JA_")
-        presentations: dict[str, tuple[str, str, tuple[tuple[str, str], ...]]] = {
-            "ITF-F1-01": (
-                "Quel couple commence par un son c ou g dur ?",
-                "single_choice",
-                (("casa_gatto", "casa / gatto"), ("cena_gelato", "cena / gelato")),
-            ),
-            "ITF-F1-01-S02": (
-                "Quel couple commence par un son c ou g doux ?",
-                "single_choice",
-                (("cena_gelato", "cena / gelato"), ("casa_gatto", "casa / gatto")),
-            ),
-            "ITF-F3-01": (
-                "Vous entrez dans une boutique. Quelle ouverture convient ?",
-                "single_choice",
-                (("formal_greeting", "Buongiorno"), ("informal_greeting", "Ciao")),
-            ),
-            "ITF-F3-02": (
-                "Présentez-vous comme Luca en commençant par buongiorno.",
-                "text",
-                (),
-            ),
-            "ITF-F4-01": (
-                "Complétez : ___ due binari alla stazione.",
-                "single_choice",
-                (("ci_sono", "Ci sono"), ("ce", "C'è")),
-            ),
-            "ITF-F5-01": (
-                "Demandez poliment à quelqu'un de répéter.",
-                "text",
-                (),
-            ),
-        }
-        if is_japanese:
-            presentations = {
-                "JAF-F1-01": (
-                    "Quelle lecture correspond au hiragana あ ?",
-                    "single_choice",
-                    (("あ=a", "a"), ("あ=i", "i")),
-                ),
-                "JAF-F1-06": (
-                    "Quelle lecture correspond au hiragana か ?",
-                    "single_choice",
-                    (("か=ka", "ka"), ("か=ki", "ki")),
-                ),
-                "JAF-F2-01": ("Recopiez la salutation こんにちは.", "text", ()),
-                "JAF-F3-01": (
-                    "Quelle formule signifie bonjour dans la journée ?",
-                    "single_choice",
-                    (("こんにちは", "こんにちは"), ("ありがとう", "ありがとう")),
-                ),
-                "JAF-F4-01": ("Demandez de l'eau poliment en japonais.", "text", ()),
-                "JAF-F5-01": ("Présentez des excuses pour attirer l'attention.", "text", ()),
-            }
-        items: list[PlacementItemResponse] = []
-        ordinal = 1
-        for block in catalogue.definition.blocks:
-            for item in block.items:
-                presentation = presentations.get(item.item_code)
-                if presentation is None:
-                    continue
-                prompt, response_kind, choices = presentation
-                items.append(
-                    PlacementItemResponse(
-                        item_revision_id=item.item_revision_id,
-                        item_code=item.item_code,
-                        block_code=block.block_code,
-                        ordinal=ordinal,
-                        prompt=prompt,
-                        response_kind=response_kind,
-                        choices=tuple(
-                            PlacementChoiceResponse(value=value, label=label)
-                            for value, label in choices
-                        ),
-                    )
-                )
-                ordinal += 1
-        if len(items) != 6:
-            raise DomainError(ErrorCode.CONTENT_UNAVAILABLE)
-        return PlacementManifestResponse(
-            pack_revision_id=pack_revision_id,
-            foundation_revision_id=catalogue.definition.foundation_revision_id,
-            items=tuple(items),
-        )
 
     @router.get(
         "/api/v1/language-packs/{pack_revision_id}/foundation-manifest",

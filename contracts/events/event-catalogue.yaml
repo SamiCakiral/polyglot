@@ -471,6 +471,26 @@
     {
       "event_type": "vocabulary_lists_merged",
       "schema_version": 1
+    },
+    {
+      "event_type": "placement_run_started",
+      "schema_version": 1
+    },
+    {
+      "event_type": "placement_item_selected",
+      "schema_version": 1
+    },
+    {
+      "event_type": "placement_response_recorded",
+      "schema_version": 1
+    },
+    {
+      "event_type": "placement_start_chosen",
+      "schema_version": 1
+    },
+    {
+      "event_type": "placement_completed",
+      "schema_version": 1
     }
   ]
 }

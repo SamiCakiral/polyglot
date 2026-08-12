@@ -1,0 +1,1706 @@
+{
+  "schema_version": 1,
+  "pack_revision_id": "019c0000-0000-7000-9000-000000000009",
+  "target_language_tag": "ja-JP",
+  "support_language_tag": "fr-FR",
+  "items": [
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000001",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000001",
+      "variant_pool_id": "ja.script.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000002",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000002",
+      "variant_pool_id": "ja.script.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000003",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000003",
+      "variant_pool_id": "ja.script.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000004",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000004",
+      "variant_pool_id": "ja.script.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000005",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000005",
+      "variant_pool_id": "ja.script.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000006",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000006",
+      "variant_pool_id": "ja.script.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000007",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000007",
+      "variant_pool_id": "ja.script.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000008",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000008",
+      "variant_pool_id": "ja.script.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000009",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000009",
+      "variant_pool_id": "ja.script.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "script",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Quelle lecture correspond à あ ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "a",
+          "i"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "a"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000010",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000010",
+      "variant_pool_id": "ja.reading.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000011",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000011",
+      "variant_pool_id": "ja.reading.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000012",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000012",
+      "variant_pool_id": "ja.reading.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000013",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000013",
+      "variant_pool_id": "ja.reading.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000014",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000014",
+      "variant_pool_id": "ja.reading.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000015",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000015",
+      "variant_pool_id": "ja.reading.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000016",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000016",
+      "variant_pool_id": "ja.reading.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000017",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000017",
+      "variant_pool_id": "ja.reading.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000018",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000018",
+      "variant_pool_id": "ja.reading.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "reading",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « えきはどこですか » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Quel est ce train ?"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000019",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000019",
+      "variant_pool_id": "ja.listening.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000020",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000020",
+      "variant_pool_id": "ja.listening.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000021",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000021",
+      "variant_pool_id": "ja.listening.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000022",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000022",
+      "variant_pool_id": "ja.listening.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000023",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000023",
+      "variant_pool_id": "ja.listening.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000024",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000024",
+      "variant_pool_id": "ja.listening.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000025",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000025",
+      "variant_pool_id": "ja.listening.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000026",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000026",
+      "variant_pool_id": "ja.listening.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000027",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000027",
+      "variant_pool_id": "ja.listening.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "listening",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": true,
+      "payload": {
+        "prompt": "Écoutez puis choisissez le sens principal.",
+        "response_kind": "single_choice",
+        "choices": [
+          "Où est la gare ?",
+          "Merci beaucoup"
+        ],
+        "tts_text": "Où est la gare ?"
+      },
+      "answer_key": {
+        "value": "Où est la gare ?"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000028",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000028",
+      "variant_pool_id": "ja.vocabulary.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000029",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000029",
+      "variant_pool_id": "ja.vocabulary.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000030",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000030",
+      "variant_pool_id": "ja.vocabulary.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000031",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000031",
+      "variant_pool_id": "ja.vocabulary.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000032",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000032",
+      "variant_pool_id": "ja.vocabulary.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000033",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000033",
+      "variant_pool_id": "ja.vocabulary.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000034",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000034",
+      "variant_pool_id": "ja.vocabulary.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000035",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000035",
+      "variant_pool_id": "ja.vocabulary.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000036",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000036",
+      "variant_pool_id": "ja.vocabulary.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "vocabulary",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Que signifie « みず » ?",
+        "response_kind": "single_choice",
+        "choices": [
+          "eau",
+          "riz"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "eau"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000037",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000037",
+      "variant_pool_id": "ja.grammar_functions.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000038",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000038",
+      "variant_pool_id": "ja.grammar_functions.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000039",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000039",
+      "variant_pool_id": "ja.grammar_functions.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000040",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000040",
+      "variant_pool_id": "ja.grammar_functions.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000041",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000041",
+      "variant_pool_id": "ja.grammar_functions.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000042",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000042",
+      "variant_pool_id": "ja.grammar_functions.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000043",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000043",
+      "variant_pool_id": "ja.grammar_functions.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000044",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000044",
+      "variant_pool_id": "ja.grammar_functions.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000045",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000045",
+      "variant_pool_id": "ja.grammar_functions.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "grammar_functions",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Complétez la demande : みず___ください。",
+        "response_kind": "single_choice",
+        "choices": [
+          "を",
+          "は"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "を"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000046",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000046",
+      "variant_pool_id": "ja.writing.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "single_choice",
+        "choices": [
+          "こんにちは",
+          ""
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "こんにちは"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000047",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000047",
+      "variant_pool_id": "ja.writing.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "single_choice",
+        "choices": [
+          "こんにちは",
+          ""
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "こんにちは"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000048",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000048",
+      "variant_pool_id": "ja.writing.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "single_choice",
+        "choices": [
+          "こんにちは",
+          ""
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "こんにちは"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000049",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000049",
+      "variant_pool_id": "ja.writing.l3",
+      "primitive_ref": "free_text",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 55,
+      "scoring_kind": "structured_lm",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "text",
+        "choices": [],
+        "tts_text": null
+      },
+      "answer_key": null
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000050",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000050",
+      "variant_pool_id": "ja.writing.l4",
+      "primitive_ref": "free_text",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 55,
+      "scoring_kind": "structured_lm",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "text",
+        "choices": [],
+        "tts_text": null
+      },
+      "answer_key": null
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000051",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000051",
+      "variant_pool_id": "ja.writing.l5",
+      "primitive_ref": "free_text",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 55,
+      "scoring_kind": "structured_lm",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "text",
+        "choices": [],
+        "tts_text": null
+      },
+      "answer_key": null
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000052",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000052",
+      "variant_pool_id": "ja.writing.l6",
+      "primitive_ref": "free_text",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 55,
+      "scoring_kind": "structured_lm",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "text",
+        "choices": [],
+        "tts_text": null
+      },
+      "answer_key": null
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000053",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000053",
+      "variant_pool_id": "ja.writing.l7",
+      "primitive_ref": "free_text",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 55,
+      "scoring_kind": "structured_lm",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "text",
+        "choices": [],
+        "tts_text": null
+      },
+      "answer_key": null
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000054",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000054",
+      "variant_pool_id": "ja.writing.l8",
+      "primitive_ref": "free_text",
+      "primary_skill_ref": "writing",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 55,
+      "scoring_kind": "structured_lm",
+      "media_required": false,
+      "payload": {
+        "prompt": "Écrivez une salutation de journée.",
+        "response_kind": "text",
+        "choices": [],
+        "tts_text": null
+      },
+      "answer_key": null
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000055",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000055",
+      "variant_pool_id": "ja.interaction_repair.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000056",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000056",
+      "variant_pool_id": "ja.interaction_repair.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000057",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000057",
+      "variant_pool_id": "ja.interaction_repair.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000058",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000058",
+      "variant_pool_id": "ja.interaction_repair.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000059",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000059",
+      "variant_pool_id": "ja.interaction_repair.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000060",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000060",
+      "variant_pool_id": "ja.interaction_repair.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000061",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000061",
+      "variant_pool_id": "ja.interaction_repair.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000062",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000062",
+      "variant_pool_id": "ja.interaction_repair.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000063",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000063",
+      "variant_pool_id": "ja.interaction_repair.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "interaction_repair",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Demandez de répéter.",
+        "response_kind": "single_choice",
+        "choices": [
+          "もういちどおねがいします",
+          "ありがとう"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "もういちどおねがいします"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000064",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000064",
+      "variant_pool_id": "ja.pragmatics_register.l0",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 0,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000065",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000065",
+      "variant_pool_id": "ja.pragmatics_register.l1",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 1,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000066",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000066",
+      "variant_pool_id": "ja.pragmatics_register.l2",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 2,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000067",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000067",
+      "variant_pool_id": "ja.pragmatics_register.l3",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 3,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000068",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000068",
+      "variant_pool_id": "ja.pragmatics_register.l4",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 4,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000069",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000069",
+      "variant_pool_id": "ja.pragmatics_register.l5",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 5,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000070",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000070",
+      "variant_pool_id": "ja.pragmatics_register.l6",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 6,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000071",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000071",
+      "variant_pool_id": "ja.pragmatics_register.l7",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 7,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    },
+    {
+      "blueprint_revision_id": "019d0000-0000-7000-9100-000000000072",
+      "variant_revision_id": "019d0000-0000-7000-9101-000000000072",
+      "variant_pool_id": "ja.pragmatics_register.l8",
+      "primitive_ref": "single_choice",
+      "primary_skill_ref": "pragmatics_register",
+      "secondary_skill_refs": [],
+      "level": 8,
+      "estimated_seconds": 30,
+      "scoring_kind": "deterministic",
+      "media_required": false,
+      "payload": {
+        "prompt": "Attirez poliment l'attention.",
+        "response_kind": "single_choice",
+        "choices": [
+          "すみません",
+          "じゃあね"
+        ],
+        "tts_text": null
+      },
+      "answer_key": {
+        "value": "すみません"
+      }
+    }
+  ]
+}

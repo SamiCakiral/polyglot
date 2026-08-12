@@ -4,14 +4,13 @@
  * Polyglot V2 API
  * OpenAPI spec version: 0.1.0
  */
-import type { PlacementChoiceResponse } from "./placementChoiceResponse";
+import type { PlacementItemResponsePayload } from "./placementItemResponsePayload";
 
 export interface PlacementItemResponse {
-  block_code: string;
-  choices: PlacementChoiceResponse[];
-  item_code: string;
-  item_revision_id: string;
+  estimated_seconds: number;
+  item_instance_id: string;
   ordinal: number;
-  prompt: string;
-  response_kind: string;
+  payload: PlacementItemResponsePayload;
+  primary_skill_ref: string;
+  primitive_ref: string;
 }

@@ -117,7 +117,10 @@
     "AbandonPracticeRun",
     "CreateTeacherConversation",
     "SendTeacherMessage",
-    "RevertTeacherAction"
+    "RevertTeacherAction",
+    "StartPlacementRun",
+    "SubmitPlacementResponse",
+    "ChoosePlacementStart"
   ],
   "query_names": [
     "GetCurrentUser",
@@ -126,7 +129,8 @@
     "GetLanguageProfile",
     "GetOnboardingState",
     "GetDiagnosticSummary",
-    "GetPlacementManifest",
+    "GetPlacementRun",
+    "GetCurrentPlacementItem",
     "GetFoundationManifest",
     "SearchLexicon",
     "GetLexicalSense",
@@ -1010,6 +1014,24 @@
       "method": "POST",
       "route": "/api/v1/teacher-actions/{action_id}:revert",
       "idempotency": "required"
+    },
+    {
+      "name": "StartPlacementRun",
+      "method": "POST",
+      "route": "/api/v1/language-profiles/{profile_id}/placement-runs",
+      "idempotency": "required"
+    },
+    {
+      "name": "SubmitPlacementResponse",
+      "method": "POST",
+      "route": "/api/v1/placement-runs/{run_id}/responses",
+      "idempotency": "required"
+    },
+    {
+      "name": "ChoosePlacementStart",
+      "method": "POST",
+      "route": "/api/v1/placement-runs/{run_id}:choose",
+      "idempotency": "required"
     }
   ],
   "query_mappings": [
@@ -1244,6 +1266,14 @@
     {
       "method": "GET",
       "route": "/language-profiles/{profile_id}/assessment-capabilities"
+    },
+    {
+      "method": "GET",
+      "route": "/placement-runs/{run_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/placement-runs/{run_id}/current-item"
     }
   ]
 }

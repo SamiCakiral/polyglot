@@ -60,7 +60,8 @@ import type {
   ModuleResponse,
   MutationResponse,
   OnboardingResponse,
-  PlacementManifestResponse,
+  PlacementItemResponse,
+  PlacementRunResponse,
   PracticePresetPageResponse,
   PracticePresetResponse,
   PracticeRunResponse,
@@ -3065,32 +3066,6 @@ export const getGetGrammarToolboxResponseMock = (
   ...overrideResponse,
 });
 
-export const getGetPlacementManifestResponseMock = (
-  overrideResponse: Partial<Extract<PlacementManifestResponse, object>> = {},
-): PlacementManifestResponse => ({
-  foundation_revision_id: faker.string.uuid(),
-  items: Array.from(
-    { length: faker.number.int({ min: 1, max: 10 }) },
-    (_, i) => i + 1,
-  ).map(() => ({
-    block_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    choices: Array.from(
-      { length: faker.number.int({ min: 1, max: 10 }) },
-      (_, i) => i + 1,
-    ).map(() => ({
-      label: faker.string.alpha({ length: { min: 10, max: 20 } }),
-      value: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    })),
-    item_code: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    item_revision_id: faker.string.uuid(),
-    ordinal: faker.number.int(),
-    prompt: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    response_kind: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  })),
-  pack_revision_id: faker.string.uuid(),
-  ...overrideResponse,
-});
-
 export const getListLanguageProfilesResponseMock = (
   overrideResponse: Partial<Extract<ProfilesResponse, object>> = {},
 ): ProfilesResponse => ({
@@ -4065,6 +4040,59 @@ export const getChoosePlacementResponseMock = (
     evidence_count: faker.number.int(),
   })),
   updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getStartPlacementRunResponseMock = (
+  overrideResponse: Partial<Extract<PlacementRunResponse, object>> = {},
+): PlacementRunResponse => ({
+  current_item: faker.helpers.arrayElement([
+    {
+      estimated_seconds: faker.number.int(),
+      item_instance_id: faker.string.uuid(),
+      ordinal: faker.number.int(),
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      primary_skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      primitive_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  elapsed_seconds: faker.number.int(),
+  estimates: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    independent_evidence_count: faker.number.int(),
+    lower_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+    probable_level: faker.helpers.arrayElement([faker.number.int(), null]),
+    skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    upper_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+  })),
+  profile_id: faker.string.uuid(),
+  provider_status: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -5447,6 +5475,190 @@ export const getRetractLexicalRelationResponseMock = (
 ): MutationResponse => ({
   event_type: faker.string.alpha({ length: { min: 10, max: 20 } }),
   resource_id: faker.string.uuid(),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetPlacementRunResponseMock = (
+  overrideResponse: Partial<Extract<PlacementRunResponse, object>> = {},
+): PlacementRunResponse => ({
+  current_item: faker.helpers.arrayElement([
+    {
+      estimated_seconds: faker.number.int(),
+      item_instance_id: faker.string.uuid(),
+      ordinal: faker.number.int(),
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      primary_skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      primitive_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  elapsed_seconds: faker.number.int(),
+  estimates: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    independent_evidence_count: faker.number.int(),
+    lower_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+    probable_level: faker.helpers.arrayElement([faker.number.int(), null]),
+    skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    upper_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+  })),
+  profile_id: faker.string.uuid(),
+  provider_status: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getGetCurrentPlacementItemResponseMock =
+  (): PlacementItemResponse | null =>
+    faker.helpers.arrayElement([
+      {
+        estimated_seconds: faker.number.int(),
+        item_instance_id: faker.string.uuid(),
+        ordinal: faker.number.int(),
+        payload: {
+          [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+              faker.datatype.boolean(),
+              faker.number.int(),
+              faker.number.float({ fractionDigits: 2 }),
+              faker.string.alpha({ length: { min: 10, max: 20 } }),
+              null,
+            ]),
+            [],
+          ]),
+        },
+        primary_skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        primitive_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      },
+      null,
+    ]);
+
+export const getSubmitPlacementResponseResponseMock = (
+  overrideResponse: Partial<Extract<PlacementRunResponse, object>> = {},
+): PlacementRunResponse => ({
+  current_item: faker.helpers.arrayElement([
+    {
+      estimated_seconds: faker.number.int(),
+      item_instance_id: faker.string.uuid(),
+      ordinal: faker.number.int(),
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      primary_skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      primitive_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  elapsed_seconds: faker.number.int(),
+  estimates: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    independent_evidence_count: faker.number.int(),
+    lower_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+    probable_level: faker.helpers.arrayElement([faker.number.int(), null]),
+    skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    upper_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+  })),
+  profile_id: faker.string.uuid(),
+  provider_status: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  version: faker.number.int(),
+  ...overrideResponse,
+});
+
+export const getChoosePlacementStartResponseMock = (
+  overrideResponse: Partial<Extract<PlacementRunResponse, object>> = {},
+): PlacementRunResponse => ({
+  current_item: faker.helpers.arrayElement([
+    {
+      estimated_seconds: faker.number.int(),
+      item_instance_id: faker.string.uuid(),
+      ordinal: faker.number.int(),
+      payload: {
+        [faker.string.alphanumeric(5)]: faker.helpers.arrayElement([
+          faker.helpers.arrayElement([
+            faker.datatype.boolean(),
+            faker.number.int(),
+            faker.number.float({ fractionDigits: 2 }),
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            null,
+          ]),
+          [],
+        ]),
+      },
+      primary_skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      primitive_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    },
+    null,
+  ]),
+  elapsed_seconds: faker.number.int(),
+  estimates: Array.from(
+    { length: faker.number.int({ min: 1, max: 10 }) },
+    (_, i) => i + 1,
+  ).map(() => ({
+    confidence: faker.number.float({ fractionDigits: 2 }),
+    independent_evidence_count: faker.number.int(),
+    lower_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+    probable_level: faker.helpers.arrayElement([faker.number.int(), null]),
+    skill_ref: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    upper_bound: faker.helpers.arrayElement([faker.number.int(), null]),
+  })),
+  profile_id: faker.string.uuid(),
+  provider_status: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
+  run_id: faker.string.uuid(),
+  status: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  stop_reason: faker.helpers.arrayElement([
+    faker.string.alpha({ length: { min: 10, max: 20 } }),
+    null,
+  ]),
   version: faker.number.int(),
   ...overrideResponse,
 });
@@ -8402,32 +8614,6 @@ export const getGetGrammarToolboxMockHandler = (
   );
 };
 
-export const getGetPlacementManifestMockHandler = (
-  overrideResponse?:
-    | PlacementManifestResponse
-    | ((
-        info: Parameters<Parameters<typeof http.get>[1]>[0],
-      ) => Promise<PlacementManifestResponse> | PlacementManifestResponse),
-  options?: RequestHandlerOptions,
-) => {
-  return http.get(
-    "*/api/v1/language-packs/:packRevisionId/placement-manifest",
-    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-      await delay(0);
-
-      return HttpResponse.json(
-        overrideResponse !== undefined
-          ? typeof overrideResponse === "function"
-            ? await overrideResponse(info)
-            : overrideResponse
-          : getGetPlacementManifestResponseMock(),
-        { status: 200 },
-      );
-    },
-    options,
-  );
-};
-
 export const getListLanguageProfilesMockHandler = (
   overrideResponse?:
     | ProfilesResponse
@@ -9129,6 +9315,32 @@ export const getChoosePlacementMockHandler = (
             : overrideResponse
           : getChoosePlacementResponseMock(),
         { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getStartPlacementRunMockHandler = (
+  overrideResponse?:
+    | PlacementRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PlacementRunResponse> | PlacementRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/language-profiles/:profileId/placement-runs",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getStartPlacementRunResponseMock(),
+        { status: 201 },
       );
     },
     options,
@@ -10217,6 +10429,112 @@ export const getRetractLexicalRelationMockHandler = (
             ? await overrideResponse(info)
             : overrideResponse
           : getRetractLexicalRelationResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetPlacementRunMockHandler = (
+  overrideResponse?:
+    | PlacementRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) => Promise<PlacementRunResponse> | PlacementRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/placement-runs/:runId",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetPlacementRunResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getGetCurrentPlacementItemMockHandler = (
+  overrideResponse?:
+    | PlacementItemResponse
+    | null
+    | ((
+        info: Parameters<Parameters<typeof http.get>[1]>[0],
+      ) =>
+        Promise<PlacementItemResponse | null> | PlacementItemResponse | null),
+  options?: RequestHandlerOptions,
+) => {
+  return http.get(
+    "*/api/v1/placement-runs/:runId/current-item",
+    async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getGetCurrentPlacementItemResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getSubmitPlacementResponseMockHandler = (
+  overrideResponse?:
+    | PlacementRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PlacementRunResponse> | PlacementRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/placement-runs/:runId/responses",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getSubmitPlacementResponseResponseMock(),
+        { status: 200 },
+      );
+    },
+    options,
+  );
+};
+
+export const getChoosePlacementStartMockHandler = (
+  overrideResponse?:
+    | PlacementRunResponse
+    | ((
+        info: Parameters<Parameters<typeof http.post>[1]>[0],
+      ) => Promise<PlacementRunResponse> | PlacementRunResponse),
+  options?: RequestHandlerOptions,
+) => {
+  return http.post(
+    "*/api/v1/placement-runs/:runId\\:choose",
+    async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+      await delay(0);
+
+      return HttpResponse.json(
+        overrideResponse !== undefined
+          ? typeof overrideResponse === "function"
+            ? await overrideResponse(info)
+            : overrideResponse
+          : getChoosePlacementStartResponseMock(),
         { status: 200 },
       );
     },
@@ -11371,7 +11689,6 @@ export const getPolyglotV2APIMock = () => [
   getListLanguagePacksMockHandler(),
   getGetFoundationManifestMockHandler(),
   getGetGrammarToolboxMockHandler(),
-  getGetPlacementManifestMockHandler(),
   getListLanguageProfilesMockHandler(),
   getCreateLanguageProfileMockHandler(),
   getGetLanguageProfileMockHandler(),
@@ -11399,6 +11716,7 @@ export const getPolyglotV2APIMock = () => [
   getStartOnboardingMockHandler(),
   getRecordPlacementProfileMockHandler(),
   getChoosePlacementMockHandler(),
+  getStartPlacementRunMockHandler(),
   getListPracticePresetsMockHandler(),
   getCreatePracticePresetMockHandler(),
   getListPracticeStacksMockHandler(),
@@ -11441,6 +11759,10 @@ export const getPolyglotV2APIMock = () => [
   getPauseModuleEnrollmentMockHandler(),
   getListLearningModulesMockHandler(),
   getRetractLexicalRelationMockHandler(),
+  getGetPlacementRunMockHandler(),
+  getGetCurrentPlacementItemMockHandler(),
+  getSubmitPlacementResponseMockHandler(),
+  getChoosePlacementStartMockHandler(),
   getStartPracticeRunMockHandler(),
   getGetPracticeRunMockHandler(),
   getAbandonPracticeRunMockHandler(),

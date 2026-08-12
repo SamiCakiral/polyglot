@@ -36,6 +36,7 @@ from polyglot.interfaces.http.routes.media import media_router
 from polyglot.interfaces.http.routes.memory import MemoryService, memory_router
 from polyglot.interfaces.http.routes.onboarding import onboarding_router
 from polyglot.interfaces.http.routes.practice import practice_router
+from polyglot.interfaces.http.routes.placement import placement_router
 from polyglot.interfaces.http.routes.progress import ProgressService, progress_router
 from polyglot.interfaces.http.routes.sprints import sprints_router
 from polyglot.interfaces.http.routes.teacher import teacher_router
@@ -56,6 +57,8 @@ from polyglot.modules.identity.language_persistence import AccountLanguageApplic
 from polyglot.modules.language_profiles.application import LanguageProfileApplicationService
 from polyglot.modules.language_profiles.onboarding_persistence import OnboardingApplicationService
 from polyglot.modules.media.application import MediaApplicationService
+from polyglot.modules.placement.evaluator import PlacementEvaluator
+from polyglot.modules.placement.persistence import SqlPlacementService
 from polyglot.modules.practice.application import PracticeService
 from polyglot.modules.sprints.application import SprintApplicationService
 from polyglot.modules.teacher.application import TeacherService
@@ -109,6 +112,7 @@ def create_app(
     sprint_service: SprintApplicationService | None = None,
     progress_service: ProgressService | None = None,
     practice_service: PracticeService | None = None,
+    placement_service: SqlPlacementService | None = None,
     assessment_service: AssessmentApplicationService | None = None,
     media_service: MediaApplicationService | None = None,
     generation_service: GenerationApplicationService | None = None,
@@ -203,6 +207,13 @@ def create_app(
     app.include_router(
         practice_router(
             practice_service,
+            identity_service,
+            allowed_origin=allowed_origin,
+        )
+    )
+    app.include_router(
+        placement_router(
+            placement_service,
             identity_service,
             allowed_origin=allowed_origin,
         )
@@ -398,6 +409,10 @@ def create_runtime_app() -> FastAPI:
         base_url=os.environ.get("POLYGLOT_LM_STUDIO_URL", "http://127.0.0.1:1234"),
         model="qwen/qwen3.6-35b-a3b",
     )
+    placement_service = SqlPlacementService(
+        session_factory,
+        PlacementEvaluator(generation_provider),
+    )
     teacher_service = SqlTeacherService(session_factory, generation_provider)
 
     @asynccontextmanager
@@ -444,6 +459,7 @@ def create_runtime_app() -> FastAPI:
         sprint_service=sprint_service,
         progress_service=progress_service,
         practice_service=practice_service,
+        placement_service=placement_service,
         assessment_service=assessment_service,
         media_service=media_service,
         generation_service=generation_service,

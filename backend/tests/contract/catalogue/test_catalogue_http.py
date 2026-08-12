@@ -214,17 +214,14 @@ def test_catalogue_query_validation_uses_correlated_rfc9457() -> None:
     assert response.json()["correlation_id"] == response.headers["X-Correlation-ID"]
 
 
-def test_placement_manifest_exposes_prompts_without_correction_oracles() -> None:
+def test_fixed_placement_manifest_is_removed() -> None:
     app = create_app(test_mode=True, catalogue_service=StubCatalogueReader())
     pack_revision_id = "019b0000-0000-7000-8000-000000000009"
 
     with TestClient(app, raise_server_exceptions=False) as client:
         response = client.get(f"/api/v1/language-packs/{pack_revision_id}/placement-manifest")
 
-    assert response.status_code == 200
-    assert len(response.json()["items"]) == 6
-    assert "checker_values" not in response.text
-    assert {item["block_code"] for item in response.json()["items"]} == {"F1", "F3", "F4", "F5"}
+    assert response.status_code == 404
 
 
 def test_foundation_manifest_exposes_all_teaching_activities() -> None:
@@ -272,15 +269,12 @@ def test_japanese_manifests_and_grammar_are_executable_without_italian_assumptio
     revision = fixture.pack_revision.pack_revision_id
 
     with TestClient(app, raise_server_exceptions=False) as client:
-        placement = client.get(f"/api/v1/language-packs/{revision}/placement-manifest")
         foundations = client.get(f"/api/v1/language-packs/{revision}/foundation-manifest")
         grammar = client.get(
             f"/api/v1/language-packs/{revision}/grammar-functions",
             params={"support_language_tag": "fr-FR"},
         )
 
-    assert placement.status_code == 200
-    assert len(placement.json()["items"]) == 6
     assert foundations.status_code == 200
     assert len(foundations.json()["activities"]) == 30
     assert "hiragana" in foundations.text.lower()

@@ -113,7 +113,10 @@ import type {
   OnboardingResponse,
   OpenAttemptRequest,
   PauseEnrollmentRequest,
-  PlacementManifestResponse,
+  PlacementAnswerRequest,
+  PlacementChoiceRequest,
+  PlacementItemResponse,
+  PlacementRunResponse,
   PracticePresetPageResponse,
   PracticePresetResponse,
   PracticeRunResponse,
@@ -162,6 +165,7 @@ import type {
   StartDiagnosticRequest,
   StartFoundationRunRequest,
   StartOnboardingRequest,
+  StartPlacementRequest,
   StartPracticeRunRequest,
   StartRunRequest,
   SubmitAttemptRequest,
@@ -13924,245 +13928,6 @@ export function useGetGrammarToolbox<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type getPlacementManifestResponse200 = {
-  data: PlacementManifestResponse;
-  status: 200;
-};
-
-export type getPlacementManifestResponse409ApplicationJson = {
-  data: ProblemResponse;
-  status: 409;
-};
-
-export type getPlacementManifestResponse409ApplicationProblemJson = {
-  data: ProblemResponse;
-  status: 409;
-};
-
-export type getPlacementManifestResponse422ApplicationJson = {
-  data: ProblemResponse;
-  status: 422;
-};
-
-export type getPlacementManifestResponse422ApplicationProblemJson = {
-  data: ProblemResponse;
-  status: 422;
-};
-
-export type getPlacementManifestResponse503ApplicationJson = {
-  data: ProblemResponse;
-  status: 503;
-};
-
-export type getPlacementManifestResponse503ApplicationProblemJson = {
-  data: ProblemResponse;
-  status: 503;
-};
-
-export type getPlacementManifestResponseSuccess =
-  getPlacementManifestResponse200 & {
-    headers: Headers;
-  };
-export type getPlacementManifestResponseError = (
-  | getPlacementManifestResponse409ApplicationJson
-  | getPlacementManifestResponse409ApplicationProblemJson
-  | getPlacementManifestResponse422ApplicationJson
-  | getPlacementManifestResponse422ApplicationProblemJson
-  | getPlacementManifestResponse503ApplicationJson
-  | getPlacementManifestResponse503ApplicationProblemJson
-) & {
-  headers: Headers;
-};
-
-export type getPlacementManifestResponse =
-  getPlacementManifestResponseSuccess | getPlacementManifestResponseError;
-
-export const getGetPlacementManifestUrl = (packRevisionId: string) => {
-  return `/api/v1/language-packs/${packRevisionId}/placement-manifest`;
-};
-
-/**
- * @summary Get Placement Manifest
- */
-export const getPlacementManifest = async (
-  packRevisionId: string,
-  options?: RequestInit,
-): Promise<getPlacementManifestResponse> => {
-  const res = await fetch(getGetPlacementManifestUrl(packRevisionId), {
-    ...options,
-    method: "GET",
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getPlacementManifestResponse["data"] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getPlacementManifestResponse;
-};
-
-export const getGetPlacementManifestQueryKey = (packRevisionId: string) => {
-  return [
-    `/api/v1/language-packs/${packRevisionId}/placement-manifest`,
-  ] as const;
-};
-
-export const getGetPlacementManifestQueryOptions = <
-  TData = Awaited<ReturnType<typeof getPlacementManifest>>,
-  TError = ProblemResponse,
->(
-  packRevisionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPlacementManifest>>,
-        TError,
-        TData
-      >
-    >;
-    fetch?: RequestInit;
-  },
-) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
-
-  const queryKey =
-    queryOptions?.queryKey ?? getGetPlacementManifestQueryKey(packRevisionId);
-
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getPlacementManifest>>
-  > = ({ signal }) =>
-    getPlacementManifest(packRevisionId, { signal, ...fetchOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: packRevisionId !== null && packRevisionId !== undefined,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getPlacementManifest>>,
-    TError,
-    TData
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-};
-
-export type GetPlacementManifestQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getPlacementManifest>>
->;
-export type GetPlacementManifestQueryError = ProblemResponse;
-
-export function useGetPlacementManifest<
-  TData = Awaited<ReturnType<typeof getPlacementManifest>>,
-  TError = ProblemResponse,
->(
-  packRevisionId: string,
-  options: {
-    query: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPlacementManifest>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getPlacementManifest>>,
-          TError,
-          Awaited<ReturnType<typeof getPlacementManifest>>
-        >,
-        "initialData"
-      >;
-    fetch?: RequestInit;
-  },
-  queryClient?: QueryClient,
-): DefinedUseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetPlacementManifest<
-  TData = Awaited<ReturnType<typeof getPlacementManifest>>,
-  TError = ProblemResponse,
->(
-  packRevisionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPlacementManifest>>,
-        TError,
-        TData
-      >
-    > &
-      Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof getPlacementManifest>>,
-          TError,
-          Awaited<ReturnType<typeof getPlacementManifest>>
-        >,
-        "initialData"
-      >;
-    fetch?: RequestInit;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-export function useGetPlacementManifest<
-  TData = Awaited<ReturnType<typeof getPlacementManifest>>,
-  TError = ProblemResponse,
->(
-  packRevisionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPlacementManifest>>,
-        TError,
-        TData
-      >
-    >;
-    fetch?: RequestInit;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-};
-/**
- * @summary Get Placement Manifest
- */
-
-export function useGetPlacementManifest<
-  TData = Awaited<ReturnType<typeof getPlacementManifest>>,
-  TError = ProblemResponse,
->(
-  packRevisionId: string,
-  options?: {
-    query?: Partial<
-      UseQueryOptions<
-        Awaited<ReturnType<typeof getPlacementManifest>>,
-        TError,
-        TData
-      >
-    >;
-    fetch?: RequestInit;
-  },
-  queryClient?: QueryClient,
-): UseQueryResult<TData, TError> & {
-  queryKey: DataTag<QueryKey, TData, TError>;
-} {
-  const queryOptions = getGetPlacementManifestQueryOptions(
-    packRevisionId,
-    options,
-  );
-
-  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
-    TData,
-    TError
-  > & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
 export type listLanguageProfilesResponse200 = {
   data: ProfilesResponse;
   status: 200;
@@ -20581,6 +20346,205 @@ export const useChoosePlacement = <
   TContext
 > => {
   return useMutation(getChoosePlacementMutationOptions(options), queryClient);
+};
+
+export type startPlacementRunResponse201 = {
+  data: PlacementRunResponse;
+  status: 201;
+};
+
+export type startPlacementRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startPlacementRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type startPlacementRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startPlacementRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type startPlacementRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startPlacementRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type startPlacementRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startPlacementRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type startPlacementRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startPlacementRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type startPlacementRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startPlacementRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type startPlacementRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startPlacementRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type startPlacementRunResponseSuccess = startPlacementRunResponse201 & {
+  headers: Headers;
+};
+export type startPlacementRunResponseError = (
+  | startPlacementRunResponse401ApplicationJson
+  | startPlacementRunResponse401ApplicationProblemJson
+  | startPlacementRunResponse403ApplicationJson
+  | startPlacementRunResponse403ApplicationProblemJson
+  | startPlacementRunResponse409ApplicationJson
+  | startPlacementRunResponse409ApplicationProblemJson
+  | startPlacementRunResponse422ApplicationJson
+  | startPlacementRunResponse422ApplicationProblemJson
+  | startPlacementRunResponse423ApplicationJson
+  | startPlacementRunResponse423ApplicationProblemJson
+  | startPlacementRunResponse429ApplicationJson
+  | startPlacementRunResponse429ApplicationProblemJson
+  | startPlacementRunResponse503ApplicationJson
+  | startPlacementRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type startPlacementRunResponse =
+  startPlacementRunResponseSuccess | startPlacementRunResponseError;
+
+export const getStartPlacementRunUrl = (profileId: string) => {
+  return `/api/v1/language-profiles/${profileId}/placement-runs`;
+};
+
+/**
+ * @summary Start Run
+ */
+export const startPlacementRun = async (
+  profileId: string,
+  startPlacementRequest: StartPlacementRequest,
+  options?: RequestInit,
+): Promise<startPlacementRunResponse> => {
+  const res = await fetch(getStartPlacementRunUrl(profileId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(startPlacementRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: startPlacementRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as startPlacementRunResponse;
+};
+
+export const getStartPlacementRunMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof startPlacementRun>>,
+    TError,
+    { profileId: string; data: StartPlacementRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof startPlacementRun>>,
+  TError,
+  { profileId: string; data: StartPlacementRequest },
+  TContext
+> => {
+  const mutationKey = ["startPlacementRun"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof startPlacementRun>>,
+    { profileId: string; data: StartPlacementRequest }
+  > = (props) => {
+    const { profileId, data } = props ?? {};
+
+    return startPlacementRun(profileId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type StartPlacementRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startPlacementRun>>
+>;
+export type StartPlacementRunMutationBody = StartPlacementRequest;
+export type StartPlacementRunMutationError = ProblemResponse;
+
+/**
+ * @summary Start Run
+ */
+export const useStartPlacementRun = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof startPlacementRun>>,
+      TError,
+      { profileId: string; data: StartPlacementRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof startPlacementRun>>,
+  TError,
+  { profileId: string; data: StartPlacementRequest },
+  TContext
+> => {
+  return useMutation(getStartPlacementRunMutationOptions(options), queryClient);
 };
 
 export type listPracticePresetsResponse200 = {
@@ -30502,6 +30466,817 @@ export const useRetractLexicalRelation = <
 > => {
   return useMutation(
     getRetractLexicalRelationMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type getPlacementRunResponse200 = {
+  data: PlacementRunResponse;
+  status: 200;
+};
+
+export type getPlacementRunResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getPlacementRunResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type getPlacementRunResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getPlacementRunResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type getPlacementRunResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getPlacementRunResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type getPlacementRunResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getPlacementRunResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type getPlacementRunResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getPlacementRunResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type getPlacementRunResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getPlacementRunResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type getPlacementRunResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getPlacementRunResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type getPlacementRunResponseSuccess = getPlacementRunResponse200 & {
+  headers: Headers;
+};
+export type getPlacementRunResponseError = (
+  | getPlacementRunResponse401ApplicationJson
+  | getPlacementRunResponse401ApplicationProblemJson
+  | getPlacementRunResponse403ApplicationJson
+  | getPlacementRunResponse403ApplicationProblemJson
+  | getPlacementRunResponse409ApplicationJson
+  | getPlacementRunResponse409ApplicationProblemJson
+  | getPlacementRunResponse422ApplicationJson
+  | getPlacementRunResponse422ApplicationProblemJson
+  | getPlacementRunResponse423ApplicationJson
+  | getPlacementRunResponse423ApplicationProblemJson
+  | getPlacementRunResponse429ApplicationJson
+  | getPlacementRunResponse429ApplicationProblemJson
+  | getPlacementRunResponse503ApplicationJson
+  | getPlacementRunResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type getPlacementRunResponse =
+  getPlacementRunResponseSuccess | getPlacementRunResponseError;
+
+export const getGetPlacementRunUrl = (runId: string) => {
+  return `/api/v1/placement-runs/${runId}`;
+};
+
+/**
+ * @summary Get Run
+ */
+export const getPlacementRun = async (
+  runId: string,
+  options?: RequestInit,
+): Promise<getPlacementRunResponse> => {
+  const res = await fetch(getGetPlacementRunUrl(runId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getPlacementRunResponse["data"] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getPlacementRunResponse;
+};
+
+export const getGetPlacementRunQueryKey = (runId: string) => {
+  return [`/api/v1/placement-runs/${runId}`] as const;
+};
+
+export const getGetPlacementRunQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPlacementRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPlacementRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPlacementRunQueryKey(runId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlacementRun>>> = ({
+    signal,
+  }) => getPlacementRun(runId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: runId !== null && runId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPlacementRun>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetPlacementRunQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPlacementRun>>
+>;
+export type GetPlacementRunQueryError = ProblemResponse;
+
+export function useGetPlacementRun<
+  TData = Awaited<ReturnType<typeof getPlacementRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPlacementRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlacementRun>>,
+          TError,
+          Awaited<ReturnType<typeof getPlacementRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetPlacementRun<
+  TData = Awaited<ReturnType<typeof getPlacementRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPlacementRun>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPlacementRun>>,
+          TError,
+          Awaited<ReturnType<typeof getPlacementRun>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetPlacementRun<
+  TData = Awaited<ReturnType<typeof getPlacementRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPlacementRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Get Run
+ */
+
+export function useGetPlacementRun<
+  TData = Awaited<ReturnType<typeof getPlacementRun>>,
+  TError = ProblemResponse,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getPlacementRun>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetPlacementRunQueryOptions(runId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type getCurrentPlacementItemResponse200 = {
+  data: PlacementItemResponse | null;
+  status: 200;
+};
+
+export type getCurrentPlacementItemResponse422 = {
+  data: HTTPValidationError;
+  status: 422;
+};
+
+export type getCurrentPlacementItemResponseSuccess =
+  getCurrentPlacementItemResponse200 & {
+    headers: Headers;
+  };
+export type getCurrentPlacementItemResponseError =
+  getCurrentPlacementItemResponse422 & {
+    headers: Headers;
+  };
+
+export type getCurrentPlacementItemResponse =
+  getCurrentPlacementItemResponseSuccess | getCurrentPlacementItemResponseError;
+
+export const getGetCurrentPlacementItemUrl = (runId: string) => {
+  return `/api/v1/placement-runs/${runId}/current-item`;
+};
+
+/**
+ * @summary Current Item
+ */
+export const getCurrentPlacementItem = async (
+  runId: string,
+  options?: RequestInit,
+): Promise<getCurrentPlacementItemResponse> => {
+  const res = await fetch(getGetCurrentPlacementItemUrl(runId), {
+    ...options,
+    method: "GET",
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getCurrentPlacementItemResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getCurrentPlacementItemResponse;
+};
+
+export const getGetCurrentPlacementItemQueryKey = (runId: string) => {
+  return [`/api/v1/placement-runs/${runId}/current-item`] as const;
+};
+
+export const getGetCurrentPlacementItemQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+  TError = HTTPValidationError,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+) => {
+  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCurrentPlacementItemQueryKey(runId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCurrentPlacementItem>>
+  > = ({ signal }) =>
+    getCurrentPlacementItem(runId, { signal, ...fetchOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: runId !== null && runId !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetCurrentPlacementItemQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCurrentPlacementItem>>
+>;
+export type GetCurrentPlacementItemQueryError = HTTPValidationError;
+
+export function useGetCurrentPlacementItem<
+  TData = Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+  TError = HTTPValidationError,
+>(
+  runId: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+          TError,
+          Awaited<ReturnType<typeof getCurrentPlacementItem>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetCurrentPlacementItem<
+  TData = Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+  TError = HTTPValidationError,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+        TError,
+        TData
+      >
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+          TError,
+          Awaited<ReturnType<typeof getCurrentPlacementItem>>
+        >,
+        "initialData"
+      >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+export function useGetCurrentPlacementItem<
+  TData = Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+  TError = HTTPValidationError,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+};
+/**
+ * @summary Current Item
+ */
+
+export function useGetCurrentPlacementItem<
+  TData = Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+  TError = HTTPValidationError,
+>(
+  runId: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getCurrentPlacementItem>>,
+        TError,
+        TData
+      >
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & {
+  queryKey: DataTag<QueryKey, TData, TError>;
+} {
+  const queryOptions = getGetCurrentPlacementItemQueryOptions(runId, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<
+    TData,
+    TError
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export type submitPlacementResponseResponse200 = {
+  data: PlacementRunResponse;
+  status: 200;
+};
+
+export type submitPlacementResponseResponse401ApplicationJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitPlacementResponseResponse401ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 401;
+};
+
+export type submitPlacementResponseResponse403ApplicationJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitPlacementResponseResponse403ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 403;
+};
+
+export type submitPlacementResponseResponse409ApplicationJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitPlacementResponseResponse409ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 409;
+};
+
+export type submitPlacementResponseResponse422ApplicationJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitPlacementResponseResponse422ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 422;
+};
+
+export type submitPlacementResponseResponse423ApplicationJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitPlacementResponseResponse423ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 423;
+};
+
+export type submitPlacementResponseResponse429ApplicationJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitPlacementResponseResponse429ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 429;
+};
+
+export type submitPlacementResponseResponse503ApplicationJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitPlacementResponseResponse503ApplicationProblemJson = {
+  data: ProblemResponse;
+  status: 503;
+};
+
+export type submitPlacementResponseResponseSuccess =
+  submitPlacementResponseResponse200 & {
+    headers: Headers;
+  };
+export type submitPlacementResponseResponseError = (
+  | submitPlacementResponseResponse401ApplicationJson
+  | submitPlacementResponseResponse401ApplicationProblemJson
+  | submitPlacementResponseResponse403ApplicationJson
+  | submitPlacementResponseResponse403ApplicationProblemJson
+  | submitPlacementResponseResponse409ApplicationJson
+  | submitPlacementResponseResponse409ApplicationProblemJson
+  | submitPlacementResponseResponse422ApplicationJson
+  | submitPlacementResponseResponse422ApplicationProblemJson
+  | submitPlacementResponseResponse423ApplicationJson
+  | submitPlacementResponseResponse423ApplicationProblemJson
+  | submitPlacementResponseResponse429ApplicationJson
+  | submitPlacementResponseResponse429ApplicationProblemJson
+  | submitPlacementResponseResponse503ApplicationJson
+  | submitPlacementResponseResponse503ApplicationProblemJson
+) & {
+  headers: Headers;
+};
+
+export type submitPlacementResponseResponse =
+  submitPlacementResponseResponseSuccess | submitPlacementResponseResponseError;
+
+export const getSubmitPlacementResponseUrl = (runId: string) => {
+  return `/api/v1/placement-runs/${runId}/responses`;
+};
+
+/**
+ * @summary Submit Response
+ */
+export const submitPlacementResponse = async (
+  runId: string,
+  placementAnswerRequest: PlacementAnswerRequest,
+  options?: RequestInit,
+): Promise<submitPlacementResponseResponse> => {
+  const res = await fetch(getSubmitPlacementResponseUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(placementAnswerRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: submitPlacementResponseResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as submitPlacementResponseResponse;
+};
+
+export const getSubmitPlacementResponseMutationOptions = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitPlacementResponse>>,
+    TError,
+    { runId: string; data: PlacementAnswerRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitPlacementResponse>>,
+  TError,
+  { runId: string; data: PlacementAnswerRequest },
+  TContext
+> => {
+  const mutationKey = ["submitPlacementResponse"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitPlacementResponse>>,
+    { runId: string; data: PlacementAnswerRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return submitPlacementResponse(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitPlacementResponseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitPlacementResponse>>
+>;
+export type SubmitPlacementResponseMutationBody = PlacementAnswerRequest;
+export type SubmitPlacementResponseMutationError = ProblemResponse;
+
+/**
+ * @summary Submit Response
+ */
+export const useSubmitPlacementResponse = <
+  TError = ProblemResponse,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof submitPlacementResponse>>,
+      TError,
+      { runId: string; data: PlacementAnswerRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof submitPlacementResponse>>,
+  TError,
+  { runId: string; data: PlacementAnswerRequest },
+  TContext
+> => {
+  return useMutation(
+    getSubmitPlacementResponseMutationOptions(options),
+    queryClient,
+  );
+};
+
+export type choosePlacementStartResponse200 = {
+  data: PlacementRunResponse;
+  status: 200;
+};
+
+export type choosePlacementStartResponse422 = {
+  data: HTTPValidationError;
+  status: 422;
+};
+
+export type choosePlacementStartResponseSuccess =
+  choosePlacementStartResponse200 & {
+    headers: Headers;
+  };
+export type choosePlacementStartResponseError =
+  choosePlacementStartResponse422 & {
+    headers: Headers;
+  };
+
+export type choosePlacementStartResponse =
+  choosePlacementStartResponseSuccess | choosePlacementStartResponseError;
+
+export const getChoosePlacementStartUrl = (runId: string) => {
+  return `/api/v1/placement-runs/${runId}:choose`;
+};
+
+/**
+ * @summary Choose
+ */
+export const choosePlacementStart = async (
+  runId: string,
+  placementChoiceRequest: PlacementChoiceRequest,
+  options?: RequestInit,
+): Promise<choosePlacementStartResponse> => {
+  const res = await fetch(getChoosePlacementStartUrl(runId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(placementChoiceRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: choosePlacementStartResponse["data"] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as choosePlacementStartResponse;
+};
+
+export const getChoosePlacementStartMutationOptions = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof choosePlacementStart>>,
+    TError,
+    { runId: string; data: PlacementChoiceRequest },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof choosePlacementStart>>,
+  TError,
+  { runId: string; data: PlacementChoiceRequest },
+  TContext
+> => {
+  const mutationKey = ["choosePlacementStart"];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof choosePlacementStart>>,
+    { runId: string; data: PlacementChoiceRequest }
+  > = (props) => {
+    const { runId, data } = props ?? {};
+
+    return choosePlacementStart(runId, data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ChoosePlacementStartMutationResult = NonNullable<
+  Awaited<ReturnType<typeof choosePlacementStart>>
+>;
+export type ChoosePlacementStartMutationBody = PlacementChoiceRequest;
+export type ChoosePlacementStartMutationError = HTTPValidationError;
+
+/**
+ * @summary Choose
+ */
+export const useChoosePlacementStart = <
+  TError = HTTPValidationError,
+  TContext = unknown,
+>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof choosePlacementStart>>,
+      TError,
+      { runId: string; data: PlacementChoiceRequest },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof choosePlacementStart>>,
+  TError,
+  { runId: string; data: PlacementChoiceRequest },
+  TContext
+> => {
+  return useMutation(
+    getChoosePlacementStartMutationOptions(options),
     queryClient,
   );
 };

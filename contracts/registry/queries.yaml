@@ -235,6 +235,14 @@
     {
       "method": "GET",
       "route": "/language-profiles/{profile_id}/assessment-capabilities"
+    },
+    {
+      "method": "GET",
+      "route": "/placement-runs/{run_id}"
+    },
+    {
+      "method": "GET",
+      "route": "/placement-runs/{run_id}/current-item"
     }
   ],
   "application_query_names": [
@@ -244,7 +252,8 @@
     "GetLanguageProfile",
     "GetOnboardingState",
     "GetDiagnosticSummary",
-    "GetPlacementManifest",
+    "GetPlacementRun",
+    "GetCurrentPlacementItem",
     "GetFoundationManifest",
     "SearchLexicon",
     "GetLexicalSense",
